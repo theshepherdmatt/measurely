@@ -61,38 +61,61 @@
   </aside>
 
   <!-- MAIN -->
-  <main id="main-content" class="main-content">
+<!-- MAIN CONTENT -->
+<main class="main-content">
 
+    <!-- HEADER -->
     <header class="header animate-enter">
-      <div style="display:flex;align-items:center;gap:1rem;">
-        <div>
-          <h1>Tips & Tweaks</h1>
-          <p>Dave highlights the biggest issues holding back your sound — and tells you exactly what to do next.</p>
+
+        <div class="header-title"
+            style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+
+            <!-- LEFT: Title -->
+            <div>
+                <h1>Tips & Tweaks</h1>
+                <p>Highlighting the biggest issues holding back your system.</p>
+            </div>
+
+            <!-- RIGHT: Hamburger (forced to far right) -->
+            <button id="mobile-menu-btn"
+                    class="btn btn-secondary"
+                    style="padding: 0.5rem; display: none; margin-left: auto;"
+                    aria-label="Toggle navigation" aria-expanded="false">
+                <img src="icons/bars.svg" style="width: 24px;" alt="">
+            </button>
+
         </div>
-        <button id="mobile-menu-btn"
-          class="btn btn-secondary"
-          style="padding:0.5rem;display:none;margin-left:auto;">
-          <img src="icons/bars.svg" style="width:24px;">
-        </button>
-      </div>
     </header>
 
-    <div class="animate-enter delay-1" style="margin-bottom:2rem;">
-      <h2>Your Priority Action Areas</h2>
-      <p style="font-size:0.9rem;color:var(--c-text-muted);">
-        These are the top three things limiting your system right now.
-      </p>
+    <div id="tipsCardsWrapper"
+         class="grid-3 animate-enter delay-2"
+         role="region" aria-live="polite">
     </div>
 
-    <div id="tipsCardsWrapper" class="grid-3 animate-enter delay-2"
-      role="region" aria-live="polite">
-    </div>
+</main>
 
-  </main>
 </div>
 
-<script src="/js/dashboard.js"></script>
 <script type="module" src="/js/devices.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("mobile-menu-btn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+
+  if (!btn || !sidebar || !overlay) return;
+  console.log("📱 Mobile Sidebar Ready (Tips & Tweaks)");
+
+  const toggleSidebar = () => {
+    sidebar.classList.toggle("active");
+    overlay.classList.toggle("active");
+  };
+
+  btn.addEventListener("click", toggleSidebar);
+  overlay.addEventListener("click", toggleSidebar);
+});
+</script>
 
 <script>
 // =====================================================
@@ -140,12 +163,12 @@ function colorClass(n) {
 
 // EXPLANATIONS
 const METRIC_EXPLAIN = {
-  peaks_dips: `Some bass notes boom, others disappear — that’s Peaks & Dips.<br>The room is messing with your bass loudness from note to note.`,
-  reflections: `Sound bounces off walls and smears detail.<br>Clarity and focus go out the window.`,
-  bandwidth: `The room can choke deep bass and airy highs.<br>You lose fullness and sparkle.`,
-  balance: `If the room pulls sound to one side,<br>voices won’t stay locked in the centre.`,
-  smoothness: `Harsh bumps in mids/highs make music edgy.<br>Flattening them brings clarity back.`,
-  reverb: `Sound hangs around after it should stop.<br>Muddiness and echo creep in.`
+  peaks_dips: `Some bass notes boom, others disappear, that’s Peaks & Dips. The room is messing with your bass loudness from note to note.`,
+  reflections: `Sound bounces off walls and smears detail. Clarity and focus go out the window.`,
+  bandwidth: `The room can choke deep bass and airy highs. You lose fullness and sparkle.`,
+  balance: `If the room pulls sound to one side, voices won’t stay locked in the centre.`,
+  smoothness: `Harsh bumps in mids/highs make music edgy. Flattening them brings clarity back.`,
+  reverb: `Sound hangs around after it should stop. Muddiness and echo creep in.`
 };
 
 function pick(arr) {
@@ -161,6 +184,9 @@ function interpolateTags(text) {
 
   const room = data.room || {};
 
+  const speakerName = window.activeSpeaker?.friendly_name || "speakers";
+
+
   const tags = {
     room_length: room.length_m,
     room_width: room.width_m,
@@ -168,8 +194,10 @@ function interpolateTags(text) {
     spk_distance: room.spk_spacing_m,
     toe_in: room.toe_in_deg,
     echo_pct: room.echo_pct,
-    speaker_name: data.speaker_friendly_name
+    speaker_friendly_name: speakerName,
+    speaker_name: speakerName
   };
+
 
   return text.replace(/\{\{(.*?)\}\}/g, (_, key) => {
     key = key.trim();
@@ -238,10 +266,10 @@ function generateCards() {
             <img src="icons/${icon}" class="simple-icon">
             <div>
               <h3>${name}</h3>
-              <div style="font-size:0.7rem;opacity:0.5;">Priority Fix ${i+1}</div>
+              <div style="font-size:0.7rem;opacity:0.5;"></div>
             </div>
           </div>
-          <div style="font-size:2rem;font-weight:800;" class="${colorClass(w.score)}">
+          <div style="font-size:2rem;font-weight:800;" color: var(--c-text-main);">
             ${w.score.toFixed(1)}
           </div>
         </div>
@@ -262,9 +290,44 @@ function generateCards() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   log("Boot");
+
+  // 🚀 Load speakers FIRST
+  if (window.initSpeakers) {
+    await window.initSpeakers();
+  }
+
+  // Load room + tips AFTER speakers are ready
   await Promise.all([loadSolutions(), loadLatest()]);
+
   generateCards();
   log("Done");
+});
+
+
+</script>
+
+<script type="module">
+import { initSpeakers } from './js/speakers.js';
+window.initSpeakers = initSpeakers;
+initSpeakers();
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("mobile-menu-btn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+
+  if (!btn || !sidebar || !overlay) return;
+  console.log("📱 Mobile Sidebar Ready (Tips & Tweaks)");
+
+  const toggleSidebar = () => {
+    sidebar.classList.toggle("active");
+    overlay.classList.toggle("active");
+  };
+
+  btn.addEventListener("click", toggleSidebar);
+  overlay.addEventListener("click", toggleSidebar);
 });
 </script>
 

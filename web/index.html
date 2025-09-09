@@ -7,6 +7,7 @@
     <title>Measurely – Dashboard</title>
     <link rel="icon" type="image/svg+xml" href="icons/dave.svg">
     <link rel="stylesheet" href="measurely.css">
+
     <script src="js/plotly.min.js"></script>
 </head>
 
@@ -110,10 +111,18 @@
                         <img src="icons/sweep.svg" style="width: 18px; filter: brightness(100);" alt="">
                         Run Sweep
                     </button>
+
                     <button id="refreshDashboardBtn" class="btn btn-secondary" aria-label="Refresh Dashboard">
                         <img src="icons/refresh.svg" style="width: 16px;" alt="">
                     </button>
+
+                    <!-- NEW: Cancel Sweep button (hidden until sweeping) -->
+                    <button id="cancelSweepBtn" class="btn btn-poor hidden" aria-label="Cancel Sweep">
+                        <img src="icons/save.svg" style="width: 18px;" alt="">
+                        Cancel Sweep
+                    </button>
                 </div>
+
 
             </header>
 
@@ -139,12 +148,12 @@
 
                     <!-- SCORE LEFT + DAVE RIGHT -->
                     <div class="overall-score-row" style="
-            display:flex;
-            justify-content:space-between;
-            align-items:flex-start;
-            gap:2rem;
-            flex-wrap:wrap;
-          ">
+                            display:flex;
+                            justify-content:space-between;
+                            align-items:flex-start;
+                            gap:2rem;
+                            flex-wrap:wrap;
+                        ">
 
                         <!-- SCORE -->
                         <div class="score-display" style="display:flex; align-items:flex-end;">
@@ -162,7 +171,7 @@
                             <!-- ICON + TITLE LEFT -->
                             <div class="dave-badge" style="margin-bottom:0.4rem; align-self:flex-start;">
                                 <img src="icons/dave.svg" style="width:20px;" alt="" aria-hidden="true">
-                                <span>DAVE SAYS</span>
+                                <span>Report</span>
                             </div>
 
                             <!-- PHRASE STARTS DIRECTLY UNDER THE ICON -->
@@ -189,12 +198,6 @@
           ">
                         <span id="overallStatus" class="status-indicator"
                             style="width:10px; height:10px; border-radius:50%; background:#6B7280;" aria-hidden="true"></span>
-
-                        <span id="overallStatusText" style="font-weight:600;" aria-live="polite">
-                            Verdict: --
-                        </span>
-
-                        <span style="opacity:0.4;">•</span>
 
                         <span style="opacity:0.6;">Based on 6 key acoustic metrics</span>
                     </div>
@@ -250,7 +253,7 @@
                         mids.</p>
                     <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">DAVE SAYS</span>
+                        <span style="font-size: 0.75rem;">Report</span>
                     </div>
                     <span id="peaksDipsDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
@@ -280,7 +283,7 @@
                         coloring sound.</p>
                     <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">DAVE SAYS</span>
+                        <span style="font-size: 0.75rem;">Report</span>
                     </div>
                     <span id="reflectionsDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
@@ -307,7 +310,7 @@
                         (Bass to Air).</p>
                     <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">DAVE SAYS</span>
+                        <span style="font-size: 0.75rem;">Report</span>
                     </div>
                     <span id="bandwidthDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
@@ -334,7 +337,7 @@
                         Bright).</p>
                     <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">DAVE SAYS</span>
+                        <span style="font-size: 0.75rem;">Report</span>
                     </div>
                     <span id="balanceDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
@@ -361,7 +364,7 @@
                         spectrum.</p>
                     <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">DAVE SAYS</span>
+                        <span style="font-size: 0.75rem;">Report</span>
                     </div>
                     <span id="smoothnessDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
@@ -388,7 +391,7 @@
                         sound.</p>
                     <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">DAVE SAYS</span>
+                        <span style="font-size: 0.75rem;">Report</span>
                     </div>
                     <span id="reverbDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>

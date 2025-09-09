@@ -25,9 +25,17 @@ def load_target_curve(speaker_key: str | None):
     freq, targ = [], []
     if path.suffix == ".csv":
         for row in csv.reader(path.read_text().splitlines()):
-            if len(row) >= 2:
-                freq.append(float(row[0]))
-                targ.append(float(row[1]))
+            if len(row) < 2:
+                continue
+            try:
+                f = float(row[0])
+                t = float(row[1])
+            except ValueError:
+                # Skip header or bad lines
+                continue
+            freq.append(f)
+            targ.append(t)
+
     elif path.suffix == ".json":
         data = json.loads(path.read_text())
         for pt in data.get("points", data):

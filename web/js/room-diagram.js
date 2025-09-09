@@ -238,30 +238,6 @@ class RoomDiagram {
         addLine(spkMidX - 20, frontY, spkMidX + 20, frontY, "measurement-line");
         addLabel(`${v.spacing.toFixed(2)}m`, spkMidX, frontY - 8);
 
-        // Toe-in angle arcs
-        const arcR = 30 * (scale / Math.max(scale, 1)); // keep arcs sensible at large rooms
-        addArc(
-            leftX + this.SPK_SIZE / 2,
-            frontY + this.SPK_SIZE / 2,
-            arcR,
-            0,
-            -idealToe,
-            "measurement-arc"
-        );
-        addArc(
-            rightX + this.SPK_SIZE / 2,
-            frontY + this.SPK_SIZE / 2,
-            arcR,
-            0,
-            idealToe,
-            "measurement-arc"
-        );
-        addLabel(`${idealToe.toFixed(1)}°`, leftX + this.SPK_SIZE / 2 - arcR, frontY + this.SPK_SIZE / 2 - 6);
-        addLabel(`${idealToe.toFixed(1)}°`, rightX + this.SPK_SIZE / 2 + arcR, frontY + this.SPK_SIZE / 2 - 6);
-
-        // Distances individually
-        addLabel(`${v.distFront.toFixed(2)}m`, centerX, roomY + v.distFront * scale - 10);
-        addLabel(`${v.listenDist.toFixed(2)}m`, centerX, listenY - this.SOFA_H / 2 - 10);
     }
 
     setExplainer(v, idealToe) {

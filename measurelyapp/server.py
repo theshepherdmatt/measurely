@@ -675,9 +675,37 @@ def get_status():
         "measurely_available": True
     })
 
+# ----------------------------------------------------------
+#  Analysis Progress Endpoint  (UI polling)
+# ----------------------------------------------------------
+@app.route('/api/analysis-progress', methods=['GET'])
+def api_analysis_progress():
+    STATUS_FILE = "/tmp/measurely_analysis_status.json"
 
+    if not os.path.exists(STATUS_FILE):
+        return jsonify({
+            "running": False,
+            "progress": 0,
+            "message": "waiting for analysis"
+        }), 200
 
-# measurelyapp/server.py (UPDATED)
+    try:
+        with open(STATUS_FILE, "r") as f:
+            data = json.load(f)
+        # Guarantee required fields exist
+        return jsonify({
+            "running": bool(data.get("running", False)),
+            "progress": int(data.get("progress", 0)),
+            "message": data.get("message", "…")
+        }), 200
+    except Exception as e:
+        print("❌ Error reading analysis status:", e)
+        return jsonify({
+            "running": False,
+            "progress": 0,
+            "message": "error reading status"
+        }), 200
+
 
 @app.route('/api/sessions', methods=['GET'])
 def get_sessions():
@@ -757,34 +785,71 @@ def serve_tipstweaks_phrases():
 @app.route('/api/speakers', methods=['GET'])
 def api_speakers():
     """
-    Provide active speaker and a list of selectable speaker profiles.
-    Current speaker comes from latest session metadata.
-    Speaker list comes from files in /speakers/*.json
+    Provide active speaker and list of available profiles from master catalogue:
+    ~/measurely/speakers/speakers.json
     """
     try:
-        # Load latest session to determine active speaker
-        latest = load_session_data(MEAS_ROOT / "latest")
-        current_key = latest.get("room", {}).get("speaker_key") \
-            or latest.get("speaker_key") \
-            or "unknown"
+        # Correct import to ensure SPEAKER_DIR exists
+        from measurelyapp.speaker import SPEAKER_DIR
 
-        # Load available speakers from /speakers/ folder
+        master = SPEAKER_DIR / "speakers.json"
+
+        if not master.exists():
+            print("⚠️ speakers.json missing at:", master)
+            return jsonify({
+                "current": {"key": "unknown", "name": "Unknown", "type": "unknown"},
+                "list": []
+            })
+
+        # Load master speaker catalogue safely
+        catalogue = json.loads(master.read_text() or "{}")
+
+        # Build speaker list
+        # Build speaker list — include friendly_name and all extras
         speakers = []
-        for file in SPEAKERS_DIR.glob("*.json"):
-            try:
-                data = json.loads(file.read_text())
-                speakers.append({
-                    "key": data.get("key", file.stem),
-                    "name": data.get("name", file.stem.replace("_", " ").title()),
-                    "type": data.get("type", "unknown")
-                })
-            except:
-                continue
 
-        # Find matching friendly name
+        for key, data in catalogue.items():
+            speakers.append({
+                "key": key,
+                "name": data.get("name", key.replace("_", " ").title()),
+                "friendly_name": data.get("friendly_name"),
+                "type": data.get("type", "unknown"),
+                "notes": data.get("notes"),
+                "brand": data.get("brand"),
+                "model": data.get("model"),
+            })
+
+        # Attempt to read current from latest session
+        current_key = None
+        try:
+            latest = load_session_data(MEAS_ROOT / "latest")
+            if isinstance(latest, dict):
+                current_key = (
+                    latest.get("room", {}).get("speaker_key")
+                    or latest.get("speaker_key")
+                    or None
+                )
+        except Exception as e:
+            print("⚠️ Could not determine current speaker from latest:", e)
+
+        # Fallback to room.json
+        if not current_key:
+            room_file = SERVICE_ROOT / "room.json"
+            if room_file.exists():
+                try:
+                    room_data = json.loads(room_file.read_text())
+                    current_key = room_data.get("speaker_key")
+                except Exception:
+                    pass
+
+        # Final fallback: use first entry in catalogue
+        if not current_key and speakers:
+            current_key = speakers[0]["key"]
+
+        # Resolve friendly current speaker
         current = next(
             (s for s in speakers if s["key"] == current_key),
-            {"key": current_key, "name": current_key, "type": "unknown"}
+            {"key": current_key or "unknown", "name": "Unknown", "type": "unknown"}
         )
 
         return jsonify({
@@ -793,10 +858,13 @@ def api_speakers():
         })
 
     except Exception as e:
-        print("ERROR in /api/speakers:", e)
+        print("❌ ERROR in /api/speakers:", e)
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
-
+        return jsonify({
+            "error": str(e),
+            "current": {"key": "unknown", "name": "Unknown"},
+            "list": []
+        }), 500
     
 # ------------------------------------------------------------------
 #  LOAD (make live) a previous session

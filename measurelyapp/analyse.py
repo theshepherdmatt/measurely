@@ -21,6 +21,24 @@ from measurelyapp.dave import dave_summary
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger("analyse")
 
+# ---------------------------------------------------------
+# Analysis UI status writer
+# Mirror sweep progress but separate file
+# ---------------------------------------------------------
+ANALYSIS_STATUS_FILE = "/tmp/measurely_analysis_status.json"
+
+def update_analysis_status(message: str, progress: int, running=True):
+    try:
+        with open(ANALYSIS_STATUS_FILE, "w") as f:
+            json.dump({
+                "running": running,
+                "progress": progress,
+                "message": message
+            }, f)
+    except Exception as e:
+        log.error(f"Status write failed: {e}")
+
+
 
 def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
 
@@ -31,6 +49,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     # LOAD INPUT
     # ---------------------------------------------------------
     freq, mag, ir, fs, label = load_session(session_dir)
+    update_analysis_status("Loaded sweep data", 5)
 
     # ---------------------------------------------------------
     # LOAD ROOM SETTINGS (GLOBAL, PERSISTENT)
@@ -65,11 +84,13 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
 
     # Graph bins — UI consumes this
     freq_ui, mag_ui = log_bins(freq, mag, ppo=ppo)
+    update_analysis_status("Computing UI frequency bins…", 15)
     print(f"UI: {len(freq_ui)} points ({ppo} PPO)")
 
     # Raw bins for analysis — capped for correct mode detection
     ppo_raw = min(ppo, 12)
     freq_raw, mag_raw = log_bins(freq, mag, ppo=ppo_raw)
+    update_analysis_status("Processing raw bins for analysis…", 25)
     print(f"Analysis: {len(freq_raw)} points ({ppo_raw} PPO)")
 
     # ----------- band energy ----------------
@@ -86,6 +107,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     sm       = smoothness(freq_raw, mag_raw)
     refs     = early_reflections(ir, fs)
     rt       = rt60_edt(ir, fs)
+    update_analysis_status("Analysing band energy and metrics…", 40)
 
     # Furnishing modifiers
     if refs:
@@ -104,6 +126,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     # ---------------------------------------------------------
     # SCORING
     # ---------------------------------------------------------
+    update_analysis_status("Scoring frequency response…", 60)
     target_curve = load_target_curve(speaker_key)
 
     scores = {
@@ -122,6 +145,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     print("Scores passed into dave_summary:", scores)
 
     summary, actions = dave_summary(scores)
+    update_analysis_status("Generating recommendations…", 75)
 
     print("dave_summary returned:", summary)
     print("dave_actions returned:", actions)
@@ -177,6 +201,8 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     # ---------------------------------------------------------
     # WRITE FILES
     # ---------------------------------------------------------
+    update_analysis_status("Writing filter & report files…", 90)
+
     write_text_summary(session_dir, export)
 
     export_small = export.copy()
@@ -203,7 +229,9 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     _atomic_write(meta_file, json.dumps(export_small, indent=2))
 
 
+    update_analysis_status("Analysis complete ✔", 100, running=False)
     print("Analysis complete →", session_dir)
+
     return export
 
 

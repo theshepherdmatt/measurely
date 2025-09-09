@@ -100,6 +100,14 @@ def log_print(outdir, *msg, verbose=True):
         print(line, flush=True)
     write_log(outdir, line)
 
+def mega_log(outdir, stage, **fields):
+    line = f"\n========== {stage} ==========\n"
+    for k, v in fields.items():
+        line += f"{k}: {v}\n"
+    line += "================================\n"
+    print(line, flush=True)
+    write_log(outdir, line)
+
 def dev_info(idx, kind=None):
     try:
         return sd.query_devices(idx, kind) if kind else sd.query_devices(idx)
@@ -286,6 +294,8 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
         rec = sd.rec(total_frames, channels=1, dtype="float32", device=args.in_dev, blocking=False)
 
         print(f"[SWEEP] about to choose playback, args.playback={args.playback}, aplay avail={shutil.which('aplay') is not None}")
+        print(f"[DEBUG] Stereo sweep routing shape for {channel_label}: {stereo_sweep.shape}")
+        print(f"[DEBUG] First 10 samples (L,R): {stereo_sweep[:10]}")
 
         # --- 2. playback ------------------------------------------------------
         update_status(f"Playing {channel_label} test sweep…", 18 if channel_label=="left" else 45)
@@ -302,6 +312,8 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
 
         rec_raw = np.nan_to_num(np.asarray(rec, dtype=np.float32).flatten())
         rms = float(np.sqrt(np.mean(rec_raw**2))) if rec_raw.size else 0.0
+        print(f"[DEBUG] {channel_label} RMS={rms:.6f}  Frames={len(rec_raw)}")
+
         if rms < 1e-6:
             raise RuntimeError("Recording silent (RMS < 1e-6).")
 
@@ -311,6 +323,16 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
 
         ir = deconvolve(rec_used, inv)
         freqs, mag = mag_response(ir, fs)
+
+        # -------------------------------------------------------------
+        # DEBUG: Impulse Response Peak Details
+        # -------------------------------------------------------------
+        if ir is not None and len(ir) > 0:
+            peak_idx = int(np.argmax(np.abs(ir)))
+            peak_val = float(ir[peak_idx])
+            print(f"[DEBUG] IR peak frame={peak_idx}  value={peak_val:.4f}")
+        else:
+            print("[DEBUG] IR EMPTY or invalid!")
 
         meta = dict(
             fs=fs, dur=args.dur, f0=args.f0, f1=args.f1,
@@ -455,6 +477,34 @@ def main():
             args.f0 = float(curve.x[0])
             args.f1 = float(curve.x[-1])
             print(f"[SWEEP] using {speaker_key} limits {args.f0:.0f} Hz – {args.f1:.0f} Hz")
+
+    # ==========================================================
+    # 🔥 DEBUG: LOG SPEAKER PROFILE + SWEEP CONFIG DETAILS
+    # ==========================================================
+    print("\n===== MEASURELY SWEEP DEBUG =====")
+    print(f"Speaker Profile Key: {speaker_key}")
+    print(f"Sweep Duration (s):  {args.dur:.2f}")
+    print(f"Sweep Range (Hz):    {args.f0:.1f} → {args.f1:.1f}")
+    print(f"Playback Backend:    {args.playback}")
+    print(f"Input Device (idx):  {args.in_dev}  info={dev_info(args.in_dev, 'input')}")
+    print(f"Output Device (idx): {args.out_dev} info={dev_info(args.out_dev, 'output')}")
+    print("=================================\n")
+
+    # And log it to session debug once outdir exists
+    try:
+        write_log(Path.home() / 'measurely' / 'measurements', [
+            "===== MEASURELY SWEEP DEBUG =====",
+            f"Speaker Profile Key: {speaker_key}",
+            f"Sweep Duration (s):  {args.dur:.2f}",
+            f"Sweep Range (Hz):    {args.f0:.1f} → {args.f1:.1f}",
+            f"Playback Backend:    {args.playback}",
+            f"Input Dev Info:      {dev_info(args.in_dev, 'input')}",
+            f"Output Dev Info:     {dev_info(args.out_dev, 'output')}",
+            "================================="
+        ])
+    except Exception as e:
+        print(f"[DEBUG] Failed writing early sweep debug log: {e}")
+
 
     # ------------------------------------------------------------------
     # Prepare session + sweep

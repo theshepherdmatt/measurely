@@ -1,5 +1,7 @@
 // web/js/room.js - Room configuration management
 
+console.log("📌 room.js loaded");
+
 import { $, fetchJSON, showToast } from './api.js';
 
 let currentRoom = {
@@ -9,12 +11,9 @@ let currentRoom = {
   seatingDistance: 3.0,
   speakerDistance: 0.2,
   speakerSpacing: 2.0,
-
-  // new persistent fields
   speaker_key: null,
   toe_in_deg: null,
   echo_pct: null,
-
   opt_hardfloor: null,
   opt_barewalls: null,
   opt_rug: null,
@@ -23,270 +22,403 @@ let currentRoom = {
   opt_wallart: null
 };
 
+// 🔍 Diagnostic log
+function logState(msg) {
+  console.log(`📌 ${msg}:`, JSON.parse(JSON.stringify(currentRoom)));
+}
+
+// -----------------------------------------------------
+// LOAD ROOM DATA FROM BACKEND
+// -----------------------------------------------------
 export async function loadRoom() {
+  console.log("🔄 loadRoom called…");
+
   try {
     const data = await fetchJSON('/api/room/latest');
+    console.log("📥 API Response:", data);
 
     if (data) {
       currentRoom = {
         ...currentRoom,
-
-        // main dimensions
         length: data.length_m ?? currentRoom.length,
         width: data.width_m ?? currentRoom.width,
         height: data.height_m ?? currentRoom.height,
-
-        // placement
         speakerDistance: data.spk_front_m ?? currentRoom.speakerDistance,
         speakerSpacing: data.spk_spacing_m ?? currentRoom.speakerSpacing,
         seatingDistance: data.listener_front_m ?? currentRoom.seatingDistance,
-
-        // NEW persistent values
         speaker_key: data.speaker_key ?? currentRoom.speaker_key,
         toe_in_deg: data.toe_in_deg ?? currentRoom.toe_in_deg,
         echo_pct: data.echo_pct ?? currentRoom.echo_pct,
-
         opt_hardfloor: data.opt_hardfloor ?? currentRoom.opt_hardfloor,
         opt_barewalls: data.opt_barewalls ?? currentRoom.opt_barewalls,
-        opt_rug: data.opt_rug ?? currentRoom.opt_rug,
+        opt_rug: data.opt_area_rug ?? currentRoom.opt_rug,
         opt_curtains: data.opt_curtains ?? currentRoom.opt_curtains,
         opt_sofa: data.opt_sofa ?? currentRoom.opt_sofa,
         opt_wallart: data.opt_wallart ?? currentRoom.opt_wallart
       };
 
-      updateRoomForm();
+      logState("After API load");
+      console.log("[ROOM] Loaded API data:", currentRoom);
+
+      updateRoomForm();          // 1st sync
       updateRoomVisualization();
+      updateRoomSummary();
+      updateSpeakerNameInSummary();
+
+      // 🔥 Guarantee second sync after DOM fully drawn
+      setTimeout(() => {
+        console.log("🎯 Post-load sync (setTimeout) running…");
+        updateRoomForm();
+      }, 200);
     }
 
     return currentRoom;
 
   } catch (error) {
-    console.error("Error loading room:", error);
-    showToast("Error loading room configuration", "error");
+    console.error("❌ Error loading room:", error);
     return currentRoom;
   }
 }
 
+// -----------------------------------------------------
+// SAVE ROOM — POST to backend
+// -----------------------------------------------------
 export async function saveRoom() {
+  console.log("💾 saveRoom() called");
+
+  const payload = {
+    length_m: parseFloat(document.getElementById('room-length').value),
+    width_m: parseFloat(document.getElementById('room-width').value),
+    height_m: parseFloat(document.getElementById('room-height').value),
+
+    spk_front_m: parseFloat(document.getElementById('speaker-distance').value),
+    spk_spacing_m: parseFloat(document.getElementById('speaker-width').value),
+    listener_front_m: parseFloat(document.getElementById('listening-distance').value),
+
+    toe_in_deg: parseFloat(document.getElementById('toe-angle').value),
+
+    echo_pct: parseInt(document.getElementById('room-echo').value),
+    floor_material: document.getElementById('floor-material').value,
+
+    opt_area_rug: document.getElementById('opt-area-rug').checked,
+    opt_barewalls: document.getElementById('opt-barewalls').checked,
+    opt_curtains: document.getElementById('opt-curtains').checked,
+    opt_sofa: document.getElementById('opt-sofa').checked,
+
+    speaker_key: document.getElementById('speakerSel').value,
+    layout: "stereo"
+  };
+
+  console.log("💾 Sending payload:", payload);
+
   try {
-    const payload = {
-      length_m: currentRoom.length,
-      width_m: currentRoom.width,
-      height_m: currentRoom.height,
-
-      listener_front_m: currentRoom.seatingDistance,
-      spk_front_m: currentRoom.speakerDistance,
-      spk_spacing_m: currentRoom.speakerSpacing,
-
-      speaker_key: currentRoom.speaker_key ?? null,
-      toe_in_deg: currentRoom.toe_in_deg ?? 0,
-      echo_pct: currentRoom.echo_pct ?? 50,
-
-      opt_hardfloor: currentRoom.opt_hardfloor ?? false,
-      opt_barewalls: currentRoom.opt_barewalls ?? false,
-      opt_rug: currentRoom.opt_rug ?? false,
-      opt_curtains: currentRoom.opt_curtains ?? false,
-      opt_sofa: currentRoom.opt_sofa ?? false,
-      opt_wallart: currentRoom.opt_wallart ?? false
-    };
-
-    await fetchJSON(`/api/room/latest`, {
+    const res = await fetch('/api/room/latest', {
       method: 'POST',
-      body: payload
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
 
-    showToast("Room configuration saved", "success");
-    return true;
+    console.log("📩 Save response:", res.status);
+    if (!res.ok) throw new Error("Save failed");
 
-  } catch (error) {
-    console.error("Error saving room:", error);
-    showToast("Error saving room configuration", "error");
-    return false;
+    if (window.toast) toast("Room setup saved", "success");
+
+    // Refresh UI & state
+    await loadRoom();
+
+    // 🔥🔥🔥 DAVE TRIGGER ADDED HERE 🔥🔥🔥
+    if (window.showDaveSummary) {
+      console.log("🤖 Updating Dave summary...");
+      showDaveSummary();
+    }
+
+  } catch (err) {
+    console.error("❌ Save error:", err);
+    if (window.toast) toast("Save error", "error");
   }
 }
 
+// -----------------------------------------------------
+// LOAD ROOM DATA & APPLY TO FORM
+// -----------------------------------------------------
+export async function loadRoomSetup() {
+  console.log("🔄 loadRoomSetup()");
+
+  try {
+    const res = await fetch('/api/room/latest');
+    if (!res.ok) {
+      console.warn("⚠ No saved room yet");
+      return;
+    }
+
+    const j = await res.json();
+    console.log("📥 Loaded backend room:", j);
+
+    const assign = (key, elId) => {
+      if (j[key] != null) {
+        const el = document.getElementById(elId);
+        if (el) el.value = j[key];
+      }
+    };
+
+    assign('length_m', 'room-length');
+    assign('width_m', 'room-width');
+    assign('height_m', 'room-height');
+    assign('spk_front_m', 'speaker-distance');
+    assign('spk_spacing_m', 'speaker-width');
+    assign('listener_front_m', 'listening-distance');
+    assign('toe_in_deg', 'toe-angle');
+    assign('echo_pct', 'room-echo');
+    assign('floor_material', 'floor-material');
+    assign('speaker_key', 'speakerSel');
+
+    document.getElementById('opt-area-rug').checked = !!j.opt_area_rug;
+    document.getElementById('opt-barewalls').checked = !!j.opt_barewalls;
+    document.getElementById('opt-curtains').checked = !!j.opt_curtains;
+    document.getElementById('opt-sofa').checked = !!j.opt_sofa;
+
+    updateRoomForm(); // sync sliders + nums
+
+    if (window.roomDiagram?.update) roomDiagram.update();
+
+  } catch (err) {
+    console.error("❌ loadRoomSetup failed:", err);
+  }
+}
+
+
+// -----------------------------------------------------
+// SLIDER-SPINBOX LINKING
+// -----------------------------------------------------
+function linkInputPair(id) {
+  const slider = document.getElementById(id);
+  const num = document.getElementById(id + '-num');
+  const val = document.getElementById(id + '-val');
+
+  if (!slider || !num) return;
+
+  console.log(`🔗 Linking ${id}`);
+
+  num.value = slider.value;
+
+  slider.addEventListener('input', () => {
+    num.value = slider.value;
+    if (val) val.textContent = slider.value;
+  });
+
+  num.addEventListener('input', () => {
+    slider.value = num.value;
+    if (val) val.textContent = num.value;
+  });
+}
+
+function showDaveSummary() {
+    const room = window.currentRoom || {}; // already loaded via loadRoomSetup()
+
+    const w = room.width_m;
+    const l = room.length_m;
+    const h = room.height_m;
+    const spkDist = room.listener_front_m;
+    const spacing = room.speaker_spacing_m;
+    const toe = room.toe_in_deg;
+
+    const sofa = room.opt_sofa;
+    const rug = room.opt_area_rug;
+    const curtains = room.opt_curtains;
+    const bare = room.opt_barewalls;
+
+    let furnText = "";
+    if (rug) furnText += "A rug helps calm reflections. ";
+    if (sofa) furnText += "A large sofa is friendly to bass. ";
+    if (curtains) furnText += "Curtains help soften upper-mid glare. ";
+    if (bare) furnText += "Bare walls will keep the room a little lively. ";
+
+    const summary = `
+        Cool. You’re working with a room around <strong>${w} × ${l}m</strong>
+        and <strong>${h}m</strong> high.
+        Speakers are spaced <strong>${spacing}m</strong> apart,
+        you’re about <strong>${spkDist}m</strong> back,
+        and toe-in is around <strong>${toe}°</strong> —
+        nice baseline for a focused soundstage.<br><br>
+        ${furnText || "Room is pretty neutral so far — easy to shape later."}
+    `;
+
+    const el = document.getElementById("dave-summary-text");
+    el.innerHTML = summary;
+    el.style.opacity = 1;
+    el.style.transform = "translateY(0)";
+
+    document.getElementById("dave-card").style.display = "block";
+}
+
+async function updateSpeakerNameInSummary() {
+  try {
+    const data = await fetchJSON('/api/speakers');
+    const spk = data.current || {};
+
+    const friendly =
+      spk.friendly_name ||
+      spk.name ||
+      spk.key ||
+      "Unknown speaker";
+
+    console.log("🔊 Speaker from API:", spk);
+
+    const el = document.getElementById("sum-speaker-model");
+    if (el) el.textContent = friendly;
+
+  } catch (err) {
+    console.warn("⚠ Speaker API failed:", err);
+  }
+}
+
+function updateRoomSummary() {
+    const w = parseFloat(document.getElementById("room-width")?.value) || 0;
+    const l = parseFloat(document.getElementById("room-length")?.value) || 0;
+    const h = parseFloat(document.getElementById("room-height")?.value) || 0;
+
+    const spacing = parseFloat(document.getElementById("speaker-width")?.value) || 0;
+    const dist = parseFloat(document.getElementById("speaker-distance")?.value) || 0;
+    const listen = parseFloat(document.getElementById("listening-distance")?.value) || 0;
+
+    const toe = parseFloat(document.getElementById("toe-angle")?.value) || 0;
+
+    // 🔊 SPEAKER NAME FROM SPEAKERS INDEX
+    const spkKey = currentRoom.speaker_key;
+    const spkProf = window.SPEAKERS?.[spkKey];
+    const model =
+        spkProf?.friendly_name ||
+        spkProf?.name ||
+        spkKey ||
+        "Unknown";
+
+    console.log("🔈 Using speaker profile:", spkKey, spkProf);
+
+    // Room volume + shape calc
+    const volume = (w * l * h).toFixed(1);
+    let shape = "Balanced shape";
+    if (l > w * 1.3) shape = "Long room";
+    if (w > l * 1.3) shape = "Wide room";
+
+    // Triangle geometry
+    const tri = spacing && listen
+        ? `Triangles: ${(spacing / listen).toFixed(2)} spacing ratio`
+        : "—";
+
+    // Ideal toe-in (geometry-based)
+    let idealToe = spacing && listen
+        ? Math.round(Math.atan((spacing / 2) / listen) * (180 / Math.PI))
+        : null;
+
+    let toeMsg = "—";
+    if (idealToe !== null) {
+        const diff = toe - idealToe;
+        toeMsg = diff > 3 ? "Slightly wide" :
+                diff < -3 ? "Slightly narrow" :
+                "Near ideal";
+        toeMsg += ` (ideal ~${idealToe}°)`;
+    }
+
+    // 🖥 UI updates
+    document.getElementById("sum-room-size").textContent =
+        `${w.toFixed(2)}m × ${l.toFixed(2)}m × ${h.toFixed(2)}m`;
+    document.getElementById("sum-room-volume").textContent = volume;
+    document.getElementById("sum-room-shape").textContent = shape;
+
+    document.getElementById("sum-speaker-model").textContent = model;
+    document.getElementById("sum-speaker-spacing").textContent =
+        `${spacing.toFixed(2)}m`;
+    document.getElementById("sum-speaker-distance").textContent =
+        `${dist.toFixed(2)}m`;
+    document.getElementById("sum-triangle").textContent = tri;
+
+    document.getElementById("sum-toe-angle").textContent =
+        `${toe.toFixed(1)}°`;
+    document.getElementById("sum-toe-comment").textContent = toeMsg;
+}
+
+
+// -----------------------------------------------------
+// APPLY DATA TO UI ELEMENTS
+// -----------------------------------------------------
 function updateRoomForm() {
-  const elements = {
-    roomLength: $('room-length'),
-    roomWidth: $('room-width'),
-    roomHeight: $('room-height'),
-    seatingDistance: $('seatingDistance'),
-    speakerDistance: $('speakerDistance'),
-    speakerSpacing: $('speakerSpacing')
-  };
+  console.log("[ROOM] updateRoomForm() applying values:", currentRoom);
 
-  Object.entries(elements).forEach(([key, el]) => {
-    if (!el) return;
+  const map = [
+    { key: "width", slider: "room-width", num: "room-width-num", val: "room-width-val" },
+    { key: "length", slider: "room-length", num: "room-length-num", val: "room-length-val" },
+    { key: "height", slider: "room-height", num: "room-height-num", val: "room-height-val" },
 
-    const roomKey = key
-      .replace(/([A-Z])/g, (_, letter) => letter.toLowerCase())
-      .replace('room', '');
+    { key: "speakerDistance", slider: "speaker-distance", num: "speaker-distance-num", val: "speaker-distance-val" },
+    { key: "speakerSpacing", slider: "speaker-width", num: "speaker-width-num", val: "speaker-width-val" },
+    { key: "seatingDistance", slider: "listening-distance", num: "listening-distance-num", val: "listening-distance-val" },
 
-    if (currentRoom[roomKey] !== undefined) {
-      el.value = currentRoom[roomKey];
+    { key: "toe_in_deg", slider: "toe-angle", num: "toe-angle", val: "toe-angle-val" }
+  ];
+
+  map.forEach(({ key, slider, num, val }) => {
+    const s = document.getElementById(slider);
+    const n = document.getElementById(num);
+    const v = document.getElementById(val);
+
+    if (currentRoom[key] !== undefined) {
+      if (s) s.value = currentRoom[key];
+      if (n) n.value = currentRoom[key];
+      if (v) v.textContent = currentRoom[key];
     }
   });
 }
 
+// -----------------------------------------------------
+// FORM & UI EVENT HANDLERS
+// -----------------------------------------------------
 export function updateRoomFromForm() {
-  const elements = {
-    roomLength: $('room-length'),
-    roomWidth: $('room-width'),
-    roomHeight: $('room-height'),
-    seatingDistance: $('seatingDistance'),
-    speakerDistance: $('speakerDistance'),
-    speakerSpacing: $('speakerSpacing')
+  console.log("✍ updateRoomFromForm");
+
+  const mapping = {
+    length: $('room-length'),
+    width: $('room-width'),
+    height: $('room-height'),
+    seatingDistance: $('listening-distance'),
+    speakerDistance: $('speaker-distance'),
+    speakerSpacing: $('speaker-width')
   };
 
-  Object.entries(elements).forEach(([key, el]) => {
+  Object.entries(mapping).forEach(([key, el]) => {
     if (!el) return;
-
-    const roomKey = key
-      .replace(/([A-Z])/g, (_, letter) => letter.toLowerCase())
-      .replace('room', '');
-
-    const value = parseFloat(el.value);
-    if (!isNaN(value)) currentRoom[roomKey] = value;
+    const v = parseFloat(el.value);
+    if (!isNaN(v)) currentRoom[key] = v;
   });
+
+  logState("After form update");
 }
 
-export function calculateOptimalPlacement() {
-  const optimalDistance = currentRoom.length * 0.38;
-  currentRoom.seatingDistance = optimalDistance;
+// -----------------------------------------------------
+// INIT — RUN ONLY AFTER DOM IS READY
+// -----------------------------------------------------
+function initUI() {
+  console.log("🚀 DOM READY — Initialising room UI…");
 
-  const optimalSpacing = optimalDistance * 0.6;
-  currentRoom.speakerSpacing = optimalSpacing;
+  //setupRoomFormHandlers();
 
-  updateRoomForm();
-  updateRoomVisualization();
+  [
+    "room-width", "room-length", "room-height",
+    "speaker-distance", "speaker-width", "listening-distance"
+  ].forEach(linkInputPair);
 
-  showToast(
-    "Optimal placement calculated! Listening position set to the 38% rule.",
-    "success"
-  );
+  loadRoom(); // async data load
 }
 
-export function calculateRoomModes() {
-  const speed = 343;
-  return [
-    { type: "length", frequency: speed / (2 * currentRoom.length) },
-    { type: "width", frequency: speed / (2 * currentRoom.width) },
-    { type: "height", frequency: speed / (2 * currentRoom.height) },
-    {
-      type: "length-width",
-      frequency: Math.sqrt(
-        Math.pow(speed / (2 * currentRoom.length), 2) +
-        Math.pow(speed / (2 * currentRoom.width), 2)
-      )
-    }
-  ].sort((a, b) => a.frequency - b.frequency);
-}
+document.addEventListener("DOMContentLoaded", initUI);
 
-export function calculateReverbTime() {
-  const vol = currentRoom.length * currentRoom.width * currentRoom.height;
-  const area =
-    2 *
-    (currentRoom.length * currentRoom.width +
-      currentRoom.length * currentRoom.height +
-      currentRoom.width * currentRoom.height);
-
-  return (0.161 * vol) / (area * 0.2);
-}
-
-export function calculateCriticalDistance() {
-  const vol = currentRoom.length * currentRoom.width * currentRoom.height;
-  const rt = calculateReverbTime();
-  return 0.057 * Math.sqrt(vol / rt);
-}
-
+// -----------------------------------------------------
 function updateRoomVisualization() {
-  const box = $('room-visual');
-  if (box && typeof window.updateRoomVisualization === 'function') {
+  if (typeof window.updateRoomVisualization === 'function') {
     window.updateRoomVisualization();
   }
 }
 
-export function setupRoomFormHandlers() {
-  const form = $('roomForm');
-  if (form) {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      updateRoomFromForm();
-      await saveRoom();
-    });
-  }
+window.saveRoom = saveRoom;
+window.loadRoomSetup = loadRoomSetup;
 
-  const inputs = [
-    'room-length',
-    'room-width',
-    'room-height',
-    'seatingDistance',
-    'speakerDistance',
-    'speakerSpacing'
-  ];
 
-  inputs.forEach(id => {
-    const el = $(id);
-    if (!el) return;
-
-    el.addEventListener("change", () => {
-      updateRoomFromForm();
-      updateRoomVisualization();
-    });
-  });
-
-  const optimalBtn = $('optimalPlacementBtn');
-  if (optimalBtn) {
-    optimalBtn.addEventListener('click', calculateOptimalPlacement);
-  }
-
-  const updateBtn = $('updateRoomBtn');
-  if (updateBtn) {
-    updateBtn.addEventListener('click', async () => {
-      updateRoomFromForm();
-      updateRoomVisualization();
-      await saveRoom();
-    });
-  }
-
-  const saveBtn = $('save-room-btn');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', async () => {
-      updateRoomFromForm();
-      await saveRoom();
-    });
-  }
-}
-
-export function initRoom() {
-  setupRoomFormHandlers();
-  loadRoom();
-}
-
-// canvas drawing (kept as-is)
-window.updateRoomCanvas = function(room) {
-  const length = Number(room.length) || 4.0;
-  const width = Number(room.width) || 4.0;
-
-  const canvas = document.getElementById("room-layout-canvas");
-  if (!canvas) return;
-
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const scale = Math.min(canvas.width / length, canvas.height / width);
-  const drawLength = length * scale;
-  const drawWidth = width * scale;
-
-  ctx.strokeStyle = "#888";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(
-    (canvas.width - drawLength) / 2,
-    (canvas.height - drawWidth) / 2,
-    drawLength,
-    drawWidth
-  );
-};
-
-window.calculateOptimalPlacement = calculateOptimalPlacement;
-window.updateRoomFromForm = updateRoomFromForm;

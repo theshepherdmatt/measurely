@@ -1,0 +1,157 @@
+/* =====================================================================
+   MEASURELY — GLOBAL STYLES
+   Offline-first, local fonts only
+   Applies to ALL pages
+====================================================================== */
+
+/* ------------------------------------------------------------
+   FONTS — LOCAL ONLY
+   Path relative to /web/css/
+------------------------------------------------------------ */
+@font-face {
+    font-family: "Inter";
+    src: url("../fonts/inter/interweb/Inter.var.woff2") format("woff2-variations");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Inter";
+    src: url("../fonts/inter/interweb/Inter-italic.var.woff2") format("woff2-variations");
+    font-weight: 100 900;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* ------------------------------------------------------------
+   ROOT VARIABLES — COLOURS + TYPOGRAPHY
+------------------------------------------------------------ */
+:root {
+    --font-main: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, Oxygen, Ubuntu, Cantarell,
+                 "Open Sans", "Helvetica Neue", sans-serif;
+
+    /* Premium Palette */
+    --c-bg: #0f172a;
+    --c-surface: #1e293b;
+    --c-surface-glass: rgba(30, 41, 59, 0.7);
+
+    --c-text-main: #f8fafc;
+    --c-text-muted: #94a3b8;
+
+    --c-accent: #6366f1;
+    --c-accent-glow: rgba(99, 102, 241, 0.5);
+
+    /* Status */
+    --c-excellent: #10b981;
+    --c-good: #f59e0b;
+    --c-okay: #3b82f6;
+    --c-poor: #ef4444;
+
+    --icon-glow-primary: rgba(99, 102, 241, 0.4);
+    --icon-glow-accent: rgba(129, 140, 248, 0.5);
+
+    /* Z-index helpers */
+    --z-sidebar: 30;
+    --z-overlay: 40;
+}
+
+/* ------------------------------------------------------------
+   RESETS
+------------------------------------------------------------ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    background: var(--c-bg);
+    color: var(--c-text-main);
+    font-family: var(--font-main);
+    -webkit-font-smoothing: antialiased;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: var(--font-main);
+    color: var(--c-text-main);
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ------------------------------------------------------------
+   LAYOUT WRAPPER
+------------------------------------------------------------ */
+.app-layout {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* ------------------------------------------------------------
+   MAIN CONTENT
+------------------------------------------------------------ */
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+/* ------------------------------------------------------------
+   TYPOGRAPHY DEFAULTS
+------------------------------------------------------------ */
+h1, h2, h3, h4 {
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+p {
+    line-height: 1.55;
+}
+
+/* Utility classes */
+.text-muted {
+    color: var(--c-text-muted);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ------------------------------------------------------------
+   ACCESSIBILITY
+------------------------------------------------------------ */
+:focus-visible {
+    outline: 2px dashed var(--c-accent);
+    outline-offset: 4px;
+}
+
+/* ------------------------------------------------------------
+   MOBILE GLOBAL
+------------------------------------------------------------ */
+@media (max-width: 1024px) {
+    .app-layout {
+        flex-direction: column;
+    }
+
+    .main-content {
+        padding: 1.25rem;
+    }
+
+    /* Sidebar visibility controlled by components.css */
+}

@@ -68,71 +68,117 @@
 
             <section class="card glass-panel animate-enter delay-1 room-layout-section">
 
+
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
+                    border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+                    <div style="width:32px; height:32px; background:rgba(59,130,246,0.2); color:#93c5fd;
+                        border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
+                        1
+                    </div>
+                    <h2 style="margin:0; font-size:1.25rem;">Measure Your Listening Room</h2>
+                </div>
+
+
+
                 <div class="room-layout-grid-new">
 
                     <!-- TOP ROW — INPUTS (TWO COLUMNS) -->
-                    <div class="inputs-grid">
+                    <!-- NEW — ONE CLEAN CARD LAYOUT -->
+                    <div class="room-setup-grid">
 
-                        <!-- ROOM DIMENSIONS -->
-                        <div class="input-section">
-                            <h3 class="room-card-title">
-                                <span class="step-badge">1</span>
-                                Room Layout
-                            </h3>
-                            <h4 class="section-label">Room Dimensions</h4>
+                        <!-- ⭐ DIAGRAM ALWAYS FIRST -->
+                        <div class="diagram-container">
+                            <svg id="room-diagram" viewBox="0 0 600 450" preserveAspectRatio="xMidYMid meet">
+                                <rect id="room-rect" x="0" y="0" width="600" height="450"
+                                    fill="rgba(30,41,59,0.25)"
+                                    stroke="rgba(129,140,248,0.7)"
+                                    stroke-width="3"
+                                    stroke-dasharray="8 6" />
 
-                            <div class="compact-row">
-                                <div class="input-block">
-                                    <label for="room-width">Width (m)</label>
-                                    <input type="number" id="room-width" step="0.01">
-                                </div>
+                                <!-- Speakers -->
+                                <image id="left-speaker" class="plan-object" href="icons/spl.svg" width="40" height="40"/>
+                                <image id="right-speaker" class="plan-object" href="icons/spr.svg" width="40" height="40"/>
 
-                                <div class="input-block">
-                                    <label for="room-length">Length (m)</label>
-                                    <input type="number" id="room-length" step="0.01">
-                                </div>
+                                <!-- Sofa -->
+                                <image id="sofa-icon" class="plan-object" href="icons/sofa.svg" width="200" height="120"/>
 
-                                <div class="input-block">
-                                    <label for="room-height">Height (m)</label>
-                                    <input type="number" id="room-height" step="0.01">
-                                </div>
+                                <!-- Toe-in -->
+                                <line id="left-toe-line" class="toe-line"/>
+                                <line id="right-toe-line" class="toe-line"/>
+
+                                <text id="listening-pos-label" text-anchor="middle"></text>
+                            </svg>
+
+                            <div class="explainer-inline">
+                                <span><strong>Room:</strong>
+                                    <span id="explainer-width">—</span> ×
+                                    <span id="explainer-length">—</span> m
+                                </span>
+                                <span><strong>Speakers:</strong>
+                                    <span id="explainer-spacing">—</span> m apart
+                                </span>
+                                <span><strong>Listening:</strong>
+                                    <span id="explainer-listen">—</span> m
+                                </span>
+                                <span><strong>Toe-in:</strong>
+                                    <span id="explainer-ideal-toe">—</span>°
+                                </span>
                             </div>
+
+
+                        </div>
                         </div>
 
-                        <!-- SPEAKER DISTANCING -->
-                        <div class="input-section">
-                            <h3 class="room-card-title">
-                                <span class="step-badge">1.b</span>
-                                Speaker Layout
-                            </h3>
+                        <!-- 🎛 SLIDERS + NUMBER INPUTS -->
+                        <!-- 🎛 CONTROLS GRID (Sliders + Spin Boxes for Mobile) -->
+                        <div class="controls-grid">
 
-                            <h4 class="section-label">Speaker Distancing</h4>
-
-
-                            <div class="compact-row">
-                                <div class="input-block">
-                                    <label for="speaker-distance">Speaker Distance (m)</label>
-                                    <input type="number" id="speaker-distance" step="0.01">
-                                </div>
-
-                                <div class="input-block">
-                                    <label for="speaker-width">Speaker Spacing (m)</label>
-                                    <input type="number" id="speaker-width" step="0.01">
-                                </div>
-
-                                <div class="input-block">
-                                    <label for="listening-distance">Listening Distance (m)</label>
-                                    <input type="number" id="listening-distance" step="0.01">
-                                </div>
-
-                                <div class="input-block">
-                                    <label for="toe-angle">Toe-In Angle (°)</label>
-                                    <input type="number" id="toe-angle" step="0.1" min="0" max="90">
-                                </div>
+                            <!-- Row 1 -->
+                            <div class="ctrl-block">
+                                <label>Width (m): <span id="room-width-val">—</span></label>
+                                <input type="range" id="room-width" min="2" max="10" step="0.05">
+                                <input type="number" id="room-width-num" min="2" max="10" step="0.05">
                             </div>
 
-                            <div class="input-block">
-                                <label for="speaker-type">Design Type</label>
+                            <div class="ctrl-block">
+                                <label>Length (m): <span id="room-length-val">—</span></label>
+                                <input type="range" id="room-length" min="2" max="10" step="0.05">
+                                <input type="number" id="room-length-num" min="2" max="10" step="0.05">
+                            </div>
+
+                            <div class="ctrl-block">
+                                <label>Height (m): <span id="room-height-val">—</span></label>
+                                <input type="range" id="room-height" min="2" max="3.5" step="0.01">
+                                <input type="number" id="room-height-num" min="2" max="3.5" step="0.01">
+                            </div>
+
+                            <!-- Row 2 -->
+                            <div class="ctrl-block">
+                                <label>Speaker Distance (m): <span id="speaker-distance-val">—</span></label>
+                                <input type="range" id="speaker-distance" min="0" max="3" step="0.05">
+                                <input type="number" id="speaker-distance-num" min="0" max="3" step="0.05">
+                            </div>
+
+                            <div class="ctrl-block">
+                                <label>Speaker Spacing (m): <span id="speaker-width-val">—</span></label>
+                                <input type="range" id="speaker-width" min="0.5" max="4" step="0.05">
+                                <input type="number" id="speaker-width-num" min="0.5" max="4" step="0.05">
+                            </div>
+
+                            <div class="ctrl-block">
+                                <label>Listening Distance (m): <span id="listening-distance-val">—</span></label>
+                                <input type="range" id="listening-distance" min="0.5" max="5" step="0.05">
+                                <input type="number" id="listening-distance-num" min="0.5" max="5" step="0.05">
+                            </div>
+
+                            <!-- Row 3 -->
+                            <div class="ctrl-block">
+                                <label>Toe-In Angle (°): <span id="toe-angle-val">—</span></label>
+                                <input type="number" id="toe-angle" step="0.1">
+                            </div>
+
+                            <div class="ctrl-block">
+                                <label>Design Type</label>
                                 <select id="speaker-type">
                                     <option value="sealed">Sealed / Infinite Baffle</option>
                                     <option value="port_front">Ported (Front)</option>
@@ -141,60 +187,14 @@
                                 </select>
                             </div>
 
-                        </div>
-
-                    </div> <!-- end .inputs-grid -->
-
-
-                    <!-- BOTTOM ROW — EXPLAINER + DIAGRAM -->
-                    <div class="results-grid">
-
-                        <!-- EXPLAINER LEFT -->
-                        <div class="explainer-card">
-                            <h4 class="explainer-title">What's happening in your room?</h4>
-
-                            <p><strong>Room size:</strong> <span id="explainer-width">—</span> × <span id="explainer-length">—</span> m</p>
-                            <p><strong>Speaker spacing:</strong> <span id="explainer-spacing">—</span> m</p>
-                            <p><strong>Listening distance:</strong> <span id="explainer-listen">—</span> m</p>
-                            <p><strong>Ideal toe-in angle:</strong> <span id="explainer-ideal-toe">—</span>°</p>
-
+                            <div class="ctrl-block"></div>
 
                         </div>
 
-                        <!-- DIAGRAM RIGHT -->
-                        <div class="room-diagram-wrapper">
-                            <svg id="room-diagram" viewBox="0 0 600 450" preserveAspectRatio="xMidYMid meet">
 
-                                <rect id="room-rect"
-                                    x="0" y="0" width="600" height="450"
-                                    fill="rgba(30,41,59,0.25)"
-                                    stroke="rgba(129,140,248,0.7)"
-                                    stroke-width="3"
-                                    stroke-dasharray="8 6" />
-
-                                <!-- SPEAKERS -->
-                                <image id="left-speaker" class="plan-object" href="icons/spl.svg" width="40" height="40" />
-                                <image id="right-speaker" class="plan-object" href="icons/spr.svg" width="40" height="40" />
-
-                                <!-- SOFA -->
-                                <image id="sofa-icon" class="plan-object" href="icons/sofa.svg" width="200" height="120" />
-
-                                <!-- TOE-IN -->
-                                <line id="left-toe-line" class="toe-line" />
-                                <line id="right-toe-line" class="toe-line" />
-
-                                <text id="listening-pos-label" text-anchor="middle"></text>
-
-                            </svg>
-                        </div>
-
-                    </div> <!-- end .results-grid -->
-
-                </div> <!-- end .room-layout-grid-new -->
+                    </div>
 
             </section>
-
-
 
             <!-- ===================================================== -->
             <!-- CARD 2 — SPEAKER PROFILE -->
@@ -216,28 +216,73 @@
                 <p id="speakerHint" style="font-size:0.9rem; color:var(--c-text-muted); margin-top:0.75rem;">
                     Select your model to load frequency limits and target behaviour.
                 </p>
-
-                <p style="font-size:0.9rem; color:var(--c-text-muted); margin-top:0.75rem;">
-                    Choose your speaker model to load frequency limits and behaviour patterns.
-                </p>
             </section>
 
             <!-- ===================================================== -->
-            <!-- CARD 3 — MATERIALS & FURNISHINGS -->
+            <!-- CARD 3 — DAVE OVERVIEW (Dashboard-style consistency) -->
+            <!-- ===================================================== -->
+            <!-- ===================================================== -->
+            <!-- CARD 3 — ROOM SUMMARY -->
+            <!-- ===================================================== -->
+            <section id="room-summary-card" class="card glass-panel animate-enter delay-3" style="margin-bottom:2rem;">
+
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
+                    border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+                    <div style="width:32px; height:32px; background:rgba(52,211,153,0.25); color:#6ee7b7;
+                        border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
+                        3
+                    </div>
+                    <h2 style="margin:0; font-size:1.25rem;">Room Summary</h2>
+                </div>
+
+                <div id="room-summary-content" style="display:grid; gap:0.75rem;">
+
+                    <!-- 🏠 ROOM -->
+                    <div>
+                        <strong>Room:</strong>
+                        <span id="sum-room-size">—</span> (approx <span id="sum-room-volume">—</span> m³)
+                        <br>
+                        <span id="sum-room-shape" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
+                    </div>
+
+                    <!-- 🔊 SPEAKERS -->
+                    <div>
+                        <strong>Speakers:</strong>
+                        <span id="sum-speaker-model">—</span>
+                        <br>
+                        <span id="sum-speaker-spacing">—</span> apart, <span id="sum-speaker-distance">—</span> from wall
+                        <br>
+                        <span id="sum-triangle" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
+                    </div>
+
+                    <!-- 🎯 TOE-IN -->
+                    <div>
+                        <strong>Toe-in:</strong>
+                        <span id="sum-toe-angle">—</span>
+                        <br>
+                        <span id="sum-toe-comment" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- CARD 4 — MATERIALS & FURNISHINGS -->
             <!-- ===================================================== -->
             <section class="card glass-panel animate-enter delay-3" style="margin-bottom:2rem;">
 
-                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
-                  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+                <div class="card-title" style="display:flex; align-items:center; gap:1rem;">
                     <div style="width:32px; height:32px; background:rgba(168,85,247,0.2); color:#c084fc;
                     border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-                        3
+                        4
                     </div>
-                    <h2 style="margin:0; font-size:1.25rem;">Materials & Furnishings</h2>
+                    <h2 style="margin:0;">Materials & Furnishings</h2>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 2fr; gap:2rem;">
+                <div class="materials-stack" style="display:flex; flex-direction:column; gap:1.5rem;">
 
+                    <!-- Floor -->
                     <div>
                         <label for="floor-material">Base Floor Surface</label>
                         <select id="floor-material">
@@ -246,57 +291,41 @@
                         </select>
                     </div>
 
+                    <!-- Room Liveliness -->
                     <div>
                         <label for="room-echo">Room Liveliness</label>
-                        <div
-                            style="background:rgba(99,102,241,0.05); padding:1rem; border-radius:12px; margin-bottom:1.5rem;">
-                            <div style="display:flex; justify-content:space-between;">
-                                <span style="color:white;">How "Live" is the room?</span>
-                                <span id="roomEchoValue" style="color:var(--c-accent); font-weight:700;">20%</span>
-                            </div>
-                            <input type="range" id="room-echo" min="0" max="100" step="5">
-                            <div
-                                style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--c-text-muted); margin-top:0.5rem;">
-                                <span>Dry</span><span>Normal</span><span>Echoey</span>
-                            </div>
-                        </div>
+                        <select id="room-echo">
+                            <option value="10">Dry / Dead</option>
+                            <option value="25">Slightly Live</option>
+                            <option value="50" selected>Normal</option>
+                            <option value="75">Live</option>
+                            <option value="90">Very Echoey</option>
+                        </select>
+                    </div>
 
+                    <!-- Contents -->
+                    <div>
                         <label>Room Contents</label>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-
+                        <div class="grid-2 room-contents" style="gap:1rem;">
                             <label class="checkbox-group">
                                 <input type="checkbox" id="opt-area-rug">
-                                <div>
-                                    <div style="color:white; font-weight:500;">Area Rug</div>
-                                </div>
+                                <span>Area Rug</span>
                             </label>
-
                             <label class="checkbox-group">
                                 <input type="checkbox" id="opt-curtains">
-                                <div>
-                                    <div style="color:white; font-weight:500;">Curtains / Blinds</div>
-                                </div>
+                                <span>Curtains / Blinds</span>
                             </label>
-
                             <label class="checkbox-group">
                                 <input type="checkbox" id="opt-sofa">
-                                <div>
-                                    <div style="color:white; font-weight:500;">Large Sofa</div>
-                                </div>
+                                <span>Large Sofa</span>
                             </label>
-
                             <label class="checkbox-group">
                                 <input type="checkbox" id="opt-wallart">
-                                <div>
-                                    <div style="color:white; font-weight:500;">Wall Art / Shelves</div>
-                                </div>
+                                <span>Wall Art / Shelves</span>
                             </label>
-
-                            <label class="checkbox-group" style="grid-column: span 2;">
+                            <label class="checkbox-group">
                                 <input type="checkbox" id="opt-barewalls">
-                                <div>
-                                    <div style="color:white; font-weight:500;">Mostly Bare Walls</div>
-                                </div>
+                                <span>Mostly Bare Walls</span>
                             </label>
 
                         </div>
@@ -323,14 +352,50 @@
 
     <script src="/js/dashboard.js"></script>
     <script type="module" src="/js/devices.js"></script>
-    <script type="module">
-        import { initSpeakers } from '/js/speakers.js';
-        document.addEventListener('DOMContentLoaded', async () => {
-            await initSpeakers();
-        });
+    <script type="module" src="js/room.js"></script>
+    <script src="js/room-diagram.js"></script>
+
+    <script>
+    document.getElementById('save-all-btn').addEventListener('click', () => {
+    if (window.saveRoom) saveRoom();
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+    if (window.loadRoomSetup) loadRoomSetup();
+    });
     </script>
 
-    <script src="js/room-diagram.js"></script>
+    <script>
+    async function loadSpeakers() {
+        const dropdown = document.getElementById('speakerSel');
+        dropdown.innerHTML = `<option>Loading…</option>`;
+
+        try {
+            const res = await fetch('/api/speakers');
+            const data = await res.json();
+
+            dropdown.innerHTML = '';
+
+            data.list.forEach(spk => {
+                const opt = document.createElement('option');
+                opt.value = spk.key;
+                opt.textContent = spk.name;
+                dropdown.appendChild(opt);
+            });
+
+            if (data.current?.key) {
+                dropdown.value = data.current.key;
+            }
+
+        } catch (err) {
+            console.error("Speaker API failed", err);
+            dropdown.innerHTML = `<option value="unknown">Unknown</option>`;
+        }
+    }
+
+    // Run speaker loader when page ready
+    document.addEventListener('DOMContentLoaded', loadSpeakers);
+    </script>
+
 
     <script>
         /* ============================================================
@@ -359,132 +424,19 @@
             setTimeout(() => box.remove(), 2400);
         }
 
-    /* ============================================================
-    SAVE SETUP
-    ============================================================ */
-    async function saveAllSetup() {
-        const payload = {
-            length_m: parseFloat(document.getElementById('room-length').value),
-            width_m: parseFloat(document.getElementById('room-width').value),
-            height_m: parseFloat(document.getElementById('room-height').value),
+    function updateValue(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const valSpan = document.getElementById(id + '-val');
+        if (!valSpan) return;
 
-            echo_pct: parseInt(document.getElementById('room-echo').value),
+        let unit = id === 'toe-angle' ? '°' : 'm';
+        valSpan.textContent = parseFloat(el.value).toFixed(2) + unit;
 
-            floor_material: document.getElementById('floor-material').value,
-
-            opt_area_rug: document.getElementById('opt-area-rug').checked,
-            opt_barewalls: document.getElementById('opt-barewalls').checked,
-            opt_wallart: document.getElementById('opt-wallart').checked,
-            opt_curtains: document.getElementById('opt-curtains').checked,
-            opt_sofa: document.getElementById('opt-sofa').checked,
-
-            spk_front_m: parseFloat(document.getElementById('speaker-distance').value),
-            spk_spacing_m: parseFloat(document.getElementById('speaker-width').value),
-            listener_front_m: parseFloat(document.getElementById('listening-distance').value),
-            toe_in_deg: parseFloat(document.getElementById('toe-angle').value),
-
-            speaker_type: document.getElementById('speaker-type').value,
-            speaker_key: document.getElementById('speakerSel').value,
-
-            layout: 'stereo'
-        };
-
-        console.log("💾 [SAVE] Payload being sent:", payload);
-
-        const res = await fetch('/api/room/latest', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        console.log("📩 [SAVE] Response status:", res.status);
-
-        if (!res.ok) {
-            toast('Save failed', 'error');
-            return;
-        }
-
-        toast('Room & speakers saved', 'success');
-        loadRoomSetup();
+        // Hook into your current update flow:
+        if (window.diagram && diagram.update) diagram.update();
     }
 
-    /* ============================================================
-    LOAD SETUP
-    ============================================================ */
-    async function loadRoomSetup() {
-        const res = await fetch('/api/room/latest');
-
-        console.log("📥 [LOAD] Fetch status:", res.status);
-
-        if (!res.ok) {
-            console.warn("⚠️ No saved room setup found.");
-            return;
-        }
-
-        const j = await res.json();
-        console.log("📥 [LOAD] Parsed room setup:", j);
-
-        function setNum(key, id) {
-            if (j[key] != null) document.getElementById(id).value = j[key];
-        }
-
-        function setBool(key, id) {
-            document.getElementById(id).checked = !!j[key];
-        }
-
-        setNum('length_m', 'room-length');
-        setNum('width_m', 'room-width');
-        setNum('height_m', 'room-height');
-
-        setNum('spk_front_m', 'speaker-distance');
-        setNum('spk_spacing_m', 'speaker-width');
-        setNum('listener_front_m', 'listening-distance');
-
-        setNum('toe_in_deg', 'toe-angle');
-
-        setBool('opt_area_rug', 'opt-area-rug');
-        setBool('opt_barewalls', 'opt-barewalls');
-        setBool('opt_wallart', 'opt-wallart');
-        setBool('opt_curtains', 'opt-curtains');
-        setBool('opt_sofa', 'opt-sofa');
-
-        if (j.echo_pct != null) {
-            document.getElementById('room-echo').value = j.echo_pct;
-            document.getElementById('roomEchoValue').textContent = j.echo_pct + '%';
-        }
-
-        if (j.floor_material) {
-            document.getElementById('floor-material').value = j.floor_material;
-        }
-
-        if (j.speaker_type) {
-            document.getElementById('speaker-type').value = j.speaker_type;
-        }
-
-        if (j.speaker_key) {
-            document.getElementById('speakerSel').value = j.speaker_key;
-        }
-
-        if (window.roomDiagram) window.roomDiagram.update();
-    }
-
-
-        /* ============================================================
-           BIND SAVE BUTTON
-        ============================================================ */
-        document.getElementById('save-all-btn').addEventListener('click', saveAllSetup);
-
-        /* ECHO SLIDER UI UPDATE */
-        const echoSlider = document.getElementById('room-echo');
-        const echoValue = document.getElementById('roomEchoValue');
-        if (echoSlider && echoValue) {
-            echoSlider.addEventListener('input', e => {
-                echoValue.textContent = e.target.value + '%';
-            });
-        }
-
-        /* LOAD ON READY */
-        document.addEventListener('DOMContentLoaded', loadRoomSetup);
 
         /* ============================================================
            MOBILE MENU TOGGLE
@@ -512,6 +464,31 @@
                 }
             });
         });
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Bind live updates to EVERY control that has a -val element
+            const ids = [
+                'room-width',
+                'room-length',
+                'room-height',
+                'speaker-distance',
+                'speaker-width',
+                'listening-distance',
+                'toe-angle'
+            ];
+
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', () => updateValue(id));
+                el.addEventListener('change', () => updateValue(id));
+                
+                // Run once on load so it doesn't show "—"
+                updateValue(id);
+            });
+        });
+
     </script>
 
 </body>

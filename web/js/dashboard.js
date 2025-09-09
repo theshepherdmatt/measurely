@@ -66,6 +66,7 @@ window.addLog = function (msg) {
     logBox.scrollTop = logBox.scrollHeight;
 };
 
+
 function applyDynamicColor(el, score) {
     if (!el || score === null || score === undefined) return;
 
@@ -145,6 +146,7 @@ class MeasurelyDashboard {
         this.deviceStatus = {};
         this.updateInterval = null;
         this.sweepCheckInterval = null;
+        this.analysisCheckInterval = null;
 
         this.loadDavePhrases();
         this.init();
@@ -156,6 +158,29 @@ class MeasurelyDashboard {
         if (score >= 6) return 'good';
         if (score >= 4) return 'okay';
         return 'needs_work';
+    }
+
+    SPEAKERS_BY_KEY = {};
+
+    async loadSpeakerProfiles() {
+        try {
+            const res = await fetch('/api/speakers');
+            if (!res.ok) throw new Error(res.status);
+            const json = await res.json();
+
+            // Build lookup table
+            this.SPEAKERS_BY_KEY = {};
+            if (json.list && Array.isArray(json.list)) {
+                json.list.forEach(s => {
+                    this.SPEAKERS_BY_KEY[s.key] = s;
+                });
+            }
+
+            console.log('[SPK] Loaded speaker profiles:', this.SPEAKERS_BY_KEY);
+
+        } catch (err) {
+            console.warn("Failed to load speakers:", err);
+        }
     }
 
 
@@ -217,6 +242,37 @@ class MeasurelyDashboard {
 
         if (peakEl) peakEl.textContent = numPeaks;
         if (dipEl) dipEl.textContent = numDips;
+    }
+
+
+    updateSpeakerSummary(room, retryCount = 0) {
+        const el = document.getElementById("sum-speaker-model");
+        if (!el || !room) return;
+
+        const key = room.speaker_key;
+        if (!key) {
+            el.textContent = "Unknown speakers";
+            return;
+        }
+
+        const spk = this.SPEAKERS_BY_KEY[key];
+
+        if (spk) {
+            el.textContent = spk.friendly_name || spk.name || key;
+            return;
+        }
+
+        // 🔁 Speaker list might not be loaded yet — retry up to 10 times over 2 seconds
+        if (retryCount < 10) {
+            setTimeout(() => {
+                this.updateSpeakerSummary(room, retryCount + 1);
+            }, 200);
+            return;
+        }
+
+        // Fallback if still unknown after retries
+        el.textContent = key;
+        console.warn(`[SPK] Speaker key unresolved after retries: ${key}`);
     }
 
     /* ============================================================
@@ -350,6 +406,10 @@ class MeasurelyDashboard {
     async init() {
         console.log('Initializing Measurely Dashboard...');
 
+        if (window.initSpeakers) {
+            await window.initSpeakers();
+        }
+
         this.setupEventListeners();
         this.resetSessionButtonLabels();  
 
@@ -357,7 +417,7 @@ class MeasurelyDashboard {
         await this.loadDavePhrases();
         await this.loadDaveOverall();
         await this.loadDaveFixes();
-
+        await this.loadSpeakerProfiles(); 
         // Then load measurement data
         await this.loadData();
 
@@ -380,20 +440,26 @@ class MeasurelyDashboard {
 
             this.currentData = await response.json();
 
-            // Debug room
-            if (this.currentData.room) {
-                console.log("ROOM:", this.currentData.room);
+            const room = this.currentData.room;
+            if (room) {
+                // First update attempt
+                this.updateSpeakerSummary(room);
+
+                // Retry after speakers JSON is surely loaded
+                setTimeout(() => this.updateSpeakerSummary(room), 300);
+
+                console.log("ROOM:", room);
             }
 
             this.updateDashboard();
-            this.updateCompareSessionMetrics(); // Update Nerds Corner with current session data
+            this.updateCompareSessionMetrics();
+
             console.log('Data loaded OK:', this.currentData);
 
         } catch (error) {
             console.error('Error loading data:', error);
             this.showError('Failed to load measurement data.');
 
-            // Fallback sample
             this.currentData = this.generateSampleData();
             this.updateDashboard();
         }
@@ -417,8 +483,16 @@ class MeasurelyDashboard {
         this.showProgressBar();
 
         const runBtn = document.getElementById('runSweepBtn');
+        const cancelBtn = document.getElementById("cancelSweepBtn");
+        const refreshBtn = document.getElementById("refreshDashboardBtn");
+
         runBtn.disabled = true;
         runBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Running Sweep...';
+
+        // 👇 Moved here — UI responds instantly
+        cancelBtn.classList.remove("hidden");
+        cancelBtn.disabled = false;
+        refreshBtn.disabled = true;
 
         try {
             const response = await fetch('/api/run-sweep', {
@@ -435,11 +509,8 @@ class MeasurelyDashboard {
             const result = await response.json();
 
             if (result.status !== 'error') {
-
-                // 🚀 IMPORTANT:
-                // from here onwards, Python is responsible for ALL logs
+                // 🚀 logs now flow from backend
                 this.monitorSweepProgress();
-
             } else {
                 addLog("ERROR: " + (result.message || 'Sweep failed'));
                 this.showError(result.message || 'Sweep failed');
@@ -453,58 +524,62 @@ class MeasurelyDashboard {
         }
     }
 
-
     /* ============================================================
-    SWEEP PROGRESS MONITOR — FINAL WORKING VERSION
-    (Fully compatible with your current server output)
+    SWEEP PROGRESS MONITOR — CANCEL SAFE
     ============================================================ */
     async monitorSweepProgress() {
-        // Kill any old timers
+        // Prevent double polling
         if (this.sweepCheckInterval) {
             clearInterval(this.sweepCheckInterval);
         }
 
+        const logBox = document.getElementById("sessionLog");
+
+        const logLine = (msg) => {
+            if (!logBox) return;
+            logBox.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+            logBox.scrollTop = logBox.scrollHeight;
+        };
+
         this.sweepCheckInterval = setInterval(async () => {
             try {
                 const res = await fetch('/api/sweep-progress');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const prog = await res.json();
 
-                const box = document.getElementById("sessionLog");
-                if (!box) return;
+                if (prog.message || prog.progress !== undefined) {
+                    logLine(`Sweep: ${prog.message || "…" } (${prog.progress}%)`);
+                }
 
-                // Build a readable line
-                const line = `[${new Date().toLocaleTimeString()}] `
-                    + (prog.running ? "RUNNING" : "IDLE")
-                    + ` – ${prog.message || ""} (${prog.progress}%)`;
-
-                // Append it
-                box.innerText += line + "\n";
-                box.scrollTop = box.scrollHeight;
-
-
-                // Sweep complete?
+                // Hand-off condition
                 if (!prog.running) {
                     clearInterval(this.sweepCheckInterval);
+                    this.sweepCheckInterval = null;
 
-                    await this.loadData();
-                    this.updateDashboard();
-
-                    this.resetSweepState();
+                    addLog("Sweep complete — starting analysis…");
+                    this.simulateAnalysisSteps();
+                    // Poll for analysis.json to appear
+                    this.waitForAnalysisFile();
                 }
+
 
             } catch (err) {
-                console.error(err);
-
-                const box = document.getElementById("sessionLogBox");
-                if (box) {
-                    box.value += `[${new Date().toLocaleTimeString()}] ERROR reading progress\n`;
-                    box.scrollTop = box.scrollHeight;
-                }
+                console.error("❌ Sweep progress error:", err);
+                logLine(`ERROR: ${err.message}`);
 
                 clearInterval(this.sweepCheckInterval);
+                this.sweepCheckInterval = null;
                 this.resetSweepState();
             }
-        }, 1000);
+        }, 800); // faster + smoother than 1000ms
+    }
+
+    /* ============================================================
+    ANALYSIS PROGRESS MONITOR — TEMPORARILY DISABLED
+    ============================================================ */
+    async monitorAnalysisProgress() {
+        console.warn("⏸ Analysis progress polling disabled — pending backend API");
+        return;
     }
 
     /* ============================================================
@@ -514,8 +589,14 @@ class MeasurelyDashboard {
         this.isSweepRunning = false;
 
         const runBtn = document.getElementById('runSweepBtn');
+        const cancelBtn = document.getElementById('cancelSweepBtn');
+        const refreshBtn = document.getElementById("refreshDashboardBtn");
+
         runBtn.disabled = false;
         runBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Quick Sweep';
+
+        if (cancelBtn) cancelBtn.classList.add("hidden");
+        if (refreshBtn) refreshBtn.disabled = false;
 
         this.hideProgressBar();
 
@@ -524,6 +605,113 @@ class MeasurelyDashboard {
             this.sweepCheckInterval = null;
         }
     }
+
+    /* ============================================================
+    WAIT FOR ANALYSIS FILE — Real finish signal
+    ============================================================ */
+    async waitForAnalysisFile() {
+        const checkInterval = 1000; // ms
+        const maxChecks = 20;
+        let checks = 0;
+
+        const checkLoop = setInterval(async () => {
+            checks++;
+
+            try {
+                const res = await fetch('/api/latest');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                const data = await res.json();
+                const score = Number(data.overall_score);
+
+                // Analysis considered “real” only when:
+                if (data.has_analysis && Number.isFinite(score) && score > 0) {
+                    clearInterval(checkLoop);
+
+                    addLog("Analysis ready — updating dashboard…");
+
+                    this.currentData = data;
+                    this.updateDashboard();
+                    this.resetSweepState();
+
+                    addLog("Dashboard synced to new sweep.");
+                    return;
+                }
+            } catch (err) {
+                console.warn("progress poll failed:", err);
+            }
+
+            // Timeout fallback
+            if (checks >= maxChecks) {
+                clearInterval(checkLoop);
+
+                addLog("Analysis timeout — showing latest data.");
+
+                await this.loadData();
+                this.updateDashboard();
+                this.resetSweepState();
+            }
+
+        }, checkInterval);
+    }
+
+    /* ============================================================
+    SIMULATED ANALYSIS LOGS — makes the process feel alive
+    ============================================================ */
+    simulateAnalysisSteps() {
+        const steps = [
+            "FFT: 16384-point transform",
+            "Band energy weighting",
+            "Modal behaviour scan",
+            "Reflection vectors applied",
+            "Decay profile measured",
+            "Scoring matrix compiled"
+        ];
+
+        let i = 0;
+        const interval = setInterval(() => {
+            if (!this.isSweepRunning && i < steps.length) {
+                // If analysis already finished unexpectedly, stop logging
+                clearInterval(interval);
+                return;
+            }
+
+            addLog(`• ${steps[i]}`);
+            i++;
+
+            if (i >= steps.length) clearInterval(interval);
+
+        }, 500);
+    }
+
+    /* ============================================================
+    CANCEL SWEEP — USER ABORT
+    ============================================================ */
+    async cancelSweep() {
+        const cancelBtn = document.getElementById("cancelSweepBtn");
+        const logBox = document.getElementById("sessionLog");
+
+        console.warn("🛑 CANCEL triggered");
+
+        cancelBtn.disabled = true;
+
+        if (this.sweepCheckInterval) {
+            clearInterval(this.sweepCheckInterval);
+            this.sweepCheckInterval = null;
+        }
+
+        await fetch('/api/sweep/cancel', { method: "POST" });
+
+        if (logBox) {
+            logBox.innerHTML = "🚫 Sweep cancelled — System Ready.<br>";
+        }
+
+        await this.loadData();
+        this.updateDashboard();
+
+        this.resetSweepState();
+    }
+
 
     /* ============================================================
     UPDATE DASHBOARD (MAIN REFRESH)
@@ -599,34 +787,48 @@ class MeasurelyDashboard {
             statusTextEl.innerHTML = this.getScoreStatusText(overall);
         }
 
-        /* ---------------- FIXED OVERALL Dave PHRASE ---------------- */
         /* ---------------- OVERALL DAVE PHRASE — USE overall_phrases.json ONLY ---------------- */
         (async () => {
             const data = this.currentData || {};
             const room = data.room || {};
             const scoresObj = data.scores || {};
 
-            // Numeric overall score we’ll use for bucket + tag
+            // Overall score used for bucket + tag
             let overallScore = Number(
                 scoresObj.overall ?? data.overall_score ?? data.overall ?? 5
             );
             if (!Number.isFinite(overallScore)) overallScore = 5;
 
-            // Speaker lookup (safe default)
+            // Restore correct active speaker based on key
             const speakerKey = room.speaker_key;
-            const spk = (speakerKey && window.SPEAKERS?.[speakerKey])
-                ? window.SPEAKERS[speakerKey]
-                : { friendly_name: "your speakers", name: "your speakers" };
+            let spkSource = null;
 
-            // Values for all the {{tags}} in overall_phrases.json
+            if (speakerKey) {
+                spkSource =
+                    (window.speaker_profiles && window.speaker_profiles[speakerKey]) ||
+                    (window.speakerProfiles && window.speakerProfiles[speakerKey]) ||
+                    null;
+            }
+
+            // Use the already set and correct active speaker
+            const spk = window.activeSpeaker || {
+                name: "speakers",
+                friendly_name: "speakers"
+            };
+
+            // IMPORTANT for ALL phrases
+            window.activeSpeaker = spk;
+
+            // Tag values for replacements
             const tagMap = {
                 overall_score: overallScore.toFixed(1),
-                room_width: room.width_m ?? room.length_m ?? "--",
-                room_length: room.length_m ?? room.width_m ?? "--",
-                room_height: room.height_m ?? room.height ?? "--",
-                spk_distance: room.spk_distance_m ?? room.listener_front_m ?? "--",
+                room_width: room.width_m ?? "--",
+                room_length: room.length_m ?? "--",
+                room_height: room.height_m ?? "--",
+                spk_distance: room.spk_spacing_m ?? "--",
                 listener_distance: room.listener_front_m ?? "--",
-                toe_in: room.toe_in ?? "--",
+                distance_from_wall: room.spk_front_m ?? "--",
+                toe_in: room.toe_in_deg ?? "--",
                 speaker_friendly_name: spk.friendly_name,
                 speaker_name: spk.name
             };
@@ -641,7 +843,6 @@ class MeasurelyDashboard {
                 return out;
             };
 
-            // Pick a template line from overall_phrases.json based on score
             const template = await this.pickOverallPhrase(overallScore);
             const phrase = expandTags(template);
 
@@ -650,7 +851,6 @@ class MeasurelyDashboard {
                 phraseEl.textContent = `“${phrase}”`;
             }
         })();
-
 
 
         /* ---------------- SIX SMALL CARD SCORES ---------------- */
@@ -1769,6 +1969,7 @@ class MeasurelyDashboard {
 
         // Sweep controls — Dashboard only
         safe('runSweepBtn',      () => this.runSweep());
+        safe('cancelSweepBtn', () => this.cancelSweep());
         //safe('saveResultsBtn',   () => this.saveResults());
         //safe('exportReportBtn',  () => this.exportReport());
 
