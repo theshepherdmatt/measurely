@@ -3,296 +3,560 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Measurely – Connect to Wi-Fi</title>
+<title>Measurely — My Room</title>
 
 <link rel="icon" type="image/svg+xml" href="icons/dave.svg">
 <link rel="stylesheet" href="measurely.css">
+<link rel="stylesheet" href="css/onboarding.css">
 
-<style>
-/* ======================================================
-   MEASURELY CAPTIVE PORTAL (AP MODE)
-   ====================================================== */
+<script src="js/vendor/three/three.min.js"></script>
+<script src="js/vendor/three/OrbitControls.js"></script>
 
-html, body {
-  height: 100%;
-  margin: 0;
-  background:
-    radial-gradient(900px 500px at 15% 10%, rgba(124,92,255,0.35), transparent 60%),
-    radial-gradient(800px 600px at 85% 25%, rgba(99,102,241,0.25), transparent 65%),
-    radial-gradient(600px 600px at 50% 85%, rgba(45,212,191,0.18), transparent 60%),
-    #0b0f1a;
-  color: #e5e7eb;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.25rem;
-}
-
-/* Outer container */
-.portal-wrap {
-  width: min(520px, 100%);
-}
-
-/* Brand header */
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-
-.brand-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #7c5cff, #5b6cff);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 10px 30px rgba(124,92,255,0.45);
-}
-
-.brand h1 {
-  font-size: 1.45rem;
-  margin: 0;
-}
-
-.brand p {
-  margin: 0;
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.65);
-}
-
-/* Main card */
-.portal-card {
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,0.08),
-      rgba(255,255,255,0.02)
-    );
-  border-radius: 22px;
-  padding: 1.75rem;
-  backdrop-filter: blur(18px);
-  box-shadow:
-    0 40px 90px rgba(0,0,0,0.65),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-}
-
-/* Inner panel */
-.panel {
-  background:
-    linear-gradient(
-      180deg,
-      rgba(13,17,35,0.9),
-      rgba(13,17,35,0.75)
-    );
-  border-radius: 16px;
-  padding: 1.25rem;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.05);
-}
-
-/* Inputs */
-label {
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.65);
-}
-
-.input {
-  width: 100%;
-  padding: 0.8rem 0.9rem;
-  margin-top: 0.35rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.06);
-  color: #fff;
-}
-
-.input::placeholder {
-  color: rgba(255,255,255,0.35);
-}
-
-.input:focus {
-  outline: none;
-  border-color: rgba(124,92,255,0.85);
-  box-shadow: 0 0 0 3px rgba(124,92,255,0.35);
-}
-
-/* Status pills */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.35rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.4);
-}
-
-.dot.warn { background: #fbbf24; }
-.dot.ok { background: #22c55e; }
-.dot.bad { background: #ef4444; }
-
-/* Buttons */
-.actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  margin-top: 1.25rem;
-}
-
-/* Footer text */
-.footer {
-  margin-top: 1.25rem;
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.55);
-  line-height: 1.5;
-  text-align: center;
-}
-</style>
 </head>
 
 <body>
 
-<div class="portal-wrap">
-
-  <div class="brand">
-    <div class="brand-logo">
-      <img src="icons/signal.svg" alt="" style="width:22px;">
+<!-- HEADER -->
+<header class="header header-onboarding">
+    <div class="header-title">
+        <h1>
+            <img
+                src="icons/largedave.svg"
+                alt=""
+                class="measurely-mark"
+                aria-hidden="true"
+            />
+            My Room
+        </h1>
+        <p>Define the physical space you listen in.</p>
     </div>
-    <div>
-      <h1>Connect Measurely to Wi-Fi</h1>
-      <p>You’re connected to <strong>MeasurelyConnect</strong></p>
-    </div>
-  </div>
+</header>
 
-  <div class="portal-card">
 
-    <div class="panel">
+<!-- FULLSCREEN ROOM -->
+<div id="roomCanvas"></div>
 
-      <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:1rem;">
-        <button id="scanBtn" class="btn btn-secondary">Scan networks</button>
-        <span id="scanStatus" class="pill">
-          <span class="dot warn"></span>
-          <span>Ready</span>
-        </span>
-      </div>
+<!-- SLIDING QUESTION PANEL -->
+<div id="questionPanel">
+  <div class="question" id="qText"></div>
+  <div class="sub" id="qSub"></div>
 
-      <div style="display:grid; gap:0.9rem;">
-        <div>
-          <label>Wi-Fi network</label>
-          <select id="ssidSelect" class="input">
-            <option value="">Select a network…</option>
-          </select>
-        </div>
+  <div id="fieldStack"></div>
 
-        <div>
-          <label>Password</label>
-          <input id="passwordInput" type="password" class="input" placeholder="Wi-Fi password">
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="connectBtn" class="btn btn-primary">
-          Connect & restart
-        </button>
-        <span id="connectStatus" class="pill">
-          <span class="dot warn"></span>
-          <span>Waiting</span>
-        </span>
-      </div>
-
-    </div>
-
-    <div class="footer">
-      After connecting, Measurely will restart and this page will disconnect.<br>
-      Reconnect on your normal Wi-Fi and visit <strong>measurely.local</strong>.
-    </div>
-
+  <div class="actions">
+    <button id="backBtn" class="btn btn-secondary">Back</button>
+    <button id="nextBtn" class="btn btn-primary">Next</button>
   </div>
 </div>
 
-<script>
-const scanBtn = document.getElementById('scanBtn');
-const connectBtn = document.getElementById('connectBtn');
-const ssidSelect = document.getElementById('ssidSelect');
-const passwordInput = document.getElementById('passwordInput');
+<!-- UPLOAD WAV OVERLAY -->
+<div id="uploadOverlay" class="upload-overlay hidden">
+  <div class="upload-card">
+    <h2>Ready to analyse your room</h2>
+    <p>Drop your measurement to see how sound moves through it.</p>
 
-function setPill(id, state, text) {
-  const el = document.getElementById(id);
-  el.querySelector('.dot').className = 'dot ' + state;
-  el.querySelector('span:last-child').textContent = text;
+    <div class="upload-dropzone" id="uploadDropzone">
+      <span>Drop measurement to begin</span>
+      <small>or click to choose a file</small>
+      <input type="file" id="wavInput" accept=".wav,audio/wav">
+    </div>
+
+    <div class="upload-hint">
+      You can tweak the room later, this won’t affect your results.
+    </div>
+  </div>
+</div>
+
+<div id="handoffOverlay" class="handoff-overlay hidden">
+  <div class="handoff-card">
+    <h3 id="handoffTitle">Room loaded</h3>
+  </div>
+</div>
+
+
+<script type="module">
+import { initRoom3D } from "./js/room3d.js";
+
+
+async function loadSavedRoom() {
+  try {
+    const res = await fetch("/api/room/latest");
+    if (!res.ok) return;
+
+    const saved = await res.json();
+
+    // 🔑 merge safely, never replace
+    roomState = {
+      ...structuredClone(DEFAULT_ROOM_STATE),
+      ...saved
+    };
+
+    console.log("[Room] Loaded saved room:", roomState);
+  } catch (e) {
+    console.warn("[Room] No saved room, using defaults");
+  }
 }
 
-async function api(path, opts = {}) {
-  const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts
+
+/* ------------------------------------------
+   LOCAL ROOM STATE (single source of truth)
+------------------------------------------ */
+const DEFAULT_ROOM_STATE = {
+  length_m: 4,
+  width_m: 4,
+  height_m: 2.5,
+  speaker_type: "standmount",
+  spk_spacing_m: 2,
+  spk_front_m: 0.3,
+  tweeter_height_m: 0.95,
+  toe_in_deg: 15,
+  listener_front_m: 2.5,
+  subwoofer: false,
+  floor_material: "hard",
+  opt_area_rug: false,
+  opt_sofa: false,
+  wall_treatment: "bare",
+  opt_coffee_table: false
+};
+
+let roomState = structuredClone(DEFAULT_ROOM_STATE);
+
+/* ------------------------------------------
+   INIT 3D ROOM
+------------------------------------------ */
+const room3D = initRoom3D({
+  mountId: "roomCanvas",
+  getRoomData: () => roomState,
+  mode: "setup"
+});
+
+/* ------------------------------------------
+   ONBOARDING STEPS
+------------------------------------------ */
+const steps = [
+  /* ------------------------------------------
+     STEP 1 — ROOM
+  ------------------------------------------ */
+  {
+    type: "room",
+    title: "Room dimensions",
+    fields: [
+      {
+        key: "length_m",
+        label: "Room length",
+        sub: "Front wall to back wall",
+        min: 2,
+        max: 10,
+        step: 0.05
+      },
+      {
+        key: "width_m",
+        label: "Room width",
+        sub: "Left wall to right wall",
+        min: 2,
+        max: 10,
+        step: 0.05
+      },
+      {
+        key: "height_m",
+        label: "Ceiling height",
+        sub: "Floor to ceiling",
+        min: 2,
+        max: 3.5,
+        step: 0.01
+      }
+    ]
+  },
+
+  /* ------------------------------------------
+     STEP 2 — SPEAKERS
+  ------------------------------------------ */
+  {
+    type: "speakers",
+    title: "Speaker placement",
+    fields: [
+      {
+        key: "spk_spacing_m",
+        label: "Speaker spacing",
+        sub: "Distance between left and right speakers",
+        min: 1.2,
+        max: 4,
+        step: 0.05
+      },
+      {
+        key: "spk_front_m",
+        label: "Distance from front wall",
+        sub: "Speaker front to wall behind",
+        min: 0.1,
+        max: 1.5,
+        step: 0.05
+      },
+      {
+        key: "tweeter_height_m",
+        label: "Tweeter height",
+        sub: "From floor",
+        min: 0.6,
+        max: 1.2,
+        step: 0.01
+      },
+      {
+        key: "toe_in_deg",
+        label: "Toe-in angle",
+        sub: "Angle toward listening position",
+        min: 0,
+        max: 30,
+        step: 1
+      },
+      {
+        key: "listener_front_m",
+        label: "Listening distance",
+        sub: "From speakers to your ears",
+        min: 1.5,
+        max: 4.5,
+        step: 0.05
+      },
+      {
+        key: "subwoofer",
+        kind: "toggle",
+        label: "Subwoofer",
+        sub: "Do you have a subwoofer in the system?"
+      }
+    ]
+  },
+
+  /* ------------------------------------------
+     STEP 3 — MATERIALS & FURNISHINGS
+  ------------------------------------------ */
+  {
+    type: "materials",
+    title: "Materials & furnishings",
+    fields: [
+      {
+        key: "floor_material",
+        kind: "select",
+        label: "Floor type",
+        sub: "Major effect on brightness and reflections",
+        options: [
+          { value: "hard", label: "Hard floor (wood / tile)" },
+          { value: "carpet", label: "Carpet" }
+        ]
+      },
+      {
+        key: "opt_area_rug",
+        kind: "toggle",
+        label: "Rug",
+        sub: "Absorbs early reflections between speakers and listener"
+      },
+      {
+        key: "opt_sofa",
+        kind: "toggle",
+        label: "Sofa",
+        sub: "Adds absorption behind the listening position"
+      },
+      {
+        key: "opt_coffee_table",
+        kind: "toggle",
+        label: "Coffee table",
+        sub: "Strong early reflection risk"
+      },
+      {
+        key: "wall_treatment",
+        kind: "select",
+        label: "Wall treatment",
+        sub: "Purpose-built acoustic treatment or heavy absorption",
+        options: [
+          { value: "bare", label: "Bare walls" },
+          { value: "treated", label: "Treated (panels or heavy curtains)" }
+        ]
+      }
+
+    ]
+  }
+];
+
+/* ------------------------------------------
+   UI STATE
+------------------------------------------ */
+let stepIndex = 0;
+
+const panel     = document.getElementById("questionPanel");
+const qText     = document.getElementById("qText");
+const qSub      = document.getElementById("qSub");
+const fieldStack = document.getElementById("fieldStack");
+const nextBtn   = document.getElementById("nextBtn");
+const backBtn = document.getElementById("backBtn");
+
+/* ------------------------------------------
+   RENDER CURRENT STEP
+------------------------------------------ */
+function loadStep() {
+  const step = steps[stepIndex];
+
+  if (step.type === "room") {
+    room3D.setStage("room");
+  } 
+  else if (step.type === "speakers") {
+    room3D.setStage("speakers");
+  } 
+  else if (step.type === "materials") {
+    room3D.setStage("furnishings");
+  }
+
+  qText.textContent = step.title;
+  qSub.textContent = "";
+
+  fieldStack.innerHTML = "";
+
+  step.fields.forEach(f => {
+    const row = document.createElement("div");
+    row.className = "field";
+
+    // default kind
+    const kind = f.kind || "range";
+
+    if (kind === "toggle") {
+      const checked = !!roomState[f.key];
+
+      row.innerHTML = `
+        <div class="field-head">
+          <div>
+            <label>${f.label}</label>
+            <div class="sub">${f.sub || ""}</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" ${checked ? "checked" : ""}>
+            <span class="slider"></span>
+          </label>
+        </div>
+      `;
+
+      const input = row.querySelector("input");
+      input.addEventListener("change", () => {
+        roomState[f.key] = !!input.checked;
+        room3D.update();
+      });
+
+    } else if (kind === "select") {
+      row.innerHTML = `
+        <label>${f.label}</label>
+        <div class="sub">${f.sub || ""}</div>
+        <select class="select">
+          ${(f.options || []).map(o =>
+            `<option value="${o.value}" ${roomState[f.key] === o.value ? "selected" : ""}>${o.label}</option>`
+          ).join("")}
+        </select>
+      `;
+
+      const sel = row.querySelector("select");
+      sel.addEventListener("change", () => {
+        roomState[f.key] = sel.value;
+        room3D.update();
+      });
+
+    } else {
+      // range slider
+      const unit = f.key.includes("deg") ? "°" : "m";
+      const value = Number(roomState[f.key] ?? 0);
+
+      row.innerHTML = `
+        <label>${f.label}</label>
+        <div class="sub">${f.sub || ""}</div>
+        <div class="value"><span class="val">${value}</span> ${unit}</div>
+        <input type="range"
+          min="${f.min}"
+          max="${f.max}"
+          step="${f.step}"
+          value="${value}"
+        >
+      `;
+
+      const slider = row.querySelector("input");
+      const valEl  = row.querySelector(".val");
+
+      slider.addEventListener("input", () => {
+        roomState[f.key] = parseFloat(slider.value);
+        valEl.textContent = slider.value;
+        room3D.update();
+      });
+    }
+
+    fieldStack.appendChild(row);
   });
-  try { return await res.json(); } catch { return {}; }
+
+  panel.classList.add("active");
+
+  // Change button text on last step
+  nextBtn.textContent =
+    (stepIndex === steps.length - 1) ? "Save & continue" : "Next";
+
+  backBtn.disabled = stepIndex === 0;
 }
 
-scanBtn.onclick = async () => {
-  scanBtn.disabled = true;
-  setPill('scanStatus', 'warn', 'Scanning…');
 
-  const data = await api('/api/network/scan');
-  ssidSelect.innerHTML = '<option value="">Select a network…</option>';
 
-  if (data.ok && Array.isArray(data.networks)) {
-    data.networks.forEach(n => {
-      if (!n.ssid) return;
-      const o = document.createElement('option');
-      o.value = n.ssid;
-      o.textContent = n.signal != null ? `${n.ssid} (${n.signal}%)` : n.ssid;
-      ssidSelect.appendChild(o);
+/* ------------------------------------------
+   NAVIGATION
+------------------------------------------ */
+nextBtn.addEventListener("click", () => {
+  stepIndex++;
+  if (stepIndex >= steps.length) finish();
+  else loadStep();
+});
+
+backBtn.addEventListener("click", () => {
+  if (stepIndex > 0) {
+    stepIndex--;
+    loadStep();
+  }
+});
+
+/* ------------------------------------------
+   FINISH ONBOARDING
+------------------------------------------ */
+async function finish() {
+  room3D.setMode("locked");
+  panel.classList.remove("active");
+
+  try {
+    await fetch("/api/room/latest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(roomState)
     });
-    setPill('scanStatus', 'ok', `Found ${data.networks.length}`);
-  } else {
-    setPill('scanStatus', 'bad', 'Scan failed');
+  } catch (err) {
+    console.error("Failed to save room", err);
   }
 
-  scanBtn.disabled = false;
-};
+  showUploadOverlay();
+}
 
-connectBtn.onclick = async () => {
-  const ssid = ssidSelect.value;
-  const password = passwordInput.value;
+const uploadOverlay = document.getElementById("uploadOverlay");
 
-  if (!ssid) {
-    setPill('connectStatus', 'bad', 'Select a network');
-    return;
-  }
+function showUploadOverlay() {
+  uploadOverlay.classList.remove("hidden");
+}
 
-  connectBtn.disabled = true;
-  setPill('connectStatus', 'warn', 'Connecting…');
+function hideUploadOverlay() {
+  uploadOverlay.classList.add("hidden");
+}
 
-  const res = await api('/api/network/connect', {
-    method: 'POST',
-    body: JSON.stringify({ ssid, password })
+const dropzone = document.getElementById("uploadDropzone");
+const wavInput = document.getElementById("wavInput");
+
+["dragenter", "dragover"].forEach(evt => {
+  dropzone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropzone.classList.add("dragover");
   });
+});
 
-  if (!res.ok) {
-    setPill('connectStatus', 'bad', 'Failed');
-    connectBtn.disabled = false;
-    return;
-  }
+["dragleave", "drop"].forEach(evt => {
+  dropzone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+  });
+});
 
-  setPill('connectStatus', 'ok', 'Restarting…');
-};
+dropzone.addEventListener("drop", e => {
+  const file = e.dataTransfer.files[0];
+  if (file) handleWav(file);
+});
+
+wavInput.addEventListener("change", () => {
+  const file = wavInput.files[0];
+  if (file) handleWav(file);
+});
+
+
+/* ------------------------------------------
+   HANDOFF OVERLAY
+------------------------------------------ */
+const handoffOverlay = document.getElementById("handoffOverlay");
+const handoffTitle   = document.getElementById("handoffTitle");
+
+function showHandoff(text) {
+  console.log("[Handoff] show:", text);
+  handoffTitle.textContent = text;
+  handoffOverlay.classList.remove("hidden");
+}
+
+function hideHandoff() {
+  console.log("[Handoff] hide");
+  handoffOverlay.classList.add("hidden");
+}
+
+
+function handleWav(file) {
+  hideUploadOverlay();
+
+  // ------------------------------------------
+  // START ANALYSIS VISUALS
+  // ------------------------------------------
+  room3D.setMode("analysing");
+
+  const volume = (
+    roomState.length_m *
+    roomState.width_m *
+    roomState.height_m
+  ).toFixed(1);
+
+  // ------------------------------------------
+  // HANDOFF MESSAGES (LINEAR TIMELINE)
+  // ------------------------------------------
+  showHandoff(`Analysing ${volume}m³ enclosure...`);
+
+  setTimeout(() => {
+    showHandoff("Locating early reflections...");
+  }, 3000);
+
+  setTimeout(() => {
+    showHandoff("Decoding modal interactions...");
+  }, 6000);
+
+  setTimeout(() => {
+    showHandoff("Diagnosis complete");
+    room3D.setMode("final"); // green room moment
+  }, 9000);
+
+  // ⏸ give completion a moment to land
+  setTimeout(() => {
+    showHandoff("Loading dashboard");
+  }, 11500);
+
+  setTimeout(() => {
+    showHandoff("Please wait");
+  }, 13500);
+
+  // ------------------------------------------
+  // TRANSITION TO DASHBOARD
+  // ------------------------------------------
+  setTimeout(() => {
+    window.location.href = "/index.html";
+  }, 15500);
+}
+
+function startAnalysisSequence(file) {
+  // This is where real upload will go later
+  console.log("Analysing:", file.name);
+
+  // Keep analysing visuals on screen for ~5 seconds
+  setTimeout(() => {
+    finishAnalysis();
+  }, 5000);
+}
+
+function finishAnalysis() {
+  console.log("Analysis complete");
+
+  // Transition to dashboard
+  window.location.href = "index.html";
+}
+
+await loadSavedRoom();
+/* ------------------------------------------
+   START
+------------------------------------------ */
+loadStep();
 </script>
 
 </body>

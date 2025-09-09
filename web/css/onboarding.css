@@ -1,0 +1,603 @@
+/* ======================================================
+   MEASURELY DASHBOARD TOKEN MIRROR (ONBOARDING)
+   ====================================================== */
+
+:root {
+  /* Typography */
+  --font-main: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Core surfaces */
+  --c-bg: #0f172a;                 /* matches dashboard */
+  --c-surface: #1e293b;
+  --c-surface-glass: rgba(30, 41, 59, 0.7);
+
+  /* Text */
+  --c-text-main: #f8fafc;
+  --c-text-muted: #94a3b8;
+
+  /* Accent (PRIMARY) */
+  --c-accent: #6366f1;             /* Indigo */
+  --c-accent-glow: rgba(99,102,241,0.45);
+
+  /* Measurely flavour (SECONDARY) */
+  --measurely-accent: #ff4f9a;     /* Pink */
+}
+
+
+/* ======================================================
+   Measurely Onboarding – Room Setup
+   ====================================================== */
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      1200px 600px at 50% -200px,
+      rgba(99, 102, 241, 0.12),
+      transparent 60%
+    ),
+    linear-gradient(
+      180deg,
+      #0f172a 0%,
+      #020617 100%
+    );
+
+
+  font-family: var(--font-main);
+  color: #e5e7eb;
+}
+
+/* ======================================================
+   3D ROOM CANVAS
+   ====================================================== */
+
+#roomCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Slight boost so wireframe reads through glass */
+#roomCanvas canvas {
+  filter: saturate(1.1) contrast(1.05);
+}
+
+/* =========================
+   HEADER — ONBOARDING SCALE
+   ========================= */
+
+.header-onboarding .header-title h1 {
+  font-size: 2.1rem;          /* ~72% of dashboard */
+  font-weight: 750;           /* keep confidence */
+  letter-spacing: -0.035em;   /* same premium tightness */
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.header-onboarding .header-title p {
+  margin: 0;
+  font-size: 0.85rem;         /* scaled relative to h1 */
+  color: var(--c-text-muted);
+  max-width: 520px;
+}
+
+.header-onboarding .header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.header-onboarding .measurely-mark {
+  width: 30px;                /* SAME icon size */
+  height: 30px;
+  opacity: 0.75;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+}
+
+.header-onboarding {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+
+  padding: 1.5rem 1.75rem 1.25rem;
+  /* top | sides | bottom */
+
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 23, 42, 0.85),
+    rgba(15, 23, 42, 0)
+  );
+
+  pointer-events: none;
+}
+
+
+/* ======================================================
+   QUESTION PANEL (BASE – MOBILE FIRST)
+   ====================================================== */
+
+#questionPanel {
+  position: absolute;
+  z-index: 10;
+
+  left: 50%;
+  bottom: 6%;
+  transform: translateX(-50%) translateY(140%);
+
+  width: min(420px, 92%);
+  padding: 1.25rem 1.25rem 1.4rem;
+
+  background: var(--c-surface-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  transition: transform 0.45s cubic-bezier(.2,.8,.2,1);
+}
+
+#questionPanel.active {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ======================================================
+   PANEL TYPOGRAPHY
+   ====================================================== */
+
+.question {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin-bottom: 0.25rem;
+}
+
+.sub {
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+  margin-bottom: 1rem;
+}
+
+/* ======================================================
+   FIELD STACK (Scrollable Content Area)
+   ====================================================== */
+
+#fieldStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0; /* important */
+}
+
+
+/* Subtle scrollbar (desktop only, WebKit) */
+#fieldStack::-webkit-scrollbar {
+  width: 6px;
+}
+
+#fieldStack::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 255, 0.35);
+  border-radius: 999px;
+}
+
+/* ======================================================
+   FIELD TYPOGRAPHY
+   ====================================================== */
+
+.field label {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-bottom: 0.15rem;
+}
+
+.field .sub {
+  font-size: 0.7rem;
+  opacity: 0.55;
+  margin-bottom: 0.25rem;
+}
+
+.field .value {
+  font-size: 0.75rem;
+  opacity: 0.75;
+  margin-bottom: 0.2rem;
+}
+
+
+/* ======================================================
+   RANGE SLIDERS
+   ====================================================== */
+
+input[type="range"] {
+  width: 100%;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    var(--c-accent),
+    var(--measurely-accent)
+  );
+
+
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px var(--c-accent-glow),
+    0 4px 10px rgba(0,0,0,0.45);
+
+
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+/* ======================================================
+   ACTION BUTTONS
+   ====================================================== */
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.25rem;
+  gap: 0.75rem;
+}
+
+/* ======================================================
+   DESKTOP LAYOUT — FIXED RIGHT PANEL (HARD OVERRIDE)
+   ====================================================== */
+
+@media (min-width: 900px) {
+
+  #questionPanel {
+    position: fixed;
+
+    /* 🔥 HARD RESET MOBILE POSITIONING */
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+
+    transform: none;
+
+    width: 460px;
+    max-width: 460px;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 1.6rem 1.6rem 1.4rem;
+
+    border-radius: 0;
+
+    background: none;
+    backdrop-filter: none;
+    box-shadow: none;
+
+    z-index: 10;
+  }
+
+  /* Mobile "active" transform must be killed too */
+  #questionPanel.active {
+    transform: none;
+  }
+
+}
+
+
+  /* --------------------------------------------------
+     SCROLLABLE CONTENT AREA
+  -------------------------------------------------- */
+
+  #fieldStack {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+  }
+
+  /* --------------------------------------------------
+     ACTIONS ALWAYS VISIBLE
+  -------------------------------------------------- */
+
+  .actions {
+    position: sticky;
+    bottom: 0;
+
+    padding-top: 1rem;
+    margin-top: 1rem;
+
+    background: linear-gradient(
+      to top,
+      rgba(12, 8, 30, 0.95),
+      rgba(12, 8, 30, 0)
+    );
+  }
+
+
+/* ======================================================
+   LARGE DESKTOP / WIDESCREEN
+   ====================================================== */
+
+@media (min-width: 1400px) {
+  #questionPanel {
+    right: 6%;
+  }
+}
+
+/* ======================================================
+   UPLOAD OVERLAY
+   ====================================================== */
+
+.upload-card {
+  width: min(420px, 92%);
+  padding: 2rem 1.8rem;
+
+  background: linear-gradient(
+    180deg,
+    rgba(30, 41, 59, 0.45),
+    rgba(15, 23, 42, 0.35)
+  );
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 40px 100px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  text-align: center;
+}
+
+
+.upload-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+
+  display: grid;
+  place-items: center;
+
+  background: rgba(5, 7, 15, 0.18);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+
+  transition: opacity 0.4s ease;
+}
+
+
+.upload-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.upload-card p {
+  font-size: 0.9rem;
+  color: var(--c-text-muted);
+  margin-bottom: 1.6rem;
+}
+
+
+/* ======================================================
+   DROP ZONE
+   ====================================================== */
+
+.upload-dropzone {
+  position: relative;
+  padding: 2rem 1.2rem;
+
+  border-radius: 16px;
+
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(99, 102, 241, 0.12),
+      transparent 65%
+    );
+
+  cursor: pointer;
+  transition: all 0.35s ease;
+}
+
+.upload-dropzone:hover,
+.upload-dropzone.dragover {
+  border-color: var(--c-accent);
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(99, 102, 241, 0.18),
+      transparent 60%
+    );
+}
+
+
+.upload-dropzone span {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.upload-dropzone small {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.upload-dropzone input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-dropzone.dragover {
+  border-color: #7c5cff;
+  background: rgba(124, 92, 255, 0.12);
+}
+
+.upload-hint {
+  margin-top: 1.2rem;
+  font-size: 0.7rem;
+  opacity: 0.55;
+}
+
+.handoff-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* 🔑 LET THE ROOM BREATHE */
+  background: rgba(5, 5, 10, 0.08); /* barely there */
+  backdrop-filter: blur(2px);
+
+  transition: opacity 0.35s ease;
+}
+
+
+.handoff-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.handoff-card {
+  padding: 1rem 1.4rem;
+  border-radius: 14px;
+
+  background: rgba(20, 20, 35, 0.55);
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.45),
+    inset 0 0 0 1px rgba(255,255,255,0.06);
+
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.handoff-card {
+  position: relative;
+  overflow: hidden; /* For the sweep effect */
+  /* ... existing styles ... */
+}
+
+/* The "Scanning" Sweep Effect */
+.handoff-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--measurely-accent) 35%, transparent),
+    transparent
+  );
+
+  animation: sweep 2.5s ease-in-out infinite;
+}
+
+
+@keyframes sweep {
+  0%   { left: -100%; }
+  100% { left: 140%; }
+}
+
+@media (min-width: 900px) {
+  #roomCanvas {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: calc(100vw - 480px); /* leaves room for panel */
+    height: 100vh;
+  }
+}
+
+.field {
+  padding: 0.75rem 1rem;
+
+  background: var(--c-surface);
+
+  box-shadow:
+    inset 0 -1px 0 rgba(255,255,255,0.04);
+
+  border-radius: 0;
+}
+
+
+/* ======================================================
+   SECTION CARD SHAPING (CORRECT)
+   ====================================================== */
+
+/* Section titles ALWAYS start a card */
+.room-section-title {
+  margin: 1.4rem 0 0;
+  padding: 0.9rem 1rem;
+
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+
+  background: var(--c-surface);
+  color: var(--c-text-main);
+
+  border-radius: 14px 14px 0 0;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Fields are flat by default */
+.field {
+  border-radius: 0;
+}
+
+/* LAST field before the NEXT section title closes the card */
+.field:has(+ .room-section-title) {
+  border-radius: 0 0 14px 14px;
+}
+
+/* Last field in the entire stack also closes its card */
+#fieldStack > .field:last-child {
+  border-radius: 0 0 14px 14px;
+}
+
+/* First section should not be pushed down */
+.room-section-title:first-child {
+  margin-top: 0;
+}
+

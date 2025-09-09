@@ -1,14 +1,16 @@
 import json
 import os
 import time
-
+from pathlib import Path
 from . import ap, sta
 from .util import run, try_run
 
 from .util import get_wifi_iface
 
+NETWORK_ENABLED = False
 
-STATE_DIR = "/home/matt/measurely/state"
+SERVICE_ROOT = Path(__file__).resolve().parents[1]
+STATE_DIR = str(SERVICE_ROOT / "state")
 ONBOARDING_FILE = os.path.join(STATE_DIR, "onboarding.json")
 
 
@@ -84,23 +86,5 @@ def status():
     }
 
 def init_network_on_boot():
-    try:
-        with open(ONBOARDING_FILE, "r") as f:
-            data = json.load(f)
-            onboarded = data.get("onboarded") is True
-    except Exception:
-        onboarded = False
-
-    print(f"[BOOT] onboarded={onboarded}")
-
-    if not onboarded:
-        print("[BOOT] Starting AP mode")
-        ap.start()
-        return
-
-    print("[BOOT] Onboarded – ensuring DHCP route")
-    run(f"sudo dhclient -4 {get_wifi_iface()}", check=False)
-
-
-
-
+    print("[BOOT] AP-only mode — starting Measurely access point")
+    ap.start()

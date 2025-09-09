@@ -30,22 +30,22 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 
-def get_next_sweep_dir(measurements_dir: Path) -> Path:
+def get_next_upload_dir(measurements_dir: Path) -> Path:
     """
-    Returns Path to next SweepN directory.
-    Requires Sweep0 to already exist.
+    Returns Path to next uploadsN directory.
     """
     max_n = -1
 
     for p in measurements_dir.iterdir():
-        if p.is_dir() and p.name.startswith("Sweep"):
+        if p.is_dir() and p.name.startswith("uploads"):
             try:
-                n = int(p.name.replace("Sweep", ""))
+                n = int(p.name.replace("uploads", ""))
                 max_n = max(max_n, n)
             except ValueError:
                 pass
 
-    return measurements_dir / f"Sweep{max_n + 1}"
+    return measurements_dir / f"uploads{max_n + 1}"
+
 
 # ------------------------------------------------------------------
 #  SWEEP STATUS WRITER
@@ -86,23 +86,19 @@ def write_session_meta(session_root, fs, args, speaker_key):
 #  utilities
 # ------------------------------------------------------------------
 def session_dir() -> Path:
-    """
-    Create next sequential SweepN directory based on filesystem.
-    Requires Sweep0 to exist.
-    """
     root = Path.home() / "measurely" / "measurements"
     root.mkdir(parents=True, exist_ok=True)
 
     max_n = -1
     for p in root.iterdir():
-        if p.is_dir() and p.name.startswith("Sweep"):
+        if p.is_dir() and p.name.startswith("uploads"):
             try:
-                n = int(p.name.replace("Sweep", ""))
+                n = int(p.name.replace("uploads", ""))
                 max_n = max(max_n, n)
             except ValueError:
                 pass
 
-    session_path = root / f"Sweep{max_n + 1}"
+    session_path = root / f"uploads{max_n + 1}"
     session_path.mkdir(parents=False, exist_ok=False)
 
     return session_path

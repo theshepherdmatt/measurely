@@ -1,0 +1,256 @@
+.notes-modal{
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 1rem;
+}
+
+
+/* Backdrop */
+.notes-modal-backdrop {
+    position: absolute;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+}
+
+/* Modal shell */
+.notes-modal-content {
+    position: relative;
+
+    width: calc(100% - 2rem);
+    max-width: 640px;
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    background: var(--c-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+    animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+/* Entrance animation */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-16px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Header */
+.notes-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 1.25rem 1.5rem;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notes-modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+/* Close button */
+.notes-modal-close {
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: none;
+    border: none;
+    border-radius: 8px;
+
+    font-size: 1.75rem;
+    line-height: 1;
+
+    color: var(--c-text-muted);
+    cursor: pointer;
+
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.notes-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Body */
+.notes-modal-body {
+    padding: 1.5rem;
+}
+
+/* Textarea */
+.notes-textarea {
+    width: 100%;
+    min-height: 120px;
+
+    padding: 1rem;
+
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+
+    color: #fff;
+    font-family: var(--font-main);
+    font-size: 0.95rem;
+    line-height: 1.5;
+
+    resize: vertical;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.notes-textarea:focus {
+    outline: none;
+    background: rgba(0, 0, 0, 0.4);
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.notes-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* Footer */
+.notes-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+
+    padding: 1.25rem 1.5rem;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Notes button (utility action) */
+.notes-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+
+    color: var(--c-text-muted);
+    cursor: pointer;
+}
+
+.notes-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--c-text-main);
+}
+
+/* Controls grid (if used inside modal) */
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+/* ===============================
+   UPLOAD MODAL SPLIT LAYOUT
+   =============================== */
+
+.upload-split {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1.25rem;
+}
+
+/* LEFT — DRAG & DROP (PRIMARY) */
+.upload-dropzone.primary {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  min-height: 180px;
+  padding: 1.75rem 1.5rem;
+
+  border-radius: 16px;
+  border: 1px dashed rgba(255,255,255,0.25);
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255,79,154,0.18),
+      transparent 65%
+    );
+
+  text-align: center;
+  cursor: pointer;
+
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.upload-dropzone.primary:hover,
+.upload-dropzone.primary.dragover {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 1px rgba(255,79,154,0.35);
+}
+
+.upload-dropzone.primary strong {
+  font-size: 1.05rem;
+  margin-bottom: 0.35rem;
+}
+
+.upload-dropzone.primary span {
+  font-size: 0.75rem;
+  opacity: 0.65;
+}
+
+/* Invisible input overlay */
+.upload-dropzone.primary input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* RIGHT — MANUAL */
+.upload-manual {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.upload-manual .manual-copy {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.upload-manual .file-hint {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}

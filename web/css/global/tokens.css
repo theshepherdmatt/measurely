@@ -1,0 +1,47 @@
+:root {
+
+    --font-main: 'Outfit', sans-serif;
+
+    /* Premium Palette */
+    --c-bg: #0f172a; /* Deep Slate */
+    --c-surface: #1e293b; /* Lighter Slate */
+    --c-surface-glass: rgba(30, 41, 59, 0.7);
+
+    --c-text-main: #f8fafc;
+    --c-text-muted: #94a3b8;
+
+    --c-accent: #6366f1; /* Indigo */
+    --c-accent-glow: rgba(99, 102, 241, 0.5);
+
+    /* Status Colors */
+    --c-excellent: #10b981; /* Emerald */
+    --c-good: #f59e0b; /* Amber */
+    --c-okay: #3b82f6; /* Blue */
+    --c-poor: #ef4444; /* Red */
+
+    /* UX/UI Enhancement: Icon glow colors */
+    --icon-glow-primary: rgba(99, 102, 241, 0.4);
+    --icon-glow-accent: rgba(129, 140, 248, 0.5);
+
+    /* ... your existing variables ... */
+    --c-primary: #6366f1; /* Link primary to your indigo accent */
+    --c-primary-rgb: 99, 102, 241;
+
+}
+
+/* Semantic aliases (do not style directly) */
+:root {
+  --c-bg-app: var(--c-bg);
+  --c-panel: var(--c-surface);
+  --c-text-primary: var(--c-text-main);
+}
+
+:root {
+    --measurely-accent: #ff4f9a; /* tweak later */
+}
+
+.measurely-mark {
+    color: var(--measurely-accent);
+    fill: var(--measurely-accent);
+}
+

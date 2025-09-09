@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Measurely — My Room</title>
+
+<link rel="icon" type="image/svg+xml" href="icons/dave.svg">
+<link rel="stylesheet" href="measurely.css">
+<link rel="stylesheet" href="css/onboarding.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header class="header header-onboarding">
+    <div class="header-title">
+        <h1>
+            <img
+                src="icons/largedave.svg"
+                alt=""
+                class="measurely-mark"
+                aria-hidden="true"
+            />
+            My Room
+        </h1>
+        <p>Define the physical space you listen in.</p>
+    </div>
+</header>
+
+
+<!-- FULLSCREEN ROOM -->
+<div id="roomCanvas"></div>
+
+<!-- SLIDING QUESTION PANEL -->
+<div id="questionPanel">
+  <div class="question" id="qText"></div>
+  <div class="sub" id="qSub"></div>
+
+  <div id="fieldStack"></div>
+
+  <div class="actions">
+    <button id="backBtn" class="btn btn-secondary">Back to Dashboard</button>
+    <button id="saveBtn" class="btn btn-primary">Save</button>
+  </div>
+</div>
+
+<script type="module">
+import { initRoom3D } from "./js/room3d.js";
+
+
+async function loadSavedRoom() {
+  try {
+    const res = await fetch("/api/room/latest");
+    if (!res.ok) return;
+
+    const saved = await res.json();
+
+    // 🔑 merge safely, never replace
+    roomState = {
+      ...structuredClone(DEFAULT_ROOM_STATE),
+      ...saved
+    };
+
+    console.log("[Room] Loaded saved room:", roomState);
+  } catch (e) {
+    console.warn("[Room] No saved room, using defaults");
+  }
+}
+
+
+/* ------------------------------------------
+   LOCAL ROOM STATE (single source of truth)
+------------------------------------------ */
+const DEFAULT_ROOM_STATE = {
+  length_m: 4,
+  width_m: 4,
+  height_m: 2.5,
+  speaker_type: "standmount",
+  spk_spacing_m: 2,
+  spk_front_m: 0.3,
+  tweeter_height_m: 0.95,
+  toe_in_deg: 15,
+  listener_front_m: 2.5,
+  subwoofer: false,
+  floor_material: "hard",
+  opt_area_rug: false,
+  opt_sofa: false,
+wall_treatment: "bare",
+  opt_coffee_table: false
+};
+
+let roomState = structuredClone(DEFAULT_ROOM_STATE);
+
+/* ------------------------------------------
+   INIT 3D ROOM
+------------------------------------------ */
+const room3D = initRoom3D({
+  mountId: "roomCanvas",
+  getRoomData: () => roomState,
+  mode: "setup"
+});
+
+/* ------------------------------------------
+   ONBOARDING STEPS
+------------------------------------------ */
+const steps = [
+  /* ------------------------------------------
+     STEP 1 — ROOM
+  ------------------------------------------ */
+  {
+    type: "room",
+    title: "Room dimensions",
+    fields: [
+      {
+        key: "length_m",
+        label: "Room length",
+        sub: "Front wall to back wall",
+        min: 2,
+        max: 10,
+        step: 0.05
+      },
+      {
+        key: "width_m",
+        label: "Room width",
+        sub: "Left wall to right wall",
+        min: 2,
+        max: 10,
+        step: 0.05
+      },
+      {
+        key: "height_m",
+        label: "Ceiling height",
+        sub: "Floor to ceiling",
+        min: 2,
+        max: 3.5,
+        step: 0.01
+      }
+    ]
+  },
+
+/* ------------------------------------------
+   STEP 2 — SPEAKERS
+------------------------------------------ */
+{
+  type: "speakers",
+  title: "Speakers & placement",
+  fields: [
+    {
+      key: "speaker_type",
+      kind: "select",
+      label: "Speaker type",
+      sub: "General speaker format used for this measurement",
+      options: [
+        { value: "standmount",   label: "Standmount / bookshelf" },
+        { value: "floorstander", label: "Floorstanding" },
+        { value: "panel",        label: "Panel / electrostatic" },
+      ]
+    },
+
+    {
+      key: "spk_spacing_m",
+      label: "Speaker spacing",
+      sub: "Distance between left and right speakers",
+      min: 1.2,
+      max: 4,
+      step: 0.05
+    },
+    {
+      key: "spk_front_m",
+      label: "Distance from front wall",
+      sub: "Speaker front to wall behind",
+      min: 0.1,
+      max: 1.5,
+      step: 0.05
+    },
+    {
+      key: "tweeter_height_m",
+      label: "Tweeter height",
+      sub: "From floor",
+      min: 0.6,
+      max: 1.2,
+      step: 0.01
+    },
+    {
+      key: "toe_in_deg",
+      label: "Toe-in angle",
+      sub: "Angle toward listening position",
+      min: 0,
+      max: 30,
+      step: 1
+    },
+    {
+      key: "listener_front_m",
+      label: "Listening distance",
+      sub: "From speakers to your ears",
+      min: 1.5,
+      max: 4.5,
+      step: 0.05
+    },
+    {
+      key: "subwoofer",
+      kind: "toggle",
+      label: "Subwoofer",
+      sub: "Do you have a subwoofer in the system?"
+    }
+  ]
+},
+
+
+  /* ------------------------------------------
+     STEP 3 — MATERIALS & FURNISHINGS
+  ------------------------------------------ */
+  {
+    type: "materials",
+    title: "Materials & furnishings",
+    fields: [
+      {
+        key: "floor_material",
+        kind: "select",
+        label: "Floor type",
+        sub: "Major effect on brightness and reflections",
+        options: [
+          { value: "hard", label: "Hard floor (wood / tile)" },
+          { value: "carpet", label: "Carpet" }
+        ]
+      },
+      {
+        key: "opt_area_rug",
+        kind: "toggle",
+        label: "Rug",
+        sub: "Absorbs early reflections between speakers and listener"
+      },
+      {
+        key: "opt_sofa",
+        kind: "toggle",
+        label: "Sofa",
+        sub: "Adds absorption behind the listening position"
+      },
+      {
+        key: "opt_coffee_table",
+        kind: "toggle",
+        label: "Coffee table",
+        sub: "Strong early reflection risk"
+      },
+      {
+        key: "wall_treatment",
+        kind: "select",
+        label: "Wall treatment",
+        sub: "Purpose-built acoustic treatment or heavy absorption",
+        options: [
+          { value: "bare", label: "Bare walls" },
+          { value: "treated", label: "Treated (panels or heavy curtains)" }
+        ]
+      }
+
+    ]
+  }
+];
+
+/* ------------------------------------------
+   UI STATE
+------------------------------------------ */
+const panel     = document.getElementById("questionPanel");
+const qText     = document.getElementById("qText");
+const qSub      = document.getElementById("qSub");
+const fieldStack = document.getElementById("fieldStack");
+
+/* ------------------------------------------
+   FINISH ONBOARDING
+------------------------------------------ */
+async function finish() {
+  room3D.setMode("locked");
+  panel.classList.remove("active");
+
+  try {
+    await fetch("/api/room/latest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(roomState)
+    });
+  } catch (err) {
+    console.error("Failed to save room", err);
+  }
+
+  // Return to dashboard
+  window.location.href = "/index.html";
+}
+
+await loadSavedRoom();
+/* ------------------------------------------
+   START
+------------------------------------------ */
+function renderAllSections() {
+  fieldStack.innerHTML = "";
+
+  steps.forEach(section => {
+    // section title
+    const sectionHeader = document.createElement("h3");
+    sectionHeader.className = "room-section-title";
+    sectionHeader.textContent = section.title;
+    fieldStack.appendChild(sectionHeader);
+
+    // set room stage once per section
+    if (section.type === "room") room3D.setStage("room");
+    if (section.type === "speakers") room3D.setStage("speakers");
+    if (section.type === "materials") room3D.setStage("furnishings");
+
+    section.fields.forEach(f => {
+      const row = document.createElement("div");
+      row.className = "field";
+
+      const kind = f.kind || "range";
+
+      if (kind === "toggle") {
+        const checked = !!roomState[f.key];
+
+        row.innerHTML = `
+          <div class="field-head">
+            <div>
+              <label>${f.label}</label>
+              <div class="sub">${f.sub || ""}</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" ${checked ? "checked" : ""}>
+              <span class="slider"></span>
+            </label>
+          </div>
+        `;
+
+        row.querySelector("input").addEventListener("change", e => {
+          roomState[f.key] = e.target.checked;
+          room3D.update();
+        });
+
+      } else if (kind === "select") {
+        row.innerHTML = `
+          <label>${f.label}</label>
+          <div class="sub">${f.sub || ""}</div>
+          <select class="select">
+            ${f.options.map(o =>
+              `<option value="${o.value}" ${roomState[f.key] === o.value ? "selected" : ""}>${o.label}</option>`
+            ).join("")}
+          </select>
+        `;
+
+        row.querySelector("select").addEventListener("change", e => {
+          roomState[f.key] = e.target.value;
+          room3D.update();
+        });
+
+      } else {
+        const unit = f.key.includes("deg") ? "°" : "m";
+        const value = roomState[f.key];
+
+        row.innerHTML = `
+          <label>${f.label}</label>
+          <div class="sub">${f.sub || ""}</div>
+          <div class="value"><span class="val">${value}</span> ${unit}</div>
+          <input type="range"
+            min="${f.min}"
+            max="${f.max}"
+            step="${f.step}"
+            value="${value}">
+        `;
+
+        const slider = row.querySelector("input");
+        const valEl = row.querySelector(".val");
+
+        slider.addEventListener("input", () => {
+          roomState[f.key] = parseFloat(slider.value);
+          valEl.textContent = slider.value;
+          room3D.update();
+        });
+      }
+
+      fieldStack.appendChild(row);
+    });
+  });
+
+  panel.classList.add("active");
+}
+
+renderAllSections();
+
+const saveBtn = document.getElementById("saveBtn");
+const backBtn = document.getElementById("backBtn");
+
+if (!saveBtn || !backBtn) {
+  console.error("Buttons not found");
+}
+
+saveBtn.onclick = finish;
+backBtn.onclick = () => {
+  window.location.href = "/index.html";
+};
+
+
+</script>
+
+</body>
+</html>

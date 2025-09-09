@@ -1,0 +1,139 @@
+/* =========================================
+   SWEEP HISTORY (UPLOADS) — CLEAN CARDS
+   ========================================= */
+
+/* Wrapper */
+.uploads-history-wrapper{
+  margin-top: 2.5rem;
+  padding: 2rem 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Grid */
+#uploadsHistoryGrid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+/* Card */
+.uploads-card{
+  padding: 1rem;
+  border-radius: 14px;
+  min-height: 260px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Title / tag */
+.uploads-title{
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.uploads-tag{
+  opacity: 0.85;
+}
+
+.uploads-filename{
+  font-size: 0.7rem;
+  opacity: 0.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-bottom: 0.15rem;
+}
+
+
+/* Time */
+.uploads-time{
+  font-size: 0.7rem;
+  opacity: 0.6;
+  margin-bottom: 0.25rem;
+}
+
+.uploads-score{
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+
+  margin-top: 0.5rem;   /* NEW */
+  margin-bottom: 0.5rem; /* NEW */
+}
+
+
+.uploads-metrics{
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.uploads-metrics > div{
+  display: flex;
+  justify-content: space-between; /* THIS is the key */
+  align-items: baseline;
+}
+
+.uploads-metrics > div span:last-child{
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+
+.uploads-metrics span{
+  opacity: 0.65;
+}
+
+/* Footer */
+.uploads-footer{
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Notes button */
+.notes-btn{
+  align-self: flex-start;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 6px;
+
+  color: var(--c-text-muted);
+  cursor: pointer;
+}
+
+.notes-btn:hover{
+  background: rgba(255,255,255,0.06);
+  color: var(--c-text-main);
+}
+
+/* Notes preview */
+.note-preview{
+  font-size: 0.65rem;
+  opacity: 0.5;
+}
+
+.note-preview.empty{
+  opacity: 0.45;
+}
+
+/* Optional: subtly highlight the latest */
+.uploads-card[data-index="0"]{
+  border-color: rgba(99,102,241,0.35);
+}

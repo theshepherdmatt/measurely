@@ -1,0 +1,18 @@
+/* dashboard/index.css */
+
+/* global foundation */
+@import "../global/tokens.css";
+@import "../global/base.css";
+@import "../global/buttons.css";
+@import "../global/cards.css";
+@import "../global/modals.css";
+@import "../global/animations.css";
+
+/* dashboard-specific */
+@import "./dashboard.layout.css";
+@import "./dashboard.engine.css";
+@import "./dashboard.metrics.css";
+@import "./dashboard.uploads.css";
+@import "./dashboard.nerds.css";
+@import "./dashboard.analysis.css";
+@import "./dashboard.progressbar.css";

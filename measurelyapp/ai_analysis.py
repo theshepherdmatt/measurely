@@ -21,7 +21,8 @@ def load_meta_for_analysis(analysis_path: Path):
 # -------------------------------------------------
 # PATHS
 # -------------------------------------------------
-BASE_DIR = Path("/home/matt/measurely")
+SERVICE_ROOT = Path(__file__).resolve().parents[1]
+BASE_DIR = SERVICE_ROOT
 MEASUREMENTS_DIR = BASE_DIR / "measurements"
 LATEST_DIR = MEASUREMENTS_DIR / "latest"
 

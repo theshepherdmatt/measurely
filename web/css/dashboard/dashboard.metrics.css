@@ -1,0 +1,60 @@
+.score-display {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+}
+
+.score-value {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: normal;
+}
+
+.score-max {
+    font-size: 1.25rem;
+    color: var(--c-text-muted);
+    font-weight: 500;
+    transform: translateY(0.4em);
+    line-height: 1;
+}
+
+.dave-quote {
+    display: block;
+    margin-top: 1rem;
+    font-style: italic;
+    font-size: 1rem;
+    line-height: 1.55;
+    color: var(--c-text-main);
+    position: relative;
+    padding-left: 0.85rem;
+}
+
+/* Instrument Tracks */
+.perf-track {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    margin: 1.25rem 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.perf-fill {
+    height: 100%;
+    width: 0%; /* Dynamic */
+    background: var(--c-accent);
+    box-shadow: 0 0 12px var(--c-accent-glow);
+    transition: width 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Status Colors */
+.text-excellent { color: var(--c-excellent) !important; }
+.text-good { color: var(--c-good) !important; }
+.text-okay { color: var(--c-okay) !important; }
+.text-poor { color: var(--c-poor) !important; }
+
+.bg-excellent { background-color: var(--c-excellent) !important; }
+.bg-good { background-color: var(--c-good) !important; }
+.bg-okay { background-color: var(--c-okay) !important; }
+.bg-poor { background-color: var(--c-poor) !important; }

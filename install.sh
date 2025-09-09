@@ -43,40 +43,6 @@ apt-get install -y \
     git \
     nodejs npm chromium
 
-# ------------------------------------------------------------
-# Allow Measurely to run DHCP client without full root
-# ------------------------------------------------------------
-msg "Installing minimal sudo rule for DHCP…"
-
-cat >/etc/sudoers.d/measurely-network <<EOF
-$APP_USER ALL=(root) NOPASSWD: /sbin/dhclient, /usr/sbin/dhclient
-EOF
-
-chmod 440 /etc/sudoers.d/measurely-network
-
-msg "✔ DHCP sudo rule installed."
-
-
-# ------------------------------------------------------------
-# 1.5 Detect Wi-Fi interface (wlan0 / wlan1 / etc)
-# ------------------------------------------------------------
-msg "Detecting Wi-Fi interface…"
-
-WIFI_IFACE="$(iw dev | awk '$1=="Interface"{print $2; exit}')"
-
-if [[ -z "$WIFI_IFACE" ]]; then
-    die "No Wi-Fi interface detected. Is Wi-Fi hardware present?"
-fi
-
-msg "✔ Detected Wi-Fi interface: $WIFI_IFACE"
-
-# Persist for runtime use
-CONF_FILE="/etc/measurely.conf"
-echo "WIFI_IFACE=$WIFI_IFACE" > "$CONF_FILE"
-chmod 644 "$CONF_FILE"
-
-msg "✔ Saved Wi-Fi interface to $CONF_FILE"
-
 
 # ------------------------------------------------------------
 # 2. Create venv
@@ -102,10 +68,16 @@ sudo -u "$APP_USER" "$VENV_DIR/bin/pip" install --quiet -r "$REPO_DIR/requiremen
 # ------------------------------------------------------------
 msg "Installing Node dependencies (report export)…"
 
-cd "$REPO_DIR/web/js"
+WEB_JS_DIR="$REPO_DIR/web/js"
+[ -d "$WEB_JS_DIR" ] || die "Missing web/js directory"
+cd "$WEB_JS_DIR"
 
-sudo -u "$APP_USER" npm init -y >/dev/null
+if [ ! -f package.json ]; then
+  sudo -u "$APP_USER" npm init -y >/dev/null
+fi
+
 sudo -u "$APP_USER" npm install puppeteer --save
+
 
 # ------------------------------------------------------------
 # 4. Install Measurely package (editable)
@@ -121,8 +93,7 @@ msg "Writing systemd unit…"
 cat >/etc/systemd/system/measurely.service <<EOF
 [Unit]
 Description=Measurely Flask Web Server
-After=network-online.target
-Wants=network-online.target
+After=network.target
 
 [Service]
 Type=simple
@@ -340,59 +311,7 @@ chmod -R u+rwX "$REPO_DIR"
 
 msg "✔ Permissions applied."
 
-# ------------------------------------------------------------
-# Optional legacy AP setup (deprecated)
-# ------------------------------------------------------------
-AP_SCRIPT="$REPO_DIR/measurely-ap.sh"
 
-msg "Checking for legacy AP setup…"
-
-if [[ -f "$AP_SCRIPT" ]]; then
-    warn "Legacy AP script detected — this path is deprecated."
-    warn "Flask-based onboarding is preferred."
-
-    chmod +x "$AP_SCRIPT"
-    install -m 755 "$AP_SCRIPT" /usr/local/sbin/measurely-ap.sh
-
-    cat >/etc/systemd/system/measurely-ap.service <<EOF
-[Unit]
-Description=Legacy Measurely AP setup (deprecated)
-After=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/sbin/measurely-ap.sh
-ExecStartPost=/bin/systemctl disable measurely-ap.service
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    systemctl enable measurely-ap.service
-else
-    msg "No legacy AP script present — using web-based onboarding."
-fi
-
-# ------------------------------------------------------------
-# 7.9 Seed onboarding state (prevent AP mode)
-# ------------------------------------------------------------
-msg "Seeding onboarding state…"
-
-STATE_DIR="$REPO_DIR/state"
-STATE_FILE="$STATE_DIR/onboarding.json"
-
-mkdir -p "$STATE_DIR"
-
-if [[ ! -f "$STATE_FILE" ]]; then
-    echo '{"onboarded": false}' > "$STATE_FILE"
-    chown "$APP_USER:$APP_USER" "$STATE_FILE"
-    chmod 644 "$STATE_FILE"
-    msg "✔ onboarding.json created (onboarded=true)"
-else
-    msg "✔ onboarding.json already exists"
-fi
-
-# ------------------------------------------------------------
 # 8. Start service
 # ------------------------------------------------------------
 msg "Reloading systemd and starting Measurely…"

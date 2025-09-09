@@ -6,363 +6,282 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Measurely – Dashboard</title>
     <link rel="icon" type="image/svg+xml" href="icons/dave.svg">
-    <link rel="stylesheet" href="measurely.css">
+    <link rel="stylesheet" href="css/dashboard/index.css">
 
     <script src="js/plotly.min.js"></script>
+
+    <script src="js/vendor/three/three.min.js"></script>
+    <script src="js/vendor/three/OrbitControls.js"></script>
+
+    <script> window.MEASURELY_MODE = "local"; // or "web" </script>
+
 </head>
 
 <body>
 
-    <div class="app-layout">
+    <div class="page">
 
         <!-- MOBILE OVERLAY -->
         <div id="sidebar-overlay" aria-hidden="true"
             style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; backdrop-filter: blur(4px);">
         </div>
 
-        <!-- SIDEBAR -->
-        <aside id="sidebar" class="sidebar" aria-label="Primary Navigation">
-            <div class="sidebar-logo">
-                <img src="icons/mainlogo.svg" alt="" aria-hidden="true" style="height: 46px;">
-                <span></span>
-            </div>
-
-            <nav aria-label="Main">
-                <a href="index.html" class="nav-item active">
-                    <img src="icons/home.svg" alt="" aria-hidden="true">
-                    Home
-                </a>
-                <a href="room-setup.html" class="nav-item">
-                    <img src="icons/dashboard.svg" alt="" aria-hidden="true">
-                    Room Setup
-                </a>
-                <a href="room-character.html" class="nav-item">
-                    <img src="icons/curtains.svg" alt="" aria-hidden="true">
-                    Room Behaviour
-                </a>
-            </nav>
-
-            <div style="margin-top: auto;" aria-hidden="true">
-                <div class="glass-panel"
-                    style="padding: 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;">
-
-                    <!-- SYSTEM READY -->
-                    <div
-                        style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--c-text-muted);">
-                        <div id="systemReadyDot" class="status-indicator"
-                            style="width: 8px; height: 8px; border-radius: 50%; background: var(--c-excellent);">
-                        </div>
-                        <span id="systemReadyText">System Ready</span>
-                    </div>
-
-                    <!-- DAC STATUS -->
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <div id="dacStatusDot" class="status-indicator"
-                            style="width: 10px; height: 10px; border-radius: 50%;">
-                        </div>
-                        <span id="dacStatusText" style="font-size: 0.8rem; color: var(--c-text-muted);">--</span>
-                    </div>
-
-                    <!-- MIC STATUS -->
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <div id="usbStatusDot" class="status-indicator"
-                            style="width: 10px; height: 10px; border-radius: 50%;">
-                        </div>
-                        <span id="usbStatusText" style="font-size: 0.8rem; color: var(--c-text-muted);">--</span>
-                    </div>
-
-                    <!-- LAST UPDATED -->
-                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.3); margin-top: 0.5rem;">
-                        Last updated: <span id="lastUpdated">Now</span>
-                    </div>
-                </div>
-            </div>
-
-        </aside>
-
-        <div id="sidebar-toggle"
-            aria-label="Toggle sidebar"
-            title="Toggle sidebar">
-        ‹
-        </div>
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
 
             <!-- HEADER -->
-            <header class="header animate-enter">
-
-                <div class="header-title"
-                    style="display: flex; align-items: center; gap: 1rem;">
-
-
-                    <!-- LEFT: Title -->
-                    <div>
-                        <h1>Your Room Results</h1>
-                        <p><p>What your room is doing to the sound, measured, not guessed.</p>
-.</p>
-                    </div>
-
-                    <!-- RIGHT: Hamburger (forced to far right) -->
-                    <button id="mobile-menu-btn" 
-                            class="btn btn-secondary" 
-                            style="padding: 0.5rem; display: none; margin-left: auto;"
-                            aria-label="Toggle navigation" aria-expanded="false">
-                        <img src="icons/bars.svg" style="width: 24px;" alt="">
-                    </button>
-
+            <header class="header">
+                <div class="header-title">
+                    <h1>
+                        <img
+                            src="icons/largedave.svg"
+                            alt=""
+                            class="measurely-mark"
+                            aria-hidden="true"
+                        />
+                        Dashboard
+                    </h1>
+                    <p>What your room is doing to the sound, measured, not guessed.</p>
                 </div>
-
-                <!-- Buttons Row -->
-                <div class="header-actions">
-
-                    <button id="runSweepBtn" class="btn btn-primary">
-                        <img src="icons/sweep.svg" alt="">
-                        Run Sweep
-                    </button>
-
-                    <button id="refreshDashboardBtn" class="btn btn-utility">
-                        <img src="icons/refresh.svg" alt="">
-                        Refresh
-                    </button>
-
-                    <!-- Cancel Sweep (hidden until active) -->
-                    <button id="cancelSweepBtn" class="btn btn-secondary hidden">
-                        <img src="icons/cancel.svg" alt="">
-                        Cancel Sweep
-                    </button>
-
-                </div>
-
-
-
             </header>
 
             <!-- TOP ROW: SCORE & ACTIONS -->
             <div class="grid-3 animate-enter delay-1">
 
-                <!-- OVERALL SCORE CARD -->
-                <div class="card glass-panel"
-                    style="grid-column: span 2; padding: 2rem; border-radius: 18px;"
-                    role="region"
-                    aria-labelledby="overallRoomScoreLabel">
 
-                    <!-- Title -->
-                    <h2 id="overallRoomScoreLabel"
-                        class="card-title"
-                        style="display:flex; align-items:center; gap:0.5rem;
-                            margin-bottom:1.25rem; font-size:0.95rem; font-weight:500;
-                            text-transform:uppercase; letter-spacing:0.5px; opacity:0.85;">
-                        <img src="icons/chart-line.svg" style="width:16px; opacity:0.7;" alt="" aria-hidden="true">
-                        Overall Room Score (latest)
-                    </h2>
+            <!-- MEASUREMENT ENGINE -->
+            <div class="card glass-panel engine-bay engine-compact">
 
-                    <!-- SCORE -->
-                    <div class="score-display"
-                        style="display:flex; align-items:flex-end; margin-bottom:1.5rem;">
-                        <span id="overallScore"
-                            class="score-value text-gradient-accent"
-                            style="font-size:5.5rem; font-weight:700;"
-                            data-color-target="overall">--</span>
-                        <span class="score-max"
-                            style="opacity:0.5; font-size:1rem; margin-left:0.35rem; transform: translateY(-10px);">
-                            /10
-                        </span>
+                <!-- HEADER -->
+                <div class="engine-header">
+                    <div class="engine-meta">
+                        <h3 class="card-title">Measurement Engine</h3>
+                        <div class="engine-subtitle">
+                            Status: <span class="engine-state">Ready</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRIMARY ACTION -->
+                <div class="engine-actions">
+                    <button id="uploadWavBtn" class="btn btn-primary engine-action is-cta">
+                        <img src="icons/arrow-down.svg" alt="">
+                        <div class="engine-action-text">
+                            <strong>Quick upload</strong>
+                            <span>Analyse a sweep now</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- DIVIDER -->
+                <div class="engine-divider"></div>
+
+                <!-- CONFIG -->
+                <div class="engine-actions">
+                    <button id="editRoomBtn"
+                            class="btn btn-secondary engine-action"
+                            onclick="location.href='myroom.html'">
+                        <img src="icons/home.svg" alt="">
+                        <div class="engine-action-text">
+                            <strong>Edit My Room</strong>
+                            <span>Dimensions, layout & furnishings</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- DIVIDER -->
+                <div class="engine-divider"></div>
+
+                <!-- DEVICE STATUS (MOVED FROM SIDEBAR) -->
+                <div class="engine-status">
+
+                    <div class="engine-status-row">
+                        <div id="systemReadyDot"
+                            class="status-indicator"
+                            style="width:8px;height:8px;border-radius:50%;background:var(--c-excellent);">
+                        </div>
+                        <span id="systemReadyText">System Ready</span>
                     </div>
 
-                    <!-- SUMMARY -->
-                    <p id="overallDavePhrase" class="dave-quote">
-                        “Run a sweep to get started.”
-                    </p>
+                    <div class="engine-status-row">
+                        <div id="dacStatusDot"
+                            class="status-indicator"
+                            style="width:10px;height:10px;border-radius:50%;">
+                        </div>
+                        <span id="dacStatusText">—</span>
+                    </div>
 
-                    <!-- FOOTER -->
-                    <div style="
-                        margin-top:1.75rem;
-                        padding-top:1rem;
-                        border-top:1px solid rgba(255,255,255,0.06);
-                        display:flex;
-                        justify-content:space-between;
-                        align-items:center;
-                        gap:1rem;
-                        font-size:0.85rem;
-                        color:var(--c-text-muted);
-                    ">
-                        <span style="opacity:0.7;">Based on 6 key acoustic metrics</span>
+                    <div class="engine-status-row">
+                        <div id="usbStatusDot"
+                            class="status-indicator"
+                            style="width:10px;height:10px;border-radius:50%;">
+                        </div>
+                        <span id="usbStatusText">—</span>
+                    </div>
 
-                        <button id="downloadReportBtn"
-                                type="button"
-                                class="btn btn-secondary"
-                                aria-label="Download report">
-                            <img src="icons/arrow-down.svg" style="width:14px;" alt="">
-                            Download report
-                        </button>
+                    <div class="engine-status-footer">
+                        Last updated: <span id="lastUpdated">Now</span>
                     </div>
 
                 </div>
 
+                <!-- DIVIDER -->
+                <div class="engine-divider"></div>
 
-                <!-- QUICK ACTIONS / INFO -->
-                <!-- LIVE LOGS CARD -->
-                <div class="card glass-panel" aria-hidden="true">
+                <!-- FOOTER -->
+                <div class="engine-footer">
 
-                    <!-- LIVE LOGS HEADER -->
-                    <h3 class="card-subtitle">Live Logs</h3>
+                    <div class="engine-footer-actions">
+                        <button id="viewHistoryBtn" class="btn btn-utility">
+                            View upload history
+                        </button>
 
-                    <!-- LOG AREA -->
-                    <div id="sessionLog"
-                        style="display:flex; flex-direction:column; gap:0.5rem;
-                            font-size:0.85rem; color:var(--c-text-muted);
-                            min-height:40px; border-top:1px solid rgba(255,255,255,0.05);
-                            padding-top:0.75rem;">
-                        <div style="opacity:0.6;">Logs will appear here once you run a sweep!
-                        </div>
+                        <button id="downloadReportBtn" class="btn btn-utility">
+                            Download report
+                        </button>
                     </div>
-
                 </div>
 
             </div>
 
-            <!-- METRICS GRID -->
+
+                    <div class="card glass-panel overall-score-card"
+                        role="region"
+                        aria-labelledby="overallRoomScoreLabel">
+
+                        <h2 id="overallRoomScoreLabel" class="card-title overall-score-header">
+                            <img src="icons/chart-line.svg" class="card-icon" alt="" aria-hidden="true">
+                            Overall Room Score (latest)
+                        </h2>
+
+
+                        <div class="overall-score-value">
+                        <span id="overallScore" class="overall-score-number">4.8</span>
+                            <span class="overall-score-max">/10</span>
+                        </div>
+                        <div class="overall-score-bar">
+                        <div class="overall-score-fill" style="width: 48%;"></div>
+                        </div>
+                        <p id="overallDavePhrase" class="dave-quote">
+                            “Upload a .Wav to get started.”
+                        </p>
+
+                        <div class="overall-score-footer">
+
+                            <div class="band-legend">
+                                Tonal balance by frequency band
+                            </div>
+
+                            <div class="band-levels">
+                                <div class="band-pill"><span>Bass</span><span id="bandBass">— dB</span></div>
+                                <div class="band-pill"><span>Mid</span><span id="bandMid">— dB</span></div>
+                                <div class="band-pill"><span>Treble</span><span id="bandTreble">— dB</span></div>
+                                <div class="band-pill"><span>Air</span><span id="bandAir">— dB</span></div>
+                            </div>
+
+                        </div>
+                    </div>
+
+            </div>
+
             <div class="grid-3 animate-enter delay-2">
 
-                <!-- Peaks & Dips -->
-                <div class="card glass-panel" role="region" aria-labelledby="peaksDipsLabel" aria-label="">
-                    <div class="card-header">
-                        <h2 class="card-title">Peaks & Dips</h2>
-                        <img src="icons/mountain.svg" style="width: 20px;" data-color-icon="peaksDips" alt="">
+                <div class="card glass-panel" role="region">
+                    <div class="card-header" style="margin-bottom: 0.75rem;">
+                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Peaks & Dips</h2>
+                        <img src="icons/mountain.svg" class="card-icon" alt="">
                     </div>
-                    <div class="score-display" style="margin-bottom: 1rem;">
-                        <span id="peaksDipsScore" class="score-value" style="font-size: 2.5rem;"
-                            data-color-target="peaksDips">--</span>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span id="peaksDipsScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
+                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">RTX Index</span>
                     </div>
-                    <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">Smoothness of bass
-                        and lower
-                        mids.</p>
-                    <span id="peaksDipsDave" class="dave-quote">--</span>
-                    <!-- Hidden spans for JS compatibility -->
-                    <span id="peaksDipsStatus" class="hidden"></span>
-                    <span id="peaksDipsStatusText" class="hidden"></span>
-                    <span id="peaksDipsRaw" class="hidden"></span>
-                    <span id="peaksDipsSummary" class="hidden"></span>
+                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
+                        <div id="peaksDipsTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Smoothing of bass and lower mids.</p>
+                    <span id="peaksDipsDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
                 </div>
 
-                <!-- Reflections -->
-                <div class="card glass-panel" 
-                     role="region" 
-                     aria-labelledby="reflectionsLabel" 
-                     aria-label="">
-                    <div class="card-header">
-                        <h2 class="card-title">Reflections</h2>
-                        <img src="icons/square-caret-left.svg" style="width: 20px;" data-color-icon="reflections"
-                            alt="">
+                <div class="card glass-panel" role="region">
+                    <div class="card-header" style="margin-bottom: 0.75rem;">
+                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Reflections</h2>
+                        <img src="icons/square-caret-left.svg" class="card-icon" alt="">
                     </div>
-                    <div class="score-display" style="margin-bottom: 1rem;">
-                        <span id="reflectionsScore" class="score-value" style="font-size: 2.5rem;"
-                            data-color-target="reflections">--</span>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span id="reflectionsScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
+                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">ms Delay</span>
                     </div>
-                    <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">Early wall/floor
-                        bounce
-                        coloring sound.</p>
-                    <span id="reflectionsDave" class="dave-quote">--</span>
-                    <span id="reflectionsStatus" class="hidden"></span>
-                    <span id="reflectionsStatusText" class="hidden"></span>
-                    <span id="reflectionsRaw" class="hidden"></span>
+                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
+                        <div id="reflectionsTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Early bounce interference patterns.</p>
+                    <span id="reflectionsDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
                 </div>
 
-                <!-- Bandwidth -->
-                <div class="card glass-panel"
-                     role="region"
-                     aria-labelledby="bandwidthLabel"
-                     aria-label="">
-                    <div class="card-header">
-                        <h2 class="card-title">Bandwidth</h2>
-                        <img src="icons/signal.svg" style="width: 20px;" data-color-icon="bandwidth" alt="">
+                <div class="card glass-panel" role="region">
+                    <div class="card-header" style="margin-bottom: 0.75rem;">
+                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Bandwidth</h2>
+                        <img src="icons/signal.svg" class="card-icon" alt="">
                     </div>
-                    <div class="score-display" style="margin-bottom: 1rem;">
-                        <span id="bandwidthScore" class="score-value" style="font-size: 2.5rem;"
-                            data-color-target="bandwidth">--</span>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span id="bandwidthScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
+                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">Hz Range</span>
                     </div>
-                    <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">How wide your
-                        system plays
-                        (Bass to Air).</p>
-                    <span id="bandwidthDave" class="dave-quote">--</span>
-                    <span id="bandwidthStatus" class="hidden"></span>
-                    <span id="bandwidthStatusText" class="hidden"></span>
-                    <span id="bandwidthRaw" class="hidden"></span>
-                    <span id="bandwidthSummary" class="hidden"></span>
+                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
+                        <div id="bandwidthTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Frequency extension from Bass to Air.</p>
+                    <span id="bandwidthDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
                 </div>
 
-                <!-- Balance -->
-                <div class="card glass-panel"
-                     role="region"
-                     aria-labelledby="balanceLabel"
-                     aria-label="">
-                    <div class="card-header">
-                        <h2 class="card-title">Balance</h2>
-                        <img src="icons/balance-scale.svg" style="width: 20px;" data-color-icon="balance" alt="">
+                <div class="card glass-panel" role="region">
+                    <div class="card-header" style="margin-bottom: 0.75rem;">
+                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Balance</h2>
+                        <img src="icons/balance-scale.svg" class="card-icon" alt="">
                     </div>
-                    <div class="score-display" style="margin-bottom: 1rem;">
-                        <span id="balanceScore" class="score-value" style="font-size: 2.5rem;"
-                            data-color-target="balance">--</span>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span id="balanceScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
+                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">Tilt Slope</span>
                     </div>
-                    <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">Tonal tilt (Warm vs
-                        Bright).</p>
-                    <span id="balanceDave" class="dave-quote">--</span>
-                    <span id="balanceStatus" class="hidden"></span>
-                    <span id="balanceStatusText" class="hidden"></span>
-                    <span id="balanceRaw" class="hidden"></span>
+                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
+                        <div id="balanceTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Tonal tilt and Warm vs Bright bias.</p>
+                    <span id="balanceDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
                 </div>
 
-                <!-- Smoothness -->
-                <div class="card glass-panel"
-                     role="region"
-                     aria-labelledby="smoothnessLabel"
-                     aria-label="">
-                    <div class="card-header">
-                        <h2 class="card-title">Smoothness</h2>
-                        <img src="icons/wave-square.svg" style="width: 20px;" data-color-icon="smoothness" alt="">
+                <div class="card glass-panel" role="region">
+                    <div class="card-header" style="margin-bottom: 0.75rem;">
+                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Smoothness</h2>
+                        <img src="icons/wave-square.svg" class="card-icon" alt="">
                     </div>
-                    <div class="score-display" style="margin-bottom: 1rem;">
-                        <span id="smoothnessScore" class="score-value" style="font-size: 2.5rem;"
-                            data-color-target="smoothness">--</span>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span id="smoothnessScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
+                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">± dB Dev</span>
                     </div>
-                    <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">Fine-grain
-                        consistency across
-                        spectrum.</p>
-                    <span id="smoothnessDave" class="dave-quote">--</span>
-                    <span id="smoothnessStatus" class="hidden"></span>
-                    <span id="smoothnessStatusText" class="hidden"></span>
-                    <span id="smoothnessRaw" class="hidden"></span>
+                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
+                        <div id="smoothnessTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Fine-grain spectrum consistency.</p>
+                    <span id="smoothnessDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
                 </div>
 
-                <!-- Clarity -->
-                <div class="card glass-panel"
-                    role="region"
-                    aria-labelledby="clarityLabel"
-                    aria-label="">
-                    <div class="card-header">
-                        <h2 class="card-title" style="margin:0;">Clarity</h2>
-                        <img src="icons/clock.svg" style="width: 20px;"
-                            data-color-icon="clarity" alt="">
+                <div class="card glass-panel" role="region">
+                    <div class="card-header" style="margin-bottom: 0.75rem;">
+                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Clarity</h2>
+                        <img src="icons/clock.svg" class="card-icon" alt="">
                     </div>
-
-                    <div class="score-display" style="margin-bottom: 1rem;">
-                        <span id="clarityScore"
-                            class="score-value"
-                            style="font-size: 2.5rem;"
-                            data-color-target="clarity">--</span>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span id="clarityScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
+                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">C50 Value</span>
                     </div>
-
-                    <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">
-                        How clearly the direct sound reaches you before reflections interfere.
-                    </p>
-                    <span id="clarityDave" class="dave-quote">--</span>
-                    <!-- Hidden spans for JS compatibility -->
-                    <span id="clarityStatus" class="hidden"></span>
-                    <span id="clarityStatusText" class="hidden"></span>
-                    <span id="clarityRaw" class="hidden"></span>
+                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
+                        <div id="clarityTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Direct sound versus reverberant decay.</p>
+                    <span id="clarityDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
                 </div>
-
 
             </div>
 
@@ -380,23 +299,15 @@
                     Deep dive analysis and raw curves.
                 </p>
 
-                <!-- SWEEP NAV (DO NOT MOVE / DO NOT RENAME) -->
+                <!-- uploads NAV (DO NOT MOVE / DO NOT RENAME) -->
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
 
-                    <div id="sweepNav" class="sweep-nav">
-                        <button class="btn btn-utility session-btn session-active" data-sweep="0">Latest</button>
-                        <button class="btn btn-utility session-btn" data-sweep="1">Previous</button>
-                        <button class="btn btn-utility session-btn" data-sweep="2">Earlier</button>
-                        <button class="btn btn-utility session-btn" data-sweep="3">Oldest</button>
+                    <div id="uploadsNav" class="uploads-nav">
+                        <button class="btn btn-utility session-btn session-active" data-uploads="0">Latest</button>
+                        <button class="btn btn-utility session-btn" data-uploads="1">Previous</button>
+                        <button class="btn btn-utility session-btn" data-uploads="2">Earlier</button>
+                        <button class="btn btn-utility session-btn" data-uploads="3">Oldest</button>
                     </div>
-
-                    <div class="band-levels">
-                        <div class="band-pill"><span>Bass</span><span id="bandBass">— dB</span></div>
-                        <div class="band-pill"><span>Mid</span><span id="bandMid">— dB</span></div>
-                        <div class="band-pill"><span>Treble</span><span id="bandTreble">— dB</span></div>
-                        <div class="band-pill"><span>Air</span><span id="bandAir">— dB</span></div>
-                    </div>
-
                 </div>
 
                 <!-- CHART -->
@@ -414,8 +325,8 @@
                     aria-hidden="true"></p>
                 </div>
 
-                <!-- SWEEP HISTORY -->
-                <section class="sweep-history-wrapper">
+                <!-- uploads HISTORY -->
+                <section class="uploads-history-wrapper">
 
                     <!-- SECTION HEADER -->
                     <h2 class="card-title" style="margin-bottom:0.75rem;">
@@ -423,19 +334,22 @@
                     </h2>
 
                     <p class="card-description">
-                        Compare your last four sweeps at a glance
+                        Compare your last four sweep at a glance
                     </p>
 
-                    <!-- SWEEP GRID -->
-                    <div id="sweepHistoryGrid">
+                    <!-- uploads GRID -->
+                    <div id="uploadsHistoryGrid">
 
-                        <!-- SWEEP 1 -->
-                        <div class="sweep-card sweep-item" data-index="0">
-                            <h3 class="sweep-title"><span class="sweep-tag">Latest</span></h3>
-                            <div class="sweep-time">—</div>
-                            <div class="sweep-score">--</div>
+                        <!-- uploads 1 -->
+                        <div class="uploads-card uploads-item" data-index="0">
+                            <h3 class="uploads-title"><span class="uploads-tag">Latest</span></h3>
+                            <div class="uploads-filename" title="livingroom_rug_test.wav">
+                            livingroom_rug_te…
+                            </div>
+                            <div class="uploads-time">—</div>
+                            <div class="uploads-score">--</div>
 
-                            <div class="sweep-metrics">
+                            <div class="uploads-metrics">
                                 <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
                                 <div><span>Reflections</span><span class="m-reflections">--</span></div>
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
@@ -444,27 +358,24 @@
                                 <div><span>Clarity</span><span class="m-clarity">--</span></div>
                             </div>
 
-
-                            <!-- AI COMPARISON -->
-                            <div class="sweep-ai-summary hidden">
-                                <p class="ai-text" data-ai-compare></p>
-                            </div>
-
-                            <div class="sweep-footer">
-                                <button class="notes-btn" data-sweep-note>Notes</button>
+                            <div class="uploads-footer">
+                                <button class="notes-btn" data-uploads-note>Notes</button>
                                 <div class="note-preview empty" data-note-preview>
-                                    <span class="note-placeholder">Add notes for this sweep</span>
+                                    <span class="note-placeholder">Add notes for this uploads</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- SWEEP 2 -->
-                        <div class="sweep-card sweep-item" data-index="1">
-                            <h3 class="sweep-title"><span class="sweep-tag">Previous</span></h3>
-                            <div class="sweep-time">—</div>
-                            <div class="sweep-score">--</div>
+                        <!-- uploads 2 -->
+                        <div class="uploads-card uploads-item" data-index="1">
+                            <h3 class="uploads-title"><span class="uploads-tag">Previous</span></h3>
+                            <div class="uploads-filename" title="livingroom_rug_test.wav">
+                            livingroom_no_rug_te…
+                            </div>
+                            <div class="uploads-time">—</div>
+                            <div class="uploads-score">--</div>
 
-                            <div class="sweep-metrics">
+                            <div class="uploads-metrics">
                                 <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
                                 <div><span>Reflections</span><span class="m-reflections">--</span></div>
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
@@ -473,27 +384,24 @@
                                 <div><span>Clarity</span><span class="m-clarity">--</span></div>
                             </div>
 
-                            <!-- AI COMPARISON -->
-                            <div class="sweep-ai-summary hidden">
-                                <span class="ai-label">Compared to previous</span>
-                                <p class="ai-text" data-ai-compare></p>
-                            </div>
-
-                            <div class="sweep-footer">
-                                <button class="notes-btn" data-sweep-note>Notes</button>
+                            <div class="uploads-footer">
+                                <button class="notes-btn" data-uploads-note>Notes</button>
                                 <div class="note-preview empty" data-note-preview>
-                                    <span class="note-placeholder">Add notes for this sweep</span>
+                                    <span class="note-placeholder">Add notes for this uploads</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- SWEEP 3 -->
-                        <div class="sweep-card sweep-item" data-index="2">
-                            <h3 class="sweep-title"><span class="sweep-tag">Earlier</span></h3>
-                            <div class="sweep-time">—</div>
-                            <div class="sweep-score">--</div>
+                        <!-- uploads 3 -->
+                        <div class="uploads-card uploads-item" data-index="2">
+                            <h3 class="uploads-title"><span class="uploads-tag">Earlier</span></h3>
+                            <div class="uploads-filename" title="livingroom_rug_test.wav">
+                            livingroom_with_sub_te…
+                            </div>
+                            <div class="uploads-time">—</div>
+                            <div class="uploads-score">--</div>
 
-                            <div class="sweep-metrics">
+                            <div class="uploads-metrics">
                                 <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
                                 <div><span>Reflections</span><span class="m-reflections">--</span></div>
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
@@ -502,27 +410,24 @@
                                 <div><span>Clarity</span><span class="m-clarity">--</span></div>
                             </div>
 
-                            <!-- AI COMPARISON -->
-                            <div class="sweep-ai-summary hidden">
-                                <span class="ai-label">Compared to previous</span>
-                                <p class="ai-text" data-ai-compare></p>
-                            </div>
-
-                            <div class="sweep-footer">
-                                <button class="notes-btn" data-sweep-note>Notes</button>
+                            <div class="uploads-footer">
+                                <button class="notes-btn" data-uploads-note>Notes</button>
                                 <div class="note-preview empty" data-note-preview>
-                                    <span class="note-placeholder">Add notes for this sweep</span>
+                                    <span class="note-placeholder">Add notes for this uploads</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- SWEEP 4 -->
-                        <div class="sweep-card sweep-item" data-index="3">
-                            <h3 class="sweep-title"><span class="sweep-tag">Oldest</span></h3>
-                            <div class="sweep-time">—</div>
-                            <div class="sweep-score">--</div>
+                        <!-- uploads 4 -->
+                        <div class="uploads-card uploads-item" data-index="3">
+                            <h3 class="uploads-title"><span class="uploads-tag">Oldest</span></h3>
+                            <div class="uploads-filename" title="livingroom_rug_test.wav">
+                            livingroom_no_coffee_te…
+                            </div>
+                            <div class="uploads-time">—</div>
+                            <div class="uploads-score">--</div>
 
-                            <div class="sweep-metrics">
+                            <div class="uploads-metrics">
                                 <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
                                 <div><span>Reflections</span><span class="m-reflections">--</span></div>
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
@@ -531,16 +436,10 @@
                                 <div><span>Clarity</span><span class="m-clarity">--</span></div>
                             </div>
 
-                            <!-- AI COMPARISON (will remain hidden – no previous sweep) -->
-                            <div class="sweep-ai-summary hidden">
-                                <span class="ai-label">Compared to previous</span>
-                                <p class="ai-text" data-ai-compare></p>
-                            </div>
-
-                            <div class="sweep-footer">
-                                <button class="notes-btn" data-sweep-note>Notes</button>
+                            <div class="uploads-footer">
+                                <button class="notes-btn" data-uploads-note>Notes</button>
                                 <div class="note-preview empty" data-note-preview>
-                                    <span class="note-placeholder">Add notes for this sweep</span>
+                                    <span class="note-placeholder">Add notes for this uploads</span>
                                 </div>
                             </div>
                         </div>
@@ -549,6 +448,206 @@
                     </section>
 
             </div>
+
+            <!-- ANALYSIS: ROOM EXPLANATION -->
+            <section class="analysis-section animate-enter delay-2">
+
+            <header class="section-header">
+                <h2 class="section-title">
+                <img src="icons/chart-line.svg" class="section-icon" alt="" aria-hidden="true">
+                Room Analysis
+                </h2>
+                <p class="section-subtitle">
+                How your room geometry and layout produced the scores above.
+                </p>
+            </header>
+
+            <div class="analysis-room-layout">
+
+                <!-- WORLD CARD -->
+                <div class="card glass-panel room-diagram-card"
+                    role="region"
+                    aria-label="3D room visualisation and analysis">
+
+                <!-- 3D CANVAS -->
+                <div id="dashboardRoomCanvas" class="room-diagram-canvas"></div>
+
+                <!-- FLOATING EXPLANATION PANEL -->
+                <div class="room-analysis-panel">
+                    <div class="analysis-scroll">
+
+                    <!-- CONTEXT PROMPTS -->
+                    <div class="analysis-prompts">
+                        <p>What physically happened in my room?</p>
+                        <p>Which surfaces and distances caused this score?</p>
+                        <p>How does this connect to the measurements above?</p>
+                    </div>
+
+                    <!-- PEAKS & DIPS / SBIR -->
+                    <div class="analysis-item"
+                        data-overlay="sbir"
+                        role="button"
+                        aria-expanded="false"
+                        aria-controls="sbirDetail">
+
+                        <div class="analysis-header">
+                        <h3 class="analysis-title">Peaks & Dips → Front Wall Interaction (SBIR)</h3>
+                        <div class="analysis-metric">
+                            <span id="sbirFreq">429</span>
+                            <span class="metric-unit">Hz</span>
+                        </div>
+                        </div>
+
+                        <p class="analysis-description">
+                        Bass cancellation caused by reflections from the wall behind the speakers
+                        interfering with the direct sound.
+                        </p>
+
+                        <div class="analysis-detail hidden" id="sbirDetail">
+                        <p>
+                            The reflected wave from the front wall arrives out of phase with the direct
+                            sound, cancelling energy at a predictable frequency.
+                        </p>
+                        <p><code>f = 343 / (2 × d)</code></p>
+                        <p class="analysis-note">
+                            <strong>d</strong> = distance between the speaker and the front wall.
+                        </p>
+                        </div>
+                    </div>
+
+                    <!-- SIDE WALL REFLECTIONS -->
+                    <div class="analysis-item"
+                        data-overlay="side_reflections"
+                        role="button"
+                        aria-expanded="false"
+                        aria-controls="sideRefDetail">
+
+                        <div class="analysis-header">
+                        <h3 class="analysis-title">Reflections → Side-Wall Paths</h3>
+                        <div class="analysis-metric">
+                            <span id="sideRefMs">3.1</span>
+                            <span class="metric-unit">ms</span>
+                        </div>
+                        </div>
+
+                        <p class="analysis-description">
+                        Early reflections from the side walls arrive shortly after the direct sound,
+                        reducing stereo focus and image stability.
+                        </p>
+
+                        <div class="analysis-detail hidden" id="sideRefDetail">
+                        <p>
+                            Calculated from the extra distance travelled by the reflected sound
+                            compared with the direct path.
+                        </p>
+                        <p><code>t = Δdistance / 343</code></p>
+                        <p class="analysis-note">
+                            Reflections arriving within ~5 ms strongly affect imaging.
+                        </p>
+                        </div>
+                    </div>
+
+                    <!-- BANDWIDTH -->
+                    <div class="analysis-item"
+                        data-overlay="bandwidth"
+                        role="button"
+                        aria-expanded="false"
+                        aria-controls="bandwidthDetail">
+
+                        <div class="analysis-header">
+                        <h3 class="analysis-title">Bandwidth → Room Support</h3>
+                        <div class="analysis-metric">
+                            <span id="bandwidthRange">38–18k</span>
+                            <span class="metric-unit">Hz</span>
+                        </div>
+                        </div>
+
+                        <p class="analysis-description">
+                        Your room dimensions determine how well low frequencies are supported
+                        and how evenly bass energy is distributed.
+                        </p>
+
+                        <div class="analysis-detail hidden" id="bandwidthDetail">
+                        <p>
+                            Below the Schroeder frequency, individual room modes dominate bass behaviour.
+                        </p>
+                        <p>
+                            <strong>Schroeder frequency:</strong>
+                            <span id="bandwidthSchroeder">292 Hz</span>
+                        </p>
+                        </div>
+                    </div>
+
+                    <!-- BALANCE -->
+                    <div class="analysis-item"
+                        data-overlay="balance"
+                        role="button"
+                        aria-expanded="false"
+                        aria-controls="balanceDetail">
+
+                        <div class="analysis-header">
+                        <h3 class="analysis-title">Balance → Left / Right Asymmetry</h3>
+                        <div class="analysis-metric">
+                            <span id="balanceOffset">0.18</span>
+                            <span class="metric-unit">m</span>
+                        </div>
+                        </div>
+
+                        <p class="analysis-description">
+                        Differences between the left and right sides of the room or listening position
+                        shift tonal balance and stereo weight.
+                        </p>
+
+                        <div class="analysis-detail hidden" id="balanceDetail">
+                        <p>
+                            Calculated from the horizontal offset of the listening position relative
+                            to the room centreline.
+                        </p>
+                        <p>
+                            Even small offsets can bias bass and image placement.
+                        </p>
+                        </div>
+                    </div>
+
+                    <!-- CLARITY -->
+                    <div class="analysis-item"
+                        data-overlay="clarity"
+                        role="button"
+                        aria-expanded="false"
+                        aria-controls="clarityDetail">
+
+                        <div class="analysis-header">
+                        <h3 class="analysis-title">Clarity → Direct vs Reflected Energy</h3>
+                        <div class="analysis-metric">
+                            <span id="clarityWindow">18</span>
+                            <span class="metric-unit">ms</span>
+                        </div>
+                        </div>
+
+                        <p class="analysis-description">
+                        Clarity is determined by how much reflected sound arrives shortly after
+                        the direct signal at the listening position.
+                        </p>
+
+                        <div class="analysis-detail hidden" id="clarityDetail">
+                        <p>
+                            Reflections arriving within the early time window compete with the direct
+                            sound and reduce intelligibility.
+                        </p>
+                        <p>
+                            Later reflections contribute to spaciousness instead of smearing detail.
+                        </p>
+                        </div>
+                    </div>
+
+                    </div>
+                </div>
+
+                </div>
+            </div>
+
+            </section>
+
 
         </main>
     </div>
@@ -586,82 +685,60 @@
         }
     </script>
 
+    <script src="js/dashboard.js"></script>
+
+
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const sidebar = document.getElementById('sidebar');
-        const main = document.querySelector('.main-content');
-        const toggle = document.getElementById('sidebar-toggle');
-        const chart = document.getElementById('frequencyChart');
+    document.addEventListener("DOMContentLoaded", () => {
+        const btn = document.getElementById("uploadWavBtn");
+        const uploadModal = document.getElementById("uploadModal");
+        if (!btn) return;
 
-        if (!sidebar || !main || !toggle) {
-            console.warn('Sidebar toggle: missing element(s)', { sidebar, main, toggle });
-            return;
+        const strong = btn.querySelector("strong");
+        const span   = btn.querySelector("span");
+        const img    = btn.querySelector("img");
+
+        if (window.MEASURELY_MODE === "local") {
+            // LOCAL = SWEEP
+            if (strong) strong.textContent = "Quick sweep";
+            if (span)   span.textContent   = "Run a sweep now";
+            if (img)    img.src            = "icons/sweep.svg";
+
+            // 🔥 ADD THESE LINES — NOTHING ELSE
+            btn.addEventListener("click", () => {
+                console.log("🟢 CLICK: uploadWavBtn");
+                console.log("🟢 MODE:", window.MEASURELY_MODE);
+                console.log("🟢 dashboard object:", window.dashboard);
+
+                if (window.dashboard?.runSweep) {
+                    console.log("🟢 CALLING dashboard.runSweep()");
+                    window.dashboard.runSweep();
+                } else {
+                    console.error("🔴 runSweep NOT FOUND on dashboard");
+                }
+            });
+
+        } else {
+            // WEB = UPLOAD
+            if (strong) strong.textContent = "Quick upload";
+            if (span)   span.textContent   = "Analyse a sweep now";
+            if (img)    img.src            = "icons/arrow-down.svg";
+
+            btn.addEventListener("click", () => {
+                console.log("🟢 CLICK: uploadWavBtn (WEB)");
+                uploadModal.classList.remove("hidden");
+                uploadModal.setAttribute("aria-hidden", "false");
+            });
         }
-
-        const applyState = (isCollapsed) => {
-            sidebar.classList.toggle('collapsed', isCollapsed);
-            main.classList.toggle('sidebar-collapsed', isCollapsed);
-            toggle.classList.toggle('collapsed', isCollapsed);
-            toggle.textContent = isCollapsed ? '›' : '‹';
-            localStorage.setItem('measurelySidebarCollapsed', String(isCollapsed));
-
-            // Resize Plotly after layout settles
-            setTimeout(() => {
-                if (window.Plotly && chart) Plotly.Plots.resize(chart);
-            }, 300);
-        };
-
-        // Restore saved state (desktop only)
-        if (window.innerWidth >= 1025) {
-            const collapsed = localStorage.getItem('measurelySidebarCollapsed') === 'true';
-            applyState(collapsed);
-        }
-
-        toggle.addEventListener('click', () => {
-            if (window.innerWidth < 1025) return; // desktop only
-            const isCollapsed = !sidebar.classList.contains('collapsed');
-            applyState(isCollapsed);
-        });
     });
     </script>
 
 
-    <script src="js/dashboard.js"></script>
 
     <script>
 
 
-        document.getElementById("refreshDashboardBtn").addEventListener("click", async () => {
-            console.log("Refreshing dashboard…");
-
-            if (!window.dashboard) {
-                console.error("Dashboard not initialised");
-                return;
-            }
-
-            try {
-                // 1. Load new sweep/session data
-                await window.dashboard.loadData();
-
-                // 2. Fully redraw dashboard UI
-                window.dashboard.updateDashboard();
-
-                updateAllMetricAria();
-
-                // 3. Update nerd metrics
-                window.dashboard.updateCompareSessionMetrics();
-
-                // 5. Optional toast
-                window.dashboard.showSuccess("Dashboard refreshed");
-
-            } catch (err) {
-                console.error("Refresh failed:", err);
-                window.dashboard.showError("Refresh failed");
-            }
-        });
-
-
-        function formatTimestamp(isoString) {
+       function formatTimestamp(isoString) {
             if (!isoString) return "No Data";
             try {
                 const date = new Date(isoString);
@@ -670,10 +747,10 @@
         }
 
 
-        // Fully replace SweepNav click logic
-        document.querySelectorAll("#sweepNav .session-btn").forEach((btn, index) => {
+        // Fully replace uploadsNav click logic
+        document.querySelectorAll("#uploadsNav .session-btn").forEach((btn, index) => {
             btn.addEventListener("click", () => {
-                console.log(`👉 SweepNav clicked - index ${index}`);
+                console.log(`👉 uploadsNav clicked - index ${index}`);
                 // Use the correct function in dashboard.js
                 window.dashboard.loadNthSession(index);
             });
@@ -687,17 +764,6 @@
                 window.dashboard = new MeasurelyDashboard();
             }
         });
-
-        const btn = document.getElementById('mobile-menu-btn');
-        const side = document.getElementById('sidebar');
-        const over = document.getElementById('sidebar-overlay');
-        function toggleMenu() {
-            side.classList.toggle("active");
-            over.classList.toggle("active");
-            document.body.style.overflow = side.classList.contains("active") ? "hidden" : "";
-        }
-        if (btn) btn.addEventListener('click', toggleMenu);
-        if (over) over.addEventListener('click', toggleMenu);
 
         document.querySelectorAll('.nav-item').forEach(link => {
             link.addEventListener('click', () => {
@@ -721,7 +787,7 @@
 
     <div class="notes-modal-content">
         <div class="notes-modal-header">
-            <h3 id="notesModalTitle">Sweep Notes</h3>
+            <h3 id="notesModalTitle">uploads Notes</h3>
             <button class="notes-modal-close" aria-label="Close notes">&times;</button>
         </div>
 
@@ -737,69 +803,194 @@
     </div>
 </div>
 
+<!-- UPLOAD WAV MODAL -->
+<div id="uploadModal" class="notes-modal hidden" aria-hidden="true">
+    <div class="notes-modal-backdrop"></div>
+
+    <div class="notes-modal-content">
+        <div class="notes-modal-header">
+            <h3>Upload Measurement</h3>
+            <button class="notes-modal-close" aria-label="Close upload">&times;</button>
+        </div>
+
+        <div class="notes-modal-body upload-split">
+
+            <!-- LEFT: DRAG & DROP -->
+            <div id="uploadDropzone" class="upload-dropzone primary">
+                <strong>Drop measurement</strong>
+                <span>Release to start analysis</span>
+
+                <input
+                    type="file"
+                    id="wavFileInput"
+                    accept=".wav,audio/wav"
+                />
+            </div>
+
+            <!-- RIGHT: MANUAL -->
+            <div class="upload-manual">
+                <div class="manual-copy">Prefer clicking?</div>
+
+                <button id="browseBtn" class="btn btn-secondary">
+                    Browse for file
+                </button>
+
+                <div id="selectedFileName" class="file-hint">
+                    No file selected
+                </div>
+
+                <button id="runAnalysisBtn"
+                        class="btn btn-primary"
+                        disabled>
+                    Run Analysis
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
 <script>
 
 // ========================
-// NOTES MODAL LOGIC
+// NOTES MODAL LOGIC (SAFE)
 // ========================
 
-let currentSweepIndex = null;
+let currentuploadsIndex = null;
 
-// FORCE modal closed on page load
 document.addEventListener("DOMContentLoaded", () => {
     const modal = document.getElementById("notesModal");
+    const textarea = document.getElementById("notesTextarea");
+    const saveBtn = document.getElementById("saveNotesBtn");
+
+    if (!modal || !textarea || !saveBtn) {
+        console.warn("Notes modal elements missing");
+        return;
+    }
+
+    // FORCE closed on load
     modal.classList.add("hidden");
     modal.setAttribute("aria-hidden", "true");
+
+    // OPEN modal
+    window.openNotesModal = (index) => {
+        currentuploadsIndex = index;
+        textarea.value = localStorage.getItem(`uploadsNote_${index}`) || "";
+        modal.classList.remove("hidden");
+        modal.setAttribute("aria-hidden", "false");
+    };
+
+    // CLOSE modal
+    window.closeNotesModal = () => {
+        modal.classList.add("hidden");
+        modal.setAttribute("aria-hidden", "true");
+    };
+
+    // OPEN buttons
+    document.querySelectorAll("[data-uploads-note]").forEach((btn, i) => {
+        btn.addEventListener("click", () => openNotesModal(i));
+    });
+
+    // SAVE
+    saveBtn.addEventListener("click", () => {
+        const note = textarea.value || "";
+        localStorage.setItem(`uploadsNote_${currentuploadsIndex}`, note);
+
+        const preview = document.querySelector(
+            `.uploads-card[data-index="${currentuploadsIndex}"] [data-note-preview]`
+        );
+        if (preview) preview.textContent = note || "—";
+
+        closeNotesModal();
+    });
+
+    // CLOSE (X buttons)
+    modal.querySelectorAll(".notes-modal-close")
+        .forEach(btn => btn.addEventListener("click", closeNotesModal));
+
+    // BACKDROP
+    modal.querySelectorAll(".notes-modal-backdrop")
+        .forEach(el => el.addEventListener("click", closeNotesModal));
 });
-
-
-// OPEN modal
-function openNotesModal(index) {
-    currentSweepIndex = index;
-
-    const modal = document.getElementById("notesModal");
-    const textarea = document.getElementById("notesTextarea");
-
-    textarea.value = localStorage.getItem(`sweepNote_${index}`) || "";
-
-    modal.classList.remove("hidden");
-    modal.setAttribute("aria-hidden", "false");
-}
-
-// CLOSE modal
-function closeNotesModal() {
-    const modal = document.getElementById("notesModal");
-    modal.classList.add("hidden");
-    modal.setAttribute("aria-hidden", "true");
-}
-
-// OPEN BUTTONS
-document.querySelectorAll("[data-sweep-note]").forEach((btn, i) => {
-    btn.addEventListener("click", () => openNotesModal(i));
-});
-
-// SAVE
-document.getElementById("saveNotesBtn").addEventListener("click", () => {
-    const textarea = document.getElementById("notesTextarea");
-
-    localStorage.setItem(`sweepNote_${currentSweepIndex}`, textarea.value);
-
-    const preview = document.querySelector(
-        `.sweep-card[data-index="${currentSweepIndex}"] [data-note-preview]`
-    );
-    preview.textContent = textarea.value || "—";
-
-    closeNotesModal();
-});
-
-// CLOSE (X)
-document.querySelector(".notes-modal-close")
-    .addEventListener("click", closeNotesModal);
-
-// BACKDROP
-document.querySelector(".notes-modal-backdrop")
-    .addEventListener("click", closeNotesModal);
 </script>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Get the current filename (e.g., 'index.html' or 'room-setup.html')
+    const currentPath = window.location.pathname.split("/").pop() || "index.html";
+    
+    const navItems = document.querySelectorAll(".nav-item");
+
+    navItems.forEach(item => {
+        // Remove hardcoded active classes first
+        item.classList.remove("active");
+        
+        // Check if the link's href matches our current page
+        if (item.getAttribute("href") === currentPath) {
+            item.classList.add("active");
+        }
+    });
+});
+
+</script>
+
+<script type="module">
+  import { initRoom3D } from "./js/room3d.js";
+
+  async function initDashboardRoom() {
+    let roomState = null;
+
+    try {
+      const res = await fetch("/api/room/latest");
+      if (res.ok) {
+        roomState = await res.json();
+      }
+    } catch (e) {
+      console.warn("[DashboardRoom] No saved room, skipping render");
+      return;
+    }
+
+    if (!roomState) return;
+
+    window.room3D = initRoom3D({
+    mountId: "dashboardRoomCanvas",
+    getRoomData: () => roomState,
+    mode: "final"
+    });
+
+    // Hard-lock behaviour
+    room3D.setStage("furnishings");
+  }
+
+  document.addEventListener("DOMContentLoaded", initDashboardRoom);
+</script>
+
+<!-- SWEEP PROGRESS OVERLAY -->
+<div id="sweepProgressModal" class="sweep-modal hidden" aria-hidden="true">
+  <div class="sweep-modal-backdrop"></div>
+
+  <div class="sweep-modal-content glass-panel">
+    <h3 class="sweep-title">Running Measurement</h3>
+
+    <div id="sweepStageText" class="sweep-stage">
+      Starting sweep…
+    </div>
+
+    <div class="sweep-progress">
+      <div class="sweep-progress-fill" id="sweepProgressFill"></div>
+    </div>
+
+    <div class="sweep-percent" id="sweepPercent">0%</div>
+
+    <div class="sweep-loader">
+      <div class="sweep-line"></div>
+    </div>
+  </div>
+</div>
 
 </body>
 

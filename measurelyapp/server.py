@@ -45,7 +45,11 @@ if env_file.exists():
             k, _, v = line.partition("=")
             os.environ.setdefault(k.strip(), v.strip())
 
-
+try:
+    sd._initialize()
+    print("✓ PortAudio initialised once at startup")
+except Exception as e:
+    print("❌ PortAudio init failed at startup:", e)
 # ------------------------------------------------------------------
 #  Flask init
 # ------------------------------------------------------------------
@@ -56,14 +60,14 @@ app.register_blueprint(network_api)
 
 update_led_state("boot")
 
-controller.init_network_on_boot()
+#controller.init_network_on_boot()
 
 # ------------------------------------------------------------------
 #  Single, unified Measurely root
 # ------------------------------------------------------------------
 
-APP_ROOT      = Path(__file__).resolve().parent        # /home/matt/measurely/measurelyapp
-SERVICE_ROOT  = APP_ROOT.parent                        # /home/matt/measurely
+APP_ROOT      = Path(__file__).resolve().parent        
+SERVICE_ROOT  = APP_ROOT.parent                        
 
 MEAS_ROOT     = SERVICE_ROOT / "measurements"
 PHRASES_DIR   = APP_ROOT / "dave" / "phrases"                   # ← CORRECT!!
@@ -383,18 +387,18 @@ def get_ip_address():
 
 
 # ------------------------------------------------------------------
-#  FETCH ALL SESSION FOLDERS (SweepX or timestamped)
+#  FETCH ALL SESSION FOLDERS (uploadsX or timestamped)
 # ------------------------------------------------------------------
 @app.route('/api/sessions/all', methods=['GET'])
 def get_sessions_all():
-    """Return ALL real session folders (SweepX or legacy timestamp format)."""
+    """Return ALL real session folders (uploadsX or legacy timestamp format)."""
     try:
         sessions = []
 
         # Accept:
-        #   - Sweep1, Sweep2, Sweep10...
+        #   - uploads1, uploads2, uploads10...
         #   - 20241201_191422_A4FBCD (old timestamp format)
-        pattern = re.compile(r"^(Sweep\d+|\d{8}_\d{6}_[0-9a-fA-F]{6})$")
+        pattern = re.compile(r"^(uploads\d+|\d{8}_\d{6}_[0-9a-fA-F]{6})$")
 
         if MEAS_ROOT.exists():
             for entry in MEAS_ROOT.iterdir():
@@ -406,7 +410,7 @@ def get_sessions_all():
                 if name == "latest":
                     continue
 
-                # Only accept folders matching SweepX or timestamp pattern
+                # Only accept folders matching uploadsX or timestamp pattern
                 if not pattern.match(name):
                     continue
 
@@ -464,7 +468,7 @@ def api_get_session(session_id):
 @app.route("/api/session/<session_id>/ai_compare", methods=["GET"])
 def api_session_ai_compare(session_id):
     """
-    Return ai_compare.json for a given sweep session if it exists.
+    Return ai_compare.json for a given uploads session if it exists.
     """
     try:
         session_dir = MEAS_ROOT / ("latest" if session_id == "latest" else session_id)
@@ -491,7 +495,7 @@ def api_session_ai_compare(session_id):
 # ------------------------------------------------------------------
 @app.route("/api/session/<session_id>/note", methods=["POST"])
 def update_session_note(session_id):
-    """ Save per-sweep notes into meta.json """
+    """ Save per-uploads notes into meta.json """
 
     try:
         # Resolve session path exactly like GET handler does
@@ -526,7 +530,7 @@ def update_session_note(session_id):
 
 
 # ------------------------------------------------------------------
-#  RUN SWEEP + UPDATE LATEST + RESTORE ROOM DATA + ANALYSE
+#  RUN uploads + UPDATE LATEST + RESTORE ROOM DATA + ANALYSE
 # ------------------------------------------------------------------
 @app.route('/api/run-sweep', methods=['POST'])
 def run_sweep():
@@ -543,6 +547,7 @@ def run_sweep():
         sweep_progress['progress'] = 0
         sweep_progress['message'] = "Starting sweep…"
         sweep_progress['session_id'] = None
+
 
         # Detect audio devices
         devices = sd.query_devices()
@@ -707,6 +712,7 @@ def get_status():
     ip = get_ip_address()
 
     try:
+
         devices = sd.query_devices()
 
         # Detect USB Mic
@@ -754,10 +760,7 @@ def get_status():
 @app.route("/api/sweephistory", methods=["GET", "POST"])
 def api_build_sweephistory():
     history = build_sweephistory(limit=4)
-    return jsonify({
-        "status": "ok",
-        "sweep_count": history["sweep_count"]
-    })
+    return jsonify(history)
 
 
 # ----------------------------------------------------------
@@ -1163,6 +1166,19 @@ def serve_session_measurements(session_id, filename):
         return jsonify({"error": "session not found"}), 404
 
     return send_from_directory(session_dir, filename)
+
+
+# ----------------------------------------------------------
+#  SERVE sweephistory.json (REQUIRED FOR DASHBOARD)
+# ----------------------------------------------------------
+@app.route("/measurements/sweephistory.json", methods=["GET"])
+def serve_sweephistory_file():
+    path = MEAS_ROOT / "sweephistory.json"
+
+    if not path.exists():
+        return jsonify({"error": "sweephistory.json not found"}), 404
+
+    return send_file(path, mimetype="application/json")
 
 
 # ------------------------------------------------------------------

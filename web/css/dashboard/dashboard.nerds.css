@@ -1,0 +1,87 @@
+/* ===============================
+   NERDS CORNER COMPONENT
+================================ */
+
+#uploadsHistoryGrid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+/* ===============================
+   MOBILE RESPONSIVENESS (600px)
+================================ */
+
+@media (max-width: 600px) {
+    
+    /* Target via a specific class instead of attribute selectors */
+    .card.nerds-card {
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+    }
+
+    /* Header & Dave Icon spacing */
+    .nerds-card .card-header {
+        margin-bottom: 1rem;
+    }
+
+    .nerds-card img[src*="dave"] {
+        width: 20px;
+    }
+
+    /* Typography Hierarchy */
+    #nerdsCornerLabel {
+        margin: 0;
+        font-size: 1.1rem;
+        line-height: 1.2;
+    }
+
+    .nerds-card p {
+        margin-top: 0.15rem;
+        font-size: 0.8rem;
+    }
+
+    /* Button Group & Navigation */
+    .nerds-card .btn-group {
+        padding: 0.15rem;
+        gap: 0.15rem;
+        border-radius: 6px;
+    }
+
+    .nerds-card button,
+    .session-btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+        border-radius: 6px;
+    }
+
+    /* Chart — Full Bleed */
+    .chart-container {
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .chart-responsive,
+    #frequencyChart {
+        width: 100%;
+        height: 350px;
+        margin: 0;
+        padding: 0;
+    }
+
+    #uploadsNav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+}

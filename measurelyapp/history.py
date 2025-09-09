@@ -3,7 +3,8 @@ from datetime import datetime
 import json
 import re
 
-MEASUREMENTS_DIR = Path("/home/matt/measurely/measurements")
+SERVICE_ROOT = Path(__file__).resolve().parents[1]
+MEASUREMENTS_DIR = SERVICE_ROOT / "measurements"
 
 
 def extract_num(sweep_id):
@@ -26,18 +27,19 @@ def build_sweephistory(limit=4):
             continue
         if d.name in ("latest",) or d.name.upper().startswith("DEMO"):
             continue
-        if not re.match(r"^Sweep\d+$", d.name):
+        if not re.match(r"^(Sweep|uploads)\d+$", d.name):
             continue
 
         analysis = load_json(d / "analysis.json")
         meta = load_json(d / "meta.json")
 
         if not analysis:
-            continue
+            analysis = {}
 
         sessions.append({
             "id": d.name,
-            "timestamp": meta.get("timestamp") or datetime.fromtimestamp(d.stat().st_mtime).isoformat(),
+            "timestamp": meta.get("timestamp")
+                or datetime.fromtimestamp(d.stat().st_mtime).isoformat(),
             "overall_score": analysis.get("scores", {}).get("overall"),
             "metrics": {
                 "bandwidth": analysis.get("scores", {}).get("bandwidth"),
@@ -52,7 +54,18 @@ def build_sweephistory(limit=4):
             "note": meta.get("notes", "")
         })
 
-    sessions.sort(key=lambda s: extract_num(s["id"]), reverse=True)
+    # --------------------------------------------------
+    # 🔥 CRITICAL FIX: stable, deterministic ordering
+    # uploadsN first, then SweepN — each numerically
+    # --------------------------------------------------
+    def sort_key(s):
+        name = s["id"]
+        num = extract_num(name)
+        if name.startswith("uploads"):
+            return (0, num)   # uploads first
+        return (1, num)       # sweeps after
+
+    sessions.sort(key=sort_key, reverse=True)
 
     sweeps = sessions[:limit]
 

@@ -2,8 +2,12 @@ import puppeteer from "puppeteer-core";
 import fs from "fs";
 import path from "path";
 
-const OUTPUT_PATH = "/home/matt/measurely/web/report.png";
-const REPORT_TEMPLATE = "file:///home/matt/measurely/web/report-template.html";
+const path = require("path");
+
+const ROOT = process.cwd();
+const OUTPUT_PATH = path.join(ROOT, "web", "report.png");
+const REPORT_TEMPLATE = "file://" + path.join(ROOT, "web", "report-template.html");
+
 
 if (process.argv.length < 3) {
     console.error("Usage: node share-report.js <sweep-folder>");
