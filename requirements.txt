@@ -1,1 +1,6 @@
-numpy\nscipy\nmatplotlib\nsounddevice\nsoundfile\n
+numpy
+scipy
+matplotlib
+sounddevice
+soundfile
+flask

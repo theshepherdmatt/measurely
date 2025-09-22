@@ -6,7 +6,7 @@ Measurely – standalone analysis (fast version)
 - Writes analysis.json + summary.txt in the session folder
 """
 
-import argparse, os, json, sys
+import argparse, os, json, sys, math
 import numpy as np
 import soundfile as sf
 
@@ -29,8 +29,12 @@ def load_response_csv(csv_path):
         _ = f.readline()  # header
         for line in f:
             s = line.strip()
-            if not s: continue
-            a, b = s.split(",")
+            if not s:
+                continue
+            parts = s.split(",")
+            if len(parts) < 2:
+                continue
+            a, b = parts[0], parts[1]
             freqs.append(float(a)); mags.append(float(b))
     freqs = np.asarray(freqs, dtype=np.float64)
     mags  = np.asarray(mags,  dtype=np.float64)
@@ -76,12 +80,15 @@ def band_mask(freqs, f_lo, f_hi):
 
 def find_3db_points(freqs, mags):
     """Estimate -3 dB bandwidth relative to midband (500–2k median)."""
-    if freqs.size < 8: return None, None
+    if freqs.size < 8:
+        return None, None
     mid = band_mask(freqs, 500, 2000)
     ref = np.median(mags[mid]) if np.any(mid) else np.median(mags)
     target = ref - 3.0
+
     low_idx = next((i for i in range(mags.size) if mags[i] >= target), None)
     high_idx = next((i for i in range(mags.size - 1, -1, -1) if mags[i] >= target), None)
+
     f_lo = float(freqs[low_idx]) if low_idx is not None else None
     f_hi = float(freqs[high_idx]) if high_idx is not None else None
     return f_lo, f_hi
@@ -91,7 +98,8 @@ def detect_modes(freqs, mags, threshold_db=6.0, min_sep_hz=15.0):
     Peaks/dips ±threshold vs a heavier-smoothed baseline.
     Baseline: moving average ~1/3 octave in the (already log-binned) domain.
     """
-    if freqs.size < 16: return []
+    if freqs.size < 16:
+        return []
     ratios = freqs[1:] / freqs[:-1]
     bpo = float(np.median(1.0 / np.log2(np.maximum(ratios, 1e-12)))) if ratios.size else 48.0
     win_bins = int(max(3, round(bpo / 3)))  # ~1/3 octave
@@ -109,16 +117,17 @@ def detect_modes(freqs, mags, threshold_db=6.0, min_sep_hz=15.0):
 
 # ------------- IR analysis -------------
 def reflections_from_ir(ir, fs, win_ms=20.0, min_rel_db=-20.0):
-    if ir.size == 0: return []
+    if ir.size == 0:
+        return []
     idx0 = int(np.argmax(np.abs(ir)))
     peak = float(abs(ir[idx0]) + 1e-12)
     thr  = peak * (10.0 ** (min_rel_db/20.0))
     end  = min(ir.size, idx0 + int(fs * (win_ms/1000.0)))
 
     refs = []
-    for i in range(idx0+1, end-1):
+    for i in range(idx0 + 1, end - 1):
         ai = abs(ir[i])
-        if ai >= thr and ai > abs(ir[i-1]) and ai >= abs(ir[i+1]):
+        if ai >= thr and ai > abs(ir[i - 1]) and ai >= abs(ir[i + 1]):
             t_ms = (i - idx0) * 1000.0 / fs
             if not refs or (t_ms - refs[-1]) >= 0.3:
                 refs.append(round(t_ms, 2))
@@ -230,39 +239,149 @@ def analyse(freqs_raw, mags_raw, ir, fs, points_per_oct=48):
         "notes": advice,
     }
 
+# ---------- Plain-English summary helpers ----------
+def _safe(val, fmt="{:.1f}"):
+    try:
+        if val is None:
+            return "?"
+        if isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
+            return "?"
+        return fmt.format(val)
+    except Exception:
+        return "?"
+
+def build_plain_summary(analysis):
+    """
+    Returns (one_line, fixes_list) where:
+      - one_line: a single short sentence anyone can understand
+      - fixes_list: 3 or fewer super-simple, actionable tips
+    """
+    bands = analysis.get("band_levels_db", {}) or {}
+    bass = bands.get("bass_20_200")
+    mid  = bands.get("mid_200_2k")
+    treb = bands.get("treble_2k_10k")
+    air  = bands.get("air_10k_20k")
+
+    smooth = analysis.get("smoothness_std_db")
+    rt60   = analysis.get("rt60_s")
+    modes  = analysis.get("modes", []) or []
+    refs   = analysis.get("reflections_ms", []) or []
+
+    fixes = []
+
+    # Default one-liner
+    one_line = "All good. Nothing scary showed up."
+
+    # Balance cues
+    if bass is not None and mid is not None:
+        diff_bass = bass - mid
+        if diff_bass >= 4:
+            one_line = "Bass is a bit too strong compared to voices."
+            fixes.append("Pull the speakers 10–20 cm away from the wall.")
+        elif diff_bass <= -4:
+            one_line = "Voices are stronger than bass."
+            fixes.append("Move speakers a little closer to the wall or add a small sub.")
+
+    # Treble / air cues
+    if air is not None and treb is not None and (air < treb - 6):
+        one_line = "Top sparkle is a bit soft."
+        fixes.append("Aim tweeters at ear height and check toe-in.")
+
+    # Room liveliness
+    if rt60 and rt60 > 0.6:
+        one_line = "Room sounds a bit echoey."
+        fixes.append("Add a rug, curtains, or soft furnishings.")
+
+    # Reflections
+    if refs:
+        if one_line == "All good. Nothing scary showed up.":
+            one_line = "Room reflections are bouncing sound back."
+        fixes.append("Place something soft at the first side-wall reflection points.")
+
+    # Strong peak near ~100 Hz (classic)
+    if any(m.get("type") == "peak" and 80 <= m.get("freq_hz", 0) <= 120 for m in modes):
+        if one_line == "All good. Nothing scary showed up.":
+            one_line = "There’s a boom around 100 Hz."
+        fixes.append("Slide speakers or seat a little to reduce the boom.")
+
+    # Smoothness (rippliness)
+    if smooth is not None and smooth > 3.0:
+        if one_line == "All good. Nothing scary showed up.":
+            one_line = "Response is a bit bumpy."
+        fixes.append("Small position tweaks (5–10 cm) can smooth things out.")
+
+    # Keep fixes short and at most 3 items
+    uniq = []
+    for tip in fixes:
+        if tip not in uniq:
+            uniq.append(tip)
+    return one_line, uniq[:3]
+
 # ------------- Summary file -------------
 def write_summary(path, analysis):
+    one_line, fixes = build_plain_summary(analysis)
+
     lines = []
-    lines.append("Measurely Analysis Report")
-    lines.append("=========================")
+    # ----- PLAIN ENGLISH (top of file) -----
+    lines.append("Simple result")
+    lines.append("-------------")
+    lines.append(one_line)
+    if fixes:
+        lines.append("")
+        lines.append("What to do next")
+        lines.append("---------------")
+        for tip in fixes:
+            lines.append(f"- {tip}")
+    lines.append("")
+
+    # ----- KEEP YOUR TECHNICAL DETAILS -----
+    lines.append("Technical details")
+    lines.append("-----------------")
+
     blo = analysis.get("bandwidth_lo_3db_hz")
     bhi = analysis.get("bandwidth_hi_3db_hz")
     if blo or bhi:
-        lines.append(f"Bandwidth (-3 dB): {blo:.0f} Hz – {bhi:.0f} Hz" if (blo and bhi) else
-                     f"Bandwidth (-3 dB): {blo or '?'} – {bhi or '?'}")
-    bands = analysis["band_levels_db"]
-    lines.append(f"Bass(20–200): {bands['bass_20_200']:+.1f} dB  "
-                 f"Mid(200–2k): {bands['mid_200_2k']:+.1f} dB  "
-                 f"Treble(2–10k): {bands['treble_2k_10k']:+.1f} dB  "
-                 f"Air(10–20k): {bands['air_10k_20k']:+.1f} dB")
-    if analysis["modes"]:
+        if (blo is not None) and (bhi is not None):
+            lines.append(f"Bandwidth (-3 dB): {_safe(blo,'{:.0f}')} Hz – {_safe(bhi,'{:.0f}')} Hz")
+        else:
+            lines.append(f"Bandwidth (-3 dB): {_safe(blo,'{:.0f}')} – {_safe(bhi,'{:.0f}')}")
+
+    bands = analysis.get("band_levels_db", {}) or {}
+    lines.append(
+        "Bands (relative dB): "
+        f"Bass(20–200) {_safe(bands.get('bass_20_200'),'{:+.1f}')}  "
+        f"Mid(200–2k) {_safe(bands.get('mid_200_2k'),'{:+.1f}')}  "
+        f"Treble(2–10k) {_safe(bands.get('treble_2k_10k'),'{:+.1f}')}  "
+        f"Air(10–20k) {_safe(bands.get('air_10k_20k'),'{:+.1f}')}"
+    )
+
+    if analysis.get("modes"):
         lines.append("Modes (±6 dB+):")
         for m in analysis["modes"][:8]:
-            lines.append(f"  - {m['type'].upper()} @ {m['freq_hz']:.0f} Hz ({m['delta_db']:+.1f} dB)")
-    if analysis["reflections_ms"]:
+            f = m.get('freq_hz'); d = m.get('delta_db'); t = m.get('type','').upper()
+            lines.append(f"  - {t} @ {_safe(f,'{:.0f}')} Hz ({_safe(d,'{:+.1f}')} dB)")
+
+    if analysis.get("reflections_ms"):
         lines.append(f"Early reflections: {analysis['reflections_ms']} ms")
-    if analysis.get("rt60_s"):
-        lines.append(f"RT60 (rough): {analysis['rt60_s']:.2f} s")
+
+    if analysis.get("rt60_s") is not None:
+        lines.append(f"RT60 (rough): {_safe(analysis['rt60_s'],'{:.2f}')} s")
+
     if analysis.get("rt60_method"):
         lines.append(f"RT60 method: {analysis['rt60_method']}")
-    if analysis.get("edt_s"):
-        lines.append(f"EDT (0→-10 dB): {analysis['edt_s']:.2f} s")
+
+    if analysis.get("edt_s") is not None:
+        lines.append(f"EDT (0→-10 dB): {_safe(analysis['edt_s'],'{:.2f}')} s")
+
     if analysis.get("notes"):
-        lines.append("Advice:")
+        lines.append("Advice (detailed):")
         for n in analysis["notes"]:
             lines.append(f"  - {n}")
+
     lines.append(f"Bins analysed: {analysis.get('bins_used')}")
     text = "\n".join(lines)
+
+    # Write files
     with open(os.path.join(path, "summary.txt"), "w") as f:
         f.write(text + "\n")
 
@@ -279,6 +398,12 @@ def main():
     ir, fs = load_impulse_wav(imp_wav)
 
     result = analyse(freqs, mags, ir, fs, points_per_oct=args.points_per_oct)
+
+    # Include simple summary and fixes in JSON for the UI if needed
+    one_liner, fixes = build_plain_summary(result)
+    result["plain_summary"] = one_liner
+    result["simple_fixes"] = fixes
+
     with open(os.path.join(outdir, "analysis.json"), "w") as f:
         json.dump(result, f, indent=2)
 

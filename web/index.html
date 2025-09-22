@@ -1,0 +1,163 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Measurely</title>
+<style>
+  /* Simple black & white, no colors */
+  :root { --pad: 14px; }
+  html,body { margin:0; padding:0; background:#fff; color:#000; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height:1.45; }
+  header { padding: var(--pad) var(--pad) 0 var(--pad); }
+  h1 { font-size: 20px; font-weight: 700; margin: 0 0 8px 0; }
+  .wrap { padding: var(--pad); display: grid; gap: var(--pad); }
+  .card { border: 1px solid #000; border-radius: 8px; padding: var(--pad); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .label { font-size: 12px; opacity: .8; margin-bottom: 4px; }
+  .value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  button { appearance: none; background:#fff; color:#000; border:1px solid #000; border-radius:8px; padding:10px 14px; font-weight:600; cursor:pointer; }
+  button[disabled] { opacity:.5; cursor:not-allowed; border-style: dashed; }
+  pre { white-space:pre-wrap; word-break:break-word; border:1px solid #000; border-radius:6px; padding:10px; max-height:240px; overflow:auto; background:#fff; }
+  a { color:#000; text-underline-offset: 2px; }
+  .small { font-size:12px; opacity:.8; }
+  .list a { display:block; padding:6px 0; text-decoration: underline; }
+  .muted { opacity:.7; }
+</style>
+
+<header>
+  <h1>Measurely</h1>
+</header>
+
+<main class="wrap">
+  <!-- Status -->
+  <section class="card">
+    <div class="row">
+      <div>
+        <div class="label">Microphone</div>
+        <div id="micStatus" class="value">—</div>
+        <div id="micName" class="small muted"></div>
+      </div>
+      <div>
+        <div class="label">DAC</div>
+        <div id="dacStatus" class="value">—</div>
+        <div id="dacName" class="small muted"></div>
+      </div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+      <button id="runBtn" disabled>Run sweep + analyse</button>
+      <span id="hint" class="small muted">Checking devices…</span>
+    </div>
+  </section>
+
+  <!-- Logs -->
+  <section class="card">
+    <div class="label">Logs</div>
+    <pre id="logs">Click “Run sweep + analyse”.</pre>
+  </section>
+
+  <!-- Result -->
+  <section class="card" id="resultCard" style="display:none;">
+    <div class="label">Result summary</div>
+    <pre id="summary">(no result yet)</pre>
+    <div class="label" style="margin-top:10px;">Artifacts</div>
+    <div id="links" class="list muted">(none)</div>
+  </section>
+
+  <!-- Sessions -->
+  <section class="card">
+    <div class="label">Past sessions</div>
+    <div id="sessions" class="list muted">(none)</div>
+  </section>
+</main>
+
+<script>
+async function refreshStatus(){
+  try {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+
+    const micOK = !!s.mic.connected;
+    const dacOK = !!s.dac.connected;
+
+    document.getElementById('micStatus').textContent = micOK ? 'Connected' : 'Not found';
+    document.getElementById('dacStatus').textContent = dacOK ? 'Connected' : 'Not found';
+
+    document.getElementById('micName').textContent = s.mic.name || '';
+    document.getElementById('dacName').textContent = s.dac.name
+      ? (s.dac.name + (s.dac.alsa ? ' ('+s.dac.alsa+')' : ''))
+      : (s.dac.alsa || '');
+
+    const runBtn = document.getElementById('runBtn');
+    runBtn.disabled = !(micOK && dacOK);
+    document.getElementById('hint').textContent =
+      (micOK && dacOK) ? 'Ready.' : 'Plug in the mic/DAC and refresh.';
+  } catch (e) {
+    document.getElementById('micStatus').textContent = 'Error';
+    document.getElementById('dacStatus').textContent = 'Error';
+    document.getElementById('hint').textContent = 'Server error.';
+  }
+}
+
+async function fetchSessions(){
+  try {
+    const r = await fetch('/api/sessions');
+    const data = await r.json();
+    const el = document.getElementById('sessions');
+    if (!data.length) { el.textContent = '(none)'; return; }
+    el.classList.remove('muted');
+    el.innerHTML = data.map(s =>
+      `<a href="#" onclick="openSession('${s.id}');return false;">${s.id}</a>`
+    ).join('');
+  } catch {
+    document.getElementById('sessions').textContent = '(error)';
+  }
+}
+
+async function openSession(id){
+  const r = await fetch('/api/session/' + id);
+  const d = await r.json();
+  document.getElementById('resultCard').style.display = 'block';
+  document.getElementById('summary').textContent = d.summary || '(no summary)';
+  const links = (d.artifacts || []).map(a =>
+    `<a href="/api/session/${id}/artifact/${encodeURIComponent(a)}" target="_blank">${a}</a>`
+  ).join('');
+  document.getElementById('links').innerHTML = links || '(none)';
+  document.getElementById('links').classList.toggle('muted', !links);
+}
+
+async function runSweep(){
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  document.getElementById('logs').textContent = 'Running…';
+  try {
+    // No payload needed: server uses sensible defaults + auto-detect
+    const r = await fetch('/api/run-sweep', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({})
+    });
+    const data = await r.json();
+    document.getElementById('logs').textContent = data.stdout || '(no output)';
+    if (data.session_id) {
+      await openSession(data.session_id);
+    } else {
+      document.getElementById('resultCard').style.display = 'block';
+      document.getElementById('summary').textContent = '(no summary)';
+      document.getElementById('links').innerHTML = '(none)';
+    }
+  } catch (e) {
+    document.getElementById('logs').textContent = 'Error: ' + e;
+  } finally {
+    btn.disabled = false;
+    fetchSessions();
+    refreshStatus();
+  }
+}
+
+document.getElementById('runBtn').addEventListener('click', runSweep);
+
+// Initial load
+refreshStatus();
+fetchSessions();
+// Optional: auto-refresh device status every few seconds
+setInterval(refreshStatus, 4000);
+</script>
