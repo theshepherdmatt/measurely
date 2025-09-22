@@ -3,24 +3,32 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Measurely</title>
 <style>
-  /* Simple black & white, no colors */
   :root { --pad: 14px; }
   html,body { margin:0; padding:0; background:#fff; color:#000; }
   body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height:1.45; }
   header { padding: var(--pad) var(--pad) 0 var(--pad); }
   h1 { font-size: 20px; font-weight: 700; margin: 0 0 8px 0; }
+  h2 { font-size: 16px; margin: 0 0 10px 0; }
   .wrap { padding: var(--pad); display: grid; gap: var(--pad); }
   .card { border: 1px solid #000; border-radius: 8px; padding: var(--pad); }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .label { font-size: 12px; opacity: .8; margin-bottom: 4px; }
   .value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  button { appearance: none; background:#fff; color:#000; border:1px solid #000; border-radius:8px; padding:10px 14px; font-weight:600; cursor:pointer; }
+  button { appearance: none; background:#fff; color:#000; border:1px solid #000; border-radius:8px; padding:12px 16px; font-weight:700; cursor:pointer; }
   button[disabled] { opacity:.5; cursor:not-allowed; border-style: dashed; }
-  pre { white-space:pre-wrap; word-break:break-word; border:1px solid #000; border-radius:6px; padding:10px; max-height:240px; overflow:auto; background:#fff; }
+  pre { white-space:pre-wrap; word-break:break-word; border:1px solid #000; border-radius:6px; padding:10px; max-height:260px; overflow:auto; background:#fff; }
   a { color:#000; text-underline-offset: 2px; }
   .small { font-size:12px; opacity:.8; }
   .list a { display:block; padding:6px 0; text-decoration: underline; }
   .muted { opacity:.7; }
+  .grid-3 { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:10px; }
+  .grid-2 { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; }
+  .field label { display:block; font-size:12px; opacity:.8; margin-bottom:4px; }
+  .field input, .field select { width:100%; padding:8px 10px; border:1px solid #000; border-radius:6px; background:#fff; color:#000; }
+  .hero { display:flex; align-items:center; gap:10px; }
+  .hero button { font-size:16px; padding:14px 18px; }
+  .img-row { display:flex; flex-wrap:wrap; gap:10px; }
+  .img-row img { display:block; max-width:100%; height:auto; border:1px solid #000; border-radius:6px; }
 </style>
 
 <header>
@@ -28,9 +36,14 @@
 </header>
 
 <main class="wrap">
-  <!-- Status -->
+
+  <!-- Hero: Run sweep (clear + alone) -->
   <section class="card">
-    <div class="row">
+    <div class="hero">
+      <button id="runBtn" disabled>Run Room Sweep</button>
+      <span id="hint" class="small muted">Checking devices…</span>
+    </div>
+    <div class="row" style="margin-top:12px;">
       <div>
         <div class="label">Microphone</div>
         <div id="micStatus" class="value">—</div>
@@ -42,24 +55,83 @@
         <div id="dacName" class="small muted"></div>
       </div>
     </div>
+  </section>
+
+  <!-- Room & Placement with dropdown presets -->
+  <section class="card">
+    <h2>Room & Placement</h2>
+
+    <div class="grid-2" style="margin-bottom:10px;">
+      <div class="field">
+        <label>Room preset</label>
+        <select id="roomPreset">
+          <option value="">— Choose preset —</option>
+          <option value="S">Small (3.5 × 2.8 × 2.4 m)</option>
+          <option value="M">Medium (4.5 × 3.5 × 2.5 m)</option>
+          <option value="L">Large (6.0 × 4.5 × 2.7 m)</option>
+          <option value="C">Custom (edit fields)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Layout</label>
+        <select id="layoutPreset">
+          <option value="">— Choose layout —</option>
+          <option value="near">Nearfield desk</option>
+          <option value="sofa">Sofa listening</option>
+          <option value="theater">Home theater</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:10px;">
+      <div class="field">
+        <label>Room length (m)</label>
+        <input id="roomL" type="number" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label>Room width (m)</label>
+        <input id="roomW" type="number" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label>Room height (m)</label>
+        <input id="roomH" type="number" step="0.01" min="0">
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="field">
+        <label>Speaker → front wall (m)</label>
+        <input id="spkFront" type="number" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label>Listener → front wall (m)</label>
+        <input id="lstFront" type="number" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label>Speaker spacing (m)</label>
+        <input id="spkSpacing" type="number" step="0.01" min="0">
+      </div>
+    </div>
+
     <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
-      <button id="runBtn" disabled>Run sweep + analyse</button>
-      <span id="hint" class="small muted">Checking devices…</span>
+      <button id="saveRoomBtn">Save room & placement</button>
+      <span id="saveRoomMsg" class="small muted"></span>
     </div>
   </section>
 
-  <!-- Logs -->
-  <section class="card">
-    <div class="label">Logs</div>
-    <pre id="logs">Click “Run sweep + analyse”.</pre>
-  </section>
-
-  <!-- Result -->
+  <!-- Result ABOVE logs -->
   <section class="card" id="resultCard" style="display:none;">
     <div class="label">Result summary</div>
     <pre id="summary">(no result yet)</pre>
-    <div class="label" style="margin-top:10px;">Artifacts</div>
-    <div id="links" class="list muted">(none)</div>
+
+    <div class="label" style="margin-top:10px;">Graphs</div>
+    <div id="graphs" class="img-row muted">(none)</div>
+  </section>
+
+  <!-- Logs (below results) -->
+  <section class="card">
+    <div class="label">Logs</div>
+    <pre id="logs">Press “Run Room Sweep”.</pre>
   </section>
 
   <!-- Sessions -->
@@ -70,26 +142,25 @@
 </main>
 
 <script>
+/* ------------ Device status ------------ */
 async function refreshStatus(){
   try {
     const r = await fetch('/api/status');
     const s = await r.json();
 
-    const micOK = !!s.mic.connected;
-    const dacOK = !!s.dac.connected;
+    const micOK = !!(s.mic && s.mic.connected);
+    const dacOK = !!(s.dac && s.dac.connected);
 
     document.getElementById('micStatus').textContent = micOK ? 'Connected' : 'Not found';
     document.getElementById('dacStatus').textContent = dacOK ? 'Connected' : 'Not found';
 
-    document.getElementById('micName').textContent = s.mic.name || '';
-    document.getElementById('dacName').textContent = s.dac.name
-      ? (s.dac.name + (s.dac.alsa ? ' ('+s.dac.alsa+')' : ''))
-      : (s.dac.alsa || '');
+    document.getElementById('micName').textContent = (s.mic && s.mic.name) || '';
+    document.getElementById('dacName').textContent = (s.dac && (s.dac.name || s.dac.alsa)) || '';
 
     const runBtn = document.getElementById('runBtn');
     runBtn.disabled = !(micOK && dacOK);
     document.getElementById('hint').textContent =
-      (micOK && dacOK) ? 'Ready.' : 'Plug in the mic/DAC and refresh.';
+      (micOK && dacOK) ? 'Ready.' : 'Plug in mic/DAC and refresh.';
   } catch (e) {
     document.getElementById('micStatus').textContent = 'Error';
     document.getElementById('dacStatus').textContent = 'Error';
@@ -97,12 +168,13 @@ async function refreshStatus(){
   }
 }
 
+/* ------------ Sessions list ------------ */
 async function fetchSessions(){
   try {
     const r = await fetch('/api/sessions');
     const data = await r.json();
     const el = document.getElementById('sessions');
-    if (!data.length) { el.textContent = '(none)'; return; }
+    if (!Array.isArray(data) || !data.length) { el.textContent = '(none)'; return; }
     el.classList.remove('muted');
     el.innerHTML = data.map(s =>
       `<a href="#" onclick="openSession('${s.id}');return false;">${s.id}</a>`
@@ -112,52 +184,118 @@ async function fetchSessions(){
   }
 }
 
+/* ------------ Open a session (summary + graphs only) ------------ */
 async function openSession(id){
   const r = await fetch('/api/session/' + id);
   const d = await r.json();
+
+  // Show summary
   document.getElementById('resultCard').style.display = 'block';
   document.getElementById('summary').textContent = d.summary || '(no summary)';
-  const links = (d.artifacts || []).map(a =>
-    `<a href="/api/session/${id}/artifact/${encodeURIComponent(a)}" target="_blank">${a}</a>`
-  ).join('');
-  document.getElementById('links').innerHTML = links || '(none)';
-  document.getElementById('links').classList.toggle('muted', !links);
+
+  // Show only PNG artifacts inline; hide WAVs/others
+  const graphsEl = document.getElementById('graphs');
+  const pngs = (d.artifacts || []).filter(a => /\.png$/i.test(a));
+  if (pngs.length) {
+    graphsEl.classList.remove('muted');
+    graphsEl.innerHTML = pngs.map(a =>
+      `<img src="/api/session/${id}/artifact/${encodeURIComponent(a)}" alt="${a}">`
+    ).join('');
+  } else {
+    graphsEl.classList.add('muted');
+    graphsEl.textContent = '(none)';
+  }
 }
 
+/* ------------ Run sweep ------------ */
 async function runSweep(){
   const btn = document.getElementById('runBtn');
   btn.disabled = true;
   document.getElementById('logs').textContent = 'Running…';
   try {
-    // No payload needed: server uses sensible defaults + auto-detect
     const r = await fetch('/api/run-sweep', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({})
+      body: JSON.stringify({}) // server uses defaults + saved settings
     });
     const data = await r.json();
     document.getElementById('logs').textContent = data.stdout || '(no output)';
     if (data.session_id) {
       await openSession(data.session_id);
+      await fetchSessions();
     } else {
       document.getElementById('resultCard').style.display = 'block';
       document.getElementById('summary').textContent = '(no summary)';
-      document.getElementById('links').innerHTML = '(none)';
+      const graphsEl = document.getElementById('graphs');
+      graphsEl.textContent = '(none)';
+      graphsEl.classList.add('muted');
     }
   } catch (e) {
     document.getElementById('logs').textContent = 'Error: ' + e;
   } finally {
     btn.disabled = false;
-    fetchSessions();
     refreshStatus();
   }
 }
 
-document.getElementById('runBtn').addEventListener('click', runSweep);
+/* ------------ Settings: load/save + presets ------------ */
+function fillRoomFields(v){
+  const g = id => document.getElementById(id);
+  g('roomL').value = v.length_m ?? '';
+  g('roomW').value = v.width_m ?? '';
+  g('roomH').value = v.height_m ?? '';
+  g('spkFront').value = v.spk_front_m ?? '';
+  g('lstFront').value = v.listener_front_m ?? '';
+  g('spkSpacing').value = v.spk_spacing_m ?? '';
+}
 
-// Initial load
+async function loadRoom(){
+  try {
+    const r = await fetch('/api/settings');
+    if (!r.ok) return;
+    const s = await r.json();
+    fillRoomFields((s.room || {}));
+  } catch {}
+}
+
+async function saveRoom(){
+  const g = id => document.getElementById(id).value;
+  const payload = {
+    room: {
+      length_m: +g('roomL') || null,
+      width_m: +g('roomW') || null,
+      height_m: +g('roomH') || null,
+      spk_front_m: +g('spkFront') || null,
+      listener_front_m: +g('lstFront') || null,
+      spk_spacing_m: +g('spkSpacing') || null,
+      layout: document.getElementById('layoutPreset').value || null
+    }
+  };
+  const r = await fetch('/api/settings', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  document.getElementById('saveRoomMsg').textContent =
+    r.ok ? 'Saved ✓' : 'Save failed';
+  if (r.ok) setTimeout(()=>{ document.getElementById('saveRoomMsg').textContent=''; }, 1500);
+}
+
+/* Preset handling */
+document.getElementById('roomPreset').addEventListener('change', e => {
+  const v = e.target.value;
+  if (v === 'S') fillRoomFields({length_m:3.5, width_m:2.8, height_m:2.4, spk_front_m:0.25, listener_front_m:1.0, spk_spacing_m:1.1});
+  else if (v === 'M') fillRoomFields({length_m:4.5, width_m:3.5, height_m:2.5, spk_front_m:0.35, listener_front_m:1.6, spk_spacing_m:1.4});
+  else if (v === 'L') fillRoomFields({length_m:6.0, width_m:4.5, height_m:2.7, spk_front_m:0.45, listener_front_m:2.2, spk_spacing_m:2.0});
+  // 'C' leaves fields as-is for manual editing
+});
+
+/* Wire up UI */
+document.getElementById('runBtn').addEventListener('click', runSweep);
+document.getElementById('saveRoomBtn').addEventListener('click', saveRoom);
+
+/* Initial load */
 refreshStatus();
 fetchSessions();
-// Optional: auto-refresh device status every few seconds
+loadRoom();
 setInterval(refreshStatus, 4000);
 </script>
