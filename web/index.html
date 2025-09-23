@@ -13,65 +13,61 @@
   html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);}
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;font-size:17px;}
 
-  /* Header with logo + title */
-  header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: var(--pad) var(--pad) 0 var(--pad);
-  }
-  .logo {
-    height: 40px;   /* adjust if you want it larger */
-    width: auto;
-    display: block;
-  }
-  h1 {
-    font-size: 22px;
-    font-weight: 800;
-    margin: 0;
-  }
+  header{padding:var(--pad) var(--pad) 0 var(--pad);}
+  header img.logo{height:40px;width:auto;display:block;}
 
-  h2{font-size:18px;margin:0 0 12px 0;}
+  /* TYPOGRAPHY HIERARCHY */
+  .card-title{font-size:18px;font-weight:700;margin:0 0 12px 0;}
+  .subhead{font-size:14px;font-weight:400;opacity:.8;margin:0 0 6px 0;}
+  .field label{display:block;font-size:13px;font-weight:400;opacity:.85;margin-bottom:6px;}
+
   .wrap{padding:var(--pad);display:grid;gap:var(--pad);}
   .card{border:1.25px solid var(--border);border-radius:var(--radius);padding:var(--pad);background:var(--bg);}
-  .label{font-size:13px;opacity:.85;margin-bottom:6px;}
+
   .value{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
   .muted{opacity:.7}
   .small{font-size:13px}
+
   .hero{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
   button{
-    appearance:none; background:var(--bg); color:var(--fg);
-    border:1.25px solid var(--border); border-radius:12px;
-    padding:14px 18px; font-weight:800; cursor:pointer; line-height:1;
+    appearance:none;background:var(--bg);color:var(--fg);
+    border:1.25px solid var(--border);border-radius:12px;
+    padding:14px 18px;font-weight:800;cursor:pointer;line-height:1;
     min-height:48px;
   }
-  button:focus{outline:3px solid #0004; outline-offset:2px}
+  button:focus{outline:3px solid #0004;outline-offset:2px}
   button[disabled]{opacity:.55;cursor:not-allowed;border-style:dashed}
-  pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--border);border-radius:10px;padding:10px;max-height:260px;overflow:auto;background:#fff}
+
+  pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--border);
+      border-radius:10px;padding:10px;max-height:260px;overflow:auto;background:#fff}
+
   a{color:var(--fg);text-underline-offset:2px}
   .list a{display:block;padding:8px 0;text-decoration:underline}
 
-  .field label{display:block;font-size:13px;opacity:.85;margin-bottom:6px}
-  .field input{
+  .field input, select{
     width:100%;padding:12px 14px;border:1.25px solid var(--border);
     border-radius:10px;background:#fff;color:var(--fg);
     min-height:44px;font-size:16px;
   }
+
   .rows{display:grid;gap:12px}
   .grid-2{display:grid;gap:16px;grid-template-columns:1fr}
   .grid-3{display:grid;gap:16px;grid-template-columns:1fr}
-  @media (min-width:680px){ .grid-2{grid-template-columns:repeat(2,1fr)} }
-  @media (min-width:980px){ .grid-3{grid-template-columns:repeat(3,1fr)} }
+  @media (min-width:680px){.grid-2{grid-template-columns:repeat(2,1fr)}}
+  @media (min-width:980px){.grid-3{grid-template-columns:repeat(3,1fr)}}
 
   .with-unit{position:relative}
   .with-unit input{padding:10px 36px 10px 10px;box-sizing:border-box}
-  .unit{
-    position:absolute;right:10px;top:50%;transform:translateY(-50%);
-    font-size:13px;opacity:.65;pointer-events:none;background:#fff;padding:0 4px
-  }
+  .unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+        font-size:13px;opacity:.65;pointer-events:none;background:#fff;padding:0 4px}
 
-  .devrow{display:grid;gap:12px;grid-template-columns:1fr;margin-top:12px}
-  @media (min-width:560px){ .devrow{grid-template-columns:1fr 1fr} }
+  .devrow{display:grid;gap:12px;grid-template-columns:1fr;margin-top:4px}
+  @media (min-width:560px){.devrow{grid-template-columns:1fr 1fr}}
+
+  .subsection{display:grid;gap:10px;margin-bottom:10px}
+  .rule{height:1px;background:var(--border);opacity:.25;margin:12px 0;}
+  .actions{margin-top:16px;display:flex;gap:10px;align-items:center;}
 </style>
 
 <header>
@@ -80,30 +76,58 @@
 
 <main class="wrap">
 
-  <!-- Run sweep -->
+  <!-- Devices -->
   <section class="card">
-    <div class="hero">
-      <button id="runBtn" disabled>Run Room Sweep</button>
-      <span id="hint" class="small muted">Checking devices…</span>
-    </div>
+    <div class="card-title">Inputs & outputs</div>
     <div class="devrow">
       <div>
-        <div class="label">Microphone</div>
+        <div class="subhead">Input: Microphone</div>
         <div id="micStatus" class="value">—</div>
         <div id="micName" class="small muted"></div>
       </div>
       <div>
-        <div class="label">DAC</div>
+        <div class="subhead">Output: DAC</div>
         <div id="dacStatus" class="value">—</div>
         <div id="dacName" class="small muted"></div>
       </div>
     </div>
   </section>
 
+  <!-- Wi-Fi Setup -->
+  <section class="card">
+    <div class="card-title">Wi-Fi setup</div>
+    <div class="subhead" id="wifiStatusLine">Status: checking…</div>
+
+    <div class="subsection">
+      <div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div class="subhead">Select your network and connect.</div>
+        <button id="wifiScanBtn">Scan</button>
+      </div>
+      <select id="wifiSel"></select>
+    </div>
+
+    <div class="subsection" id="wifiPwdWrap" style="display:none;">
+      <label for="wifiPwd" class="subhead">Password</label>
+      <input id="wifiPwd" type="password" placeholder="Wi-Fi password">
+    </div>
+
+    <div class="actions">
+      <button id="wifiConnectBtn">Connect</button>
+      <button id="hotspotStopBtn" style="margin-left:auto">Stop hotspot</button>
+      <span id="wifiMsg" class="small muted"></span>
+    </div>
+
+    <div class="small muted" id="wifiHint" style="margin-top:8px;">
+      Tip: once connected, open <code>http://measurely.local/</code> on your home network.
+    </div>
+  </section>
+
   <!-- Room & Placement -->
   <section class="card">
-    <h2>Room & Placement</h2>
-    <div class="rows">
+    <div class="card-title">Room & placement</div>
+
+    <div class="subsection">
+      <div class="subhead">Room measurements</div>
       <div class="grid-3">
         <div class="field with-unit">
           <label for="roomL">Room length</label>
@@ -121,50 +145,65 @@
           <span class="unit">m</span>
         </div>
       </div>
-      <div class="grid-2">
+    </div>
+
+    <div class="rule"></div>
+
+    <div class="subsection">
+      <div class="subhead">Speaker placement</div>
+      <div class="grid-3">
         <div class="field with-unit">
           <label for="spkFront">Speaker → front wall</label>
           <input id="spkFront" type="number" step="0.01" min="0" placeholder="e.g. 0.30">
           <span class="unit">m</span>
         </div>
         <div class="field with-unit">
-          <label for="lstToSpk">Listener → speakers</label>
-          <input id="lstToSpk" type="number" step="0.01" min="0" placeholder="e.g. 2.20">
+          <label for="lstToSpk">Listener → front wall</label>
+          <input id="lstToSpk" type="number" step="0.01" min="0" placeholder="e.g. 3.00">
+          <span class="unit">m</span>
+        </div>
+        <div class="field with-unit">
+          <label for="spkSpacing">Speaker spacing</label>
+          <input id="spkSpacing" type="number" step="0.01" min="0" placeholder="e.g. 2.00">
           <span class="unit">m</span>
         </div>
       </div>
-      <div>
-        <button id="saveRoomBtn">Save room & placement</button>
-        <span id="saveRoomMsg" class="small muted" style="margin-left:10px"></span>
-      </div>
-      <p class="small muted" style="margin:6px 2px 0">
-        Tip: measure from the <b>front baffle</b> to the wall, and from the <b>centre line between speakers</b> to your <b>ear position</b>.
-      </p>
+    </div>
+
+    <div class="actions">
+      <button id="saveRoomBtn">Save room & placement</button>
+      <span id="saveRoomMsg" class="small muted"></span>
     </div>
   </section>
 
-  <!-- Result -->
-  <section class="card" id="resultCard" style="display:none;">
-    <div class="label">Result summary</div>
-    <pre id="summary">(no result yet)</pre>
-    <div class="label" style="margin-top:10px;">Graphs</div>
-    <div id="graphs" class="muted">(none)</div>
+  <!-- Sweep -->
+  <section class="card">
+    <div class="card-title">Sweep</div>
+    <div class="hero">
+      <button id="runBtn" disabled>Run room sweep</button>
+      <span id="hint" class="small muted">Checking devices…</span>
+    </div>
+    <div class="subhead" style="margin-top:12px;">Logs</div>
+    <pre id="logs">Press “Run Room Sweep”.</pre>
   </section>
 
-  <!-- Logs -->
-  <section class="card">
-    <div class="label">Logs</div>
-    <pre id="logs">Press “Run Room Sweep”.</pre>
+  <!-- Results -->
+  <section class="card" id="resultCard" style="display:none;">
+    <div class="card-title">Results</div>
+    <pre id="summary">(no result yet)</pre>
+    <div class="subhead" style="margin-top:10px;">Graphs</div>
+    <div id="graphs" class="muted">(none)</div>
   </section>
 
   <!-- Sessions -->
   <section class="card">
-    <div class="label">Past sessions</div>
+    <div class="card-title">Past sessions</div>
     <div id="sessions" class="list muted">(none)</div>
   </section>
 </main>
 
 <script>
+/* ---------- Devices ---------- */
 async function refreshStatus(){
   try{
     const r = await fetch('/api/status'); const s = await r.json();
@@ -180,6 +219,8 @@ async function refreshStatus(){
     micStatus.textContent='Error'; dacStatus.textContent='Error'; hint.textContent='Server error.';
   }
 }
+
+/* ---------- Sessions ---------- */
 async function fetchSessions(){
   try{
     const r = await fetch('/api/sessions'); const data = await r.json();
@@ -188,6 +229,7 @@ async function fetchSessions(){
     sessions.innerHTML=data.map(s=>`<a href="#" onclick="openSession('${s.id}');return false;">${s.id}</a>`).join('');
   }catch{sessions.textContent='(error)';}
 }
+
 async function openSession(id){
   const r = await fetch('/api/session/'+id); const d = await r.json();
   resultCard.style.display='block'; summary.textContent=d.summary||'(no summary)';
@@ -195,9 +237,13 @@ async function openSession(id){
   const pngs=(d.artifacts||[]).filter(a=>/\.png$/i.test(a));
   if(pngs.length){
     graphsEl.classList.remove('muted');
-    graphsEl.innerHTML=pngs.map(a=>`<img alt="${a}" src="/api/session/${id}/artifact/${encodeURIComponent(a)}" style="display:block;max-width:100%;height:auto;border:1px solid #000;border-radius:10px;margin:8px 0">`).join('');
-  }else{graphsEl.classList.add('muted'); graphsEl.textContent='(none)';}
+    graphsEl.innerHTML=pngs.map(a=>`<img alt="${a}" src="/api/session/${id}/artifact/${encodeURIComponent(a)}" style="display:block;max-width:100%;height:auto;border:1.25px solid var(--border);border-radius:10px;margin:8px 0">`).join('');
+  }else{
+    graphsEl.classList.add('muted'); graphsEl.textContent='(none)';
+  }
 }
+
+/* ---------- Sweep ---------- */
 async function runSweep(){
   runBtn.disabled=true; logs.textContent='Running…';
   try{
@@ -208,23 +254,168 @@ async function runSweep(){
   }catch(e){logs.textContent='Error: '+e;}
   finally{runBtn.disabled=false; refreshStatus();}
 }
+
+/* ---------- Room config ---------- */
 function fillRoomFields(v){
-  roomL.value=v.length_m??''; roomW.value=v.width_m??''; roomH.value=v.height_m??'';
-  spkFront.value=v.spk_front_m??''; lstToSpk.value=v.listener_to_speakers_m??'';
+  roomL.value = v.length_m ?? '';
+  roomW.value = v.width_m ?? '';
+  roomH.value = v.height_m ?? '';
+  spkFront.value = v.spk_front_m ?? '';
+  lstToSpk.value = v.listener_front_m ?? '';
+  spkSpacing.value = v.spk_spacing_m ?? '';
 }
 async function loadRoom(){
-  try{const r=await fetch('/api/settings'); if(!r.ok)return; const s=await r.json(); fillRoomFields(s.room||{});}catch{}
+  try{
+    const r=await fetch('/api/settings'); if(!r.ok)return;
+    const s=await r.json(); fillRoomFields(s.room||{});
+  }catch{}
 }
 async function saveRoom(){
   const payload={room:{
-    length_m:+roomL.value||null, width_m:+roomW.value||null, height_m:+roomH.value||null,
-    spk_front_m:+spkFront.value||null, listener_to_speakers_m:+lstToSpk.value||null
+    length_m:+roomL.value||null,
+    width_m:+roomW.value||null,
+    height_m:+roomH.value||null,
+    spk_front_m:+spkFront.value||null,
+    listener_front_m:+lstToSpk.value||null,
+    spk_spacing_m:+spkSpacing.value||null,
+    layout:null
   }};
   const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   saveRoomMsg.textContent=r.ok?'Saved ✓':'Save failed';
   if(r.ok) setTimeout(()=>saveRoomMsg.textContent='',1500);
 }
+
+/* ---------- Wi-Fi onboarding ---------- */
+const wifiSel = document.getElementById('wifiSel');
+const wifiPwd = document.getElementById('wifiPwd');
+const wifiPwdWrap = document.getElementById('wifiPwdWrap');
+const wifiScanBtn = document.getElementById('wifiScanBtn');
+const wifiConnectBtn = document.getElementById('wifiConnectBtn');
+const wifiMsg = document.getElementById('wifiMsg');
+const wifiStatusLine = document.getElementById('wifiStatusLine');
+const wifiHint = document.getElementById('wifiHint');
+const hotspotStopBtn = document.getElementById('hotspotStopBtn');
+
+function needsPwd(sec){
+  if (!sec || sec === 'OPEN' || sec === '--') return false;
+  return true;
+}
+
+async function scanWifi(){
+  wifiMsg.textContent = 'Scanning…';
+  wifiScanBtn.disabled = true;
+  try {
+    const r = await fetch('/api/wifi/scan');
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'scan failed');
+    wifiSel.innerHTML = '';
+    j.networks.forEach(n=>{
+      const opt=document.createElement('option');
+      opt.value = n.ssid;
+      opt.textContent = `${n.ssid} • ${n.security} • ${n.signal}%`;
+      opt.dataset.security = n.security;
+      wifiSel.appendChild(opt);
+    });
+    if (j.networks.length){
+      const sec = wifiSel.options[wifiSel.selectedIndex].dataset.security;
+      wifiPwdWrap.style.display = needsPwd(sec)?'block':'none';
+      wifiMsg.textContent = 'Select a network.';
+    } else {
+      wifiPwdWrap.style.display = 'none';
+      wifiMsg.textContent = 'No networks found.';
+    }
+  } catch(e){
+    wifiMsg.textContent = 'Error: '+e;
+  } finally {
+    wifiScanBtn.disabled = false;
+  }
+}
+
+wifiSel?.addEventListener('change',()=>{
+  const sec = wifiSel.options[wifiSel.selectedIndex]?.dataset.security;
+  wifiPwdWrap.style.display = needsPwd(sec)?'block':'none';
+});
+
+async function connectWifi(){
+  const ssid = wifiSel.value;
+  const sec = wifiSel.options[wifiSel.selectedIndex]?.dataset.security;
+  const body = {ssid:ssid, psk: needsPwd(sec)? wifiPwd.value:''};
+  if(needsPwd(sec) && !body.psk){ wifiMsg.textContent='Password required.'; return; }
+
+  wifiMsg.textContent='Connecting…';
+  wifiConnectBtn.disabled = true;
+  try {
+    const r=await fetch('/api/wifi/connect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    const j=await r.json();
+    if(!j.ok) throw new Error(j.error||'connect failed');
+    wifiMsg.textContent='Connected. The hotspot will switch off shortly.';
+    wifiStatus(); // refresh status immediately
+  } catch(e){
+    wifiMsg.textContent='Error: '+e;
+  } finally {
+    wifiConnectBtn.disabled = false;
+  }
+}
+
+async function stopHotspot(){
+  hotspotStopBtn.disabled = true;
+  wifiMsg.textContent = 'Stopping hotspot…';
+  try{
+    const r = await fetch('/api/hotspot/stop', { method:'POST' });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'failed');
+    wifiMsg.textContent = 'Hotspot stopping. If this page drops, join your home Wi-Fi.';
+  }catch(e){
+    wifiMsg.textContent = 'Error: '+e;
+    hotspotStopBtn.disabled = false;
+  }
+}
+
+async function wifiStatus(){
+  try{
+    const r = await fetch('/api/wifi/status');
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'status failed');
+
+    if(j.mode === 'ap'){
+      wifiStatusLine.textContent = 'Status: Onboarding hotspot active';
+      wifiScanBtn.disabled = false;
+      wifiConnectBtn.disabled = false;
+      hotspotStopBtn.disabled = false;
+      wifiHint.style.display = '';
+    } else if(j.mode === 'station'){
+      wifiStatusLine.textContent = `Status: Connected to ${j.ssid || '(unknown)'} • IP ${j.ip4 || '-'}`;
+      // When connected, hide onboarding controls
+      wifiScanBtn.disabled = true;
+      wifiConnectBtn.disabled = true;
+      hotspotStopBtn.disabled = true;
+      wifiMsg.textContent = `Use ${j.hostname || 'measurely.local'} on your network.`;
+      wifiHint.style.display = '';
+    } else {
+      wifiStatusLine.textContent = 'Status: Wi-Fi down';
+      wifiScanBtn.disabled = false;
+      wifiConnectBtn.disabled = false;
+      hotspotStopBtn.disabled = false;
+      wifiHint.style.display = '';
+    }
+  }catch(e){
+    wifiStatusLine.textContent = 'Status: error';
+  }
+}
+
+/* ---------- Wire up ---------- */
 runBtn.addEventListener('click', runSweep);
 saveRoomBtn.addEventListener('click', saveRoom);
+wifiScanBtn.addEventListener('click', scanWifi);
+wifiConnectBtn.addEventListener('click', connectWifi);
+hotspotStopBtn.addEventListener('click', stopHotspot);
+
+/* ---------- Boot actions ---------- */
 refreshStatus(); fetchSessions(); loadRoom(); setInterval(refreshStatus,4000);
+wifiStatus(); setInterval(wifiStatus, 5000);
+scanWifi(); /* auto-scan once for Wi-Fi */
 </script>

@@ -1,33 +1,36 @@
 #!/usr/bin/env python3
-import sys, json, subprocess, os
+import sys, json, subprocess
 from pathlib import Path
-from flask import Flask, request, jsonify, send_from_directory, send_file, abort
+from flask import Flask, request, jsonify, send_from_directory, abort
 import sounddevice as sd
 
 # -------------------------------------------------------------------
 # Paths
 # -------------------------------------------------------------------
-PROJECT_ROOT = Path(__file__).resolve().parent.parent  # repo root (serves web/index.html)
-MEAS_ROOT    = Path.home() / "Measurely" / "measurements"  # where sessions are stored
+PROJECT_ROOT = Path(__file__).resolve().parent.parent   # repo root
+WEB_DIR      = PROJECT_ROOT / "web"                     # serves index.html + assets
+MEAS_ROOT    = Path.home() / "Measurely" / "measurements"
 MEAS_ROOT.mkdir(parents=True, exist_ok=True)
 
-CFG_PATH = Path.home() / ".measurely" / "config.json"  # persisted app settings
+CFG_PATH = Path.home() / ".measurely" / "config.json"
 CFG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
+NMCLI_BIN = "/usr/bin/nmcli"
+HOTSPOT_HELPER = "/usr/local/bin/measurely-hotspot.sh"
+
 # -------------------------------------------------------------------
-# Device detection (unchanged logic, small tidy)
+# Device detection
 # -------------------------------------------------------------------
 def detect_devices():
-    """Return dict with mic + dac connection info and ALSA string."""
     mic_idx = mic_name = dac_idx = dac_name = None
-    alsa_str = "hw:2,0"  # sensible default
+    alsa_str = "hw:2,0"
 
     try:
         devs = sd.query_devices()
     except Exception:
         devs = []
 
-    # Mic: prefer 'umik', else first input with channels > 0
+    # Mic
     for i, d in enumerate(devs):
         if int(d.get("max_input_channels", 0)) > 0:
             if mic_idx is None:
@@ -36,17 +39,17 @@ def detect_devices():
                 mic_idx, mic_name = i, d.get("name", "")
                 break
 
-    # DAC: prefer hifiberry, else first output with channels > 0
+    # DAC
     for i, d in enumerate(devs):
         if int(d.get("max_output_channels", 0)) > 0:
             if dac_idx is None:
                 dac_idx, dac_name = i, d.get("name", "")
-            if any(k in d.get("name", "").lower()
-                   for k in ("hifiberry", "snd_rpi_hifiberry", "pcm510", "pcm512", "i2s", "dac")):
+            if any(k in d.get("name", "").lower() for k in
+                   ("hifiberry", "snd_rpi_hifiberry", "pcm510", "pcm512", "i2s", "dac")):
                 dac_idx, dac_name = i, d.get("name", "")
                 break
 
-    # Optional: refine ALSA hw:X,Y from aplay -l
+    # ALSA hw:X,Y from aplay -l
     try:
         out = subprocess.check_output(["aplay", "-l"], text=True, stderr=subprocess.STDOUT)
         for ln in out.splitlines():
@@ -72,7 +75,7 @@ def detect_devices():
     }
 
 # -------------------------------------------------------------------
-# Settings persistence
+# Config
 # -------------------------------------------------------------------
 def read_config():
     if CFG_PATH.exists():
@@ -86,12 +89,29 @@ def write_config(cfg: dict):
     CFG_PATH.write_text(json.dumps(cfg, indent=2))
 
 # -------------------------------------------------------------------
+# Helpers
+# -------------------------------------------------------------------
+def run_nmcli(args):
+    """
+    Run nmcli via sudo (granted by /etc/sudoers.d/measurely-nm).
+    Returns (rc, stdout, stderr).
+    """
+    proc = subprocess.run(["sudo", NMCLI_BIN, *args], text=True, capture_output=True)
+    return proc.returncode, (proc.stdout or "").strip(), (proc.stderr or "").strip()
+
+# -------------------------------------------------------------------
 # Flask app
 # -------------------------------------------------------------------
 def create_app():
-    app = Flask(__name__)
+    # Serve static files directly from web/
+    app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
 
-    # ----- Helpers -----
+    # Index route
+    @app.get("/")
+    def index():
+        return app.send_static_file("index.html")
+
+    # ----- Measurement helper -----
     def run_orchestrator(params):
         cmd = [
             sys.executable, "-m", "measurely.main",
@@ -108,7 +128,6 @@ def create_app():
         if params.get("backend", "aplay") == "aplay":
             cmd += ["--alsa-device", params.get("alsa_device", "hw:2,0")]
 
-        # NOTE: Orchestrator must ultimately save to MEAS_ROOT/<session_id>/
         proc = subprocess.run(cmd, cwd=str(PROJECT_ROOT), text=True, capture_output=True)
         out = (proc.stdout or "") + (("\n[stderr]\n" + (proc.stderr or "")) if proc.stderr else "")
         saved_dir = None
@@ -127,10 +146,9 @@ def create_app():
     def list_sessions():
         if not MEAS_ROOT.exists():
             return []
-        items = []
-        # Sort by modification time (newest first)
         dirs = [p for p in MEAS_ROOT.iterdir() if p.is_dir()]
         dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+        items = []
         for p in dirs:
             summary = p / "summary.txt"
             analysis = p / "analysis.json"
@@ -142,16 +160,11 @@ def create_app():
             })
         return items
 
-    # ----- Routes -----
-    @app.get("/")
-    def index():
-        return send_file(PROJECT_ROOT / "web" / "index.html")
-
+    # ----- API routes -----
     @app.get("/api/status")
     def api_status():
         return jsonify(detect_devices())
 
-    # Settings
     @app.get("/api/settings")
     def api_get_settings():
         return jsonify(read_config())
@@ -165,7 +178,6 @@ def create_app():
         write_config(cfg)
         return jsonify({"ok": True, "saved": cfg})
 
-    # Sessions
     @app.get("/api/sessions")
     def api_sessions():
         return jsonify(list_sessions())
@@ -183,9 +195,7 @@ def create_app():
                 resp["analysis"] = json.loads(jfile.read_text())
             except Exception:
                 pass
-        # Only expose PNGs to the UI
-        arts = sorted([f.name for f in d.iterdir()
-                       if f.is_file() and f.suffix.lower() == ".png"])
+        arts = sorted([f.name for f in d.iterdir() if f.is_file() and f.suffix.lower() == ".png"])
         if arts:
             resp["artifacts"] = arts
         return jsonify(resp)
@@ -196,14 +206,11 @@ def create_app():
         f = d / fname
         if not f.exists() or not f.is_file():
             abort(404)
-        # We allow serving any file path requested; the UI will only request PNGs.
         return send_from_directory(d, fname)
 
-    # Run sweep
     @app.post("/api/run-sweep")
     def api_run():
         params = request.get_json(force=True, silent=True) or {}
-        # Fill device defaults from auto-detect
         status = detect_devices()
         params.setdefault("in_dev", status["mic"]["index"])
         params.setdefault("out_dev", status["dac"]["index"])
@@ -216,13 +223,11 @@ def create_app():
 
         out, saved_dir, rc = run_orchestrator(params)
 
-        # If a session was created, stamp meta.json with saved settings
         sid = None
         if saved_dir:
             try:
                 sid = Path(saved_dir).name
                 session_dir = Path(saved_dir)
-                # Only stamp if this is inside our MEAS_ROOT, otherwise write there too
                 if not session_dir.exists():
                     session_dir = MEAS_ROOT / sid
                 meta = {"settings": read_config()}
@@ -233,19 +238,196 @@ def create_app():
         resp = {"ok": rc == 0, "returncode": rc, "stdout": out}
         if sid:
             resp.update({"saved_dir": saved_dir, "session_id": sid})
-            sfile = (MEAS_ROOT / sid / "summary.txt")
+            sfile = MEAS_ROOT / sid / "summary.txt"
             if sfile.exists():
                 resp["summary"] = sfile.read_text(errors="ignore")
         return jsonify(resp), (200 if rc == 0 else 500)
 
+    # -------------------------------------------------------------------
+    # New: Captive portal + Wi-Fi onboarding
+    # -------------------------------------------------------------------
+
+    # Captive portal checks
+    @app.get("/hotspot-detect.html")
+    def apple_captive():
+        return "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>", 200, {"Content-Type": "text/html"}
+
+    @app.get("/generate_204")
+    def android_captive():
+        return "", 204
+
+    @app.get("/ncsi.txt")
+    def windows_captive():
+        return "Microsoft NCSI", 200, {"Content-Type": "text/plain"}
+
+    # Wi-Fi scan (via sudo nmcli)
+    @app.get("/api/wifi/scan")
+    def wifi_scan():
+        try:
+            run_nmcli(["dev", "wifi", "rescan"])
+            rc, out, err = run_nmcli(["-t", "-f", "SSID,SECURITY,SIGNAL,CHAN", "dev", "wifi", "list"])
+            if rc != 0:
+                return jsonify({"ok": False, "error": err or out or f"nmcli rc={rc}"}), 500
+
+            nets, seen = [], set()
+            for ln in out.splitlines():
+                ssid, sec, sig, chan = (ln.split(":", 3) + ["", "", "", ""])[:4]
+                key = (ssid, chan)
+                if not ssid or key in seen:
+                    continue
+                seen.add(key)
+                try:
+                    sig_i = int(sig or 0)
+                except Exception:
+                    sig_i = 0
+                nets.append({"ssid": ssid, "security": sec or "OPEN", "signal": sig_i, "channel": chan})
+            nets.sort(key=lambda x: x["signal"], reverse=True)
+            return jsonify({"ok": True, "networks": nets})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    # Wi-Fi connect (adds profile and switches; stops hotspot)
+    @app.post("/api/wifi/connect")
+    def wifi_connect():
+        body = request.get_json(force=True, silent=True) or {}
+        ssid = (body.get("ssid") or "").strip()
+        psk  = body.get("psk") or ""
+        if not ssid:
+            return jsonify({"ok": False, "error": "Missing ssid"}), 400
+
+        con_name = f"Measurely-{ssid}"
+        try:
+            # Clean any prior profile with same name
+            run_nmcli(["con", "delete", con_name])
+
+            # Use ifname "*" so NM can move the profile to wlan0 once AP is down
+            add_args = ["con", "add", "type", "wifi", "ifname", "*",
+                        "con-name", con_name, "ssid", ssid,
+                        "connection.autoconnect", "yes"]
+            if psk:
+                add_args += ["wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", psk]
+            else:
+                add_args += ["wifi-sec.key-mgmt", "none"]
+
+            rc, out, err = run_nmcli(add_args)
+            if rc != 0:
+                return jsonify({"ok": False, "error": err or out or f"nmcli add rc={rc}"}), 500
+
+            # Attempt to bring it up (may fail while AP is active)
+            rc_up, out_up, err_up = run_nmcli(["con", "up", con_name])
+
+            # Stop hotspot regardless; allows transition to infra
+            try:
+                subprocess.run([HOTSPOT_HELPER, "stop"], check=False)
+            except Exception:
+                pass
+
+            if rc_up != 0:
+                # Partial success: profile added; NM will likely connect once AP is down
+                note = err_up or out_up or "Switching from AP to Wi-Fi"
+                return jsonify({"ok": True, "connected": ssid, "note": note}), 200
+
+            return jsonify({"ok": True, "connected": ssid})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+        
+        
+    @app.get("/api/wifi/status")
+    def wifi_status():
+        """
+        Returns:
+          {
+            "ok": true,
+            "mode": "ap" | "station" | "down",
+            "ssid": "SHEPHERD-HOUSE" | null,
+            "connection": "Measurely-SHEPHERD-HOUSE" | null,
+            "ip4": "192.168.0.70" | null,
+            "hotspot_active": true|false,
+            "hostname": "measurely.local"
+          }
+        """
+        try:
+            # Active connections (NAME:TYPE:DEVICE)
+            rc, out, err = run_nmcli(["-t", "-f", "NAME,TYPE,DEVICE", "con", "show", "--active"])
+            active = (out or "").splitlines() if rc == 0 else []
+
+            hotspot_active = any(
+                ln.split(":")[0] == "Measurely-Hotspot" and ln.split(":")[-1] == "wlan0"
+                for ln in active if ":" in ln
+            )
+
+            # Which connection is on wlan0?
+            con_name = None
+            for ln in active:
+                try:
+                    name, typ, dev = ln.split(":")
+                    if dev == "wlan0" and typ == "wifi":
+                        con_name = name
+                        break
+                except ValueError:
+                    pass
+
+            # IP
+            rc, ip_out, _ = run_nmcli(["-t", "-f", "IP4.ADDRESS", "dev", "show", "wlan0"])
+            ip4 = None
+            if rc == 0:
+                for line in (ip_out or "").splitlines():
+                    if ":" in line:
+                        ip4 = line.split(":", 1)[1].split("/", 1)[0].strip()
+                        if ip4:
+                            break
+
+            # SSID for the active connection (if any)
+            ssid = None
+            if con_name:
+                rc, ssid_out, _ = run_nmcli(["-t", "-f", "802-11-wireless.ssid", "con", "show", con_name])
+                if rc == 0 and ssid_out:
+                    ssid = ssid_out.split(":", 1)[-1].strip() or None
+                # If our naming convention Measurely-<SSID>, derive as fallback
+                if not ssid and con_name.startswith("Measurely-"):
+                    ssid = con_name[len("Measurely-"):]
+
+            # Mode
+            if hotspot_active:
+                mode = "ap"
+            elif con_name and ip4:
+                mode = "station"
+            else:
+                mode = "down"
+
+            return jsonify({
+                "ok": True,
+                "mode": mode,
+                "ssid": ssid,
+                "connection": con_name,
+                "ip4": ip4,
+                "hotspot_active": hotspot_active,
+                "hostname": "measurely.local"
+            })
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+
+    # Hotspot stop (for a UI button)
+    @app.post("/api/hotspot/stop")
+    def hotspot_stop():
+        try:
+            subprocess.check_call([HOTSPOT_HELPER, "stop"])
+            return jsonify({"ok": True})
+        except subprocess.CalledProcessError as e:
+            return jsonify({"ok": False, "error": f"stop failed: {e}"}), 500
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     return app
+
+
 
 # -------------------------------------------------------------------
 # Entrypoint
 # -------------------------------------------------------------------
 def main():
     app = create_app()
-    # debug=False is important for systemd; remove reloader
     app.run(host="0.0.0.0", port=5000, debug=False)
 
 if __name__ == "__main__":
