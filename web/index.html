@@ -3,47 +3,90 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Measurely</title>
 <style>
-  :root { --pad: 14px; }
-  html,body { margin:0; padding:0; background:#fff; color:#000; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height:1.45; }
-  header { padding: var(--pad) var(--pad) 0 var(--pad); }
-  h1 { font-size: 20px; font-weight: 700; margin: 0 0 8px 0; }
-  h2 { font-size: 16px; margin: 0 0 10px 0; }
-  .wrap { padding: var(--pad); display: grid; gap: var(--pad); }
-  .card { border: 1px solid #000; border-radius: 8px; padding: var(--pad); }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .label { font-size: 12px; opacity: .8; margin-bottom: 4px; }
-  .value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  button { appearance: none; background:#fff; color:#000; border:1px solid #000; border-radius:8px; padding:12px 16px; font-weight:700; cursor:pointer; }
-  button[disabled] { opacity:.5; cursor:not-allowed; border-style: dashed; }
-  pre { white-space:pre-wrap; word-break:break-word; border:1px solid #000; border-radius:6px; padding:10px; max-height:260px; overflow:auto; background:#fff; }
-  a { color:#000; text-underline-offset: 2px; }
-  .small { font-size:12px; opacity:.8; }
-  .list a { display:block; padding:6px 0; text-decoration: underline; }
-  .muted { opacity:.7; }
-  .grid-3 { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:10px; }
-  .grid-2 { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; }
-  .field label { display:block; font-size:12px; opacity:.8; margin-bottom:4px; }
-  .field input, .field select { width:100%; padding:8px 10px; border:1px solid #000; border-radius:6px; background:#fff; color:#000; }
-  .hero { display:flex; align-items:center; gap:10px; }
-  .hero button { font-size:16px; padding:14px 18px; }
-  .img-row { display:flex; flex-wrap:wrap; gap:10px; }
-  .img-row img { display:block; max-width:100%; height:auto; border:1px solid #000; border-radius:6px; }
+  :root{
+    --pad:14px;
+    --radius:10px;
+    --border:#000;
+    --bg:#fff;
+    --fg:#000;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;font-size:17px;}
+
+  /* Header with logo + title */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: var(--pad) var(--pad) 0 var(--pad);
+  }
+  .logo {
+    height: 40px;   /* adjust if you want it larger */
+    width: auto;
+    display: block;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  h2{font-size:18px;margin:0 0 12px 0;}
+  .wrap{padding:var(--pad);display:grid;gap:var(--pad);}
+  .card{border:1.25px solid var(--border);border-radius:var(--radius);padding:var(--pad);background:var(--bg);}
+  .label{font-size:13px;opacity:.85;margin-bottom:6px;}
+  .value{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .muted{opacity:.7}
+  .small{font-size:13px}
+  .hero{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  button{
+    appearance:none; background:var(--bg); color:var(--fg);
+    border:1.25px solid var(--border); border-radius:12px;
+    padding:14px 18px; font-weight:800; cursor:pointer; line-height:1;
+    min-height:48px;
+  }
+  button:focus{outline:3px solid #0004; outline-offset:2px}
+  button[disabled]{opacity:.55;cursor:not-allowed;border-style:dashed}
+  pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--border);border-radius:10px;padding:10px;max-height:260px;overflow:auto;background:#fff}
+  a{color:var(--fg);text-underline-offset:2px}
+  .list a{display:block;padding:8px 0;text-decoration:underline}
+
+  .field label{display:block;font-size:13px;opacity:.85;margin-bottom:6px}
+  .field input{
+    width:100%;padding:12px 14px;border:1.25px solid var(--border);
+    border-radius:10px;background:#fff;color:var(--fg);
+    min-height:44px;font-size:16px;
+  }
+  .rows{display:grid;gap:12px}
+  .grid-2{display:grid;gap:16px;grid-template-columns:1fr}
+  .grid-3{display:grid;gap:16px;grid-template-columns:1fr}
+  @media (min-width:680px){ .grid-2{grid-template-columns:repeat(2,1fr)} }
+  @media (min-width:980px){ .grid-3{grid-template-columns:repeat(3,1fr)} }
+
+  .with-unit{position:relative}
+  .with-unit input{padding:10px 36px 10px 10px;box-sizing:border-box}
+  .unit{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    font-size:13px;opacity:.65;pointer-events:none;background:#fff;padding:0 4px
+  }
+
+  .devrow{display:grid;gap:12px;grid-template-columns:1fr;margin-top:12px}
+  @media (min-width:560px){ .devrow{grid-template-columns:1fr 1fr} }
 </style>
 
 <header>
-  <h1>Measurely</h1>
+  <img src="./measurely.svg" alt="Measurely logo" class="logo">
 </header>
 
 <main class="wrap">
 
-  <!-- Hero: Run sweep (clear + alone) -->
+  <!-- Run sweep -->
   <section class="card">
     <div class="hero">
       <button id="runBtn" disabled>Run Room Sweep</button>
       <span id="hint" class="small muted">Checking devices…</span>
     </div>
-    <div class="row" style="margin-top:12px;">
+    <div class="devrow">
       <div>
         <div class="label">Microphone</div>
         <div id="micStatus" class="value">—</div>
@@ -57,78 +100,58 @@
     </div>
   </section>
 
-  <!-- Room & Placement with dropdown presets -->
+  <!-- Room & Placement -->
   <section class="card">
     <h2>Room & Placement</h2>
-
-    <div class="grid-2" style="margin-bottom:10px;">
-      <div class="field">
-        <label>Room preset</label>
-        <select id="roomPreset">
-          <option value="">— Choose preset —</option>
-          <option value="S">Small (3.5 × 2.8 × 2.4 m)</option>
-          <option value="M">Medium (4.5 × 3.5 × 2.5 m)</option>
-          <option value="L">Large (6.0 × 4.5 × 2.7 m)</option>
-          <option value="C">Custom (edit fields)</option>
-        </select>
+    <div class="rows">
+      <div class="grid-3">
+        <div class="field with-unit">
+          <label for="roomL">Room length</label>
+          <input id="roomL" type="number" step="0.01" min="0" placeholder="e.g. 4.5">
+          <span class="unit">m</span>
+        </div>
+        <div class="field with-unit">
+          <label for="roomW">Room width</label>
+          <input id="roomW" type="number" step="0.01" min="0" placeholder="e.g. 3.6">
+          <span class="unit">m</span>
+        </div>
+        <div class="field with-unit">
+          <label for="roomH">Ceiling height</label>
+          <input id="roomH" type="number" step="0.01" min="0" placeholder="e.g. 2.4">
+          <span class="unit">m</span>
+        </div>
       </div>
-      <div class="field">
-        <label>Layout</label>
-        <select id="layoutPreset">
-          <option value="">— Choose layout —</option>
-          <option value="near">Nearfield desk</option>
-          <option value="sofa">Sofa listening</option>
-          <option value="theater">Home theater</option>
-        </select>
+      <div class="grid-2">
+        <div class="field with-unit">
+          <label for="spkFront">Speaker → front wall</label>
+          <input id="spkFront" type="number" step="0.01" min="0" placeholder="e.g. 0.30">
+          <span class="unit">m</span>
+        </div>
+        <div class="field with-unit">
+          <label for="lstToSpk">Listener → speakers</label>
+          <input id="lstToSpk" type="number" step="0.01" min="0" placeholder="e.g. 2.20">
+          <span class="unit">m</span>
+        </div>
       </div>
-    </div>
-
-    <div class="grid-3" style="margin-bottom:10px;">
-      <div class="field">
-        <label>Room length (m)</label>
-        <input id="roomL" type="number" step="0.01" min="0">
+      <div>
+        <button id="saveRoomBtn">Save room & placement</button>
+        <span id="saveRoomMsg" class="small muted" style="margin-left:10px"></span>
       </div>
-      <div class="field">
-        <label>Room width (m)</label>
-        <input id="roomW" type="number" step="0.01" min="0">
-      </div>
-      <div class="field">
-        <label>Room height (m)</label>
-        <input id="roomH" type="number" step="0.01" min="0">
-      </div>
-    </div>
-
-    <div class="grid-3">
-      <div class="field">
-        <label>Speaker → front wall (m)</label>
-        <input id="spkFront" type="number" step="0.01" min="0">
-      </div>
-      <div class="field">
-        <label>Listener → front wall (m)</label>
-        <input id="lstFront" type="number" step="0.01" min="0">
-      </div>
-      <div class="field">
-        <label>Speaker spacing (m)</label>
-        <input id="spkSpacing" type="number" step="0.01" min="0">
-      </div>
-    </div>
-
-    <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
-      <button id="saveRoomBtn">Save room & placement</button>
-      <span id="saveRoomMsg" class="small muted"></span>
+      <p class="small muted" style="margin:6px 2px 0">
+        Tip: measure from the <b>front baffle</b> to the wall, and from the <b>centre line between speakers</b> to your <b>ear position</b>.
+      </p>
     </div>
   </section>
 
-  <!-- Result ABOVE logs -->
+  <!-- Result -->
   <section class="card" id="resultCard" style="display:none;">
     <div class="label">Result summary</div>
     <pre id="summary">(no result yet)</pre>
-
     <div class="label" style="margin-top:10px;">Graphs</div>
-    <div id="graphs" class="img-row muted">(none)</div>
+    <div id="graphs" class="muted">(none)</div>
   </section>
 
-  <!-- Logs (below results) -->
+  <!-- Logs -->
   <section class="card">
     <div class="label">Logs</div>
     <pre id="logs">Press “Run Room Sweep”.</pre>
@@ -142,160 +165,66 @@
 </main>
 
 <script>
-/* ------------ Device status ------------ */
 async function refreshStatus(){
-  try {
-    const r = await fetch('/api/status');
-    const s = await r.json();
-
+  try{
+    const r = await fetch('/api/status'); const s = await r.json();
     const micOK = !!(s.mic && s.mic.connected);
     const dacOK = !!(s.dac && s.dac.connected);
-
-    document.getElementById('micStatus').textContent = micOK ? 'Connected' : 'Not found';
-    document.getElementById('dacStatus').textContent = dacOK ? 'Connected' : 'Not found';
-
-    document.getElementById('micName').textContent = (s.mic && s.mic.name) || '';
-    document.getElementById('dacName').textContent = (s.dac && (s.dac.name || s.dac.alsa)) || '';
-
-    const runBtn = document.getElementById('runBtn');
+    micStatus.textContent = micOK ? 'Connected' : 'Not found';
+    dacStatus.textContent = dacOK ? 'Connected' : 'Not found';
+    micName.textContent = (s.mic && s.mic.name) || '';
+    dacName.textContent = (s.dac && (s.dac.name || s.dac.alsa)) || '';
     runBtn.disabled = !(micOK && dacOK);
-    document.getElementById('hint').textContent =
-      (micOK && dacOK) ? 'Ready.' : 'Plug in mic/DAC and refresh.';
-  } catch (e) {
-    document.getElementById('micStatus').textContent = 'Error';
-    document.getElementById('dacStatus').textContent = 'Error';
-    document.getElementById('hint').textContent = 'Server error.';
+    hint.textContent = (micOK && dacOK) ? 'Ready.' : 'Plug in mic/DAC and refresh.';
+  }catch(e){
+    micStatus.textContent='Error'; dacStatus.textContent='Error'; hint.textContent='Server error.';
   }
 }
-
-/* ------------ Sessions list ------------ */
 async function fetchSessions(){
-  try {
-    const r = await fetch('/api/sessions');
-    const data = await r.json();
-    const el = document.getElementById('sessions');
-    if (!Array.isArray(data) || !data.length) { el.textContent = '(none)'; return; }
-    el.classList.remove('muted');
-    el.innerHTML = data.map(s =>
-      `<a href="#" onclick="openSession('${s.id}');return false;">${s.id}</a>`
-    ).join('');
-  } catch {
-    document.getElementById('sessions').textContent = '(error)';
-  }
+  try{
+    const r = await fetch('/api/sessions'); const data = await r.json();
+    if(!Array.isArray(data)||!data.length){sessions.textContent='(none)';return;}
+    sessions.classList.remove('muted');
+    sessions.innerHTML=data.map(s=>`<a href="#" onclick="openSession('${s.id}');return false;">${s.id}</a>`).join('');
+  }catch{sessions.textContent='(error)';}
 }
-
-/* ------------ Open a session (summary + graphs only) ------------ */
 async function openSession(id){
-  const r = await fetch('/api/session/' + id);
-  const d = await r.json();
-
-  // Show summary
-  document.getElementById('resultCard').style.display = 'block';
-  document.getElementById('summary').textContent = d.summary || '(no summary)';
-
-  // Show only PNG artifacts inline; hide WAVs/others
-  const graphsEl = document.getElementById('graphs');
-  const pngs = (d.artifacts || []).filter(a => /\.png$/i.test(a));
-  if (pngs.length) {
+  const r = await fetch('/api/session/'+id); const d = await r.json();
+  resultCard.style.display='block'; summary.textContent=d.summary||'(no summary)';
+  const graphsEl=document.getElementById('graphs');
+  const pngs=(d.artifacts||[]).filter(a=>/\.png$/i.test(a));
+  if(pngs.length){
     graphsEl.classList.remove('muted');
-    graphsEl.innerHTML = pngs.map(a =>
-      `<img src="/api/session/${id}/artifact/${encodeURIComponent(a)}" alt="${a}">`
-    ).join('');
-  } else {
-    graphsEl.classList.add('muted');
-    graphsEl.textContent = '(none)';
-  }
+    graphsEl.innerHTML=pngs.map(a=>`<img alt="${a}" src="/api/session/${id}/artifact/${encodeURIComponent(a)}" style="display:block;max-width:100%;height:auto;border:1px solid #000;border-radius:10px;margin:8px 0">`).join('');
+  }else{graphsEl.classList.add('muted'); graphsEl.textContent='(none)';}
 }
-
-/* ------------ Run sweep ------------ */
 async function runSweep(){
-  const btn = document.getElementById('runBtn');
-  btn.disabled = true;
-  document.getElementById('logs').textContent = 'Running…';
-  try {
-    const r = await fetch('/api/run-sweep', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({}) // server uses defaults + saved settings
-    });
-    const data = await r.json();
-    document.getElementById('logs').textContent = data.stdout || '(no output)';
-    if (data.session_id) {
-      await openSession(data.session_id);
-      await fetchSessions();
-    } else {
-      document.getElementById('resultCard').style.display = 'block';
-      document.getElementById('summary').textContent = '(no summary)';
-      const graphsEl = document.getElementById('graphs');
-      graphsEl.textContent = '(none)';
-      graphsEl.classList.add('muted');
-    }
-  } catch (e) {
-    document.getElementById('logs').textContent = 'Error: ' + e;
-  } finally {
-    btn.disabled = false;
-    refreshStatus();
-  }
+  runBtn.disabled=true; logs.textContent='Running…';
+  try{
+    const r=await fetch('/api/run-sweep',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const data=await r.json(); logs.textContent=data.stdout||'(no output)';
+    if(data.session_id){await openSession(data.session_id); await fetchSessions();}
+    else{resultCard.style.display='block'; summary.textContent='(no summary)'; graphs.textContent='(none)'; graphs.classList.add('muted');}
+  }catch(e){logs.textContent='Error: '+e;}
+  finally{runBtn.disabled=false; refreshStatus();}
 }
-
-/* ------------ Settings: load/save + presets ------------ */
 function fillRoomFields(v){
-  const g = id => document.getElementById(id);
-  g('roomL').value = v.length_m ?? '';
-  g('roomW').value = v.width_m ?? '';
-  g('roomH').value = v.height_m ?? '';
-  g('spkFront').value = v.spk_front_m ?? '';
-  g('lstFront').value = v.listener_front_m ?? '';
-  g('spkSpacing').value = v.spk_spacing_m ?? '';
+  roomL.value=v.length_m??''; roomW.value=v.width_m??''; roomH.value=v.height_m??'';
+  spkFront.value=v.spk_front_m??''; lstToSpk.value=v.listener_to_speakers_m??'';
 }
-
 async function loadRoom(){
-  try {
-    const r = await fetch('/api/settings');
-    if (!r.ok) return;
-    const s = await r.json();
-    fillRoomFields((s.room || {}));
-  } catch {}
+  try{const r=await fetch('/api/settings'); if(!r.ok)return; const s=await r.json(); fillRoomFields(s.room||{});}catch{}
 }
-
 async function saveRoom(){
-  const g = id => document.getElementById(id).value;
-  const payload = {
-    room: {
-      length_m: +g('roomL') || null,
-      width_m: +g('roomW') || null,
-      height_m: +g('roomH') || null,
-      spk_front_m: +g('spkFront') || null,
-      listener_front_m: +g('lstFront') || null,
-      spk_spacing_m: +g('spkSpacing') || null,
-      layout: document.getElementById('layoutPreset').value || null
-    }
-  };
-  const r = await fetch('/api/settings', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  });
-  document.getElementById('saveRoomMsg').textContent =
-    r.ok ? 'Saved ✓' : 'Save failed';
-  if (r.ok) setTimeout(()=>{ document.getElementById('saveRoomMsg').textContent=''; }, 1500);
+  const payload={room:{
+    length_m:+roomL.value||null, width_m:+roomW.value||null, height_m:+roomH.value||null,
+    spk_front_m:+spkFront.value||null, listener_to_speakers_m:+lstToSpk.value||null
+  }};
+  const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  saveRoomMsg.textContent=r.ok?'Saved ✓':'Save failed';
+  if(r.ok) setTimeout(()=>saveRoomMsg.textContent='',1500);
 }
-
-/* Preset handling */
-document.getElementById('roomPreset').addEventListener('change', e => {
-  const v = e.target.value;
-  if (v === 'S') fillRoomFields({length_m:3.5, width_m:2.8, height_m:2.4, spk_front_m:0.25, listener_front_m:1.0, spk_spacing_m:1.1});
-  else if (v === 'M') fillRoomFields({length_m:4.5, width_m:3.5, height_m:2.5, spk_front_m:0.35, listener_front_m:1.6, spk_spacing_m:1.4});
-  else if (v === 'L') fillRoomFields({length_m:6.0, width_m:4.5, height_m:2.7, spk_front_m:0.45, listener_front_m:2.2, spk_spacing_m:2.0});
-  // 'C' leaves fields as-is for manual editing
-});
-
-/* Wire up UI */
-document.getElementById('runBtn').addEventListener('click', runSweep);
-document.getElementById('saveRoomBtn').addEventListener('click', saveRoom);
-
-/* Initial load */
-refreshStatus();
-fetchSessions();
-loadRoom();
-setInterval(refreshStatus, 4000);
+runBtn.addEventListener('click', runSweep);
+saveRoomBtn.addEventListener('click', saveRoom);
+refreshStatus(); fetchSessions(); loadRoom(); setInterval(refreshStatus,4000);
 </script>
