@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-Measurely – headless sweep runner (SSH-friendly)
+Measurely – headless sweep runner (SSH-friendly, atomic writes)
 
-- Starts recording slightly BEFORE playback to ensure we never miss the start.
-- Detects the true sweep onset via cross-correlation, trims the pre-roll,
-  and only keeps the sweep + a post-roll tail for deconvolution.
+- Records slightly BEFORE playback to avoid missing the sweep start.
+- Detects true sweep onset via cross-correlation; trims pre-roll.
+- Deconvolves to impulse response; derives magnitude response.
 - Very verbose console logging for SSH runs (use --verbose).
 - Saves a complete artefact set (wav, csv, pngs, json) per run.
+- All artefacts are written ATOMICALLY to avoid 0-byte files.
 """
 
-import os, json, uuid, argparse, subprocess, shutil, tempfile, signal, sys, time
+import os, sys, json, uuid, argparse, subprocess, shutil, tempfile, signal, time
 from datetime import datetime
+from pathlib import Path
+
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
@@ -23,29 +27,33 @@ import matplotlib.pyplot as plt
 
 
 # ---------------------- utils / logging ----------------------
-def session_dir():
-    root = os.path.expanduser("~/Measurely/measurements")
+def session_dir() -> str:
+    root = Path.home() / "Measurely" / "measurements"
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
-    return os.path.join(root, stamp)
+    return str(root / stamp)
 
 def write_log(outdir, lines):
-    os.makedirs(outdir, exist_ok=True)
-    path = os.path.join(outdir, "debug.txt")
-    with open(path, "a") as f:
-        if isinstance(lines, (list, tuple)):
-            for ln in lines:
-                f.write(str(ln).rstrip() + "\n")
-        else:
-            f.write(str(lines).rstrip() + "\n")
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    path = outdir / "debug.txt"
+    text = ""
+    if isinstance(lines, (list, tuple)):
+        for ln in lines:
+            text += f"{str(ln).rstrip()}\n"
+    else:
+        text = f"{str(lines).rstrip()}\n"
+    # append is fine for a log; if it fails we don't crash the run
+    try:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(text)
+    except Exception:
+        pass
 
 def log_print(outdir, *msg, verbose=True):
     line = " ".join(str(m) for m in msg)
     if verbose:
         print(line, flush=True)
-    try:
-        write_log(outdir, line)
-    except Exception:
-        pass
+    write_log(outdir, line)
 
 def dev_info(idx, kind=None):
     try:
@@ -58,6 +66,60 @@ def fail(outdir, e, where=""):
     raise
 
 
+# ---------------------- atomic I/O helpers ----------------------
+def _atomic_write_bytes(data: bytes, dest: Path):
+    dest = Path(dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=str(dest.parent), delete=False) as tf:
+        tf.write(data)
+        tf.flush()
+        os.fsync(tf.fileno())
+        tmp = tf.name
+    os.replace(tmp, dest)
+
+def write_text_atomic(text: str, dest: Path):
+    _atomic_write_bytes(text.encode("utf-8"), Path(dest))
+
+def write_json_atomic(obj, dest: Path):
+    payload = json.dumps(obj, ensure_ascii=False, indent=2).encode("utf-8")
+    _atomic_write_bytes(payload, Path(dest))
+
+def savefig_atomic(fig, dest: Path, **kwargs):
+    dest = Path(dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    # save to tmp then atomically replace
+    with tempfile.NamedTemporaryFile(dir=str(dest.parent), suffix=dest.suffix, delete=False) as tf:
+        tmp = tf.name
+    try:
+        fig.savefig(tmp, **kwargs)
+        # fsync written bytes
+        with open(tmp, "rb") as rf:
+            os.fsync(rf.fileno())
+        os.replace(tmp, dest)
+    finally:
+        try:
+            os.unlink(tmp)
+        except FileNotFoundError:
+            pass
+        plt.close(fig)
+
+def write_wav_atomic(dest: Path, data, fs: int):
+    dest = Path(dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=str(dest.parent), suffix=".wav", delete=False) as tf:
+        tmp = tf.name
+    try:
+        sf.write(tmp, data, fs)
+        with open(tmp, "rb") as rf:
+            os.fsync(rf.fileno())
+        os.replace(tmp, dest)
+    finally:
+        try:
+            os.unlink(tmp)
+        except FileNotFoundError:
+            pass
+
+
 # graceful Ctrl+C / kill -TERM
 def _graceful_stop(sig, _frame):
     try:
@@ -65,6 +127,7 @@ def _graceful_stop(sig, _frame):
     finally:
         code = 130 if sig == signal.SIGINT else 143
         sys.exit(code)
+
 signal.signal(signal.SIGINT, _graceful_stop)
 signal.signal(signal.SIGTERM, _graceful_stop)
 
@@ -82,8 +145,7 @@ def gen_log_sweep(fs=48000, dur=8.0, f0=20.0, f1=20000.0):
     sweep /= np.max(np.abs(sweep)) + 1e-12
     sweep *= 0.7  # headroom
 
-    # Inverse filter for deconvolution
-    # (Time-reverse with amplitude weighting)
+    # Inverse filter for deconvolution (time-reverse + amplitude weighting)
     inv = sweep[::-1].astype(np.float64)
     w = np.exp(t / K)  # amplitude correction
     inv = (inv / w).astype(np.float32)
@@ -94,11 +156,8 @@ def xcorr_peak_index(rec, ref):
     Find the start of 'ref' (sweep) inside 'rec' using FFT cross-correlation.
     Returns index in 'rec' where the best alignment occurs (>=0).
     """
-    # xcorr(rec, ref) -> correlate rec with ref
-    # Using fftconvolve for speed
     c = fftconvolve(rec, ref[::-1], mode="full")
     k = int(np.argmax(np.abs(c)))
-    # shift so that 0 corresponds to rec[0] aligned with ref[0]
     start_idx = k - (len(ref) - 1)
     return max(0, start_idx)
 
@@ -164,81 +223,88 @@ def make_stereo(x):
 
 # ---------------------- saving / plotting ----------------------
 def save_all(outdir, fs, sweep, rec_raw, rec_used, ir, freqs, mag, meta):
-    os.makedirs(outdir, exist_ok=True)
+    out = Path(outdir)
+    out.mkdir(parents=True, exist_ok=True)
 
     # WAVs
-    sf.write(os.path.join(outdir, "sweep.wav"), sweep, fs)
-    sf.write(os.path.join(outdir, "mic_recording_raw.wav"), rec_raw, fs)
-    sf.write(os.path.join(outdir, "mic_recording_used.wav"), rec_used, fs)
-    sf.write(os.path.join(outdir, "impulse.wav"), ir, fs)
+    write_wav_atomic(out / "sweep.wav", sweep, fs)
+    write_wav_atomic(out / "mic_recording_raw.wav", rec_raw, fs)
+    write_wav_atomic(out / "mic_recording_used.wav", rec_used, fs)
+    write_wav_atomic(out / "impulse.wav", ir, fs)
 
-    # CSV
-    with open(os.path.join(outdir, "response.csv"), "w") as f:
-        f.write("freq_hz,mag_db\n")
-        for fr, db in zip(freqs, mag):
-            f.write(f"{fr:.6f},{db:.2f}\n")
+    # CSV (always at least a header)
+    lines = ["freq_hz,mag_db\n"]
+    if freqs.size and mag.size:
+        n = int(min(freqs.size, mag.size))
+        for fr, db in zip(freqs[:n], mag[:n]):
+            lines.append(f"{float(fr):.6f},{float(db):.2f}\n")
+    write_text_atomic("".join(lines), out / "response.csv")
 
-    # 1) Impulse response
+    # 1) Impulse response plot
     try:
-        t = np.arange(len(ir)) / float(fs)
-        plt.figure(figsize=(9,4))
-        plt.plot(t, ir)
-        plt.xlabel("Time (s)"); plt.ylabel("Amplitude")
-        plt.title("Measurely – Impulse Response"); plt.grid(True, ls=":")
-        plt.tight_layout(); plt.savefig(os.path.join(outdir, "impulse_response.png"), dpi=150)
-    finally:
-        plt.close()
-
-    # 2) Frequency response
-    nyq = max(1.0, fs/2.0)
-    fl  = 20.0 if nyq >= 40.0 else max(0.5, nyq/10.0)
-
-    msk_all = (freqs > 0) & np.isfinite(freqs) & np.isfinite(mag)
-    fx_all, mx_all = freqs[msk_all], mag[msk_all]
-    msk = msk_all & (freqs >= fl) & (freqs <= nyq)
-    fx, mx = freqs[msk], mag[msk]
-
-    try:
-        plt.figure(figsize=(9,5))
-        if fx.size > 0:
-            plt.semilogx(fx, mx)
-            lo, hi = np.percentile(mx, [5,95])
-            pad = max(3.0, 0.1*(hi-lo))
-            plt.ylim(lo - pad, hi + pad)
-            plt.xlim(fl, nyq)
-        elif fx_all.size > 0:
-            plt.semilogx(fx_all, mx_all)
-            plt.xlim(max(0.5, float(fx_all.min())), float(fx_all.max()))
+        t = np.arange(len(ir)) / float(fs) if len(ir) else np.array([0.0, 1.0])
+        fig = plt.figure(figsize=(9, 4))
+        ax = fig.add_subplot(111)
+        if len(ir):
+            ax.plot(t, ir)
         else:
-            ax = plt.gca()
-            ax.text(0.5, 0.5, "No finite data to plot", ha="center", va="center", transform=ax.transAxes)
-        plt.grid(True, which="both", ls=":")
-        plt.xlabel("Frequency (Hz)"); plt.ylabel("Magnitude (dB)")
-        plt.title("Measurely – Frequency Response"); plt.tight_layout()
-        plt.savefig(os.path.join(outdir, "response.png"), dpi=150)
-    finally:
-        plt.close()
+            ax.text(0.5, 0.5, "No IR data", ha="center", va="center", transform=ax.transAxes)
+        ax.set_xlabel("Time (s)"); ax.set_ylabel("Amplitude")
+        ax.set_title("Measurely – Impulse Response"); ax.grid(True, ls=":")
+        fig.tight_layout()
+        savefig_atomic(fig, out / "impulse_response.png", dpi=150)
+    except Exception as e:
+        write_log(outdir, f"Plot IR failed: {e}")
 
-    # Meta + debug JSON
-    with open(os.path.join(outdir, "meta.json"), "w") as f:
-        json.dump(meta, f, indent=2)
+    # 2) Frequency response plot
+    try:
+        nyq = max(1.0, fs/2.0)
+        fl  = 20.0 if nyq >= 40.0 else max(0.5, nyq/10.0)
+
+        msk_all = (freqs > 0) & np.isfinite(freqs) & np.isfinite(mag)
+        fx_all, mx_all = freqs[msk_all], mag[msk_all]
+        msk = msk_all & (freqs >= fl) & (freqs <= nyq)
+        fx, mx = freqs[msk], mag[msk]
+
+        fig = plt.figure(figsize=(9, 5))
+        ax = fig.add_subplot(111)
+        if fx.size > 0:
+            ax.semilogx(fx, mx)
+            lo, hi = np.percentile(mx, [5, 95])
+            pad = max(3.0, 0.1*(hi-lo))
+            ax.set_ylim(lo - pad, hi + pad)
+            ax.set_xlim(fl, nyq)
+        elif fx_all.size > 0:
+            ax.semilogx(fx_all, mx_all)
+            ax.set_xlim(max(0.5, float(fx_all.min())), float(fx_all.max()))
+        else:
+            ax.text(0.5, 0.5, "No finite data to plot", ha="center", va="center", transform=ax.transAxes)
+        ax.grid(True, which="both", ls=":")
+        ax.set_xlabel("Frequency (Hz)"); ax.set_ylabel("Magnitude (dB)")
+        ax.set_title("Measurely – Frequency Response")
+        fig.tight_layout()
+        savefig_atomic(fig, out / "response.png", dpi=150)
+    except Exception as e:
+        write_log(outdir, f"Plot FR failed: {e}")
+
+    # Meta + debug JSON (atomic)
+    write_json_atomic(meta, out / "meta.json")
 
     dbg = {
         "fs": fs,
-        "nyquist": nyq,
+        "nyquist": float(fs/2.0),
         "rec_raw_len": int(len(rec_raw)),
         "rec_used_len": int(len(rec_used)),
         "rec_raw_rms": float(np.sqrt(np.mean(rec_raw**2))) if rec_raw.size else None,
         "rec_used_rms": float(np.sqrt(np.mean(rec_used**2))) if rec_used.size else None,
         "ir_len": int(len(ir)),
         "ir_peak": float(np.max(np.abs(ir))) if ir.size else None,
-        "freq_points": int(fx.size if fx.size else fx_all.size),
-        "low_cut_used_hz": float(fl),
-        "freq_min": float((fx.min() if fx.size else fx_all.min())) if (fx.size or fx_all.size) else None,
-        "freq_max": float((fx.max() if fx.size else fx_all.max())) if (fx.size or fx_all.size) else None,
+        "freq_points": int(int(np.isfinite(freqs).sum()) if freqs.size else 0),
+        "low_cut_used_hz": float(20.0 if (fs/2.0) >= 40.0 else max(0.5, (fs/2.0)/10.0)),
+        "freq_min": float(np.nanmin(freqs)) if freqs.size else None,
+        "freq_max": float(np.nanmax(freqs)) if freqs.size else None,
     }
-    with open(os.path.join(outdir, "debug_stats.json"), "w") as f:
-        json.dump(dbg, f, indent=2)
+    write_json_atomic(dbg, out / "debug_stats.json")
 
 
 # ---------------------- CLI ----------------------
@@ -271,14 +337,14 @@ def main():
         print(sd.query_devices())
         sys.exit(0)
 
-    # Always force 48k for typical UMIK-1 flows; the DAC side can resample.
-    fs = int(args.fs) if args.fs else 48000
+    # For typical UMIK-1 flows; DAC can resample.
+    fs = 48000 if not args.fs else int(args.fs)
     fs = 48000  # harden to 48k to reduce surprises on RPi + UMIK-1
 
     sweep, inv = gen_log_sweep(fs, args.dur, args.f0, args.f1)
 
     outdir = session_dir()
-    os.makedirs(outdir, exist_ok=True)
+    Path(outdir).mkdir(parents=True, exist_ok=True)
     log_print(outdir, "=== Measurely run start ===", verbose=args.verbose)
     log_print(outdir, f"Outdir: {outdir}", verbose=args.verbose)
     log_print(outdir, f"Params: fs={fs} dur={args.dur} f0={args.f0} f1={args.f1}", verbose=args.verbose)
@@ -330,7 +396,7 @@ def main():
         if rms < 1e-6:
             raise RuntimeError("Recording silent (RMS < 1e-6). Check mic index, gain, or amp volume.")
 
-        # --- Align and trim: find where the sweep actually starts in the raw capture
+        # Align and trim: find where the sweep actually starts in the raw capture
         start_idx = xcorr_peak_index(rec_raw, sweep)
         log_print(outdir, f"Sweep onset estimated at frame {start_idx} (~{start_idx/fs:.3f}s)", verbose=args.verbose)
         use_len = len(sweep) + int(fs * args.postpad)
@@ -359,7 +425,9 @@ def main():
         save_all(outdir, fs, sweep, rec_raw, rec_used, ir, freqs, mag, meta)
         log_print(outdir, "Saved artefacts.", verbose=args.verbose)
 
-        print("Saved:", outdir)  # <-- GUI looks for this exact line
+        # GUI watches stdout for this exact line:
+        print("Saved:", outdir)
+
         log_print(outdir, "=== Measurely run end ===", verbose=args.verbose)
 
     except Exception as e:

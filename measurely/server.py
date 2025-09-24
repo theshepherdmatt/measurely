@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, json, subprocess
+import sys, json, subprocess, threading
 from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory, abort
 import sounddevice as sd
@@ -92,10 +92,6 @@ def write_config(cfg: dict):
 # Helpers
 # -------------------------------------------------------------------
 def run_nmcli(args):
-    """
-    Run nmcli via sudo (granted by /etc/sudoers.d/measurely-nm).
-    Returns (rc, stdout, stderr).
-    """
     proc = subprocess.run(["sudo", NMCLI_BIN, *args], text=True, capture_output=True)
     return proc.returncode, (proc.stdout or "").strip(), (proc.stderr or "").strip()
 
@@ -103,7 +99,6 @@ def run_nmcli(args):
 # Flask app
 # -------------------------------------------------------------------
 def create_app():
-    # Serve static files directly from web/
     app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
 
     # Index route
@@ -160,7 +155,9 @@ def create_app():
             })
         return items
 
-    # ----- API routes -----
+    # -------------------------------------------------------------------
+    # API routes
+    # -------------------------------------------------------------------
     @app.get("/api/status")
     def api_status():
         return jsonify(detect_devices())
@@ -244,10 +241,8 @@ def create_app():
         return jsonify(resp), (200 if rc == 0 else 500)
 
     # -------------------------------------------------------------------
-    # New: Captive portal + Wi-Fi onboarding
+    # Captive portal + Wi-Fi onboarding
     # -------------------------------------------------------------------
-
-    # Captive portal checks
     @app.get("/hotspot-detect.html")
     def apple_captive():
         return "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>", 200, {"Content-Type": "text/html"}
@@ -260,7 +255,6 @@ def create_app():
     def windows_captive():
         return "Microsoft NCSI", 200, {"Content-Type": "text/plain"}
 
-    # Wi-Fi scan (via sudo nmcli)
     @app.get("/api/wifi/scan")
     def wifi_scan():
         try:
@@ -286,7 +280,6 @@ def create_app():
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
-    # Wi-Fi connect (adds profile and switches; stops hotspot)
     @app.post("/api/wifi/connect")
     def wifi_connect():
         body = request.get_json(force=True, silent=True) or {}
@@ -297,10 +290,8 @@ def create_app():
 
         con_name = f"Measurely-{ssid}"
         try:
-            # Clean any prior profile with same name
-            run_nmcli(["con", "delete", con_name])
+            run_nmcli(["con", "delete", con_name])  # clean prior
 
-            # Use ifname "*" so NM can move the profile to wlan0 once AP is down
             add_args = ["con", "add", "type", "wifi", "ifname", "*",
                         "con-name", con_name, "ssid", ssid,
                         "connection.autoconnect", "yes"]
@@ -313,41 +304,20 @@ def create_app():
             if rc != 0:
                 return jsonify({"ok": False, "error": err or out or f"nmcli add rc={rc}"}), 500
 
-            # Attempt to bring it up (may fail while AP is active)
-            rc_up, out_up, err_up = run_nmcli(["con", "up", con_name])
-
-            # Stop hotspot regardless; allows transition to infra
-            try:
+            # Respond immediately
+            def switch_to_wifi():
+                run_nmcli(["con", "up", con_name])
                 subprocess.run([HOTSPOT_HELPER, "stop"], check=False)
-            except Exception:
-                pass
 
-            if rc_up != 0:
-                # Partial success: profile added; NM will likely connect once AP is down
-                note = err_up or out_up or "Switching from AP to Wi-Fi"
-                return jsonify({"ok": True, "connected": ssid, "note": note}), 200
+            threading.Thread(target=switch_to_wifi, daemon=True).start()
+            return jsonify({"ok": True, "connected": ssid, "note": "Switching to Wi-Fi..."})
 
-            return jsonify({"ok": True, "connected": ssid})
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
-        
-        
+
     @app.get("/api/wifi/status")
     def wifi_status():
-        """
-        Returns:
-          {
-            "ok": true,
-            "mode": "ap" | "station" | "down",
-            "ssid": "SHEPHERD-HOUSE" | null,
-            "connection": "Measurely-SHEPHERD-HOUSE" | null,
-            "ip4": "192.168.0.70" | null,
-            "hotspot_active": true|false,
-            "hostname": "measurely.local"
-          }
-        """
         try:
-            # Active connections (NAME:TYPE:DEVICE)
             rc, out, err = run_nmcli(["-t", "-f", "NAME,TYPE,DEVICE", "con", "show", "--active"])
             active = (out or "").splitlines() if rc == 0 else []
 
@@ -356,7 +326,6 @@ def create_app():
                 for ln in active if ":" in ln
             )
 
-            # Which connection is on wlan0?
             con_name = None
             for ln in active:
                 try:
@@ -367,7 +336,6 @@ def create_app():
                 except ValueError:
                     pass
 
-            # IP
             rc, ip_out, _ = run_nmcli(["-t", "-f", "IP4.ADDRESS", "dev", "show", "wlan0"])
             ip4 = None
             if rc == 0:
@@ -377,17 +345,14 @@ def create_app():
                         if ip4:
                             break
 
-            # SSID for the active connection (if any)
             ssid = None
             if con_name:
                 rc, ssid_out, _ = run_nmcli(["-t", "-f", "802-11-wireless.ssid", "con", "show", con_name])
                 if rc == 0 and ssid_out:
                     ssid = ssid_out.split(":", 1)[-1].strip() or None
-                # If our naming convention Measurely-<SSID>, derive as fallback
                 if not ssid and con_name.startswith("Measurely-"):
                     ssid = con_name[len("Measurely-"):]
 
-            # Mode
             if hotspot_active:
                 mode = "ap"
             elif con_name and ip4:
@@ -407,8 +372,6 @@ def create_app():
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
-
-    # Hotspot stop (for a UI button)
     @app.post("/api/hotspot/stop")
     def hotspot_stop():
         try:
@@ -420,8 +383,6 @@ def create_app():
             return jsonify({"ok": False, "error": str(e)}), 500
 
     return app
-
-
 
 # -------------------------------------------------------------------
 # Entrypoint

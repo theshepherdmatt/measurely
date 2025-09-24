@@ -1,20 +1,56 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-Measurely – standalone analysis (fast version)
+Measurely – standalone analysis (fast + robust I/O)
 - Compacts response to log-spaced bins (points_per_oct configurable)
 - Analyses bandwidth, band balances, peaks/dips, reflections, RT60/EDT
-- Writes analysis.json + summary.txt in the session folder
-- Reads meta.json for room & placement context and folds it into advice
+- Reads meta.json (plus ~/.measurely/config.json fallback) for room context
+- Writes analysis.json + summary.txt atomically in the session folder
 """
 
-import argparse, os, json, sys, math
+import argparse, os, json, sys, math, tempfile, logging
 import numpy as np
 import soundfile as sf
 from pathlib import Path
 
+# -------------------------------------------------------------------
+# Constants & logging
+# -------------------------------------------------------------------
 C_MPS = 343.0  # speed of sound (m/s)
 
-# ---------------- I/O ----------------
+log = logging.getLogger("measurely.analyse")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
+# -------------------------------------------------------------------
+# Safe atomic writers (prevents 0-byte files on crash)
+# -------------------------------------------------------------------
+def _atomic_write_bytes(data: bytes, dest: Path):
+    dest = Path(dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=str(dest.parent), delete=False) as tf:
+        tf.write(data)
+        tf.flush()
+        os.fsync(tf.fileno())
+        tmp = tf.name
+    os.replace(tmp, dest)
+
+def write_text_atomic(text: str, dest: Path):
+    payload = text.encode("utf-8")
+    _atomic_write_bytes(payload, dest)
+    log.info("Wrote %s (%d bytes)", dest, len(payload))
+
+def write_json_atomic(obj, dest: Path):
+    payload = json.dumps(obj, ensure_ascii=False, indent=2).encode("utf-8")
+    _atomic_write_bytes(payload, dest)
+    log.info("Wrote %s (%d bytes)", dest, len(payload))
+
+# -------------------------------------------------------------------
+# I/O
+# -------------------------------------------------------------------
 def load_session_paths(path):
     if os.path.isdir(path):
         resp = os.path.join(path, "response.csv")
@@ -26,7 +62,9 @@ def load_session_paths(path):
         return resp, imp, path
     raise FileNotFoundError(f"{path} is not a directory")
 
-# ---------------- Meta (room) ----------------
+# -------------------------------------------------------------------
+# Meta (room)
+# -------------------------------------------------------------------
 def _to_float(v):
     try:
         return float(v)
@@ -42,9 +80,10 @@ def load_meta_raw(session_dir):
     p = os.path.join(session_dir, "meta.json")
     if os.path.isfile(p):
         try:
-            with open(p, "r") as f:
+            with open(p, "r", encoding="utf-8") as f:
                 data = json.load(f) or {}
-        except Exception:
+        except Exception as e:
+            log.warning("Could not parse %s: %s", p, e)
             data = {}
 
     # If room settings aren't present in the session, fall back to app config
@@ -53,31 +92,16 @@ def load_meta_raw(session_dir):
         if not (isinstance(data, dict) and isinstance(data.get("settings"), dict)
                 and isinstance(data["settings"].get("room"), dict)):
             if cfg_path.exists():
-                cfg = json.loads(cfg_path.read_text()) or {}
+                cfg = json.loads(cfg_path.read_text(encoding="utf-8")) or {}
                 if isinstance(cfg.get("room"), dict):
                     data.setdefault("settings", {})
-                    # only fill in if missing, don't overwrite session-provided room
                     data["settings"].setdefault("room", cfg["room"])
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug("No usable ~/.measurely/config.json: %s", e)
 
     return data
 
-
 def normalize_room_meta(meta_raw):
-    """
-    Accepts structures like:
-    {
-      "settings": {
-        "room": {
-          "length_m": 4, "width_m": 4, "height_m": 3,
-          "spk_front_m": 0.2, "listener_front_m": 3, "spk_spacing_m": 2,
-          "layout": "sofa"
-        }
-      }
-    }
-    Returns a single dict with consistent keys and both m and cm where useful.
-    """
     room = {}
     if isinstance(meta_raw, dict):
         if isinstance(meta_raw.get("settings"), dict) and isinstance(meta_raw["settings"].get("room"), dict):
@@ -88,28 +112,26 @@ def normalize_room_meta(meta_raw):
     length_m   = _to_float(room.get("length_m"))
     width_m    = _to_float(room.get("width_m"))
     height_m   = _to_float(room.get("height_m"))
-    spk_front_m      = _to_float(room.get("spk_front_m"))      # speaker -> front wall
-    listener_front_m = _to_float(room.get("listener_front_m")) # listener -> front wall
+    spk_front_m      = _to_float(room.get("spk_front_m"))
+    listener_front_m = _to_float(room.get("listener_front_m"))
     spk_spacing_m    = _to_float(room.get("spk_spacing_m"))
-    layout           = (room.get("layout") or "stereo").strip()
+    layout = (room.get("layout") or "stereo")
+    layout = layout.strip() if isinstance(layout, str) else "stereo"
 
     # Derived centimeters
     speaker_to_front_wall_cm = spk_front_m * 100 if spk_front_m is not None else None
-    speaker_to_side_wall_cm  = None  # not provided by your schema
+    speaker_to_side_wall_cm  = None
     speaker_spacing_cm       = spk_spacing_m * 100 if spk_spacing_m is not None else None
-    seating_distance_cm      = None  # (could be added later if you store it)
+    seating_distance_cm      = None
     listener_to_back_wall_cm = None
     if length_m is not None and listener_front_m is not None:
         d_back_m = max(length_m - listener_front_m, 0.0)
         listener_to_back_wall_cm = d_back_m * 100.0
 
     return {
-        # geometry (m)
         "length_m": length_m, "width_m": width_m, "height_m": height_m,
         "spk_front_m": spk_front_m, "listener_front_m": listener_front_m,
-        "spk_spacing_m": spk_spacing_m,
-        "layout": layout,
-        # convenience (cm)
+        "spk_spacing_m": spk_spacing_m, "layout": layout,
         "speaker_to_front_wall_cm": speaker_to_front_wall_cm,
         "speaker_to_side_wall_cm": speaker_to_side_wall_cm,
         "speaker_spacing_cm": speaker_spacing_cm,
@@ -118,7 +140,6 @@ def normalize_room_meta(meta_raw):
     }
 
 def compute_room_estimates(room):
-    """First axial modes (Hz) and predicted front-wall reflection delay (ms)."""
     def first_mode(dim_m):
         try:
             if dim_m and dim_m > 0:
@@ -144,11 +165,13 @@ def compute_room_estimates(room):
         "front_wall_reflection_ms": fw_ms,
     }
 
-# ---------------- Response/IR loaders ----------------
+# -------------------------------------------------------------------
+# Response/IR loaders
+# -------------------------------------------------------------------
 def load_response_csv(csv_path):
     freqs, mags = [], []
-    with open(csv_path, "r") as f:
-        _ = f.readline()  # header
+    with open(csv_path, "r", encoding="utf-8") as f:
+        _ = f.readline()  # header (optional)
         for line in f:
             s = line.strip()
             if not s:
@@ -156,10 +179,15 @@ def load_response_csv(csv_path):
             parts = s.split(",")
             if len(parts) < 2:
                 continue
-            freqs.append(float(parts[0]))
-            mags.append(float(parts[1]))
+            try:
+                freqs.append(float(parts[0]))
+                mags.append(float(parts[1]))
+            except ValueError:
+                continue
     freqs = np.asarray(freqs, dtype=np.float64)
     mags  = np.asarray(mags,  dtype=np.float64)
+    if freqs.size == 0 or mags.size == 0:
+        log.warning("response.csv appears empty or invalid: %s", csv_path)
     m = np.isfinite(freqs) & np.isfinite(mags) & (freqs > 0)
     return freqs[m], mags[m]
 
@@ -170,7 +198,25 @@ def load_impulse_wav(wav_path):
     ir = np.nan_to_num(ir, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
     return ir, int(fs)
 
-# ---------------- helpers: compaction / stats ----------------
+# Optional fallback: derive response from impulse if CSV is empty
+def derive_response_from_ir(ir, fs, n_fft=131072):
+    if ir is None or ir.size == 0 or fs <= 0:
+        return np.array([]), np.array([])
+    n = min(len(ir), n_fft)
+    w = np.hanning(n)
+    y = ir[:n] * w
+    H = np.fft.rfft(y, n=n_fft)
+    f = np.fft.rfftfreq(n_fft, d=1.0/fs)
+    mag = np.abs(H) + 1e-18
+    mag_db = 20.0 * np.log10(mag)
+    mid = (f >= 500) & (f <= 2000)
+    ref = np.median(mag_db[mid]) if np.any(mid) else np.median(mag_db)
+    mag_db = mag_db - ref
+    return f, mag_db
+
+# -------------------------------------------------------------------
+# helpers: compaction / stats
+# -------------------------------------------------------------------
 def compact_log_bins(freqs, mags, fmin=20.0, fmax=20000.0, points_per_oct=48):
     freqs = np.asarray(freqs); mags = np.asarray(mags)
     mkeep = (freqs >= max(fmin, 1e-3)) & (freqs <= fmax) & np.isfinite(mags)
@@ -225,7 +271,9 @@ def detect_modes(freqs, mags, threshold_db=6.0, min_sep_hz=15.0):
             last_f = freqs[i]
     return modes
 
-# ---------------- IR analysis ----------------
+# -------------------------------------------------------------------
+# IR analysis
+# -------------------------------------------------------------------
 def reflections_from_ir(ir, fs, win_ms=20.0, min_rel_db=-20.0):
     if ir.size == 0:
         return []
@@ -285,10 +333,36 @@ def rt60_metrics(ir, fs, max_window_s=1.5):
         rt60, method = None, None
     return {"rt60_s": rt60, "method": method, "edt_s": edt}
 
-# ---------------- Main analysis ----------------
+# -------------------------------------------------------------------
+# Main analysis
+# -------------------------------------------------------------------
 def analyse(freqs_raw, mags_raw, ir, fs, points_per_oct=48):
     freqs, mags = compact_log_bins(freqs_raw, mags_raw, fmin=20.0, fmax=20000.0,
                                    points_per_oct=points_per_oct)
+
+    # Handle empty/insufficient response data gracefully
+    if freqs.size == 0 or mags.size == 0:
+        reflections_ms = reflections_from_ir(ir, fs, win_ms=20.0, min_rel_db=-20.0)
+        rt = rt60_metrics(ir, fs, max_window_s=1.5)
+        return {
+            "bandwidth_lo_3db_hz": None,
+            "bandwidth_hi_3db_hz": None,
+            "band_levels_db": {
+                "bass_20_200":   None,
+                "mid_200_2k":    None,
+                "treble_2k_10k": None,
+                "air_10k_20k":   None,
+            },
+            "smoothness_std_db": None,
+            "modes": [],
+            "reflections_ms": reflections_ms,
+            "rt60_s": rt["rt60_s"],
+            "rt60_method": rt["method"],
+            "edt_s": rt["edt_s"],
+            "bins_used": 0,
+            "notes": ["No frequency response data found (response.csv was empty)."],
+        }
+
     bands = {
         "bass_20_200":   float(np.nanmean(mags[band_mask(freqs, 20, 200)]) if np.any(band_mask(freqs,20,200)) else np.nan),
         "mid_200_2k":    float(np.nanmean(mags[band_mask(freqs, 200, 2000)]) if np.any(band_mask(freqs,200,2000)) else np.nan),
@@ -335,17 +409,14 @@ def analyse(freqs_raw, mags_raw, ir, fs, points_per_oct=48):
         "notes": advice,
     }
 
-# ---------------- Context injection ----------------
+# -------------------------------------------------------------------
+# Context injection
+# -------------------------------------------------------------------
 def apply_room_context_and_insights(session_dir, result):
-    """
-    Loads & normalizes meta, computes estimates, attaches to result, and
-    adds context-aware notes (without duplicating).
-    """
     meta_raw = load_meta_raw(session_dir)
     room = normalize_room_meta(meta_raw)
     estimates = compute_room_estimates(room)
 
-    # Attach context
     result["context"] = {"room": room}
     result["room_estimates"] = estimates
 
@@ -357,7 +428,6 @@ def apply_room_context_and_insights(session_dir, result):
         if s not in notes:
             notes.append(s)
 
-    # Speakers close to front wall and bass elevated → suggest pull-out
     try:
         if (room.get("spk_front_m") is not None
             and room["spk_front_m"] < 0.25
@@ -367,7 +437,6 @@ def apply_room_context_and_insights(session_dir, result):
     except Exception:
         pass
 
-    # Small-ish room → soft furnishings help
     try:
         L = room.get("length_m"); W = room.get("width_m")
         if (L and L <= 3.2) or (W and W <= 2.6):
@@ -375,7 +444,6 @@ def apply_room_context_and_insights(session_dir, result):
     except Exception:
         pass
 
-    # If predicted front-wall bounce matches a very-early reflection, mention it
     fw_ms = estimates.get("front_wall_reflection_ms")
     early = result.get("reflections_ms") or []
     if fw_ms and any(abs(t - fw_ms) <= max(0.08 * fw_ms, 0.25) for t in early):
@@ -383,7 +451,9 @@ def apply_room_context_and_insights(session_dir, result):
 
     result["notes"] = notes
 
-# ---------------- Summary helpers ----------------
+# -------------------------------------------------------------------
+# Summary helpers
+# -------------------------------------------------------------------
 def _safe(val, fmt="{:.1f}"):
     try:
         if val is None: return "?"
@@ -410,7 +480,6 @@ def build_plain_summary(analysis, context=None):
     fixes = []
     one_line = "All good. Nothing scary showed up."
 
-    # Balance cues
     if bass is not None and mid is not None:
         diff_bass = bass - mid
         if diff_bass >= 4:
@@ -420,41 +489,35 @@ def build_plain_summary(analysis, context=None):
             one_line = "Voices are stronger than bass."
             fixes.append("Move speakers a little closer to the wall or add a small sub.")
 
-    # Treble / air
     if air is not None and treb is not None and (air < treb - 6):
         one_line = "Top sparkle is a bit soft."
         fixes.append("Aim tweeters at ear height and check toe-in.")
 
-    # Room liveliness
     if rt60 and rt60 > 0.6:
         one_line = "Room sounds a bit echoey."
         fixes.append("Add a rug, curtains, or soft furnishings.")
 
-    # Reflections
     if refs:
         if one_line == "All good. Nothing scary showed up.":
             one_line = "Room reflections are bouncing sound back."
         fixes.append("Place something soft at the first side-wall reflection points.")
 
-    # ~100 Hz boom
     if any(m.get("type") == "peak" and 80 <= m.get("freq_hz", 0) <= 120 for m in modes):
         if one_line == "All good. Nothing scary showed up.":
             one_line = "There’s a boom around 100 Hz."
         fixes.append("Slide speakers or seat a little to reduce the boom.")
 
-    # Smoothness
     if smooth is not None and smooth > 3.0:
         if one_line == "All good. Nothing scary showed up.":
             one_line = "Response is a bit bumpy."
         fixes.append("Small position tweaks (5–10 cm) can smooth things out.")
 
-    # Context-aware tweaks (normalized schema already includes *_m and *_cm)
     try:
         fw_cm = room.get("speaker_to_front_wall_cm")
         sw_cm = room.get("speaker_to_side_wall_cm")
         bw_cm = room.get("listener_to_back_wall_cm")
-        width_m  = room.get("length_m")  # typo avoided; check both below:
-        length_m = room.get("length_m")
+        Wm = room.get("width_m") or 0
+        Lm = room.get("length_m") or 0
 
         if fw_cm is not None and fw_cm < 20 and (bass is not None and mid is not None and (bass - mid) >= 3):
             fixes.append("Speakers are very close to the wall; try +10–20 cm distance.")
@@ -462,22 +525,20 @@ def build_plain_summary(analysis, context=None):
             fixes.append("Speakers are close to side walls; add/shift side absorption a little.")
         if bw_cm is not None and bw_cm < 30 and any(m.get("type") == "peak" and 40 <= m.get("freq_hz", 0) <= 80 for m in modes):
             fixes.append("Seat is near back wall; move forward ~10–20 cm to ease bass build-up.")
-        # small room hint
-        Wm = room.get("width_m") or 0
-        Lm = room.get("length_m") or 0
         if (0 < Wm <= 2.6) or (0 < Lm <= 3.2):
             fixes.append("Small room: thick rug/curtains help a lot.")
     except Exception:
         pass
 
-    # Unique & limit to 3
     uniq = []
     for tip in fixes:
         if tip not in uniq:
             uniq.append(tip)
     return one_line, uniq[:3]
 
-# ---------------- Ratings (/10) ----------------
+# -------------------------------------------------------------------
+# Ratings (/10)
+# -------------------------------------------------------------------
 def _linmap(x, x0, x1, y0, y1):
     if x0 == x1: return (y0 + y1) / 2
     t = (x - x0) / (x1 - x0)
@@ -565,7 +626,9 @@ def compute_scores(analysis):
     scores["overall"] = round(np.mean(list(scores.values())), 1)
     return scores
 
-# ---------------- Summary file ----------------
+# -------------------------------------------------------------------
+# Summary file
+# -------------------------------------------------------------------
 def write_summary(path, analysis, context=None):
     one_line, fixes = build_plain_summary(analysis, context=context)
     blo = analysis.get("bandwidth_lo_3db_hz")
@@ -676,46 +739,68 @@ def write_summary(path, analysis, context=None):
         lines.append(f"  Reverb     : {sc['reverb']}/10")
         lines.append(f"  Overall    : {sc['overall']}/10")
         lines.append("")
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug("Score block skipped: %s", e)
 
     lines.append(f"Bins analysed: {analysis.get('bins_used')}")
     text = "\n".join(lines)
-    with open(os.path.join(path, "summary.txt"), "w") as f:
-        f.write(text + "\n")
+    write_text_atomic(text + "\n", Path(path) / "summary.txt")
 
-# ---------------- CLI ----------------
+# -------------------------------------------------------------------
+# CLI
+# -------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser(description="Analyse a Measurely session directory")
     ap.add_argument("session_dir", help="Path to folder with response.csv and impulse.wav")
     ap.add_argument("--points-per-oct", type=int, default=48,
                     help="Log bins per octave (analysis speed vs detail)")
+    ap.add_argument("--no-ir-fallback", action="store_true",
+                    help="Disable deriving a response from impulse.wav if response.csv is empty")
     args = ap.parse_args()
 
     resp_csv, imp_wav, outdir = load_session_paths(args.session_dir)
+    outdir_p = Path(outdir)
+
+    # 1) Load data
     freqs, mags = load_response_csv(resp_csv)
     ir, fs = load_impulse_wav(imp_wav)
 
-    # 1) Analyse raw data
+    # Optional fallback if CSV is empty/invalid
+    if (freqs.size == 0 or mags.size == 0) and not args.no_ir_fallback:
+        log.warning("No usable response.csv; deriving response from impulse as fallback.")
+        f2, m2 = derive_response_from_ir(ir, fs)
+        if f2.size > 0:
+            freqs, mags = f2, m2
+        else:
+            log.warning("Impulse fallback also produced no data; proceeding with IR-only metrics.")
+
+    # 2) Analyse
     result = analyse(freqs, mags, ir, fs, points_per_oct=args.points_per_oct)
 
-    # 2) Merge room meta + add room-aware insights BEFORE scoring/summary
+    # 3) Context & insights
     apply_room_context_and_insights(outdir, result)
 
-    # 3) Ratings (/10) for UI & progress tracking
+    # 4) Scores
     result["scores"] = compute_scores(result)
 
-    # 4) Plain English for UI (context-aware)
+    # 5) Plain English
     one_liner, fixes = build_plain_summary(result, context=result.get("context"))
     result["plain_summary"] = one_liner
     result["simple_fixes"] = fixes
 
-    # 5) Persist
-    with open(os.path.join(outdir, "analysis.json"), "w") as f:
-        json.dump(result, f, indent=2)
+    # 6) Persist atomically
+    try:
+        write_json_atomic(result, outdir_p / "analysis.json")
+        write_summary(outdir_p, result, context=result.get("context"))
+    except Exception as e:
+        log.exception("Persist failed: %s", e)
+        raise
 
-    write_summary(outdir, result, context=result.get("context"))
     print("Analysis complete:", outdir)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        log.error("Fatal error: %s", exc)
+        sys.exit(1)
