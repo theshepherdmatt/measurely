@@ -22,39 +22,49 @@ HOTSPOT_HELPER = "/usr/local/bin/measurely-hotspot.sh"
 # Device detection
 # -------------------------------------------------------------------
 def detect_devices():
-    mic_idx = mic_name = dac_idx = dac_name = None
-    alsa_str = "hw:2,0"
+    mic_idx = mic_name = None
+    dac_idx = dac_name = None
+    alsa_str = None
 
+    # --- Probe PortAudio (sounddevice) ---
     try:
-        devs = sd.query_devices()
+        sd_devs = sd.query_devices()
     except Exception:
-        devs = []
+        sd_devs = []
 
-    # Mic
-    for i, d in enumerate(devs):
-        if int(d.get("max_input_channels", 0)) > 0:
-            if mic_idx is None:
-                mic_idx, mic_name = i, d.get("name", "")
-            if "umik" in (d.get("name", "")).lower():
-                mic_idx, mic_name = i, d.get("name", "")
-                break
+    # Pick microphone (prefer UMIK), must have input channels
+    for i, d in enumerate(sd_devs):
+        try:
+            if int(d.get("max_input_channels", 0)) > 0:
+                name = (d.get("name") or "")
+                if mic_idx is None:
+                    mic_idx, mic_name = i, name
+                if "umik" in name.lower():
+                    mic_idx, mic_name = i, name
+                    break
+        except Exception:
+            pass
 
-    # DAC
-    for i, d in enumerate(devs):
-        if int(d.get("max_output_channels", 0)) > 0:
-            if dac_idx is None:
-                dac_idx, dac_name = i, d.get("name", "")
-            if any(k in d.get("name", "").lower() for k in
-                   ("hifiberry", "snd_rpi_hifiberry", "pcm510", "pcm512", "i2s", "dac")):
-                dac_idx, dac_name = i, d.get("name", "")
-                break
+    # We'll only accept DAC candidates with output channels
+    def sd_output_candidates():
+        out = []
+        for i, d in enumerate(sd_devs):
+            try:
+                if int(d.get("max_output_channels", 0)) > 0:
+                    out.append((i, d.get("name") or ""))
+            except Exception:
+                pass
+        return out
 
-    # ALSA hw:X,Y from aplay -l
+    # --- Probe ALSA (authoritative for aplay backend) ---
+    PREFERRED = ("hifiberry","snd_rpi_hifiberry","pcm510","pcm512","i2s","dac","usb audio","audioinjector","spdif","hdmi","wolfson")
+
+    alsa_candidates = []
     try:
         out = subprocess.check_output(["aplay", "-l"], text=True, stderr=subprocess.STDOUT)
         for ln in out.splitlines():
-            if "hifiberry" in ln.lower():
-                parts = ln.split()
+            if "card " in ln and "device " in ln:
+                parts = ln.strip().split()
                 card = dev = None
                 for j, p in enumerate(parts):
                     if p == "card" and j + 1 < len(parts):
@@ -64,14 +74,45 @@ def detect_devices():
                         try: dev = int(parts[j+1].rstrip(":"))
                         except: pass
                 if card is not None and dev is not None:
-                    alsa_str = f"hw:{card},{dev}"
-                    break
+                    alsa_candidates.append({"alsa": f"hw:{card},{dev}", "line": ln})
+        # Prefer HiFiBerry/PCM/USB-ish
+        def score(c):
+            n = c["line"].lower()
+            return 0 if any(k in n for k in PREFERRED) else 1
+        alsa_candidates.sort(key=score)
+        if alsa_candidates:
+            alsa_str = alsa_candidates[0]["alsa"]
+            # Use a readable name from the line
+            dac_name = alsa_candidates[0]["line"]
     except Exception:
         pass
 
+    # If PortAudio is available, try to map a sensible output index (purely for display)
+    if dac_idx is None:
+        outs = sd_output_candidates()
+        # Prefer names that look like our ALSA choice or known DAC keywords
+        if outs:
+            # match by keyword
+            pick = None
+            for i, nm in outs:
+                low = nm.lower()
+                if any(k in low for k in PREFERRED):
+                    pick = (i, nm); break
+            # otherwise first output device
+            if pick is None:
+                pick = outs[0]
+            dac_idx, _nm = pick
+            # Only override dac_name with PortAudio name if we didn't get one from ALSA
+            if not dac_name:
+                dac_name = _nm
+
+    # Fallback ALSA string if nothing parsed (shouldn’t happen often)
+    if alsa_str is None:
+        alsa_str = "hw:0,0"  # safer default on your box than hw:2,0
+
     return {
         "mic": {"connected": mic_idx is not None, "index": mic_idx, "name": mic_name or ""},
-        "dac": {"connected": dac_idx is not None, "index": dac_idx, "name": dac_name or "", "alsa": alsa_str}
+        "dac": {"connected": (alsa_str is not None), "index": dac_idx, "name": dac_name or "", "alsa": alsa_str}
     }
 
 # -------------------------------------------------------------------
@@ -94,6 +135,34 @@ def write_config(cfg: dict):
 def run_nmcli(args):
     proc = subprocess.run(["sudo", NMCLI_BIN, *args], text=True, capture_output=True)
     return proc.returncode, (proc.stdout or "").strip(), (proc.stderr or "").strip()
+
+# NEW: session helpers ------------------------------------------------
+def _session_dir_from_id(sid: str) -> Path:
+    p = MEAS_ROOT / sid
+    if not p.is_dir():
+        abort(404, f"Session not found: {sid}")
+    return p
+
+def _latest_session_dir() -> Path | None:
+    if not MEAS_ROOT.exists():
+        return None
+    dirs = [p for p in MEAS_ROOT.iterdir() if p.is_dir() and (p/"analysis.json").exists()]
+    if not dirs:
+        return None
+    dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+    return dirs[0]
+
+def _load_analysis_for(sid: str | None):
+    d = _session_dir_from_id(sid) if sid else _latest_session_dir()
+    if not d:
+        return None, None
+    jfile = d / "analysis.json"
+    if not jfile.exists():
+        return d.name, None
+    try:
+        return d.name, json.loads(jfile.read_text(encoding="utf-8"))
+    except Exception:
+        return d.name, None
 
 # -------------------------------------------------------------------
 # Flask app
@@ -133,10 +202,7 @@ def create_app():
         return out, saved_dir, proc.returncode
 
     def session_dir_from_id(sid: str) -> Path:
-        p = MEAS_ROOT / sid
-        if not p.is_dir():
-            abort(404, f"Session not found: {sid}")
-        return p
+        return _session_dir_from_id(sid)
 
     def list_sessions():
         if not MEAS_ROOT.exists():
@@ -239,6 +305,59 @@ def create_app():
             if sfile.exists():
                 resp["summary"] = sfile.read_text(errors="ignore")
         return jsonify(resp), (200 if rc == 0 else 500)
+
+    # ---------------- Simple + Geek endpoints (NEW) -------------------
+    @app.get("/api/simple")
+    def api_simple():
+        """
+        Returns the compact 'Simple' payload for the latest session, or a given sid:
+        GET /api/simple            -> latest
+        GET /api/simple?sid=XYZ    -> specific session
+        """
+        sid = request.args.get("sid")
+        sid, data = _load_analysis_for(sid)
+        if data is None:
+            return jsonify({"ok": False, "error": "No analysis.json found", "sid": sid}), 404
+
+        # Prefer analyser-generated simple_view. Provide a safe fallback if missing.
+        simple = data.get("simple_view")
+        if not simple:
+            scores = data.get("scores", {}) or {}
+            overall = scores.get("overall")
+            # Minimal headline logic
+            if overall is None:
+                headline = "Room status unavailable."
+            elif overall >= 9.0:
+                headline = "Excellent — leave it be!"
+            elif overall >= 7.5:
+                headline = "Strong result."
+            elif overall >= 6.0:
+                headline = "Decent — a few tweaks will help."
+            elif overall >= 4.0:
+                headline = "Sounds a bit echoey."
+            else:
+                headline = "Room needs attention."
+            sections = {k: {"score": scores.get(k), "status": "unknown"}
+                        for k in ("bandwidth","balance","peaks_dips","smoothness","reflections","reverb")}
+            top_actions = data.get("simple_fixes") or []
+            # Convert simple_fixes (list of strings) into [{section:'advice',...}] shape lightly
+            top_actions = [{"section": "advice", "score": None, "advice": s} for s in top_actions[:3]]
+            simple = {"overall": overall, "headline": headline, "sections": sections, "top_actions": top_actions}
+
+        return jsonify({"ok": True, "sid": sid, **simple})
+
+    @app.get("/api/geek")
+    def api_geek():
+        """
+        Returns the full analysis.json for the latest session, or a given sid:
+        GET /api/geek            -> latest
+        GET /api/geek?sid=XYZ    -> specific session
+        """
+        sid = request.args.get("sid")
+        sid, data = _load_analysis_for(sid)
+        if data is None:
+            return jsonify({"ok": False, "error": "No analysis.json found", "sid": sid}), 404
+        return jsonify({"ok": True, "sid": sid, "analysis": data})
 
     # -------------------------------------------------------------------
     # Captive portal + Wi-Fi onboarding

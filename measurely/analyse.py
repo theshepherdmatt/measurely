@@ -6,6 +6,8 @@ Measurely – standalone analysis (fast + robust I/O)
 - Analyses bandwidth, band balances, peaks/dips, reflections, RT60/EDT
 - Reads meta.json (plus ~/.measurely/config.json fallback) for room context
 - Writes analysis.json + summary.txt atomically in the session folder
+- (NEW) Builds a 'Simple' payload: overall score, headline, per-section scores/status,
+        and the top three suggestions for improving the score
 """
 
 import argparse, os, json, sys, math, tempfile, logging
@@ -537,7 +539,7 @@ def build_plain_summary(analysis, context=None):
     return one_line, uniq[:3]
 
 # -------------------------------------------------------------------
-# Ratings (/10)
+# Ratings (/10) + Simple-view helpers
 # -------------------------------------------------------------------
 def _linmap(x, x0, x1, y0, y1):
     if x0 == x1: return (y0 + y1) / 2
@@ -618,13 +620,130 @@ def compute_scores(analysis):
     scores = {
         "bandwidth":   score_bandwidth(blo, bhi),
         "balance":     score_balance(bands),
-        "modes":       score_modes(modes),
+        "peaks_dips":  score_modes(modes),
         "smoothness":  score_smoothness(smooth),
         "reflections": score_reflections(refs),
         "reverb":      score_reverb(rt60, edt),
     }
     scores["overall"] = round(np.mean(list(scores.values())), 1)
     return scores
+
+# ---- Simple-view helpers -----------------------------------------------------
+
+def section_status(score: float) -> str:
+    """Traffic-light style status for UI."""
+    if score is None: return "unknown"
+    if score >= 8.0:  return "great"
+    if score >= 6.5:  return "good"
+    if score >= 5.5:  return "ok"
+    if score >= 4.5:  return "needs_work"
+    return "poor"
+
+def build_headline(overall: float) -> str:
+    if overall is None: return "Room status unavailable."
+    if overall >= 9.0:  return "Excellent — leave it be!"
+    if overall >= 7.5:  return "Strong result."
+    if overall >= 6.0:  return "Decent — a few tweaks will help."
+    if overall >= 4.0:  return "Sounds a bit echoey."
+    return "Room needs attention."
+
+# Base advice strings (UK spelling)
+ADVICE_BASE = {
+    "bandwidth":  "Extend bass by moving speakers 10–20 cm closer to the front wall; re-sweep.",
+    "balance":    "Toe-in speakers slightly and ensure tweeters are at ear height.",
+    "peaks_dips": "Slide speakers or seat ~10–20 cm to shift peaks/dips; re-sweep and pick the best.",
+    "smoothness": "Keep placement symmetrical; 5–10 cm angle/width tweaks usually help.",
+    "reflections":"Add a rug/curtains and soften first side-wall reflection points.",
+    "reverb":     "Add soft furnishings or bookshelves to bring reverberation down (~0.3–0.6 s).",
+}
+
+def refine_balance_advice(bands: dict) -> str:
+    b = bands.get("bass_20_200"); m = bands.get("mid_200_2k")
+    t = bands.get("treble_2k_10k"); a = bands.get("air_10k_20k")
+    if b is not None and m is not None and (b - m) >= 3:
+        return "Bass is strong; pull speakers 10–20 cm into the room or move the seat forward slightly."
+    if b is not None and m is not None and (m - b) >= 3:
+        return "Midrange is forward; try a touch less toe-in and ensure no hard desk/floor reflections."
+    if a is not None and t is not None and (a < t - 6):
+        return "Top end is soft; raise tweeters to ear height and increase toe-in slightly."
+    return ADVICE_BASE["balance"]
+
+def refine_peaks_advice(modes: list, room: dict) -> str:
+    if any(m.get("type") == "peak" and 80 <= m.get("freq_hz",0) <= 120 for m in modes):
+        return "Boom around ~100 Hz; increase speaker–front-wall distance by 10–20 cm."
+    if any(m.get("type") == "dip" and 60 <= m.get("freq_hz",0) <= 100 for m in modes):
+        return "Bass dip detected; try small seat moves (10–20 cm) and re-sweep."
+    return ADVICE_BASE["peaks_dips"]
+
+def refine_reflections_advice(refs: list) -> str:
+    if any(t < 2.0 for t in refs):
+        return "Strong early reflections; add a rug and side-wall panels at first reflection points."
+    return ADVICE_BASE["reflections"]
+
+def refine_reverb_advice(rt60: float) -> str:
+    if rt60 is None: return ADVICE_BASE["reverb"]
+    if rt60 > 0.8:   return "Reverberation is high; add thicker curtains and more absorption to target ~0.4–0.6 s."
+    if rt60 < 0.2:   return "Room is very dry; consider reducing absorption to restore some liveliness."
+    return ADVICE_BASE["reverb"]
+
+def build_top_actions(scores: dict, analysis: dict, room: dict, n: int = 3):
+    """
+    Pick the lowest scoring sections and attach tailored advice.
+    """
+    order = ["reflections","peaks_dips","balance","bandwidth","smoothness","reverb"]
+    # Filter to known sections and sort by score asc, then by our order for stability
+    items = [(k, scores.get(k)) for k in order if k in scores and isinstance(scores.get(k),(int,float))]
+    items.sort(key=lambda kv: (kv[1], order.index(kv[0])))
+    bands = analysis.get("band_levels_db") or {}
+    modes = analysis.get("modes") or []
+    refs  = analysis.get("reflections_ms") or []
+    rt60  = analysis.get("rt60_s")
+    actions = []
+    for k, sc in items[:n]:
+        if k == "balance":
+            advice = refine_balance_advice(bands)
+        elif k == "peaks_dips":
+            advice = refine_peaks_advice(modes, room)
+        elif k == "reflections":
+            advice = refine_reflections_advice(refs)
+        elif k == "reverb":
+            advice = refine_reverb_advice(rt60)
+        else:
+            advice = ADVICE_BASE.get(k, "Looks fine as is.")
+        actions.append({"section": k, "score": round(float(sc),1), "advice": advice})
+    return actions
+
+def build_simple_view(scores: dict, analysis: dict, room: dict):
+    """
+    Compact payload for the Simple card in the UI.
+    """
+    overall = scores.get("overall")
+    headline = build_headline(overall)
+
+    sections = {}
+    for key, label in (
+        ("bandwidth","bandwidth"),
+        ("balance","balance"),
+        ("peaks_dips","peaks_dips"),
+        ("smoothness","smoothness"),
+        ("reflections","reflections"),
+        ("reverb","reverb"),
+    ):
+        val = scores.get(key)
+        sections[key] = {
+            "score": round(float(val),1) if isinstance(val,(int,float)) else None,
+            "status": section_status(val)
+        }
+
+    top_actions = build_top_actions(scores, analysis, room, n=3)
+
+    simple = {
+        "overall": overall,
+        "headline": headline,
+        "sections": sections,
+        "top_actions": top_actions
+    }
+    return simple
 
 # -------------------------------------------------------------------
 # Summary file
@@ -733,7 +852,7 @@ def write_summary(path, analysis, context=None):
         lines.append("-------------")
         lines.append(f"  Bandwidth  : {sc['bandwidth']}/10")
         lines.append(f"  Balance    : {sc['balance']}/10")
-        lines.append(f"  Peaks/Dips : {sc['modes']}/10")
+        lines.append(f"  Peaks/Dips : {sc['peaks_dips']}/10")
         lines.append(f"  Smoothness : {sc['smoothness']}/10")
         lines.append(f"  Reflections: {sc['reflections']}/10")
         lines.append(f"  Reverb     : {sc['reverb']}/10")
@@ -781,14 +900,19 @@ def main():
     apply_room_context_and_insights(outdir, result)
 
     # 4) Scores
-    result["scores"] = compute_scores(result)
+    scores = compute_scores(result)
+    result["scores"] = scores
 
     # 5) Plain English
     one_liner, fixes = build_plain_summary(result, context=result.get("context"))
     result["plain_summary"] = one_liner
     result["simple_fixes"] = fixes
 
-    # 6) Persist atomically
+    # 6) Simple UI payload (NEW)
+    room_ctx = (result.get("context") or {}).get("room") or {}
+    result["simple_view"] = build_simple_view(scores, result, room_ctx)
+
+    # 7) Persist atomically
     try:
         write_json_atomic(result, outdir_p / "analysis.json")
         write_summary(outdir_p, result, context=result.get("context"))
