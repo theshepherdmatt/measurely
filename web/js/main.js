@@ -47,10 +47,9 @@ async function runSweep() {
     } else {
       $('resultCard')?.style.setProperty('display', 'block');
       if ($('summary')) $('summary').textContent = '(no summary)';
-      if ($('graphs')) {
-        $('graphs').textContent = '(none)';
-        $('graphs').classList.add('muted');
-      }
+      const g = $('graphs');
+      if (g) g.remove();
+
       await renderSimpleAndGeek();
     }
 

@@ -1,4 +1,4 @@
-// web/js/dashboard.js — graph + section scores + tips & tweaks
+// web/js/dashboard.js — collapsible (safe) + graph + section scores + tips
 
 /* ---------- DOM + fetch ---------- */
 const $id = (id) => document.getElementById(id);
@@ -9,21 +9,109 @@ async function fetchJSON(url) {
 }
 
 /* ---------- state ---------- */
-let _fr = null;        // [{f,l,r}]
-let _sections = null;  // { bandwidth:{score}, balance:{score}, ... }
+let _fr = null;         // [{f,l,r}]
+let _sections = null;   // { bandwidth:{score}, balance:{score}, ... }
 let _topActions = null; // [{section, advice}]
 let _err = '';
+
+/* ---------- styles ---------- */
+function injectCollapsibleStyles(){
+  if (document.getElementById('dash-collapsible-style')) return;
+  const css = `
+    .mly-collapser{appearance:none;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.08);
+      border-radius:10px;width:100%;padding:10px 12px;margin:8px 0 10px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+    .mly-collapser:focus-visible{outline:2px solid #7aaaff;outline-offset:2px}
+    .mly-col-left{display:flex;align-items:center;gap:8px;font-weight:600}
+    .mly-col-title{letter-spacing:.2px}
+    .mly-col-right{display:flex;align-items:center;gap:10px}
+    .mly-pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;line-height:1.4}
+    .mly-pill--ok{background:#e8f7ee;color:#0a7f3f}
+    .mly-pill--warn{background:#fff6e5;color:#8a5a00}
+    .mly-pill--danger{background:#fde8e8;color:#b00020}
+    .mly-pill--neutral{background:#f0f0f0;color:#555}
+    .mly-chevron{transition:transform .18s ease;margin-left:6px}
+    .mly-collapser.is-expanded .mly-chevron{transform:rotate(180deg)}
+  `;
+  const s=document.createElement('style'); s.id='dash-collapsible-style'; s.textContent=css;
+  document.head.appendChild(s);
+}
+function injectDashStyles(){
+  if (document.getElementById('dash-inline-style')) return;
+  const css = `
+    .dash-box{padding:12px 14px;border:1px solid rgba(0,0,0,.08);border-radius:10px;background:rgba(0,0,0,.02);}
+    .dash-heading{display:flex;align-items:center;gap:8px;margin:12px 0 8px;font-weight:600;}
+    .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
+    .dash-list{margin:0;padding-left:18px;line-height:1.45;}
+    .dash-sep{height:1px;background:rgba(0,0,0,.06);margin:14px 0;}
+  `;
+  const s=document.createElement('style'); s.id='dash-inline-style'; s.textContent=css;
+  document.head.appendChild(s);
+}
+
+/* ---------- compact summary (safe: no DOM moving) ---------- */
+function ensureDashCollapsibleUI(){
+  const card = document.getElementById('dashboard-heading')?.closest('.card');
+  const wrap = $id('dashboard');
+  if (!card || !wrap || card.dataset.collapsible === '1') return;
+
+  injectCollapsibleStyles();
+
+  const summary = document.createElement('button');
+  summary.type = 'button';
+  summary.className = 'mly-collapser';
+  summary.setAttribute('aria-expanded', 'false');
+  summary.setAttribute('aria-controls', 'dashboard'); // toggles the existing container
+  summary.innerHTML = `
+    <div class="mly-col-left">
+      <span class="mly-col-title">Dashboard</span>
+    </div>
+    <div class="mly-col-right">
+      <span id="dashPill" class="mly-pill mly-pill--neutral">Checking…</span>
+      <span class="mly-chevron" aria-hidden="true">▾</span>
+    </div>
+  `;
+
+  // Insert summary row *before* the #dashboard content
+  card.insertBefore(summary, wrap);
+
+  // Restore expanded state
+  const expanded = localStorage.getItem('dash.expanded') === '1';
+  setDashExpanded(summary, wrap, expanded);
+
+  summary.addEventListener('click', ()=>{
+    const isOpen = summary.getAttribute('aria-expanded') === 'true';
+    setDashExpanded(summary, wrap, !isOpen);
+    localStorage.setItem('dash.expanded', !isOpen ? '1' : '0');
+  });
+
+  card.dataset.collapsible = '1';
+}
+function setDashExpanded(summaryEl, contentEl, expanded){
+  summaryEl.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  summaryEl.classList.toggle('is-expanded', expanded);
+  contentEl.style.display = expanded ? '' : 'none';
+}
+function setDashPill(text, variant='neutral'){
+  const pill = document.getElementById('dashPill');
+  if (!pill) return;
+  const map = { ok:'mly-pill--ok', warn:'mly-pill--warn', danger:'mly-pill--danger', neutral:'mly-pill--neutral' };
+  pill.textContent = text;
+  pill.className = `mly-pill ${map[variant] || map.neutral}`;
+}
 
 /* ---------- public API ---------- */
 export function initDashboard() {
   const wrap = $id('dashboard');
   if (!wrap) return;
+
   injectDashStyles();
+  ensureDashCollapsibleUI(); // adds compact summary row above #dashboard
+
   wrap.innerHTML = `
     <div id="dash-graph-wrap"
         style="width:100%;height:360px;border:1px solid rgba(0,0,0,.1);border-radius:8px"></div>
 
-    <!-- legend + status line -->
     <div id="dash-graph-meta"
         style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">
       <div id="dash-legend" aria-label="Legend" style="display:flex;align-items:center;gap:14px">
@@ -39,17 +127,13 @@ export function initDashboard() {
       <div id="dash-msg" class="small muted"></div>
     </div>
 
-    <!-- friendly help text -->
     <p id="dash-help" class="small muted" style="margin-top:6px">
       This graph shows your room’s frequency response. The blue (Left) and red (Right) lines are the level across frequency on a log scale. 
       The shaded band marks ±3&nbsp;dB around the median—aim for smooth curves inside this band and similar Left/Right shapes.
       Scroll to zoom · drag to pan · hover to read exact values.
     </p>
 
-    <!-- section scores -->
     <div id="dash-sections" style="margin-top:12px"></div>
-
-    <!-- tips & tweaks -->
     <div id="dash-tips" style="margin-top:14px"></div>
   `;
 
@@ -89,9 +173,14 @@ export async function refreshDashboard() {
       else if (!_sections) _err = '(demo data only had FR)';
     }
 
-    if (!_fr) _err = _err || 'No frequency response found in /api/geek or /api/simple.';
+    // Update pill
+    if (_fr && _fr.length >= 2) setDashPill('Ready', 'ok');
+    else if (_err)             setDashPill('Error', 'danger');
+    else                       setDashPill('No data', 'neutral');
+
   } catch (e) {
     _err = String(e?.message || e);
+    setDashPill('Error', 'danger');
   } finally {
     render();
     setBusy(false);
@@ -101,19 +190,7 @@ export function setStatus(){ /* no-op */ }
 export function setBusy(isBusy) {
   const msg = $id('dash-msg');
   if (msg) msg.textContent = isBusy ? 'Working…' : '';
-}
-
-function injectDashStyles(){
-  if (document.getElementById('dash-inline-style')) return;
-  const css = `
-    .dash-box{padding:12px 14px;border:1px solid rgba(0,0,0,.08);border-radius:10px;background:rgba(0,0,0,.02);}
-    .dash-heading{display:flex;align-items:center;gap:8px;margin:12px 0 8px;font-weight:600;}
-    .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
-    .dash-list{margin:0;padding-left:18px;line-height:1.45;}
-    .dash-sep{height:1px;background:rgba(0,0,0,.06);margin:14px 0;}
-  `;
-  const s=document.createElement('style'); s.id='dash-inline-style'; s.textContent=css;
-  document.head.appendChild(s);
+  if (isBusy) setDashPill('Working…', 'neutral');
 }
 
 /* ---------- render ---------- */
@@ -152,20 +229,20 @@ function render(){
       <div class="dash-heading"><span class="muted">Section scores</span></div>
       <div class="dash-box">
         <p class="small muted" style="margin:0 0 8px 0;">
-          Scores are computed from your last sweep by comparing the measured response to a neutral target (1/6-oct smoothed), then deducting points for L/R imbalance, large or narrow peaks/dips, limited bandwidth (−3 dB points), strong early reflections, and excessive reverb; 10 means smooth (≈±3 dB), balanced, and well-damped.
+          Scores are computed from your last sweep by comparing the measured response to a neutral target (1/6-oct smoothed),
+          then deducting points for L/R imbalance, large or narrow peaks/dips, limited bandwidth (−3 dB points), strong early reflections,
+          and excessive reverb; 10 means smooth (≈±3 dB), balanced, and well-damped.
         </p>
         <div class="dash-grid">
           ${pills || '<span class="muted">(none)</span>'}
         </div>
       </div>
     `;
-
-
   } else if (!_err) {
     sec.innerHTML = `<div class="muted">(no section scores)</div>`;
   }
 
-  // Tips & tweaks (prefer API actions; else weakest-section tips)
+  // Tips & tweaks
   const tipsList = buildTipsList(_sections, _topActions);
   const focus = tipsList.focus;
   const items = tipsList.items.slice(0, 5).map(t =>
@@ -183,14 +260,12 @@ function render(){
       </ol>
     </div>
   `;
-
 }
 
 /* ---------- tips logic ---------- */
 function buildTipsList(sections, topActions){
   const allowed = new Set(['bandwidth','balance','peaks_dips','smoothness','reflections','reverb','general']);
 
-  // Weakest section by score (our focus)
   const weakest = (() => {
     if (!sections) return 'general';
     const entries = Object.entries(sections)
@@ -201,7 +276,6 @@ function buildTipsList(sections, topActions){
     return entries[0][0];
   })();
 
-  // Normalize API tips (array only) and whitelist section names
   const api = (topActions || [])
     .filter(Boolean)
     .map(a => {
@@ -219,7 +293,6 @@ function buildTipsList(sections, topActions){
     .filter(Boolean);
 
   if (api.length) {
-    // Prioritize tips that match the weakest section
     const prioritized = [
       ...api.filter(t => t.section === weakest),
       ...api.filter(t => t.section !== weakest)
@@ -227,7 +300,6 @@ function buildTipsList(sections, topActions){
     return { focus: weakest.replace('_','/'), items: prioritized };
   }
 
-  // Fallback canned tips by weakest section
   const tipMap = {
     general: [
       'Re-run a sweep after any speaker or seat move.',
@@ -270,15 +342,12 @@ function buildTipsList(sections, topActions){
   return { focus: weakest.replace('_','/'), items };
 }
 
-
 /* =================================================================== */
 /* ==========================  S E C T I O N S  ======================= */
 /* =================================================================== */
 
 function extractSectionsAnywhere(payload){
   if (!payload || typeof payload !== 'object') return null;
-
-  // Likely spots
   const candidates = [
     payload?.simple_view?.sections,
     payload?.sections,
@@ -290,14 +359,10 @@ function extractSectionsAnywhere(payload){
     const secs = coerceSections(node);
     if (secs) return secs;
   }
-  // Deep search
   return deepFindSections(payload);
 }
-
 function coerceSections(node){
   if (!node || typeof node !== 'object') return null;
-
-  // object with named keys -> {key:{score}}
   const keys = ['bandwidth','balance','peaks_dips','smoothness','reflections','reverb'];
   const found = {};
   let hit = false;
@@ -309,22 +374,16 @@ function coerceSections(node){
   }
   if (hit) return found;
 
-  // array of {name,score}
   if (Array.isArray(node)) {
     for (const it of node) {
       const name = String(it?.name || it?.key || '').toLowerCase().replace(/\s+/g,'_');
       const n = num(it?.score ?? it?.value);
-      if (name && Number.isFinite(n)) {
-        found[name] = { score: n };
-        hit = true;
-      }
+      if (name && Number.isFinite(n)) { found[name] = { score: n }; hit = true; }
     }
     return hit ? found : null;
   }
-
   return null;
 }
-
 function deepFindSections(obj, depth=0){
   if (!obj || depth > 5) return null;
   const attempt = coerceSections(obj);
@@ -337,7 +396,6 @@ function deepFindSections(obj, depth=0){
   }
   return null;
 }
-
 function pillClassFromScore(s) {
   if (s == null || isNaN(s)) return '';
   return s >= 8 ? 'great'
@@ -353,7 +411,6 @@ function pillClassFromScore(s) {
 
 function extractTopActionsAnywhere(payload){
   if (!payload || typeof payload !== 'object') return null;
-  // Only accept ARRAY fields; do NOT treat random objects as tips
   const candidates = [
     payload?.simple_view?.top_actions,
     payload?.top_actions,
@@ -368,9 +425,8 @@ function extractTopActionsAnywhere(payload){
       if (arr?.length) return arr;
     }
   }
-  return null; // no arrays => no API tips
+  return null;
 }
-
 function normalizeTopActionsArray(arr){
   const out = [];
   for (const it of arr) {
@@ -386,45 +442,6 @@ function normalizeTopActionsArray(arr){
     }
   }
   return out;
-}
-
-
-function normalizeTopActions(node){
-  if (!node) return null;
-  const out = [];
-
-  if (Array.isArray(node)) {
-    for (const it of node) {
-      if (typeof it === 'string') out.push({ section: 'general', advice: it });
-      else if (typeof it === 'object') {
-        const section = (it.section || it.area || it.category || 'general');
-        const advice  = it.advice || it.text || it.tip || it.recommendation || it.title;
-        if (advice) out.push({ section, advice });
-      }
-    }
-  } else if (typeof node === 'object') {
-    // Map<string,string|array>
-    for (const [k,v] of Object.entries(node)) {
-      if (typeof v === 'string') out.push({ section: k, advice: v });
-      else if (Array.isArray(v)) {
-        v.forEach(s => { if (typeof s === 'string') out.push({ section: k, advice: s }); });
-      }
-    }
-  }
-  return out.length ? out : null;
-}
-
-function deepFindTopActions(obj, depth=0){
-  if (!obj || depth > 5) return null;
-  const direct = normalizeTopActions(obj);
-  if (direct?.length) return direct;
-  if (typeof obj === 'object') {
-    for (const v of Object.values(obj)) {
-      const r = deepFindTopActions(v, depth+1);
-      if (r?.length) return r;
-    }
-  }
-  return null;
 }
 
 /* =================================================================== */
@@ -451,14 +468,12 @@ function extractFRAnywhere(payload){
   }
   return deepSearchFR(payload);
 }
-
 function coerceToFR(node){
   if (isArrayLike(node)) {
     const fr = fromArray(toArray(node));
     if (fr?.length) return fr;
   }
   if (node && typeof node === 'object') {
-    // Columnar vectors
     const variants = [
       ['f','l','r'], ['freq','L','R'], ['frequency','left','right'],
       ['frequency','left_db','right_db'], ['hz','magL','magR'],
@@ -477,7 +492,6 @@ function coerceToFR(node){
         if (fr?.length) return fr;
       }
     }
-    // Try any array field inside
     for (const v of Object.values(node)) {
       if (isArrayLike(v)) {
         const fr = fromArray(toArray(v));
@@ -487,7 +501,6 @@ function coerceToFR(node){
   }
   return null;
 }
-
 function deepSearchFR(obj, depth=0){
   if (!obj || depth > 6) return null;
   if (isArrayLike(obj)) {
@@ -503,7 +516,7 @@ function deepSearchFR(obj, depth=0){
   return null;
 }
 
-/* ---------- FR shape helpers ---------- */
+/* ---------- FR helpers ---------- */
 function isArrayLike(x){ return Array.isArray(x) || (x && typeof x === 'object' && Number.isFinite(x.length)); }
 function toArray(x){ return Array.isArray(x) ? x : (x && typeof x === 'object' && Number.isFinite(x.length) ? Array.from(x) : []); }
 function toMaybeArray(x){ return isArrayLike(x) ? toArray(x) : null; }
@@ -536,7 +549,6 @@ function fromArray(arr){
   out.sort((a,b)=> a.f - b.f);
   return out.length >= 2 ? out : null;
 }
-
 function fromVectors(fArr, aArr, bArr){
   const N = Math.min(fArr.length, aArr.length, bArr.length);
   const out = [];
@@ -568,7 +580,6 @@ function renderFRGraph(host, rawFr, { frac=6 } = {}){
   const mids = fr.map(p => (p.l + p.r) / 2).slice().sort((a,b)=>a-b);
   const med = mids[Math.floor(mids.length/2)] ?? 0;
 
-  // Percentile-based Y window (clean auto-scale) with min ±12 dB around median
   const vals = fr.flatMap(p => [p.l, p.r]).filter(Number.isFinite);
   const pct = (arr, q) => { const a = arr.slice().sort((x,y)=>x-y); const i=(a.length-1)*q, lo=Math.floor(i), hi=Math.ceil(i); return lo===hi?a[lo]:a[lo]+(a[hi]-a[lo])*(i-lo); };
   const p10 = pct(vals, 0.10), p90 = pct(vals, 0.90);
@@ -598,17 +609,14 @@ function renderFRGraph(host, rawFr, { frac=6 } = {}){
     line(svg, pad.l, y, pad.l+iw, y, '#999', .25);
     text(svg, pad.l-6, y+3, `${(v - med).toFixed(0)} dB`, 10, 'end');
   }
-  // 0 dB reference (median)
   line(svg, pad.l, yOfV(med), pad.l + iw, yOfV(med), '#666', 0.35);
 
-  // paths
   let pathsGroup = groupPaths([
     ['#1f77b4', fr.map(p=>[xOfF(p.f), yOfV(p.l)])],
     ['#d62728', fr.map(p=>[xOfF(p.f), yOfV(p.r)])],
   ]);
   svg.appendChild(pathsGroup);
 
-  // hover readout
   const readout = document.createElement('div');
   Object.assign(readout.style, {position:'absolute',transform:'translate(-50%,-110%)',background:'rgba(0,0,0,.6)',color:'#fff',
     padding:'2px 6px',borderRadius:'4px',fontSize:'12px',pointerEvents:'none',display:'none'});
@@ -734,8 +742,6 @@ function logNorm(f, fmin, fmax){
   const ln = (x)=> Math.log10(Math.max(1e-9, x));
   return (ln(f)-ln(fmin))/(ln(fmax)-ln(fmin));
 }
-
-/* ---------- smoothing ---------- */
 function smoothFracOctDual(fr, frac){
   if (!frac || frac <= 0) return fr.slice();
   const out=[]; const k = Math.pow(2, 1/frac)/2;

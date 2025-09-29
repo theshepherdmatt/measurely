@@ -1,7 +1,10 @@
-// web/js/devices.js — padded boxes + short fixed names
+// web/js/devices.js — collapsible Inputs & outputs + padded boxes + short fixed names
 import { $, setDisabled, announce, fetchJSON } from './api.js';
 
-/* one-time style injector (same vibe as dashboard) */
+/* -------- DOM helpers -------- */
+const ioCard = () => document.getElementById('io-heading')?.closest('.card');
+
+/* -------- one-time style injectors -------- */
 function injectDeviceStyles(){
   if (document.getElementById('io-inline-style')) return;
   const css = `
@@ -18,21 +21,122 @@ function injectDeviceStyles(){
   document.head.appendChild(s);
 }
 
+function injectCollapsibleStyles(){
+  if (document.getElementById('io-collapsible-style')) return;
+  const css = `
+    .mly-collapser{appearance:none;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.08);
+      border-radius:10px;width:100%;padding:10px 12px;margin:8px 0 10px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+    .mly-collapser:focus-visible{outline:2px solid #7aaaff;outline-offset:2px}
+    .mly-col-left{display:flex;align-items:center;gap:8px;font-weight:600}
+    .mly-col-title{letter-spacing:.2px}
+    .mly-col-right{display:flex;align-items:center;gap:10px}
+    .mly-pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;line-height:1.4}
+    .mly-pill--ok{background:#e8f7ee;color:#0a7f3f}
+    .mly-pill--warn{background:#fff6e5;color:#8a5a00}
+    .mly-pill--danger{background:#fde8e8;color:#b00020}
+    .mly-pill--neutral{background:#f0f0f0;color:#555}
+    .mly-chevron{transition:transform .18s ease;margin-left:6px}
+    .mly-collapser.is-expanded .mly-chevron{transform:rotate(180deg)}
+  `;
+  const s = document.createElement('style');
+  s.id = 'io-collapsible-style';
+  s.textContent = css;
+  document.head.appendChild(s);
+}
+
+/* -------- collapsible UI bootstrapping -------- */
+function ensureIOCollapsibleUI(){
+  const card = ioCard();
+  if (!card || card.dataset.collapsible === '1') return;
+
+  injectCollapsibleStyles();
+
+  // Move everything after the H2 into a details wrapper
+  const heading = card.querySelector('h2');
+  const following = [];
+  for (let n = heading?.nextSibling; n; n = n.nextSibling) { following.push(n); }
+  const details = document.createElement('div');
+  details.id = 'ioDetailsWrap';
+  // Insert summary button just after the H2
+  const summary = document.createElement('button');
+  summary.type = 'button';
+  summary.className = 'mly-collapser';
+  summary.setAttribute('aria-expanded', 'false');
+  summary.setAttribute('aria-controls', 'ioDetailsWrap');
+  summary.innerHTML = `
+    <div class="mly-col-left">
+      <span class="mly-col-title">Inputs &amp; outputs</span>
+    </div>
+    <div class="mly-col-right">
+      <span id="ioPill" class="mly-pill mly-pill--neutral">Checking…</span>
+      <span class="mly-chevron" aria-hidden="true">▾</span>
+    </div>
+  `;
+
+  if (heading?.nextSibling) {
+    card.insertBefore(summary, heading.nextSibling);
+    card.insertBefore(details, summary.nextSibling);
+  } else {
+    card.appendChild(summary);
+    card.appendChild(details);
+  }
+  following.forEach(n => details.appendChild(n));
+
+  // Default collapsed (remember user choice)
+  const expanded = localStorage.getItem('io.expanded') === '1';
+  setIODetailsExpanded(summary, details, expanded);
+
+  summary.addEventListener('click', ()=>{
+    const isOpen = summary.getAttribute('aria-expanded') === 'true';
+    setIODetailsExpanded(summary, details, !isOpen);
+    localStorage.setItem('io.expanded', !isOpen ? '1' : '0');
+  });
+
+  card.dataset.collapsible = '1';
+}
+
+function setIODetailsExpanded(summaryEl, detailsEl, expanded){
+  summaryEl.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  summaryEl.classList.toggle('is-expanded', expanded);
+  detailsEl.style.display = expanded ? '' : 'none';
+}
+
+function setIOPill(text, variant){
+  const pill = document.getElementById('ioPill');
+  if (!pill) return;
+  pill.textContent = text;
+  const base = 'mly-pill';
+  const map = { ok:'mly-pill--ok', warn:'mly-pill--warn', danger:'mly-pill--danger', neutral:'mly-pill--neutral' };
+  pill.className = `${base} ${map[variant] || map.neutral}`;
+}
+
+/* -------- main refresh -------- */
 export async function refreshStatus() {
   try {
     injectDeviceStyles();
+    ensureIOCollapsibleUI();
 
     const s = await fetchJSON('/api/status');
     const micOK = !!(s?.mic?.connected);
     const dacOK = !!(s?.dac?.connected);
 
-    // Status pills
+    // Summary pill (overall)
+    if (micOK && dacOK) {
+      setIOPill('Ready', 'ok');
+    } else if (micOK || dacOK) {
+      setIOPill('Check devices', 'warn');
+    } else {
+      setIOPill('Not connected', 'danger');
+    }
+
+    // Status pills inside boxes
     const micStatus = $('micStatus');
     const dacStatus = $('dacStatus');
     if (micStatus){ micStatus.textContent = micOK ? 'Connected' : 'Not found'; micStatus.className = 'status ' + (micOK ? 'ok' : 'warn'); }
     if (dacStatus){ dacStatus.textContent = dacOK ? 'Connected' : 'Not found'; dacStatus.className = 'status ' + (dacOK ? 'ok' : 'warn'); }
 
-    // SHORT, fixed names (no long device strings)
+    // Short, fixed names
     const micName = $('micName');
     const dacName = $('dacName');
     if (micName) micName.textContent = micOK ? 'USB Microphone' : '';
@@ -44,6 +148,7 @@ export async function refreshStatus() {
     const hint = $('hint');
     if (hint) hint.textContent = ready ? 'Ready.' : 'Plug in mic/DAC and refresh.';
   } catch (e) {
+    setIOPill('Error', 'danger');
     const micStatus = $('micStatus'); if (micStatus){ micStatus.textContent = 'Error'; micStatus.className = 'status warn'; }
     const dacStatus = $('dacStatus'); if (dacStatus){ dacStatus.textContent = 'Error'; dacStatus.className = 'status warn'; }
     const hint = $('hint'); if (hint) hint.textContent = 'Server error.';

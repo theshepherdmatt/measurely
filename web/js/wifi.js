@@ -12,6 +12,110 @@ const wifiHint = () => $('wifiHint');
 const hotspotStopBtn = () => $('hotspotStopBtn');
 const needsPwd = (sec)=> !!(sec && sec !== 'OPEN' && sec !== '--');
 
+/* -------- Collapsible card UI (Wi-Fi) -------- */
+function injectCollapsibleStyles(){
+  if (document.getElementById('wifi-collapsible-style')) return;
+  const css = `
+    .mly-collapser{appearance:none;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.08);
+      border-radius:10px;width:100%;padding:10px 12px;margin-bottom:10px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+    .mly-collapser:focus-visible{outline:2px solid #7aaaff;outline-offset:2px}
+    .mly-col-left{display:flex;align-items:center;gap:8px;font-weight:600}
+    .mly-col-title{letter-spacing:.2px}
+    .mly-col-right{display:flex;align-items:center;gap:10px}
+    .mly-pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;line-height:1.4}
+    .mly-pill--ok{background:#e8f7ee;color:#0a7f3f}
+    .mly-pill--warn{background:#fff6e5;color:#8a5a00}
+    .mly-pill--danger{background:#fde8e8;color:#b00020}
+    .mly-pill--neutral{background:#f0f0f0;color:#555}
+    .mly-chevron{transition:transform .18s ease;margin-left:6px}
+    .mly-collapser.is-expanded .mly-chevron{transform:rotate(180deg)}
+  `;
+  const s = document.createElement('style');
+  s.id = 'wifi-collapsible-style';
+  s.textContent = css;
+  document.head.appendChild(s);
+}
+
+function ensureWifiCollapsibleUI(){
+  const card = wifiCard(); 
+  if (!card || card.dataset.collapsible === '1') return;
+
+  injectCollapsibleStyles();
+
+  // Keep the H2 visible; only move siblings after it
+  const h2 = card.querySelector('h2');
+
+  // Collect everything after the H2
+  const following = [];
+  for (let n = h2?.nextSibling; n; n = n.nextSibling) {
+    following.push(n);
+  }
+
+  // Summary button goes right after the H2
+  const summary = document.createElement('button');
+  summary.type = 'button';
+  summary.className = 'mly-collapser';
+  summary.setAttribute('aria-expanded', 'false');
+  summary.setAttribute('aria-controls', 'wifiDetailsWrap');
+  summary.innerHTML = `
+    <div class="mly-col-left">
+      <span class="mly-col-title">Wi-Fi</span>
+    </div>
+    <div class="mly-col-right">
+      <span id="wifiPill" class="mly-pill mly-pill--neutral">Checking…</span>
+      <span class="mly-chevron" aria-hidden="true">▾</span>
+    </div>
+  `;
+
+  const details = document.createElement('div');
+  details.id = 'wifiDetailsWrap';
+
+  if (h2?.nextSibling) {
+    card.insertBefore(summary, h2.nextSibling);
+    card.insertBefore(details, summary.nextSibling);
+  } else {
+    card.appendChild(summary);
+    card.appendChild(details);
+  }
+
+  // Move the original content AFTER the H2 into details
+  following.forEach(n => details.appendChild(n));
+
+  // default collapsed (remember user choice)
+  const expanded = localStorage.getItem('wifi.expanded') === '1';
+  setWifiDetailsExpanded(summary, details, expanded);
+
+  summary.addEventListener('click', ()=>{
+    const isOpen = summary.getAttribute('aria-expanded') === 'true';
+    setWifiDetailsExpanded(summary, details, !isOpen);
+    localStorage.setItem('wifi.expanded', !isOpen ? '1' : '0');
+  });
+
+  card.dataset.collapsible = '1';
+}
+
+
+function setWifiDetailsExpanded(summaryEl, detailsEl, expanded){
+  summaryEl.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  summaryEl.classList.toggle('is-expanded', expanded);
+  detailsEl.style.display = expanded ? '' : 'none';
+}
+
+function setWifiPill(text, variant){
+  const pill = document.getElementById('wifiPill');
+  if (!pill) return;
+  pill.textContent = text;
+  const base = 'mly-pill';
+  const map = {
+    ok: 'mly-pill--ok',
+    warn: 'mly-pill--warn',
+    danger: 'mly-pill--danger',
+    neutral: 'mly-pill--neutral'
+  };
+  pill.className = `${base} ${map[variant] || map.neutral}`;
+}
+
 export async function scanWifi(){
   wifiMsg().textContent='Scanning…'; announce('Scanning for Wi-Fi networks.');
   setDisabled(wifiScanBtn(), true);
@@ -75,6 +179,8 @@ export async function stopHotspot(){
 
 export async function wifiStatus(){
   try{
+    ensureWifiCollapsibleUI(); // <-- set up the collapsible header the first time we run
+
     const j = await fetchJSON('/api/wifi/status');
     const mode = String(j.mode||'').toLowerCase();
     const hotspotActive = !!j.hotspot_active;
@@ -84,6 +190,19 @@ export async function wifiStatus(){
     const connected = (connectedMode || j.connected===true) && (!!ip || !!ssid);
 
     wifiCard().hidden = false;
+
+    // Compact header pill state
+    if (connected && !hotspotActive){
+      setWifiPill('Connected', 'ok');
+    } else if (mode==='ap' || hotspotActive){
+      setWifiPill('Hotspot', 'warn');
+    } else if (!!ip || !!ssid){
+      setWifiPill('Connected', 'ok');
+    } else {
+      setWifiPill('Wi-Fi down', 'danger');
+    }
+
+    // Full details (inside the collapsed area) keep your original behavior
     if(connected && !hotspotActive){
       wifiStatusLine().textContent = `Status: Connected to ${ssid || 'Wi-Fi'} • IP ${ip || '-'}`;
       [wifiScanBtn(),hotspotStopBtn(),wifiConnectBtn()].forEach(b=>setDisabled(b,true));
@@ -92,6 +211,7 @@ export async function wifiStatus(){
       wifiHint().style.display='';
       return;
     }
+
     if(mode==='ap' || mode==='hotspot'){
       wifiStatusLine().textContent='Status: Onboarding hotspot active';
       [wifiScanBtn(),wifiConnectBtn(),hotspotStopBtn()].forEach(b=>setDisabled(b,false));
@@ -99,6 +219,7 @@ export async function wifiStatus(){
       wifiHint().style.display='';
       return;
     }
+
     const maybeConnected = (!!ip || !!ssid);
     if(maybeConnected){
       wifiStatusLine().textContent = `Status: Connected${ssid?` to ${ssid}`:''}${ip?` • IP ${ip}`:''}`;
@@ -113,7 +234,9 @@ export async function wifiStatus(){
     wifiHint().style.display='';
   }catch(e){
     wifiCard().hidden = false;
+    setWifiPill('Error', 'danger');
     wifiStatusLine().textContent='Status: error';
     announce('Error reading Wi-Fi status.');
   }
 }
+

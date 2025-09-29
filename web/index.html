@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Measurely</title>
+  <link rel="icon" type="image/png" href="./favicon.png">
   <link rel="stylesheet" href="./style.css">
 </head>
 
@@ -23,7 +24,8 @@
     <!-- Welcome -->
     <section class="card" aria-labelledby="welcome-heading">
       <h2 id="welcome-heading" class="card-title">Welcome to Measurely</h2>
-      <p class="subhead">Plug in your USB microphone and connect the DAC to your amplifier. Join Wi-Fi if needed, enter a few room details, then run a sweep. Results appear below with simple advice and geek details.</p>
+      <p class="subhead soft">Measurely turns your room’s sound into clear scores and simple fixes.</p>
+      <p class="subhead muted" style="font-weight:400">Plug in your USB microphone and connect the DAC to your amplifier. Join Wi-Fi if needed, enter a few room details, then run a sweep. Results appear below with simple advice and geek details.</p>
     </section>
 
     <!-- Devices -->
@@ -82,12 +84,7 @@
 
     <!-- Room & placement -->
     <section class="card compact" aria-labelledby="room-heading">
-      <h2 id="room-heading" class="card-title">Room &amp; placement</h2>
-
-      <details class="hint">
-        <summary>Quick tip</summary>
-        <p class="small muted">These measurements help tailor advice for your space. Use metres (m). Nearest 5–10&nbsp;cm is fine.</p>
-      </details>
+      <h2 id="room-heading" class="card-title">Room &amp; speaker placement</h2>
 
       <div class="subsection" aria-labelledby="room-measurements-heading">
         <div class="subhead" id="room-measurements-heading">Room measurements</div>
@@ -115,14 +112,6 @@
       <div class="subsection" aria-labelledby="speaker-placement-heading">
         <div class="subhead" id="speaker-placement-heading">Speaker placement</div>
 
-        <details class="hint">
-          <summary>Guidelines</summary>
-          <p class="small muted">
-            Start with speakers <b>0.4–0.8&nbsp;m</b> from the front wall, listener centred,
-            and <b>speaker spacing ≈ 0.8–1.0×</b> the listener distance. Enter your current positions—we’ll suggest tweaks after the sweep.
-          </p>
-        </details>
-
         <div class="grid-3">
           <div class="with-unit">
             <label for="spkFront">Speaker to front wall (metres)</label>
@@ -148,6 +137,13 @@
       </div>
     </section>
 
+    <!-- Dashboard -->
+    <section class="card" aria-labelledby="dashboard-heading">
+      <h2 id="dashboard-heading" class="card-title">Dashboard</h2>
+      <!-- JS will fill this -->
+      <div id="dashboard"></div>
+    </section>
+
     <!-- Sweep -->
     <section class="card" aria-labelledby="sweep-heading">
       <h2 id="sweep-heading" class="card-title">Sweep</h2>
@@ -170,34 +166,6 @@
 
       <div class="rule" role="separator" aria-hidden="true"></div>
 
-      <!-- Pretty graph UI -->
-      <div class="subhead" style="margin-top:4px;">Graphs</div>
-      <div id="graphs-pretty" class="graph-wrap" hidden>
-        <div class="graph-toolbar">
-          <label for="smoothSel">Smoothing:</label>
-          <select id="smoothSel">
-            <option value="none">None</option>
-            <option value="12">1/12 octave</option>
-            <option value="6" selected>1/6 octave</option>
-            <option value="3">1/3 octave</option>
-          </select>
-
-          <label for="bandSel">Target band:</label>
-          <select id="bandSel">
-            <option value="0">Off</option>
-            <option value="2">±2 dB</option>
-            <option value="3" selected>±3 dB</option>
-            <option value="5">±5 dB</option>
-          </select>
-
-          <span class="badge" id="cursorReadout" aria-live="polite">— Hz, — dB</span>
-        </div>
-
-        <div class="graph-legend" id="graphLegend"></div>
-        <div class="svg-host" id="graphHost" role="img" aria-label="Frequency response graph"></div>
-        <p class="graph-tip">Tip: Click legend items to show/hide sweeps. Drag to pan, wheel to zoom. Double-click to reset.</p>
-      </div>
-
       <!-- Geek details + empty placeholder -->
       <details class="mly-details" id="mly-geek">
         <summary class="mly-link" role="button" aria-controls="mly-geek-box">Show Geek Details</summary>
@@ -213,15 +181,9 @@
       <div id="graphs" class="muted" role="region" aria-label="Analysis graphs">(none)</div>
     </section>
 
-    <!-- Section Scores (separate full-width card; placed above sessions) -->
-    <section class="card" id="sectionScoresCard" aria-labelledby="section-scores-heading" style="display:none;">
-      <h2 id="section-scores-heading" class="card-title">Section scores</h2>
-      <div id="sectionScoresGrid" class="mly-grid"></div>
-    </section>
-
     <!-- Sessions -->
     <section class="card" aria-labelledby="sessions-heading">
-      <h2 id="sessions-heading" class="card-title">Past sessions</h2>
+      <h2 id="sessions-heading" class="card-title">Past sweeps</h2>
       <div id="sessions" class="muted" role="region" aria-live="polite">(none)</div>
     </section>
 
