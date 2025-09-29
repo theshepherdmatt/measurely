@@ -18,6 +18,7 @@ let _err = '';
 export function initDashboard() {
   const wrap = $id('dashboard');
   if (!wrap) return;
+  injectDashStyles();
   wrap.innerHTML = `
     <div id="dash-graph-wrap"
         style="width:100%;height:360px;border:1px solid rgba(0,0,0,.1);border-radius:8px"></div>
@@ -102,6 +103,19 @@ export function setBusy(isBusy) {
   if (msg) msg.textContent = isBusy ? 'Working…' : '';
 }
 
+function injectDashStyles(){
+  if (document.getElementById('dash-inline-style')) return;
+  const css = `
+    .dash-box{padding:12px 14px;border:1px solid rgba(0,0,0,.08);border-radius:10px;background:rgba(0,0,0,.02);}
+    .dash-heading{display:flex;align-items:center;gap:8px;margin:12px 0 8px;font-weight:600;}
+    .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
+    .dash-list{margin:0;padding-left:18px;line-height:1.45;}
+    .dash-sep{height:1px;background:rgba(0,0,0,.06);margin:14px 0;}
+  `;
+  const s=document.createElement('style'); s.id='dash-inline-style'; s.textContent=css;
+  document.head.appendChild(s);
+}
+
 /* ---------- render ---------- */
 function render(){
   const host = $id('dash-graph-wrap');
@@ -135,15 +149,18 @@ function render(){
       }).join('');
 
     sec.innerHTML = `
-      <div class="muted" style="margin-bottom:6px">Section scores</div>
-      <div style="
-        display:grid;
-        grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-        gap:8px;
-      ">
-        ${pills || '<span class="muted">(none)</span>'}
+      <div class="dash-heading"><span class="muted">Section scores</span></div>
+      <div class="dash-box">
+        <p class="small muted" style="margin:0 0 8px 0;">
+          Scores are computed from your last sweep by comparing the measured response to a neutral target (1/6-oct smoothed), then deducting points for L/R imbalance, large or narrow peaks/dips, limited bandwidth (−3 dB points), strong early reflections, and excessive reverb; 10 means smooth (≈±3 dB), balanced, and well-damped.
+        </p>
+        <div class="dash-grid">
+          ${pills || '<span class="muted">(none)</span>'}
+        </div>
       </div>
     `;
+
+
   } else if (!_err) {
     sec.innerHTML = `<div class="muted">(no section scores)</div>`;
   }
@@ -156,11 +173,17 @@ function render(){
   ).join('');
 
   tips.innerHTML = `
-    <div class="muted" style="margin-bottom:6px">Tips &amp; tweaks${focus ? ` · focused on ${focus}` : ''}</div>
-    <ol style="margin:0 0 0 18px;padding:0;">
-      ${items || '<li class="muted">(no tips)</li>'}
-    </ol>
+    <div class="dash-sep" role="separator" aria-hidden="true"></div>
+    <div class="dash-heading">
+      <span class="muted">Tips &amp; tweaks${focus ? ` · focused on ${focus}` : ''}</span>
+    </div>
+    <div class="dash-box">
+      <ol class="dash-list">
+        ${items || '<li class="muted">(no tips)</li>'}
+      </ol>
+    </div>
   `;
+
 }
 
 /* ---------- tips logic ---------- */
@@ -323,10 +346,6 @@ function pillClassFromScore(s) {
        : s >= 4.5 ? 'warn'
        : 'poor';
 }
-
-/* =================================================================== */
-/* =====================  T O P   A C T I O N S  ====================== */
-/* =================================================================== */
 
 /* =================================================================== */
 /* =====================  T O P   A C T I O N S  ====================== */
