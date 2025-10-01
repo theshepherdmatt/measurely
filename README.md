@@ -1,3 +1,6 @@
+---
+
+````markdown
 # Measurely
 
 Measurely is a simple audio measurement toolkit for Raspberry Pi.  
@@ -158,4 +161,4 @@ sudo rm /etc/samba/measurely.conf
 sudo systemctl restart smbd nmbd
 ```
 
-```
+``
