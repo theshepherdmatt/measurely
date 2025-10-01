@@ -1,5 +1,3 @@
-
-````markdown
 # Measurely
 
 Measurely is a simple audio measurement toolkit for Raspberry Pi.  
