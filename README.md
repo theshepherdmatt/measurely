@@ -35,3 +35,15 @@ Results are stored under your home folder (`~/Measurely/measurements`) and share
    ```
 
 2. Clone the Measurely repository:
+   
+   ```bash
+   git clone https://github.com/theshepherdmatt/measurely.git
+   cd measurely
+   ```
+   
+3. Run the installer:
+   
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
