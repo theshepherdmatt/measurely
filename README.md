@@ -33,7 +33,7 @@ Results are stored under your home folder (`~/Measurely/measurements`) and share
    ```bash
    sudo apt update
    sudo apt install -y git
-````
+   ```
 
 2. Clone the Measurely repository:
 
