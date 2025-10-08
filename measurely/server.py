@@ -501,6 +501,54 @@ def create_app():
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    # -------- Filtering endpoints (CamillaDSP YAML) --------
+    @app.post("/api/filter")
+    def api_filter_generate():
+        sid, data = _load_analysis_for(None)
+        if not data:
+            return jsonify({"ok": False, "error": "No analysis found"}), 404
+
+        # Simple demo filters — replace with real data later
+        filters = [
+            {"type": "Biquad", "freq": 60,  "gain": -3.0, "q": 1.0},
+            {"type": "Biquad", "freq": 120, "gain":  1.5, "q": 1.2},
+        ]
+
+        # Build a minimal valid CamillaDSP YAML string
+        yaml_lines = [
+            "pipeline:",
+            "  - type: Filter",
+            "    channel: 0",
+            "    name: L",
+            "  - type: Filter",
+            "    channel: 1",
+            "    name: R",
+            "filters:",
+        ]
+        for i, f in enumerate(filters, start=1):
+            yaml_lines += [
+                f"  peq{i}:",
+                "    type: Biquad",
+                f"    freq: {f['freq']}",
+                f"    gain: {f['gain']}",
+                f"    q: {f['q']}",
+                "    mode: PEQ",
+            ]
+        yaml_lines += ["mixers: []", "sinks: []"]
+
+        yaml = "\n".join(yaml_lines)
+        out = MEAS_ROOT / sid / "camilladsp.yaml"
+        out.write_text(yaml, encoding="utf-8")
+        return jsonify({"ok": True, "sid": sid, "yaml": yaml})
+
+    @app.get("/api/filter/download")
+    def api_filter_download():
+        sid, _ = _load_analysis_for(None)
+        path = MEAS_ROOT / sid / "camilladsp.yaml"
+        if not path.exists():
+            abort(404)
+        return send_from_directory(path.parent, path.name, as_attachment=True)
+
     return app
 
 # -------------------------------------------------------------------

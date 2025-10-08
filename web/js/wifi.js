@@ -157,7 +157,7 @@ export async function connectWifi(){
   wifiMsg().textContent='Connecting…'; wifiConnectBtn().textContent='Connecting…'; announce(`Connecting to ${ssid}.`);
   setDisabled(wifiConnectBtn(),true); setBusy(wifiConnectBtn(),true);
   try{
-    const j=await fetchJSON('/api/wifi/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await fetchJSON('/api/wifi/connect', { method:'POST', body });
     wifiMsg().textContent='Connected. The hotspot will switch off shortly.'; announce(`Connected to ${ssid}.`);
     wifiStatus();
   }catch(e){

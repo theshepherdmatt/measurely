@@ -5,9 +5,41 @@ Measurely – main orchestrator
 - Runs capture sweep (measurely.sweep), then analysis (measurely.analyse)
 - Echoes the sweep's stdout (so the "Saved: <dir>" line is preserved)
 - After analysis, prints a plain-English summary + simple fixes
+
+Extras:
+- --speaker support to load a profile from ~/measurely/speakers/speakers.json
+- Forwards safe sweep bounds/levels to measurely.sweep
+- Passes target curve CSV to measurely.analyse
 """
 
 import argparse, subprocess, sys, os, shlex, json
+
+# --- speaker profiles ---
+def _repo_root():
+    # Resolve .../measurely (project root) from this file's location
+    here = os.path.dirname(os.path.abspath(__file__))
+    return os.path.abspath(os.path.join(here))  # script sits at repo root already
+
+def _speakers_root():
+    # <repo>/speakers
+    return os.path.join(_repo_root(), "speakers")
+
+def _load_speakers_index():
+    cfg = os.path.join(_speakers_root(), "speakers.json")
+    with open(cfg, "r") as f:
+        return json.load(f), cfg
+
+def _load_speaker_profile(key: str) -> dict:
+    data, cfg_path = _load_speakers_index()
+    prof = data.get(key)
+    if not prof:
+        raise ValueError(f"Speaker profile '{key}' not found in {cfg_path}")
+    folder = os.path.join(_speakers_root(), prof["folder"])
+    target_csv = os.path.join(folder, prof.get("target_curve", ""))
+    if prof.get("target_curve") and not os.path.isfile(target_csv):
+        raise FileNotFoundError(f"Target curve not found: {target_csv}")
+    prof["_target_csv_abs"] = target_csv if prof.get("target_curve") else None
+    return prof
 
 # --- backend managers ---
 class PlaybackManager:
@@ -52,8 +84,22 @@ def main():
     ap.add_argument("--points-per-oct", type=int, default=48,
                     help="Log bins per octave to pass to analyse")
     ap.add_argument("--tag", default=None, help="Optional tag for the capture (saved in meta)")
+    ap.add_argument("--speaker", default=None, help="Speaker profile key (e.g. quad_esl57)")
+    # Optional manual overrides (take precedence over speaker defaults)
+    ap.add_argument("--level", type=float, default=None, help="Sweep level in dBFS (e.g. -15)")
+    ap.add_argument("--start-hz", type=float, default=None, help="Sweep start frequency")
+    ap.add_argument("--end-hz", type=float, default=None, help="Sweep end frequency")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
+
+    # Load speaker profile (if any)
+    speaker = None
+    if args.speaker:
+        try:
+            speaker = _load_speaker_profile(args.speaker)
+        except Exception as e:
+            _print_err(f"[speaker] {e}")
+            sys.exit(3)
 
     mgr = ManagerFactory.for_system(prefer=args.backend, alsa_device=args.alsa_device)
 
@@ -74,13 +120,25 @@ def main():
     if args.tag:
         sweep_cmd += ["--tag", args.tag]
 
+    # Apply speaker defaults unless overridden by CLI
+    lvl = args.level if args.level is not None else (speaker.get("safe_level_dbfs") if speaker else None)
+    s_hz = args.start_hz if args.start_hz is not None else (speaker.get("sweep_start_hz") if speaker else None)
+    e_hz = args.end_hz if args.end_hz is not None else (speaker.get("sweep_end_hz") if speaker else None)
+    if lvl is not None:
+        sweep_cmd += ["--level", str(lvl)]
+    if s_hz is not None:
+        sweep_cmd += ["--start-hz", str(s_hz)]
+    if e_hz is not None:
+        sweep_cmd += ["--end-hz", str(e_hz)]
+
     if args.dry_run:
         print("Would run capture:\n ", shlex.join(sweep_cmd))
         print("Then run analyse on the Saved: directory found in capture output with:")
-        print(" ", shlex.join([
-            sys.executable, "-m", "measurely.analyse", "<session_dir>",
-            "--points-per-oct", str(args.points_per_oct),
-        ]))
+        ana_preview = [sys.executable, "-m", "measurely.analyse", "<session_dir>",
+                       "--points-per-oct", str(args.points_per_oct)]
+        if speaker and speaker.get("_target_csv_abs"):
+            ana_preview += ["--target-csv", speaker["_target_csv_abs"]]
+        print(" ", shlex.join(ana_preview))
         sys.exit(0)
 
     # ----- Run capture and surface its stdout (incl. Saved: ...) -----
@@ -110,6 +168,10 @@ def main():
         sys.executable, "-m", "measurely.analyse", saved_dir,
         "--points-per-oct", str(args.points_per_oct),
     ]
+    # Forward target curve if present
+    if speaker and speaker.get("_target_csv_abs"):
+        analyse_cmd += ["--target-csv", speaker["_target_csv_abs"]]
+
     ana = subprocess.run(analyse_cmd, text=True, capture_output=True)
     # Surface analysis logs (so UI shows them too)
     if ana.stdout:

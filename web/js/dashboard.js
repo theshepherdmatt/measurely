@@ -1,4 +1,4 @@
-// web/js/dashboard.js — collapsible (safe) + graph + section scores + tips
+// web/js/dashboard.js collapsible (safe) + graph + section scores + tips
 
 /* ---------- DOM + fetch ---------- */
 const $id = (id) => document.getElementById(id);
@@ -194,15 +194,15 @@ export function setBusy(isBusy) {
 }
 
 /* ---------- render ---------- */
-function render(){
+function render() {
   const host = $id('dash-graph-wrap');
   const msg  = $id('dash-msg');
   const sec  = $id('dash-sections');
   const tips = $id('dash-tips');
   if (!host) return;
+  if (sec) sec.innerHTML = '';
+  if (tips) tips.innerHTML = '';
   host.innerHTML = '';
-  sec.innerHTML = '';
-  tips.innerHTML = '';
 
   if (!_fr || _fr.length < 2) {
     host.textContent = '(no response data)';
@@ -780,3 +780,49 @@ function getDemoSections(){
     smoothness:{score:6.2}, reflections:{score:7.0}, reverb:{score:6.8},
   };
 }
+
+
+/* ---------- Filtering card (CamillaDSP export) ---------- */
+function renderFilterCard(){
+  const root = document.getElementById('dashboard') || document.body;
+  const card = document.createElement('section');
+  card.className = 'dash-box';
+  card.innerHTML = `
+    <div class="dash-heading"><span>Filtering</span></div>
+    <p>Create CamillaDSP filters from your latest measurement.</p>
+    <div class="actions">
+      <button id="filter-gen" class="btn">Generate Filters</button>
+      <button id="filter-dl" class="btn" disabled>Download YAML</button>
+    </div>
+    <pre id="filter-preview" class="muted" style="max-height:300px;overflow:auto">(none yet)</pre>
+  `;
+  const btnGen = card.querySelector('#filter-gen');
+  const btnDl  = card.querySelector('#filter-dl');
+  const prev   = card.querySelector('#filter-preview');
+  btnGen.onclick = async ()=>{
+    btnGen.disabled = true;
+    prev.textContent = 'Generating...';
+    try{
+      const r = await fetch('/api/filter', {method:'POST'});
+      const res = await r.json();
+      if(res.ok){
+        prev.textContent = res.yaml || '(empty YAML)';
+        btnDl.disabled = false;
+      } else {
+        prev.textContent = res.error || 'Error generating filter.';
+      }
+    }catch(e){ prev.textContent = String(e); }
+    btnGen.disabled = false;
+  };
+  btnDl.onclick = ()=>{ window.location = '/api/filter/download'; };
+  root.appendChild(card);
+}
+
+// Ensure it renders after the dashboard content exists
+(function(){
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ()=> setTimeout(renderFilterCard, 200));
+  } else {
+    setTimeout(renderFilterCard, 200);
+  }
+})();

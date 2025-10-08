@@ -6,11 +6,18 @@ export function announce(msg){
 }
 export function setBusy(el,b=true){ el && el.setAttribute('aria-busy', b?'true':'false'); }
 export function setDisabled(el,d=true){ if(!el) return; el.disabled=d; el.setAttribute('aria-disabled', d?'true':'false'); }
-export async function fetchJSON(url){
-  const r = await fetch(url);
-  if(!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+export async function fetchJSON(url, opts = {}) {
+  // If they passed a plain object as body, JSON-encode it and set header
+  const init = { cache: 'no-store', ...opts };
+  if (init.body && typeof init.body === 'object' && !(init.body instanceof FormData)) {
+    init.headers = { 'Content-Type': 'application/json', ...(init.headers || {}) };
+    init.body = JSON.stringify(init.body);
+  }
+  const r = await fetch(url, init);
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   return r.json();
 }
+
 // friendly device name
 export function simplifyName(raw){
   if(!raw) return '';
@@ -27,4 +34,9 @@ export function simplifyName(raw){
   if(l.includes('usb audio')) return 'USB Audio DAC';
   if(l.includes('codec') && l.includes('bcm')) return 'Pi audio';
   return s.split(/[\n,]/)[0].trim().replace(/\s{2,}/g,' ');
+}
+
+
+export async function filterGenerate(){
+  return fetchJSON('/api/filter', { method: 'POST' });
 }

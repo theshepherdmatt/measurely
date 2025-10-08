@@ -14,6 +14,7 @@ import argparse, os, json, sys, math, tempfile, logging
 import numpy as np
 import soundfile as sf
 from pathlib import Path
+import csv
 
 # -------------------------------------------------------------------
 # Constants & logging
@@ -53,16 +54,90 @@ def write_json_atomic(obj, dest: Path):
 # -------------------------------------------------------------------
 # I/O
 # -------------------------------------------------------------------
-def load_session_paths(path):
-    if os.path.isdir(path):
-        resp = os.path.join(path, "response.csv")
-        imp  = os.path.join(path, "impulse.wav")
-        if not os.path.isfile(resp):
-            raise FileNotFoundError(f"Missing response.csv in {path}")
-        if not os.path.isfile(imp):
-            raise FileNotFoundError(f"Missing impulse.wav in {path}")
-        return resp, imp, path
-    raise FileNotFoundError(f"{path} is not a directory")
+def load_session_paths(session_dir: str):
+    """
+    Returns (freqs, mags, ir, fs, used_label) by:
+      1) Using root-level response.csv + impulse.wav if present, else
+      2) Searching left/ and right/, and:
+         - if both present: merge L/R responses (dB avg) + use left IR
+         - if only one present: use that channel
+    """
+    ses = Path(session_dir)
+    if not ses.is_dir():
+        raise FileNotFoundError(f"{session_dir} is not a directory")
+
+    root_resp = ses / "response.csv"
+    root_imp  = ses / "impulse.wav"
+    if root_resp.exists() and root_imp.exists():
+        freqs, mags = load_response_csv(str(root_resp))
+        ir, fs = load_impulse_wav(str(root_imp))
+        return freqs, mags, ir, fs, "root"
+
+    # Look in channel subfolders
+    ch_files = {}
+    for ch in ("left", "right", "stereo"):
+        d = ses / ch
+        r = d / "response.csv"
+        i = d / "impulse.wav"
+        if r.exists() and i.exists():
+            ch_files[ch] = (r, i)
+
+    if not ch_files:
+        raise FileNotFoundError(
+            f"Missing response.csv/impulse.wav in {session_dir} (root or left/right)"
+        )
+
+    # If only one channel available, use it
+    if len(ch_files) == 1:
+        (rpath, ipath), label = next(iter(ch_files.values())), next(iter(ch_files.keys()))
+        freqs, mags = load_response_csv(str(rpath))
+        ir, fs = load_impulse_wav(str(ipath))
+        return freqs, mags, ir, fs, label
+
+    # If both left and right exist, merge responses (simple average in dB)
+    if "left" in ch_files and "right" in ch_files:
+        l_resp, l_imp = ch_files["left"]
+        r_resp, _     = ch_files["right"]
+
+        fl, ml = load_response_csv(str(l_resp))
+        fr, mr = load_response_csv(str(r_resp))
+
+        # If either is empty, fall back to the other
+        if fl.size == 0 or ml.size == 0:
+            ir, fs = load_impulse_wav(str(l_imp))
+            return fr, mr, ir, fs, "right"
+        if fr.size == 0 or mr.size == 0:
+            ir, fs = load_impulse_wav(str(l_imp))
+            return fl, ml, ir, fs, "left"
+
+        # Align on a common (rounded) frequency grid
+        rl = np.round(fl, 2); rr = np.round(fr, 2)
+        common = np.intersect1d(rl, rr)
+        if common.size == 0:
+            # Grids don't match at all; just use left
+            ir, fs = load_impulse_wav(str(l_imp))
+            return fl, ml, ir, fs, "left"
+
+        # Build maps from rounded freq -> index
+        idxL = {v: i for i, v in enumerate(rl)}
+        idxR = {v: i for i, v in enumerate(rr)}
+        f_used, m_used = [], []
+        for v in common:
+            iL = idxL.get(v); iR = idxR.get(v)
+            if iL is not None and iR is not None:
+                f_used.append(fl[iL])
+                m_used.append( (ml[iL] + mr[iR]) / 2.0 )
+
+        freqs = np.array(f_used, dtype=float)
+        mags  = np.array(m_used, dtype=float)
+        ir, fs = load_impulse_wav(str(l_imp))  # use left IR by convention
+        return freqs, mags, ir, fs, "merged_LR"
+
+    # Otherwise use whichever channel was found (e.g., "stereo")
+    label, (rpath, ipath) = next(iter(ch_files.items()))
+    freqs, mags = load_response_csv(str(rpath))
+    ir, fs = load_impulse_wav(str(ipath))
+    return freqs, mags, ir, fs, label
 
 # -------------------------------------------------------------------
 # Meta (room)
@@ -866,27 +941,239 @@ def write_summary(path, analysis, context=None):
     write_text_atomic(text + "\n", Path(path) / "summary.txt")
 
 # -------------------------------------------------------------------
+# CamillaDSP YAML generator (moOde v2 / Volumio v1)
+# -------------------------------------------------------------------
+def _pick_eq_bands_from_analysis(analysis: dict, max_bands: int = 4):
+    """
+    Turn detected modes into simple corrective PEQs.
+    - Prioritise strongest |delta_db|
+    - Limit to low/mid frequencies (<= 500 Hz) where room modes dominate
+    - Clamp gain to [-6, +6] dB
+    - Use fixed Q heuristics (peaks narrower than dips)
+    Returns: list of dicts: [{f, q, gain}, ...]
+    """
+    modes = analysis.get("modes") or []
+    if not modes:
+        return []
+
+    # Score by severity and useful range
+    cand = []
+    for m in modes:
+        f = float(m.get("freq_hz") or 0)
+        d = float(m.get("delta_db") or 0)
+        if f <= 15 or f > 500:
+            continue
+        # inverse gain to correct (peaks -> negative, dips -> positive)
+        gain = -d
+        # clamp and round
+        gain = max(-6.0, min(6.0, gain))
+        # heuristic Q: peaks a bit narrower, dips a bit wider
+        if d > 0:     # measured peak -> cut
+            q = 5.0 if f < 150 else 3.5
+        else:         # measured dip -> boost
+            q = 3.0 if f < 150 else 2.2
+        cand.append({"f": round(f, 1), "q": round(q, 2), "gain": round(gain, 2), "sev": abs(d)})
+
+    cand.sort(key=lambda x: (x["sev"], -x["gain"]), reverse=True)
+    bands = []
+    used_freqs = []
+    for c in cand:
+        # avoid stacking multiple bands on nearly the same freq
+        if any(abs(c["f"] - uf) < 0.08 * uf for uf in used_freqs):
+            continue
+        bands.append({k: c[k] for k in ("f","q","gain")})
+        used_freqs.append(c["f"])
+        if len(bands) >= max_bands:
+            break
+    return bands
+
+def _yaml_for_moode_v2(eq_bands: list, pretrim_db: float = -4.0, samplerate: int = 48000) -> str:
+    """
+    moOde uses CamillaDSP v2.x. Provide full schema with devices/filters/pipeline.
+    moOde will override capture/playback; we still provide valid placeholders.
+    """
+    lines = []
+    lines += [
+        "title: MeasureLy – Auto PEQ (moOde v2)",
+        "description: Generated from MeasureLy analysis",
+        "devices:",
+        f"  samplerate: {samplerate}",
+        "  chunksize: 2048",
+        "  queuelimit: 1",
+        "  enable_rate_adjust: true",
+        f"  capture_samplerate: {samplerate}",
+        "  rate_measure_interval: 1",
+        "  silence_threshold: 0",
+        "  silence_timeout: 0",
+        "  stop_on_rate_change: false",
+        "  target_level: 1024",
+        "  volume_ramp_time: 150",
+        "  capture:",
+        "    type: Stdin",
+        "    channels: 2",
+        "    format: S24LE",
+        "  playback:",
+        "    type: Alsa",
+        "    channels: 2",
+        "    device: hw:0,0",
+        "    format: S24LE",
+        "  resampler:",
+        "    type: AsyncSinc",
+        "    profile: Balanced",
+        "filters:",
+        "  pretrim:",
+        "    type: Gain",
+        f"    parameters: {{ gain: {pretrim_db} }}",
+    ]
+    # Emit PEQs
+    if not eq_bands:
+        # Always include at least one tiny PEQ so the pipeline is valid
+        eq_bands = [{"f": 100.0, "q": 1.0, "gain": 0.0}]
+    for i, p in enumerate(eq_bands, start=1):
+        lines += [
+            f"  peq{i}:",
+            "    type: Biquad",
+            "    parameters:",
+            "      type: Peaking",
+            f"      freq: {p['f']}",
+            f"      Q: {p['q']}",
+            f"      gain: {p['gain']}",
+        ]
+    names = ", ".join(f"peq{i}" for i in range(1, len(eq_bands)+1))
+    lines += [
+        "mixers: []",
+        "pipeline:",
+        "  - type: Filter",
+        "    channels: [0, 1]",
+        "    names: [pretrim]",
+        "  - type: Filter",
+        "    channels: [0]",
+        f"    names: [{names}]",
+        "  - type: Filter",
+        "    channels: [1]",
+        f"    names: [{names}]",
+        "processors: null",
+    ]
+    return "\n".join(lines) + "\n"
+
+def _yaml_for_volumio_v1(eq_bands: list, pretrim_db: float = -5.0, samplerate: int = 48000) -> str:
+    """
+    Volumio FusionDSP commonly uses CamillaDSP v1.0.x; use v1 fields.
+    Important: capture=/tmp/fusiondspfifo, playback=postDsp, enable_resampling/resampler_type.
+    """
+    lines = []
+    lines += [
+        "title: MeasureLy – Auto PEQ (Volumio v1)",
+        "description: Generated from MeasureLy analysis",
+        "devices:",
+        f"  samplerate: {samplerate}",
+        "  chunksize: 4800",
+        "  queuelimit: 1",
+        "  enable_rate_adjust: false",
+        f"  capture_samplerate: {samplerate}",
+        "  rate_measure_interval: 1",
+        "  silence_threshold: 0",
+        "  silence_timeout: 0",
+        "  stop_on_rate_change: false",
+        "  target_level: 1024",
+        "  volume_ramp_time: 150",
+        "  capture:",
+        "    type: File",
+        "    channels: 2",
+        "    filename: /tmp/fusiondspfifo",
+        "    format: S32LE",
+        "    extra_samples: 4096",
+        "  playback:",
+        "    type: Alsa",
+        "    channels: 2",
+        "    device: postDsp",
+        "    format: S32LE",
+        "  enable_resampling: true",
+        "  resampler_type: BalancedAsync",
+        "filters:",
+        "  pretrim:",
+        "    type: Gain",
+        f"    parameters: {{ gain: {pretrim_db} }}",
+    ]
+    if not eq_bands:
+        eq_bands = [{"f": 100.0, "q": 1.0, "gain": 0.0}]
+    for i, p in enumerate(eq_bands, start=1):
+        lines += [
+            f"  peq{i}:",
+            "    type: Biquad",
+            "    parameters:",
+            "      type: Peaking",
+            f"      f: {p['f']}",
+            f"      q: {p['q']}",
+            f"      gain: {p['gain']}",
+        ]
+    names = ", ".join(f"peq{i}" for i in range(1, len(eq_bands)+1))
+    lines += [
+        "mixers:",
+        "  stereo:",
+        "    channels: { in: 2, out: 2 }",
+        "    mapping:",
+        "      - dest: 0",
+        "        sources: [{ channel: 0, gain: 0 }]",
+        "      - dest: 1",
+        "        sources: [{ channel: 1, gain: 0 }]",
+        "pipeline:",
+        "  - type: Mixer",
+        "    name: stereo",
+        "  - type: Filter",
+        "    channels: [0, 1]",
+        "    names: [pretrim]",
+        "  - type: Filter",
+        "    channels: [0]",
+        f"    names: [{names}]",
+        "  - type: Filter",
+        "    channels: [1]",
+        f"    names: [{names}]",
+        "processors: null",
+    ]
+    return "\n".join(lines) + "\n"
+
+def write_camilladsp_yaml(session_dir: str, analysis: dict, target: str = "moode", samplerate: int = 48000):
+    """
+    Create camilladsp.yaml in the session directory.
+    target: 'moode' (Camilla v2) or 'volumio' (Camilla v1). Env override:
+        MEASURELY_DSP_TARGET=volumio or moode
+    """
+    # 1) Pick bands from analysis (peaks/dips -> inverse gain)
+    bands = _pick_eq_bands_from_analysis(analysis, max_bands=4)
+    # add gentle house-curve compensation? (skip for now; keep neutral)
+
+    # 2) Build YAML per target
+    tgt = (os.environ.get("MEASURELY_DSP_TARGET") or target or "moode").lower()
+    if tgt.startswith("vol"):
+        yaml_txt = _yaml_for_volumio_v1(bands, pretrim_db=-5.0, samplerate=samplerate)
+    else:
+        yaml_txt = _yaml_for_moode_v2(bands, pretrim_db=-4.0, samplerate=samplerate)
+
+    # 3) Write file
+    out = Path(session_dir) / "camilladsp.yaml"
+    write_text_atomic(yaml_txt, out)
+    log.info("Generated CamillaDSP YAML: %s (target=%s, bands=%d)", out, tgt, len(bands))
+
+
+# -------------------------------------------------------------------
 # CLI
 # -------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser(description="Analyse a Measurely session directory")
-    ap.add_argument("session_dir", help="Path to folder with response.csv and impulse.wav")
-    ap.add_argument("--points-per-oct", type=int, default=48,
-                    help="Log bins per octave (analysis speed vs detail)")
-    ap.add_argument("--no-ir-fallback", action="store_true",
-                    help="Disable deriving a response from impulse.wav if response.csv is empty")
+    ap.add_argument("session_dir", help="Path to folder with response.csv/impulse.wav or left/right subfolders")
+    ap.add_argument("--points-per-oct", type=int, default=48, help="Log bins per octave")
+    ap.add_argument("--no-ir-fallback", action="store_true", help="Disable deriving response from impulse if CSV empty")
     args = ap.parse_args()
 
-    resp_csv, imp_wav, outdir = load_session_paths(args.session_dir)
-    outdir_p = Path(outdir)
-
-    # 1) Load data
-    freqs, mags = load_response_csv(resp_csv)
-    ir, fs = load_impulse_wav(imp_wav)
+    # 1) Load (now tolerant of left/right/stereo subfolders)
+    freqs, mags, ir, fs, where = load_session_paths(args.session_dir)
+    outdir_p = Path(args.session_dir)
+    log.info("Loaded data from: %s", where)
 
     # Optional fallback if CSV is empty/invalid
     if (freqs.size == 0 or mags.size == 0) and not args.no_ir_fallback:
-        log.warning("No usable response.csv; deriving response from impulse as fallback.")
+        log.warning("No usable response; deriving from impulse as fallback.")
         f2, m2 = derive_response_from_ir(ir, fs)
         if f2.size > 0:
             freqs, mags = f2, m2
@@ -897,7 +1184,7 @@ def main():
     result = analyse(freqs, mags, ir, fs, points_per_oct=args.points_per_oct)
 
     # 3) Context & insights
-    apply_room_context_and_insights(outdir, result)
+    apply_room_context_and_insights(args.session_dir, result)
 
     # 4) Scores
     scores = compute_scores(result)
@@ -908,7 +1195,7 @@ def main():
     result["plain_summary"] = one_liner
     result["simple_fixes"] = fixes
 
-    # 6) Simple UI payload (NEW)
+    # 6) Simple UI payload
     room_ctx = (result.get("context") or {}).get("room") or {}
     result["simple_view"] = build_simple_view(scores, result, room_ctx)
 
@@ -919,8 +1206,16 @@ def main():
     except Exception as e:
         log.exception("Persist failed: %s", e)
         raise
+    
+    # 8) Auto-generate CamillaDSP YAML for the session
+    try:
+        # Default to moOde v2; set MEASURELY_DSP_TARGET=volumio to emit v1 format
+        write_camilladsp_yaml(str(outdir_p), result, target="moode", samplerate=48000)
+    except Exception as e:
+        log.warning("YAML generation skipped: %s", e)
 
-    print("Analysis complete:", outdir)
+    print("Analysis complete:", args.session_dir)
+
 
 if __name__ == "__main__":
     try:

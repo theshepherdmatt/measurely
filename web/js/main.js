@@ -6,6 +6,7 @@ import { loadRoom, saveRoom } from './room.js';
 import { scanWifi, connectWifi, stopHotspot, wifiStatus, bindWifiSelect } from './wifi.js';
 import { renderSimpleAndGeek } from './results.js';
 import { initDashboard, refreshDashboard, setStatus } from './dashboard.js';
+import { initSpeakers, currentSpeakerKey } from './speakers.js';
 
 window.DASH_DEBUG = 1;  // verbose console logs from dashboard.js
 window.DASH_DEMO  = 1;  // force a demo snapshot so the mini FR + balance render
@@ -19,15 +20,18 @@ async function runSweep() {
   runBtn?.setAttribute('aria-busy', 'true');
   if (logsEl) {
     logsEl.textContent = 'Running…';
-    logsEl.removeAttribute('aria-live');
+    logsEl.removeAttribute('aria-live'); // avoid double-speaking while logs stream in
   }
 
   try {
+    const payload = { speaker: currentSpeakerKey() || null };
+
     const resp = await fetch('/api/run-sweep', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
+      body: JSON.stringify(payload)
     });
+
     if (!resp.ok) {
       const txt = await resp.text().catch(() => '');
       throw new Error(`HTTP ${resp.status} ${resp.statusText}${txt ? ` – ${txt}` : ''}`);
@@ -42,14 +46,14 @@ async function runSweep() {
     }
 
     if (data.session_id) {
+      // Make the session active in UI *and* render results using that ID immediately.
       await openSession(data.session_id);
       await fetchSessions();
+      await renderSimpleAndGeek(data.session_id);
     } else {
       $('resultCard')?.style.setProperty('display', 'block');
       if ($('summary')) $('summary').textContent = '(no summary)';
-      const g = $('graphs');
-      if (g) g.remove();
-
+      const g = $('graphs'); if (g) g.remove();
       await renderSimpleAndGeek();
     }
 
@@ -68,7 +72,7 @@ async function runSweep() {
 }
 
 /* -------------------- Bootstrapping -------------------- */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Wire controls
   $('runBtn')?.addEventListener('click', runSweep);
   $('saveRoomBtn')?.addEventListener('click', saveRoom);
@@ -76,6 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('wifiConnectBtn')?.addEventListener('click', connectWifi);
   $('hotspotStopBtn')?.addEventListener('click', stopHotspot);
   bindWifiSelect();
+
+  // Speakers (builds the UI control + restores saved selection)
+  await initSpeakers();
 
   // Dashboard
   initDashboard({
@@ -95,6 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadRoom();
   wifiStatus();
   scanWifi();
+
+  // First render (resolver will auto-find the newest measurement if no sid)
   renderSimpleAndGeek();
   refreshDashboard();
 
@@ -102,17 +111,3 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(refreshStatus, 4000);
   setInterval(wifiStatus, 5000);
 });
-
-/* -------------------- Optional bridge -------------------- */
-// Call setStatus() with richer info if refreshStatus() returns it
-/*
-function mirrorStatusToDashboard(dev) {
-  setStatus({
-    wifi: dev?.wifi_ok ? 'ok' : (dev?.wifi_warn ? 'warn' : 'missing'),
-    inputs: dev?.io_ok ? 'ok' : 'warn',
-    mic: dev?.mic_present ? 'ok' : 'missing',
-    storage: dev?.storage_used_pct,
-    deviceTemp: dev?.cpu_temp_c
-  });
-}
-*/
