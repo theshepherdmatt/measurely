@@ -456,5 +456,8 @@ export async function renderSimpleAndGeek(optionalSid){
   const measId = await resolveMeasId(optionalSid, simple || {}, analysis || {});
   if (measId) window.currentMeasurementId = measId;
 
-  await renderGraphsForId(measId);
+  // Disable all graph rendering (no huge blue/red images)
+  const g = document.getElementById('graphs');
+  if (g) g.innerHTML = '';
+
 }

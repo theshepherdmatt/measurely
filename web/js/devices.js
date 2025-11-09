@@ -1,11 +1,15 @@
-// web/js/devices.js — collapsible Inputs & outputs + padded boxes + short fixed names
+// web/js/devices.js
 import { $, setDisabled, announce, fetchJSON } from './api.js';
 
 /* -------- DOM helpers -------- */
 const ioCard = () => document.getElementById('io-heading')?.closest('.card');
 
+/* -------- persistent state -------- */
+let lastMicOK = null;
+let lastDacOK = null;
+
 /* -------- one-time style injectors -------- */
-function injectDeviceStyles(){
+function injectDeviceStyles() {
   if (document.getElementById('io-inline-style')) return;
   const css = `
     .io-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--gap,12px);}
@@ -17,11 +21,13 @@ function injectDeviceStyles(){
     .status.ok{background:#e9f7ef;border-color:#bfe9d1;color:#176a3a;}
     .status.warn{background:#fff7e6;border-color:#ffe3b3;color:#8a6d3b;}
   `;
-  const s=document.createElement('style'); s.id='io-inline-style'; s.textContent=css;
+  const s = document.createElement('style');
+  s.id = 'io-inline-style';
+  s.textContent = css;
   document.head.appendChild(s);
 }
 
-function injectCollapsibleStyles(){
+function injectCollapsibleStyles() {
   if (document.getElementById('io-collapsible-style')) return;
   const css = `
     .mly-collapser{appearance:none;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.08);
@@ -45,20 +51,19 @@ function injectCollapsibleStyles(){
   document.head.appendChild(s);
 }
 
-/* -------- collapsible UI bootstrapping -------- */
-function ensureIOCollapsibleUI(){
+function ensureIOCollapsibleUI() {
   const card = ioCard();
   if (!card || card.dataset.collapsible === '1') return;
 
   injectCollapsibleStyles();
 
-  // Move everything after the H2 into a details wrapper
   const heading = card.querySelector('h2');
   const following = [];
   for (let n = heading?.nextSibling; n; n = n.nextSibling) { following.push(n); }
+
   const details = document.createElement('div');
   details.id = 'ioDetailsWrap';
-  // Insert summary button just after the H2
+
   const summary = document.createElement('button');
   summary.type = 'button';
   summary.className = 'mly-collapser';
@@ -74,20 +79,14 @@ function ensureIOCollapsibleUI(){
     </div>
   `;
 
-  if (heading?.nextSibling) {
-    card.insertBefore(summary, heading.nextSibling);
-    card.insertBefore(details, summary.nextSibling);
-  } else {
-    card.appendChild(summary);
-    card.appendChild(details);
-  }
+  card.insertBefore(summary, heading.nextSibling);
+  card.insertBefore(details, summary.nextSibling);
   following.forEach(n => details.appendChild(n));
 
-  // Default collapsed (remember user choice)
   const expanded = localStorage.getItem('io.expanded') === '1';
   setIODetailsExpanded(summary, details, expanded);
 
-  summary.addEventListener('click', ()=>{
+  summary.addEventListener('click', () => {
     const isOpen = summary.getAttribute('aria-expanded') === 'true';
     setIODetailsExpanded(summary, details, !isOpen);
     localStorage.setItem('io.expanded', !isOpen ? '1' : '0');
@@ -96,18 +95,18 @@ function ensureIOCollapsibleUI(){
   card.dataset.collapsible = '1';
 }
 
-function setIODetailsExpanded(summaryEl, detailsEl, expanded){
+function setIODetailsExpanded(summaryEl, detailsEl, expanded) {
   summaryEl.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   summaryEl.classList.toggle('is-expanded', expanded);
   detailsEl.style.display = expanded ? '' : 'none';
 }
 
-function setIOPill(text, variant){
+function setIOPill(text, variant) {
   const pill = document.getElementById('ioPill');
   if (!pill) return;
   pill.textContent = text;
   const base = 'mly-pill';
-  const map = { ok:'mly-pill--ok', warn:'mly-pill--warn', danger:'mly-pill--danger', neutral:'mly-pill--neutral' };
+  const map = { ok: 'mly-pill--ok', warn: 'mly-pill--warn', danger: 'mly-pill--danger', neutral: 'mly-pill--neutral' };
   pill.className = `${base} ${map[variant] || map.neutral}`;
 }
 
@@ -117,11 +116,27 @@ export async function refreshStatus() {
     injectDeviceStyles();
     ensureIOCollapsibleUI();
 
-    const s = await fetchJSON('/api/status');
+    let s;
+    try {
+      s = await fetchJSON('/api/status');
+    } catch {
+      // retry once on failure
+      await new Promise(r => setTimeout(r, 400));
+      s = await fetchJSON('/api/status');
+    }
+
     const micOK = !!(s?.mic?.connected);
     const dacOK = !!(s?.dac?.connected);
 
-    // Summary pill (overall)
+    // Only update UI if there's been a change
+    const micChanged = micOK !== lastMicOK;
+    const dacChanged = dacOK !== lastDacOK;
+    if (!micChanged && !dacChanged) return;
+
+    lastMicOK = micOK;
+    lastDacOK = dacOK;
+
+    // Summary pill
     if (micOK && dacOK) {
       setIOPill('Ready', 'ok');
     } else if (micOK || dacOK) {
@@ -130,28 +145,41 @@ export async function refreshStatus() {
       setIOPill('Not connected', 'danger');
     }
 
-    // Status pills inside boxes
+    // Individual box statuses
     const micStatus = $('micStatus');
     const dacStatus = $('dacStatus');
-    if (micStatus){ micStatus.textContent = micOK ? 'Connected' : 'Not found'; micStatus.className = 'status ' + (micOK ? 'ok' : 'warn'); }
-    if (dacStatus){ dacStatus.textContent = dacOK ? 'Connected' : 'Not found'; dacStatus.className = 'status ' + (dacOK ? 'ok' : 'warn'); }
+    if (micStatus) {
+      micStatus.textContent = micOK ? 'Connected' : 'Not found';
+      micStatus.className = 'status ' + (micOK ? 'ok' : 'warn');
+    }
+    if (dacStatus) {
+      dacStatus.textContent = dacOK ? 'Connected' : 'Not found';
+      dacStatus.className = 'status ' + (dacOK ? 'ok' : 'warn');
+    }
 
-    // Short, fixed names
     const micName = $('micName');
     const dacName = $('dacName');
     if (micName) micName.textContent = micOK ? 'USB Microphone' : '';
     if (dacName) dacName.textContent = dacOK ? 'Built-in DAC' : '';
 
-    // Enable “Run” only when both are present
     const ready = micOK && dacOK;
     setDisabled($('runBtn'), !ready);
     const hint = $('hint');
     if (hint) hint.textContent = ready ? 'Ready.' : 'Plug in mic/DAC and refresh.';
   } catch (e) {
     setIOPill('Error', 'danger');
-    const micStatus = $('micStatus'); if (micStatus){ micStatus.textContent = 'Error'; micStatus.className = 'status warn'; }
-    const dacStatus = $('dacStatus'); if (dacStatus){ dacStatus.textContent = 'Error'; dacStatus.className = 'status warn'; }
-    const hint = $('hint'); if (hint) hint.textContent = 'Server error.';
+    const micStatus = $('micStatus');
+    const dacStatus = $('dacStatus');
+    if (micStatus) {
+      micStatus.textContent = 'Error';
+      micStatus.className = 'status warn';
+    }
+    if (dacStatus) {
+      dacStatus.textContent = 'Error';
+      dacStatus.className = 'status warn';
+    }
+    const hint = $('hint');
+    if (hint) hint.textContent = 'Server error.';
     announce('Error reading device status.');
   }
 }

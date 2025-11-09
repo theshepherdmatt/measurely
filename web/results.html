@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Measurely – Results</title>
+  <link rel="icon" type="image/png" href="./favicon.png">
+  <link rel="stylesheet" href="./style.css">
+  <style>
+    /* keep header layout consistent with index */
+    header { display:flex; align-items:center; justify-content:space-between; }
+    .hamburger { display:inline-flex; flex-direction:column; gap:5px; padding:8px; border:0; background:none; cursor:pointer; }
+    .hamburger span { display:block; width:26px; height:2px; background:#fff; }
+    .menu { position:absolute; top:56px; right:12px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px 0; box-shadow:0 6px 24px rgba(0,0,0,.12); }
+    .menu a { display:block; padding:8px 14px; text-decoration:none; color:#333; }
+    .menu a:hover { text-decoration:underline; }
+
+    /* simple list styling for sessions */
+    .list { margin:0; padding:0; list-style:none; }
+    .list li { padding:10px 12px; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+    .list li:hover { background:#fafafa; }
+    .pill { font-size:.8rem; padding:2px 8px; border:1px solid #ddd; border-radius:999px; color:#555; }
+    .muted { color:#666; }
+    .results-grid { display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); }
+    .score { padding:12px; border:1px solid #eee; border-radius:12px; background:#fff; }
+    .artifacts { display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); margin-top:10px; }
+    .artifacts img { width:100%; height:auto; border:1px solid #eee; border-radius:8px; }
+    pre.mly-pre { white-space:pre-wrap; word-break:break-word; }
+  </style>
+</head>
+
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+
+  <header role="banner">
+    <img src="./measurely.svg" alt="Measurely" class="logo">
+    <button id="menu-toggle" class="hamburger" aria-label="Open menu" aria-controls="top-menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav id="top-menu" class="menu" hidden>
+      <a href="index.html">Dashboard</a>
+      <a href="results.html">Results</a>
+    </nav>
+  </header>
+
+  <main id="main" class="wrap" role="main" aria-labelledby="page-title">
+    <h1 id="page-title" class="visually-hidden">Past sweeps and results</h1>
+
+    <!-- Past Sweeps -->
+    <section class="card" aria-labelledby="sessions-heading">
+      <h2 id="sessions-heading" class="card-title">Past sweeps</h2>
+      <ul id="sessions" class="list" role="listbox" aria-label="Past sweeps"></ul>
+      <div id="sessions-empty" class="muted">(none)</div>
+    </section>
+
+    <!-- Results (hidden until a sweep is selected) -->
+    <section class="card" id="resultCard" aria-labelledby="results-heading" hidden>
+      <h2 id="results-heading" class="card-title">Results</h2>
+      <p class="small muted">Select a past sweep to see its scores and artifacts.</p>
+
+      <!-- Headline + quick scores -->
+      <div id="results-structured" class="results-grid" aria-live="polite"></div>
+
+      <div class="rule" role="separator" aria-hidden="true"></div>
+
+      <!-- Summary -->
+      <div class="subhead" style="margin-top:10px;">Summary</div>
+      <pre id="summary" class="mly-pre muted">(no result yet)</pre>
+
+      <!-- Artifacts (PNGs) -->
+      <div class="subhead" style="margin-top:10px;">Graphs</div>
+      <div id="graphs" class="artifacts" role="region" aria-label="Analysis graphs"></div>
+
+      <!-- Geek -->
+      <details class="mly-details" id="mly-geek" style="margin-top:10px">
+        <summary class="mly-link" role="button" aria-controls="mly-geek-box">Show Full JSON</summary>
+        <div id="mly-geek-box">
+          <pre id="mly-geek-json" class="mly-pre" aria-live="polite"></pre>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <script>
+    // --- hamburger toggle (same behavior as index) ---
+    const btn = document.getElementById('menu-toggle');
+    const menu = document.getElementById('top-menu');
+    btn.addEventListener('click', () => {
+      const open = menu.hasAttribute('hidden');
+      if (open) menu.removeAttribute('hidden'); else menu.setAttribute('hidden','');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.addEventListener('click', (e) => {
+      if (!menu.hasAttribute('hidden') && !menu.contains(e.target) && e.target !== btn) {
+        menu.setAttribute('hidden',''); btn.setAttribute('aria-expanded','false');
+      }
+    });
+
+    // --- helpers ---
+    const $ = (id) => document.getElementById(id);
+    function text(el, s){ el.textContent = s; }
+    function clear(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+
+    // --- render sessions list ---
+    async function loadSessions() {
+      try {
+        const res = await fetch('/api/sessions');
+        const data = await res.json();
+        const list = $('sessions');
+        const empty = $('sessions-empty');
+        clear(list);
+
+        if (!Array.isArray(data) || data.length === 0) {
+          empty.style.display = '';
+          return;
+        }
+        empty.style.display = 'none';
+
+        data.forEach(item => {
+          const li = document.createElement('li');
+          li.setAttribute('role','option');
+          li.dataset.sid = item.id;
+          const title = document.createElement('span');
+          title.textContent = item.id;
+          const tags = document.createElement('span');
+          tags.className = 'pill';
+          tags.textContent = (item.has_analysis ? 'analysed' : 'raw');
+          li.appendChild(title);
+          li.appendChild(tags);
+          li.addEventListener('click', () => loadSession(item.id));
+          list.appendChild(li);
+        });
+      } catch (e) {
+        $('sessions-empty').textContent = 'Failed to load sessions.';
+      }
+    }
+
+    // --- render a session result ---
+    async function loadSession(sid) {
+      try {
+        const res = await fetch(`/api/session/${encodeURIComponent(sid)}`);
+        if (!res.ok) throw new Error('not ok');
+        const data = await res.json();
+
+        // show card
+        $('resultCard').hidden = false;
+
+        // summary
+        const summary = data.summary || '(no summary.txt found)';
+        text($('summary'), summary);
+
+        // artifacts
+        const g = $('graphs'); clear(g);
+        if (Array.isArray(data.artifacts) && data.artifacts.length) {
+          data.artifacts.forEach(fname => {
+            const img = document.createElement('img');
+            img.alt = fname;
+            img.src = `/api/session/${encodeURIComponent(sid)}/artifact/${encodeURIComponent(fname)}`;
+            g.appendChild(img);
+          });
+        } else {
+          const div = document.createElement('div');
+          div.className = 'muted';
+          div.textContent = '(no graphs)';
+          g.appendChild(div);
+        }
+
+        // structured quick view (simple/compact)
+        const rs = $('results-structured'); clear(rs);
+        const ana = data.analysis || {};
+        const scores = (ana.scores || {});
+        const headline = (ana.simple_view && ana.simple_view.headline) || '';
+
+        if (headline) {
+          const h = document.createElement('div');
+          h.className = 'score';
+          h.innerHTML = `<strong>${headline}</strong>`;
+          rs.appendChild(h);
+        }
+
+        // show a few key numbers if present
+        const metrics = [
+          ['Overall', scores.overall],
+          ['Bandwidth (lo -3dB)', ana.bandwidth_lo_3db_hz],
+          ['Bandwidth (hi -3dB)', ana.bandwidth_hi_3db_hz],
+          ['Smoothness σ (dB)', ana.smoothness_std_db]
+        ];
+        metrics.forEach(([label, val]) => {
+          if (val !== undefined && val !== null) {
+            const d = document.createElement('div');
+            d.className = 'score';
+            d.innerHTML = `<div class="muted">${label}</div><div style="font-size:1.2rem">${(typeof val === 'number') ? String(val.toFixed ? val.toFixed(2) : val) : String(val)}</div>`;
+            rs.appendChild(d);
+          }
+        });
+
+        // full JSON
+        $('mly-geek-json').textContent = JSON.stringify(ana, null, 2);
+
+        // scroll results into view for convenience
+        $('resultCard').scrollIntoView({behavior:'smooth', block:'start'});
+      } catch (e) {
+        $('resultCard').hidden = false;
+        text($('summary'), 'Failed to load session.');
+        clear($('graphs'));
+        clear($('results-structured'));
+        $('mly-geek-json').textContent = '';
+      }
+    }
+
+    // kick off
+    loadSessions();
+  </script>
+</body>
+</html>
