@@ -1,289 +1,244 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Measurely — Settings</title>
-  <link rel="icon" type="image/png" href="./favicon.png">
-  <link rel="stylesheet" href="./style.css">
-  <style>
-    /* header alignment (same as index) */
-    header { display:flex; align-items:center; justify-content:space-between; }
-    .hamburger { display:inline-flex; flex-direction:column; gap:5px; padding:8px; border:0; background:none; cursor:pointer; }
-    .hamburger span { display:block; width:26px; height:2px; background:#fff; }
-    .menu { position:absolute; top:56px; right:12px; background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px 0; box-shadow:0 6px 24px rgba(0,0,0,.12); }
-    .menu[hidden]{ display:none !important; }
-    .menu a { display:block; padding:8px 14px; text-decoration:none; color:#333; }
-    .menu a:hover { text-decoration:underline; }
-
-    /* Camilla card preview area */
-    #camillaPreview {
-      white-space: pre-wrap; word-break: break-word;
-      max-height: 320px; overflow: auto;
-      border: 1px solid var(--border, #000); border-radius: 10px;
-      padding: 10px; background: #fff;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Measurely – Settings</title>
+  <link rel="stylesheet" href="measurely.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
-<body>
-  <a href="#main" class="skip-link">Skip to main content</a>
+<body class="bg-gray-50">
+  <!-- Mobile Menu (right) -->
+  <button class="mobile-menu-button fixed top-4 right-4 z-50 p-2 rounded-lg" id="mobile-menu-btn">
+    <i class="fas fa-bars text-white text-xl"></i>
+  </button>
 
-  <header role="banner">
-    <img src="./measurely.svg" alt="Measurely" class="logo">
-    <button id="menu-toggle" class="hamburger" aria-label="Open menu" aria-controls="top-menu" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
-    <nav id="top-menu" class="menu" hidden>
-      <a href="index.html">Dashboard</a>
-      <a href="results.html">Results</a>
-      <a href="settings.html" aria-current="page">Settings</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- Sidebar -->
+  <div class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40" id="sidebar">
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold mb-2">Measurely</h1>
+      <p class="text-sm opacity-80">Room Acoustic Analysis</p>
+    </div>
+
+    <nav class="space-y-2">
+      <a href="index.html" class="nav-item"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
+      <a href="analysis.html" class="nav-item"><i class="fas fa-wave-square mr-3"></i>Frequency Analysis</a>
+      <a href="recommendations.html" class="nav-item"><i class="fas fa-lightbulb mr-3"></i>Recommendations</a>
+      <a href="room-setup.html" class="nav-item"><i class="fas fa-home mr-3"></i>Room Setup</a>
+      <a href="sessions.html" class="nav-item"><i class="fas fa-history mr-3"></i>Sessions</a>
+      <a href="settings.html" class="nav-item active"><i class="fas fa-cog mr-3"></i>Settings</a>
     </nav>
-  </header>
 
-  <main id="main" class="wrap" role="main" aria-labelledby="page-title">
-    <h1 id="page-title" class="visually-hidden">Measurely Settings</h1>
-
-    <!-- Inputs & Outputs -->
-    <section class="card" aria-labelledby="io-heading">
-      <h2 id="io-heading" class="card-title">Inputs &amp; outputs</h2>
-      <p class="small muted io-tip">Tip: plug in your USB mic and DAC; Measurely will detect them.</p>
-
-      <div class="io-grid">
-        <section class="io-box">
-          <div class="io-head">
-            <span class="io-label" id="micHeading">Input: Microphone</span>
-            <span id="micStatus" class="status warn" role="status" aria-live="polite">Checking…</span>
-          </div>
-          <div id="micName" class="io-name" aria-describedby="micHeading"></div>
-        </section>
-
-        <section class="io-box">
-          <div class="io-head">
-            <span class="io-label" id="dacHeading">Output: DAC</span>
-            <span id="dacStatus" class="status warn" role="status" aria-live="polite">Checking…</span>
-          </div>
-          <div id="dacName" class="io-name" aria-describedby="dacHeading"></div>
-        </section>
-      </div>
-    </section>
-
-    <!-- Wi-Fi setup -->
-    <section class="card" id="wifiCard" aria-labelledby="wifi-heading">
-      <h2 id="wifi-heading" class="card-title">Wi-Fi setup</h2>
-      <p class="subhead" id="wifiStatusLine" role="status" aria-live="polite">Status: checking…</p>
-
-      <div class="subsection">
-        <div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-          <p class="subhead" id="wifiSelHelp">Select your network and connect.</p>
-          <button id="wifiScanBtn" aria-describedby="wifiSelHelp">Scan</button>
+    <div class="absolute bottom-6 left-6 right-6">
+      <div class="bg-white bg-opacity-20 rounded-lg p-4">
+        <div class="flex items-center mb-2">
+          <div class="status-indicator status-good pulse-animation" id="deviceStatusIndicator"></div>
+          <span class="text-sm" id="deviceStatusText">System Ready</span>
         </div>
-        <label class="visually-hidden" for="wifiSel">Available Wi-Fi networks</label>
-        <select id="wifiSel" aria-describedby="wifiSelHelp"></select>
+        <p class="text-xs opacity-80">Last updated: <span id="lastUpdated">Now</span></p>
       </div>
+    </div>
+  </div>
 
-      <div class="subsection" id="wifiPwdWrap" style="display:none;">
-        <label for="wifiPwd" class="subhead">Password</label>
-        <input id="wifiPwd" type="password" placeholder="Wi-Fi password" autocomplete="current-password" inputmode="text">
-      </div>
+  <!-- Main Content -->
+  <div class="main-content ml-64 p-8">
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-800 mb-2">Settings</h2>
+      <p class="text-gray-600">Configure your Measurely system preferences and measurement parameters</p>
+    </div>
 
-      <div class="actions">
-        <button id="wifiConnectBtn" class="primary">Connect</button>
-        <button id="hotspotStopBtn" style="margin-left:auto">Stop hotspot</button>
-        <span id="wifiMsg" class="small muted" role="status" aria-live="polite"></span>
-      </div>
-
-      <p class="small muted" id="wifiHint" style="margin-top:8px;">
-        Tip: once connected, open <code>http://measurely.local/</code> on your home network.
-      </p>
-    </section>
-
-    <!-- Speaker & Room -->
-    <section class="card compact" aria-labelledby="room-heading">
-      <h2 id="room-heading" class="card-title">Speaker &amp; room</h2>
-
-      <div class="subsection" aria-labelledby="room-measurements-heading">
-        <div class="subhead" id="room-measurements-heading">Room measurements</div>
-        <div class="grid-3">
-          <div class="with-unit">
-            <label for="roomL">Room length (metres)</label>
-            <input id="roomL" type="number" step="0.01" min="0" inputmode="decimal" aria-describedby="roomLUnit">
-            <span id="roomLUnit" class="unit">m</span>
-          </div>
-          <div class="with-unit">
-            <label for="roomW">Room width (metres)</label>
-            <input id="roomW" type="number" step="0.01" min="0" inputmode="decimal" aria-describedby="roomWUnit">
-            <span id="roomWUnit" class="unit">m</span>
-          </div>
-          <div class="with-unit">
-            <label for="roomH">Ceiling height (metres)</label>
-            <input id="roomH" type="number" step="0.01" min="0" inputmode="decimal" aria-describedby="roomHUnit">
-            <span id="roomHUnit" class="unit">m</span>
+    <!-- Measurement Settings -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-sliders-h mr-2"></i>Measurement Settings</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Frequency Range (Hz)</label>
+          <div class="flex space-x-2">
+            <input type="number" class="input-field flex-1" placeholder="20" value="20">
+            <span class="self-center text-gray-600">to</span>
+            <input type="number" class="input-field flex-1" placeholder="20000" value="20000">
           </div>
         </div>
-      </div>
-
-      <div class="rule" role="separator" aria-hidden="true"></div>
-
-      <div class="subsection" aria-labelledby="speaker-placement-heading">
-        <div class="subhead" id="speaker-placement-heading">Speaker placement</div>
-
-        <div class="grid-3">
-          <div class="with-unit">
-            <label for="spkFront">Speaker to front wall (metres)</label>
-            <input id="spkFront" type="number" step="0.01" min="0" inputmode="decimal" aria-describedby="spkFrontUnit">
-            <span id="spkFrontUnit" class="unit">m</span>
-          </div>
-          <div class="with-unit">
-            <label for="lstToSpk">Listener to front wall (metres)</label>
-            <input id="lstToSpk" type="number" step="0.01" min="0" inputmode="decimal" aria-describedby="lstToSpkUnit">
-            <span id="lstToSpkUnit" class="unit">m</span>
-          </div>
-          <div class="with-unit">
-            <label for="spkSpacing">Speaker spacing (metres)</label>
-            <input id="spkSpacing" type="number" step="0.01" min="0" inputmode="decimal" aria-describedby="spkSpacingUnit">
-            <span id="spkSpacingUnit" class="unit">m</span>
-          </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Measurement Points</label>
+          <select class="select-field w-full">
+            <option value="256">256 points (Fast)</option>
+            <option value="512" selected>512 points (Standard)</option>
+            <option value="1024">1024 points (High Res)</option>
+            <option value="2048">2048 points (Ultra High Res)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Sweep Duration</label>
+          <select class="select-field w-full">
+            <option value="1">1 second (Fast)</option>
+            <option value="2" selected>2 seconds (Standard)</option>
+            <option value="4">4 seconds (Precise)</option>
+            <option value="8">8 seconds (High Precision)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Signal Level</label>
+          <input type="range" min="-20" max="0" value="-12" class="w-full" id="signal-level">
+          <div class="text-center text-sm text-gray-600 mt-1"><span id="signal-level-value">-12</span> dBFS</div>
         </div>
       </div>
+    </div>
 
-      <div class="actions">
-        <button id="saveRoomBtn" class="primary">Save room &amp; placement</button>
-        <span id="saveRoomMsg" class="small muted" role="status" aria-live="polite"></span>
+    <!-- Audio Device Settings -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-microphone mr-2"></i>Audio Device Settings</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Input Device</label>
+          <select class="select-field w-full">
+            <option value="default">Default System Input</option>
+            <option value="mic1">USB Microphone (Audio Interface)</option>
+            <option value="mic2">Measurement Microphone (Calibration)</option>
+            <option value="line1">Line Input 1</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Output Device</label>
+          <select class="select-field w-full">
+            <option value="default">Default System Output</option>
+            <option value="speakers1">Studio Monitors</option>
+            <option value="speakers2">Home Theater System</option>
+            <option value="headphones">Headphones</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Sample Rate</label>
+          <select class="select-field w-full">
+            <option value="44100">44.1 kHz</option>
+            <option value="48000" selected>48 kHz</option>
+            <option value="96000">96 kHz</option>
+            <option value="192000">192 kHz</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Buffer Size</label>
+          <select class="select-field w-full">
+            <option value="128">128 samples (Low Latency)</option>
+            <option value="256" selected>256 samples (Balanced)</option>
+            <option value="512">512 samples (Stable)</option>
+            <option value="1024">1024 samples (Safe)</option>
+          </select>
+        </div>
       </div>
-    </section>
+    </div>
 
-    <!-- CamillaDSP Filters -->
-    <section class="card" aria-labelledby="camilla-heading">
-      <h2 id="camilla-heading" class="card-title">CamillaDSP filters</h2>
-      <p class="small muted">
-        Generate a CamillaDSP configuration from your latest analysed sweep. Preview it, then download the YAML.
-      </p>
-      <div class="actions">
-        <button id="camillaGenBtn" class="primary">Generate filters</button>
-        <button id="camillaDownloadBtn" disabled>Download YAML</button>
-        <span id="camillaMsg" class="small muted" role="status" aria-live="polite"></span>
+    <!-- Display Settings -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-desktop mr-2"></i>Display Settings</h3>
+      <div class="space-y-4">
+        <setting-toggle label="Dark Mode" sub="Use dark theme for all interfaces" active></setting-toggle>
+        <setting-toggle label="Show Grid Lines" sub="Display grid lines on frequency response charts" active></setting-toggle>
+        <setting-toggle label="Auto-refresh" sub="Automatically refresh device status every 5 seconds" active></setting-toggle>
+        <setting-toggle label="Sound Notifications" sub="Play sound when sweep completes"></setting-toggle>
       </div>
-      <div class="subhead" style="margin-top:10px;">Preview</div>
-      <pre id="camillaPreview" aria-label="CamillaDSP YAML preview">(none yet)</pre>
-    </section>
-  </main>
+    </div>
+
+    <!-- Data Management -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-database mr-2"></i>Data Management</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="bg-gray-50 p-4 rounded-lg"><div class="text-sm text-gray-600">Storage Usage</div><div class="text-2xl font-bold text-gray-800">2.4 GB</div><div class="text-xs text-gray-500">Session data and measurements</div></div>
+        <div class="bg-gray-50 p-4 rounded-lg"><div class="text-sm text-gray-600">Sessions Stored</div><div class="text-2xl font-bold text-gray-800">47</div><div class="text-xs text-gray-500">Total measurement sessions</div></div>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg" onclick="exportAllData()"><i class="fas fa-download mr-2"></i>Export All Data</button>
+        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg" onclick="importData()"><i class="fas fa-upload mr-2"></i>Import Data</button>
+        <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg" onclick="clearAllData()"><i class="fas fa-trash mr-2"></i>Clear All Data</button>
+      </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="bg-white rounded-2xl shadow-lg p-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-info-circle mr-2"></i>System Information</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div><div class="text-gray-600">Application Version</div><div class="text-gray-800 font-medium">Measurely v2.1.0</div></div>
+        <div><div class="text-gray-600">Last Updated</div><div class="text-gray-800 font-medium">November 9, 2025</div></div>
+        <div><div class="text-gray-600">Python Version</div><div class="text-gray-800 font-medium">3.9.7</div></div>
+        <div><div class="text-gray-600">Audio Backend</div><div class="text-gray-800 font-medium">PortAudio v19.7.0</div></div>
+      </div>
+      <div class="mt-6">
+        <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg" onclick="checkForUpdates()"><i class="fas fa-sync-alt mr-2"></i>Check for Updates</button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // hamburger toggle
-    const btn = document.getElementById('menu-toggle');
-    const menu = document.getElementById('top-menu');
-    btn.addEventListener('click', () => {
-      const open = menu.hasAttribute('hidden');
-      if (open) menu.removeAttribute('hidden'); else menu.setAttribute('hidden','');
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
-    document.addEventListener('click', (e) => {
-      if (!menu.hasAttribute('hidden') && !menu.contains(e.target) && !btn.contains(e.target)) {
-        menu.setAttribute('hidden',''); btn.setAttribute('aria-expanded','false');
-      }
-    });
+    const btn  = document.getElementById('mobile-menu-btn');
+    const side = document.getElementById('sidebar');
+    const over = document.getElementById('sidebar-overlay');
 
-    // minimal status + settings load/save (works with your Flask API)
-    async function refreshStatus(){
-      try {
-        const r = await fetch('/api/status'); const s = await r.json();
-        const mic = s.mic || {}, dac = s.dac || {};
-        const micStatus = document.getElementById('micStatus');
-        const dacStatus = document.getElementById('dacStatus');
-        micStatus.textContent = mic.connected ? 'Connected' : 'Not found';
-        dacStatus.textContent = dac.connected ? 'Connected' : 'Not found';
-        micStatus.classList.toggle('ok', !!mic.connected);
-        micStatus.classList.toggle('warn', !mic.connected);
-        dacStatus.classList.toggle('ok', !!dac.connected);
-        dacStatus.classList.toggle('warn', !dac.connected);
-        document.getElementById('micName').textContent = mic.name || '';
-        document.getElementById('dacName').textContent = dac.name || '';
-      } catch {}
+    function toggleMenu() {
+      side.classList.toggle('active');
+      over.classList.toggle('active');
+      document.body.style.overflow = side.classList.contains('active') ? 'hidden' : '';
     }
 
-    async function loadRoom(){
-      try {
-        const r = await fetch('/api/settings'); const cfg = await r.json();
-        const room = (cfg && cfg.room) || {};
-        const set = (id,v)=>{ const el = document.getElementById(id); if (el && v != null) el.value = v; };
-        set('roomL', room.length_m);
-        set('roomW', room.width_m);
-        set('roomH', room.height_m);
-        set('spkFront', room.spk_front_m);
-        set('lstToSpk', room.listener_front_m);
-        set('spkSpacing', room.spk_spacing_m);
-      } catch {}
-    }
+    btn.addEventListener('click', toggleMenu);
+    over.addEventListener('click', toggleMenu);
 
-    async function saveRoom(){
-      const val = (id)=>{ const el = document.getElementById(id); const n = parseFloat(el.value); return isNaN(n)? null : n; };
-      const payload = {
-        room: {
-          length_m: val('roomL'),
-          width_m: val('roomW'),
-          height_m: val('roomH'),
-          spk_front_m: val('spkFront'),
-          listener_front_m: val('lstToSpk'),
-          spk_spacing_m: val('spkSpacing')
+    document.querySelectorAll('.nav-item').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          side.classList.remove('active');
+          over.classList.remove('active');
+          document.body.style.overflow = '';
         }
-      };
-      const msg = document.getElementById('saveRoomMsg');
-      msg.textContent = 'Saving…';
-      try {
-        const r = await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-        await r.json().catch(()=>({}));
-        msg.textContent = r.ok ? 'Saved.' : 'Failed to save';
-      } catch(e){
-        msg.textContent = 'Failed to save';
+      });
+    });
+
+    // slider + dummy functions
+    const signalLevelSlider = document.getElementById('signal-level');
+    const signalLevelValue = document.getElementById('signal-level-value');
+    signalLevelSlider.addEventListener('input', (e) => {
+      signalLevelValue.textContent = e.target.value;
+    });
+
+    function exportAllData() { alert('Export All Data clicked'); }
+    function importData() { alert('Import Data clicked'); }
+    function clearAllData() { if(confirm('Clear all data?')) alert('Data cleared'); }
+    function checkForUpdates() { alert('You are running the latest version.'); }
+
+    document.addEventListener('change', (e) => {
+      if (e.target.classList.contains('input-field') || e.target.classList.contains('select-field')) {
+        console.log('Setting changed:', e.target.value);
+      }
+    });
+
+    class SettingToggle extends HTMLElement {
+      connectedCallback() {
+        const label = this.getAttribute('label');
+        const sub = this.getAttribute('sub');
+        const active = this.hasAttribute('active');
+        this.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-gray-800 font-medium">${label}</div>
+              <div class="text-gray-600 text-sm">${sub}</div>
+            </div>
+            <div class="toggle-switch ${active ? 'active' : ''}" onclick="this.classList.toggle('active')">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        `;
       }
     }
+    customElements.define('setting-toggle', SettingToggle);
 
-    document.getElementById('saveRoomBtn').addEventListener('click', saveRoom);
-
-    // --- CamillaDSP Filter actions ---
-    const camillaGenBtn = document.getElementById('camillaGenBtn');
-    const camillaDownloadBtn = document.getElementById('camillaDownloadBtn');
-    const camillaMsg = document.getElementById('camillaMsg');
-    const camillaPreview = document.getElementById('camillaPreview');
-
-    camillaGenBtn.addEventListener('click', async () => {
-      camillaGenBtn.disabled = true;
-      camillaDownloadBtn.disabled = true;
-      camillaMsg.textContent = 'Generating…';
-      camillaPreview.textContent = 'Generating…';
-
-      try {
-        // expects server to return { ok: true, yaml: "..." } or { ok:false, error:"..." }
-        const r = await fetch('/api/filter', { method:'POST' });
-        const j = await r.json();
-        if (j && j.ok) {
-          camillaPreview.textContent = j.yaml || '(empty YAML)';
-          camillaMsg.textContent = 'Generated.';
-          camillaDownloadBtn.disabled = false;
-        } else {
-          camillaPreview.textContent = j?.error || 'Error generating filter.';
-          camillaMsg.textContent = 'Failed.';
-        }
-      } catch (e) {
-        camillaPreview.textContent = String(e);
-        camillaMsg.textContent = 'Failed.';
-      } finally {
-        camillaGenBtn.disabled = false;
-      }
-    });
-
-    camillaDownloadBtn.addEventListener('click', () => {
-      // server route should stream the last-generated camilla config
-      window.location = '/api/filter/download';
-    });
-
-    // initial
-    refreshStatus(); loadRoom();
-    setInterval(refreshStatus, 5000);
+    setInterval(() => {
+      const el = document.getElementById('lastUpdated');
+      if (el) el.textContent = new Date().toLocaleTimeString();
+    }, 1000);
   </script>
-
-  <!-- Reuse your existing module bundle if needed -->
-  <script type="module" src="./js/main.js"></script>
 </body>
 </html>

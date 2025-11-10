@@ -1,0 +1,63 @@
+/* ---------- sidebar (desktop default) ---------- */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;                 /* desktop: stick left */
+  height: 100%;
+  width: 16rem;
+  background: #7c3aed;
+  padding: 1.5rem;
+  z-index: 40;
+  color: #fff;
+}
+
+/* ---------- mobile override (RIGHT) ---------- */
+@media (max-width: 768px) {
+  .sidebar {
+    left: auto;            /* remove left anchor */
+    right: 0;              /* stick to right edge */
+    transform: translateX(100%); /* start off-screen RIGHT */
+    transition: transform .3s ease;
+  }
+  .sidebar.active {
+    transform: translateX(0);    /* slide IN from right */
+  }
+}
+
+/* ---------- nav items ---------- */
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s;
+  color: #fff;
+}
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.2);
+  font-weight: 600;
+}
+
+/* =====  MOBILE  ===== */
+@media (max-width: 768px) {
+  /* let main content use full width */
+  .main-content {
+    margin-left: 0 !important;   /* kill the 16-rem left gap */
+    padding: 1.25rem;            /* slightly smaller gutters */
+  }
+}
+
+#mobile-menu-btn {
+  background: rgba(0,0,0,.7); /* any dark tone you like */
+  backdrop-filter: blur(4px); /* optional glass effect */
+}
+
+/* hide hamburger on desktop */
+@media (min-width: 769px) {
+  #mobile-menu-btn {
+    display: none;
+  }
+}

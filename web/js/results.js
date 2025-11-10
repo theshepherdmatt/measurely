@@ -1,463 +1,292 @@
-// web/js/results.js
-import { $, fetchJSON } from './api.js';
+// web/js/results.js - Results display and management
 
-/* ---------- flags ---------- */
-// Add ?debug=1 to your URL to show the Graphs Debug panel
-const urlParams = new URLSearchParams(location.search);
-const DEBUG_GRAPHS = urlParams.has('debug');
-const FULLBLEED = new URLSearchParams(location.search).has('fullbleed'); // ?fullbleed=1 for edge-to-edge
+import { $, simpleResult, geekResult, showToast } from './api.js';
 
-/* ---------- helpers ---------- */
-const pillClassFromScore = (s) =>
-  (s == null || !Number.isFinite(Number(s))) ? '' :
-  (s >= 8 ? 'great' : s >= 6.5 ? 'good' : s >= 5.5 ? 'ok' : s >= 4.5 ? 'warn' : 'poor');
+let currentSessionId = '';
+let simpleData = null;
+let geekData = null;
 
-const badgeText = (o) => {
-  if (o == null || !Number.isFinite(Number(o))) return 'Unavailable';
-  if (o >= 9)   return 'Excellent';
-  if (o >= 7.5) return 'Good';
-  if (o >= 6)   return 'Decent';
-  if (o >= 4.5) return 'Fair';
-  return 'Needs attention';
-};
-
-const fmtM = (v) => (v == null || !Number.isFinite(Number(v))) ? '—' : `${Number(v).toFixed(2)} m`;
-
-const scoringBlurbHTML = `
-  <p id="sectionScoresBlurb" class="small muted" style="margin:6px 0 10px 0;">
-    Scores come from your last sweep compared to a neutral target (1/6-oct smoothed).
-    We deduct points for L/R imbalance, large or narrow peaks/dips, limited bandwidth (−3 dB points),
-    strong early reflections, and excessive reverb. A 10/10 means smooth (≈±3 dB), balanced, and well-damped.
-  </p>
-`;
-
-/* ---------- tiny utils ---------- */
-let _roomSettingsPromise = null;
-async function getRoomSettings(){
-  if (!_roomSettingsPromise) _roomSettingsPromise = fetchJSON('/api/settings').catch(() => ({}));
-  return _roomSettingsPromise;
+export async function renderSimpleAndGeek(sessionId = '') {
+  currentSessionId = sessionId;
+  
+  try {
+    // Fetch both simple and geek results
+    const [simple, geek] = await Promise.all([
+      simpleResult(sessionId),
+      geekResult(sessionId)
+    ]);
+    
+    simpleData = simple;
+    geekData = geek;
+    
+    if (simple?.ok) {
+      renderSimpleResults(simple);
+    }
+    
+    if (geek?.ok) {
+      renderGeekResults(geek);
+    }
+    
+    if (!simple?.ok && !geek?.ok) {
+      showNoResults();
+    }
+    
+  } catch (error) {
+    console.error('Error rendering results:', error);
+    showToast('Error loading results', 'error');
+    showNoResults();
+  }
 }
-function topIssues(sections, n = 3){
-  if (!sections || typeof sections !== 'object') return [];
-  return Object.entries(sections)
-    .map(([key, sec]) => ({
-      key,
-      score: (sec && typeof sec.score === 'number') ? sec.score : NaN,
-      advice: (sec && (sec.advice_short || sec.advice || sec.note || sec.headline)) || ''
-    }))
-    .filter(x => Number.isFinite(x.score))
-    .sort((a,b) => a.score - b.score)
-    .slice(0, n);
+
+function renderSimpleResults(data) {
+  const container = $('simpleResults');
+  if (!container) return;
+  
+  // Update dashboard scores if available
+  updateDashboardScores(data);
+  
+  container.innerHTML = `
+    <div class="bg-white rounded-lg shadow-lg p-6">
+      <h3 class="text-xl font-semibold mb-4">Analysis Results</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div class="text-center p-4 bg-blue-50 rounded-lg">
+          <div class="text-2xl font-bold text-blue-600">${data.scores?.overall || 'N/A'}</div>
+          <div class="text-sm text-gray-600">Overall Score</div>
+        </div>
+        <div class="text-center p-4 bg-green-50 rounded-lg">
+          <div class="text-2xl font-bold text-green-600">${data.scores?.bandwidth || 'N/A'}</div>
+          <div class="text-sm text-gray-600">Bandwidth</div>
+        </div>
+        <div class="text-center p-4 bg-yellow-50 rounded-lg">
+          <div class="text-2xl font-bold text-yellow-600">${data.scores?.balance || 'N/A'}</div>
+          <div class="text-sm text-gray-600">Balance</div>
+        </div>
+      </div>
+      
+      <div class="space-y-4">
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <span class="font-medium">Frequency Range</span>
+          <span>${data.bandwidth_lo_3db_hz?.toFixed(0) || 'N/A'} - ${data.bandwidth_hi_3db_hz?.toFixed(0) || 'N/A'} Hz</span>
+        </div>
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <span class="font-medium">Smoothness</span>
+          <span>${data.smoothness_std_db?.toFixed(1) || 'N/A'} dB std dev</span>
+        </div>
+      </div>
+    </div>
+  `;
 }
-function killNonePlaceholders(){
-  const suspects = [
-    $('summary'),
-    document.querySelector('#resultCard .results-bottom-note'),
-    document.querySelector('#resultCard .muted:last-of-type'),
-  ];
-  suspects.forEach(el => {
-    const t = (el?.textContent || '').trim().toLowerCase();
-    if (t === '(none)' || t === '(no summary)' || t === 'none' || t === 'no summary'){
-      el.style.display = 'none'; el?.setAttribute?.('aria-hidden','true');
+
+function renderGeekResults(data) {
+  const container = $('geekResults');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="bg-white rounded-lg shadow-lg p-6">
+      <h3 class="text-xl font-semibold mb-4">Detailed Analysis</h3>
+      
+      <div class="space-y-6">
+        <!-- Frequency Bands -->
+        <div>
+          <h4 class="font-semibold mb-3">Frequency Band Levels</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex justify-between p-2 bg-blue-50 rounded">
+              <span>Bass (20-200Hz)</span>
+              <span class="font-mono">${data.band_levels_db?.bass_20_200?.toFixed(1) || 'N/A'} dB</span>
+            </div>
+            <div class="flex justify-between p-2 bg-green-50 rounded">
+              <span>Mid (200-2kHz)</span>
+              <span class="font-mono">${data.band_levels_db?.mid_200_2k?.toFixed(1) || 'N/A'} dB</span>
+            </div>
+            <div class="flex justify-between p-2 bg-yellow-50 rounded">
+              <span>Treble (2-10kHz)</span>
+              <span class="font-mono">${data.band_levels_db?.treble_2k_10k?.toFixed(1) || 'N/A'} dB</span>
+            </div>
+            <div class="flex justify-between p-2 bg-purple-50 rounded">
+              <span>Air (10-20kHz)</span>
+              <span class="font-mono">${data.band_levels_db?.air_10k_20k?.toFixed(1) || 'N/A'} dB</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Room Modes -->
+        ${data.modes && data.modes.length > 0 ? `
+          <div>
+            <h4 class="font-semibold mb-3">Detected Room Modes</h4>
+            <div class="space-y-2">
+              ${data.modes.map(mode => `
+                <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                  <span>${mode.freq_hz?.toFixed(0) || 'N/A'} Hz</span>
+                  <span class="font-mono ${mode.delta_db > 0 ? 'text-red-600' : 'text-blue-600'}">
+                    ${mode.delta_db > 0 ? 'PEAK' : 'DIP'} ${mode.delta_db?.toFixed(1) || 'N/A'} dB
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function updateDashboardScores(data) {
+  // Update scores in the main dashboard if available
+  const scoreElements = {
+    overallScore: data.scores?.overall,
+    bandwidthScore: data.scores?.bandwidth,
+    balanceScore: data.scores?.balance,
+    smoothnessScore: data.scores?.smoothness,
+    peaksDipsScore: data.scores?.peaks_dips,
+    reflectionsScore: data.scores?.reflections,
+    reverbScore: data.scores?.reverb
+  };
+  
+  Object.entries(scoreElements).forEach(([id, value]) => {
+    const element = $(id);
+    if (element && value !== undefined) {
+      element.textContent = value.toFixed(1);
+    }
+  });
+  
+  // Update frequency bands
+  if (data.band_levels_db) {
+    updateFrequencyBands(data.band_levels_db);
+  }
+}
+
+function updateFrequencyBands(bands) {
+  const bandElements = {
+    'bass-value': bands.bass_20_200,
+    'mid-value': bands.mid_200_2k,
+    'treble-value': bands.treble_2k_10k,
+    'air-value': bands.air_10k_20k
+  };
+  
+  Object.entries(bandElements).forEach(([id, value]) => {
+    const element = $(id);
+    if (element && value !== undefined) {
+      element.textContent = `${value > 0 ? '+' : ''}${value.toFixed(1)} dB`;
     }
   });
 }
 
-/* ---------- side-by-side styles (MUCH bigger, blue/red) ---------- */
-function ensureGraphsStyles(){
-  if (document.getElementById('graphs-style')) return;
-  const css = `
-    /* default huge container */
-    #graphs { width: 100%; max-width: 3200px; margin: 28px auto 0; }
-
-    /* optional full-bleed: go edge-to-edge of the viewport */
-    .graphs-fullbleed #graphs {
-      width: 100vw;
-      max-width: 100vw;
-      margin-left: calc(50% - 50vw); /* center the full-bleed container */
-      margin-right: 0;
-    }
-
-    /* Side-by-side grid, bigger gaps */
-    .graphs-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 36px;
-    }
-    @media (max-width: 1400px){ .graphs-grid { grid-template-columns: 1fr; gap: 28px; } }
-
-    /* Big cards */
-    .graph-fig {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 6px 32px rgba(0,0,0,.16);
-      padding: 18px 18px 22px;
-      overflow: hidden;
-    }
-    .graph-fig.left  { border-top: 10px solid #1e90ff; } /* blue */
-    .graph-fig.right { border-top: 10px solid #e53935; } /* red  */
-
-    /* Images stretch to card width (so they get BIG) */
-    .graph-fig img {
-      width: 100%;
-      height: auto;
-      display: block;
-      border-radius: 12px;
-    }
-
-    /* Larger captions */
-    .graph-fig figcaption {
-      text-align: center;
-      margin-top: 10px;
-      font-size: 16px;
-      line-height: 1.3;
-      opacity: .95;
-      font-weight: 600;
-    }
-    .graph-fig.left  figcaption { color: #1e90ff; }
-    .graph-fig.right figcaption { color: #e53935; }
-  `;
-  const el = document.createElement('style');
-  el.id = 'graphs-style';
-  el.textContent = css;
-  document.head.appendChild(el);
-}
-
-/* ---------- DEBUG UI (only with ?debug=1) ---------- */
-function ensureDebugPanel(){
-  if (!DEBUG_GRAPHS) return null;
-  const card = document.getElementById('resultCard') || document.body;
-  let dbg = $('graphs-debug');
-  if (!dbg){
-    dbg = document.createElement('div');
-    dbg.id = 'graphs-debug';
-    dbg.style.cssText = 'margin-top:10px;padding:10px;border:1px dashed #999;border-radius:8px;font-size:12px;line-height:1.4;background:#fafafa;';
-    dbg.innerHTML = `
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <strong>Graphs Debug</strong>
-        <span id="gd-measid" style="opacity:.8"></span>
-        <input id="gd-override" placeholder="paste measId (folder name)" style="min-width:220px;padding:4px 6px">
-        <button id="gd-set" style="padding:4px 8px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer">Set</button>
-        <button id="gd-recheck" style="padding:4px 8px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer">Re-check</button>
+function showNoResults() {
+  const simpleContainer = $('simpleResults');
+  const geekContainer = $('geekResults');
+  
+  if (simpleContainer) {
+    simpleContainer.innerHTML = `
+      <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+        <i class="fas fa-chart-line text-4xl text-gray-400 mb-4"></i>
+        <h3 class="text-lg font-semibold text-gray-600 mb-2">No Results Available</h3>
+        <p class="text-gray-500">Run a sweep to see your room analysis results.</p>
       </div>
-      <div id="gd-urls" style="margin-top:6px;word-break:break-all"></div>
-      <div id="gd-status" style="margin-top:6px"></div>
     `;
-    card.appendChild(dbg);
-    // wire buttons
-    dbg.querySelector('#gd-set')?.addEventListener('click', () => {
-      const v = (dbg.querySelector('#gd-override')?.value || '').trim();
-      if (v){ window.currentMeasurementId = v; renderGraphsForId(v, true); }
-    });
-    dbg.querySelector('#gd-recheck')?.addEventListener('click', async () => {
-      const simple = await fetchJSON('/api/simple').catch(()=>({}));
-      const geek   = await fetchJSON('/api/geek').catch(()=>({}));
-      resolveMeasId(null, simple, geek).then(id => renderGraphsForId(id, true));
-    });
   }
-  return dbg;
-}
-function setDebugInfo(id, leftURL, rightURL){
-  if (!DEBUG_GRAPHS) return;
-  const dbg = ensureDebugPanel();
-  const mid = dbg.querySelector('#gd-measid');
-  const urls = dbg.querySelector('#gd-urls');
-  mid.textContent = id ? `· measId: ${id}` : '· measId: (none)';
-  urls.innerHTML = `
-    <div>Left: <code>${leftURL || '(n/a)'}</code></div>
-    <div>Right: <code>${rightURL || '(n/a)'}</code></div>
-  `;
-}
-async function updateDebugStatus(leftURL, rightURL){
-  if (!DEBUG_GRAPHS) return;
-  const st = $('gd-status'); if (!st) return;
-  st.textContent = 'Checking…';
-  const check = async (url) => {
-    if (!url) return { ok:false, code:'n/a' };
-    try {
-      let r = await fetch(url, { method:'HEAD', cache:'no-store' });
-      if (!r.ok) throw { code:r.status };
-      return { ok:true, code:r.status };
-    } catch {
-      try {
-        let r2 = await fetch(url, { method:'GET', headers:{Range:'bytes=0-0'}, cache:'no-store' });
-        return { ok:r2.ok, code:r2.status };
-      } catch {
-        return { ok:false, code:'net' };
-      }
-    }
-  };
-  const [L, R] = await Promise.all([check(leftURL), check(rightURL)]);
-  const pill = (res,label)=>`<span style="display:inline-block;padding:2px 6px;margin-left:6px;border-radius:10px;${res.ok?'background:#e6f7ea;color:#0a7a2d;border:1px solid #9ad3a9':'background:#fdeaea;color:#8a0f0f;border:1px solid #e6a1a1'}">${label} ${res.ok?'✅':'❌'} (HTTP ${res.code})</span>`;
-  st.innerHTML = `Left ${pill(L,'left')} Right ${pill(R,'right')}`;
-}
-
-/* ---------- graphs (side-by-side) ---------- */
-function ensureGraphsContainer(){
-  ensureGraphsStyles();
-  if (FULLBLEED) document.documentElement.classList.add('graphs-fullbleed');
-
-  const card = document.getElementById('resultCard') || document.body;
-  let g = $('graphs');
-  if (!g) {
-    g = document.createElement('div');
-    g.id = 'graphs';
-    g.className = 'muted';
-    g.setAttribute('role', 'region');
-    g.setAttribute('aria-label', 'Analysis graphs');
-    card.appendChild(g);
-  } else if (g.parentElement !== card) {
-    card.appendChild(g);
+  
+  if (geekContainer) {
+    geekContainer.innerHTML = `
+      <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+        <i class="fas fa-microscope text-4xl text-gray-400 mb-4"></i>
+        <h3 class="text-lg font-semibold text-gray-600 mb-2">No Detailed Data</h3>
+        <p class="text-gray-500">Detailed analysis will appear after your first sweep.</p>
+      </div>
+    `;
   }
-  g.innerHTML = '';
-  return g;
 }
 
-function imgEl(src, alt){
-  const img = new Image();
-  img.alt = alt;
-  img.decoding = 'async';
-  img.loading = 'lazy';
-  img.src = src;
-  return img;
-}
-
-async function renderGraphsForId(measId){
-  const g = ensureGraphsContainer();
-
-  const bust = `?v=${Date.now()}`;
-  const leftURL  = measId ? `/measurements/${measId}/left/response.png${bust}`  : null;
-  const rightURL = measId ? `/measurements/${measId}/right/response.png${bust}` : null;
-
-  ensureDebugPanel();
-  setDebugInfo(measId || null, leftURL, rightURL);
-  updateDebugStatus(leftURL, rightURL);
-
-  if (!measId){
-    g.innerHTML = '<div class="small muted">No measurement ID found. Cannot load graphs.</div>';
-    killNonePlaceholders();
+export function exportResults(format = 'json') {
+  if (!simpleData && !geekData) {
+    showToast('No results to export', 'error');
     return;
   }
-
-  // Big side-by-side grid
-  const grid = document.createElement('div');
-  grid.className = 'graphs-grid';
-
-  // Left (blue)
-  const figL = document.createElement('figure');
-  figL.className = 'graph-fig left';
-  figL.appendChild(imgEl(leftURL, 'Left response'));
-  const capL = document.createElement('figcaption');
-  capL.textContent = 'Left response';
-  figL.appendChild(capL);
-
-  // Right (red)
-  const figR = document.createElement('figure');
-  figR.className = 'graph-fig right';
-  figR.appendChild(imgEl(rightURL, 'Right response'));
-  const capR = document.createElement('figcaption');
-  capR.textContent = 'Right response';
-  figR.appendChild(capR);
-
-  grid.appendChild(figL);
-  grid.appendChild(figR);
-  g.appendChild(grid);
-
-  killNonePlaceholders();
-}
-
-/* ---------- measId resolver ---------- */
-function uniqPush(arr, v){ if (v==null) return; const s=String(v); if (!arr.includes(s)) arr.push(s); }
-async function headOk(url){
-  try {
-    const r = await fetch(url, { method:'HEAD', cache:'no-store' });
-    if (r.ok) return true;
-  } catch {}
-  try {
-    const r2 = await fetch(url, { method:'GET', headers:{Range:'bytes=0-0'}, cache:'no-store' });
-    return r2.ok;
-  } catch { return false; }
-}
-async function tryValidateId(id){
-  if (!id) return false;
-  const bust = `?v=${Date.now()}`;
-  const L = `/measurements/${id}/left/response.png${bust}`;
-  const R = `/measurements/${id}/right/response.png${bust}`;
-  const [okL, okR] = await Promise.all([headOk(L), headOk(R)]);
-  return okL && okR;
-}
-function extractSessionIds(payload){
-  const out = [];
-  const pushFrom = (x)=>{
-    if (!x) return;
-    const cand = x.measid || x.sid || x.session_id || x.id || x.timestamp || x.folder || x.uuid;
-    uniqPush(out, cand);
+  
+  const exportData = {
+    sessionId: currentSessionId,
+    timestamp: new Date().toISOString(),
+    simple: simpleData,
+    geek: geekData,
+    format: format
   };
-  if (Array.isArray(payload)) payload.forEach(pushFrom);
-  if (Array.isArray(payload?.sessions)) payload.sessions.forEach(pushFrom);
-  if (Array.isArray(payload?.data)) payload.data.forEach(pushFrom);
-  if (payload?.latest) pushFrom(payload.latest);
-  return out;
-}
-async function resolveMeasId(optionalSid, simple, analysis){
-  const candidates = [];
-  uniqPush(candidates, optionalSid);
-  uniqPush(candidates, simple?.measid);
-  uniqPush(candidates, simple?.sid);
-  uniqPush(candidates, simple?.session_id);
-  uniqPush(candidates, analysis?.measurement_id);
-  uniqPush(candidates, analysis?.session_id);
-  uniqPush(candidates, analysis?.sid);
-  uniqPush(candidates, analysis?.timestamp);
-  uniqPush(candidates, window.currentMeasurementId);
-
-  for (const id of candidates){ if (await tryValidateId(id)) return id; }
-
-  try {
-    const sessions = await fetchJSON('/api/sessions').catch(()=>null);
-    const ids = extractSessionIds(sessions);
-    for (const id of ids){ if (await tryValidateId(id)) return id; }
-  } catch {}
-
-  try {
-    const ls = await fetchJSON('/api/simple?latest=1').catch(()=>null);
-    const lsid = ls?.measid || ls?.sid || ls?.session_id || ls?.timestamp;
-    if (await tryValidateId(lsid)) return lsid;
-  } catch {}
-
-  try {
-    const lg = await fetchJSON('/api/geek?latest=1').catch(()=>null);
-    const gsid = lg?.analysis?.measurement_id || lg?.analysis?.sid || lg?.analysis?.session_id || lg?.analysis?.timestamp;
-    if (await tryValidateId(gsid)) return gsid;
-  } catch {}
-
-  return null;
+  
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `measurely-results-${currentSessionId || 'latest'}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('Results exported successfully', 'success');
 }
 
-/* ---------- main renderers ---------- */
-async function renderResultsStructured(simple){
-  const wrap = $('results-structured'); if (!wrap) return;
-  wrap.innerHTML = '';
-
-  const overall = document.createElement('div');
-  overall.className = 'result-box';
-  const overallScore = Number(simple?.overall);
-  const scoreTxt = Number.isFinite(overallScore) ? overallScore.toFixed(1) : '—';
-  overall.innerHTML = `
-    <div class="result-head">
-      <span class="result-label">Room score</span>
-      <span class="result-pill ${pillClassFromScore(overallScore)}">
-        ${scoreTxt} / 10 · ${badgeText(overallScore)}
-      </span>
-    </div>
-    <p class="result-desc">${simple?.headline || '—'}</p>
-  `;
-
-  try {
-    const settings = await getRoomSettings();
-    const r = settings?.room || {};
-    overall.insertAdjacentHTML('beforeend', `
-      <ul class="small muted" style="margin:8px 0 0 18px;">
-        <li><b>Dimensions:</b> ${fmtM(r.length_m)} × ${fmtM(r.width_m)} × ${fmtM(r.height_m)}</li>
-        <li><b>Speaker spacing:</b> ${fmtM(r.spk_spacing_m)}</li>
-        <li><b>Speaker → front wall:</b> ${fmtM(r.spk_front_m)}</li>
-        <li><b>Listener → front wall:</b> ${fmtM(r.listener_front_m)}</li>
-      </ul>
-    `);
-  } catch {}
-
-  const issues = topIssues(simple?.sections, 3);
-  if (issues.length){
-    overall.insertAdjacentHTML('beforeend', `
-      <div class="subhead" style="margin-top:10px;">Highlights</div>
-      <ul class="result-actions" style="margin-left:18px;">
-        ${issues.map(i => {
-          const label = i.key.replace('_', '/');
-          const s = Number.isFinite(i.score) ? ` (${i.score.toFixed(1)}/10)` : '';
-          const tip = i.advice || 'Needs attention.';
-          return `<li><b>${label}${s}:</b> ${tip}</li>`;
-        }).join('')}
-      </ul>
-    `);
+export function generateReport() {
+  if (!simpleData) {
+    showToast('No data available for report generation', 'error');
+    return;
   }
+  
+  // Generate a simple text report
+  const report = `
+Measurely Room Acoustic Analysis Report
+Generated: ${new Date().toLocaleString()}
+Session: ${currentSessionId || 'Latest'}
 
-  wrap.appendChild(overall);
+Overall Score: ${simpleData.scores?.overall || 'N/A'}/10
 
-  const actions = Array.isArray(simple?.top_actions) ? simple.top_actions : [];
-  if (actions.length){
-    const actionsBox = document.createElement('div');
-    actionsBox.className = 'result-box';
-    const ol = document.createElement('ol'); ol.className = 'result-actions';
-    actions.forEach(a => {
-      const name = String(a?.section || 'advice').replace('_', ' ');
-      const scoreTxt = (typeof a?.score === 'number') ? ` (${a?.score.toFixed(1)}/10)` : '';
-      const li = document.createElement('li');
-      li.innerHTML = `<b>${name}${scoreTxt}:</b> ${a?.advice || ''}`;
-      ol.appendChild(li);
-    });
-    actionsBox.innerHTML = `<div class="result-label">How to improve your score</div>`;
-    actionsBox.appendChild(ol);
-    wrap.appendChild(actionsBox);
+Frequency Analysis:
+- Bandwidth: ${simpleData.bandwidth_lo_3db_hz?.toFixed(0) || 'N/A'} - ${simpleData.bandwidth_hi_3db_hz?.toFixed(0) || 'N/A'} Hz
+- Smoothness: ${simpleData.smoothness_std_db?.toFixed(1) || 'N/A'} dB std deviation
+
+Band Levels:
+- Bass (20-200Hz): ${simpleData.band_levels_db?.bass_20_200?.toFixed(1) || 'N/A'} dB
+- Mid (200-2kHz): ${simpleData.band_levels_db?.mid_200_2k?.toFixed(1) || 'N/A'} dB
+- Treble (2-10kHz): ${simpleData.band_levels_db?.treble_2k_10k?.toFixed(1) || 'N/A'} dB
+- Air (10-20kHz): ${simpleData.band_levels_db?.air_10k_20k?.toFixed(1) || 'N/A'} dB
+
+Recommendations:
+${generateRecommendations(simpleData)}
+  `.trim();
+  
+  const blob = new Blob([report], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `measurely-report-${currentSessionId || 'latest'}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('Report generated successfully', 'success');
+}
+
+function generateRecommendations(data) {
+  const recommendations = [];
+  
+  if (data.scores?.bandwidth < 5) {
+    recommendations.push('- Limited frequency response detected. Consider speaker placement or room treatment.');
   }
-
-  const secCard = $('sectionScoresCard');
-  const secWrap = $('sectionScoresGrid');
-  if (secCard && secWrap){
-    if (!$('sectionScoresBlurb')) secWrap.insertAdjacentHTML('beforebegin', scoringBlurbHTML);
-    secWrap.innerHTML = '';
-    const order = ['bandwidth','balance','peaks_dips','smoothness','reflections','reverb'];
-    let rendered = 0;
-    order.forEach(k => {
-      const sec = simple?.sections?.[k] || {};
-      const score = (typeof sec.score === 'number') ? sec.score : NaN;
-      const label = k.replace('_', '/');
-      const box = document.createElement('div');
-      box.className = 'mly-item';
-      box.innerHTML = `
-        <span class="result-label">${label}</span>
-        <span class="mly-pill ${pillClassFromScore(score)}">${Number.isFinite(score) ? score.toFixed(1) : '—'}/10</span>
-      `;
-      secWrap.appendChild(box);
-      rendered++;
-    });
-    secCard.style.display = rendered ? 'block' : 'none';
-  } else {
-    if (!overall.querySelector('#sectionScoresBlurb')) {
-      overall.insertAdjacentHTML('beforeend', scoringBlurbHTML);
-    }
+  
+  if (data.scores?.balance < 3) {
+    recommendations.push('- Frequency balance needs improvement. Check speaker positioning and room acoustics.');
   }
+  
+  if (data.scores?.smoothness < 5) {
+    recommendations.push('- Response smoothness could be better. Consider acoustic treatment.');
+  }
+  
+  if (data.modes && data.modes.length > 0) {
+    recommendations.push('- Room modes detected. Consider bass traps and acoustic treatment.');
+  }
+  
+  return recommendations.length > 0 ? recommendations.join('\n') : '- Your room shows good acoustic characteristics!';
 }
 
-function renderGeek(analysis){
-  const box = $('mly-geek-json');
-  if (box) box.textContent = JSON.stringify(analysis ?? {}, null, 2);
-}
-
-/* ---------- public API ---------- */
-export async function renderSimpleAndGeek(optionalSid){
-  // Ensure the graphs container exists + styles are applied
-  ensureGraphsContainer();
-
-  // Build the debug panel only if requested
-  ensureDebugPanel();
-
-  // Fetch data
-  const sidQuery = optionalSid ? `?sid=${encodeURIComponent(optionalSid)}` : '';
-  const simpleRes = await fetchJSON(`/api/simple${sidQuery}`).catch(() => ({}));
-  const geekRes   = await fetchJSON(`/api/geek${sidQuery}`).catch(() => ({}));
-
-  const simple   = simpleRes?.simple_view ? simpleRes.simple_view : simpleRes;
-  const analysis = geekRes?.analysis     ? geekRes.analysis       : geekRes;
-
-  await renderResultsStructured(simple || {});
-  renderGeek(analysis || {});
-  killNonePlaceholders();
-
-  const measId = await resolveMeasId(optionalSid, simple || {}, analysis || {});
-  if (measId) window.currentMeasurementId = measId;
-
-  // Disable all graph rendering (no huge blue/red images)
-  const g = document.getElementById('graphs');
-  if (g) g.innerHTML = '';
-
-}
+// Global functions for HTML handlers
+window.exportResults = exportResults;
+window.generateReport = generateReport;

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Measurely – Room Setup</title>
+
+  <link rel="stylesheet" href="measurely.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* tiny inline styles so the page still looks identical */
+    .room-visual       { position:relative; width:100%; height:300px; background:#f9fafb; border-radius:8px; overflow:hidden; }
+    .speaker           { position:absolute; width:20px; height:20px; background:#fbbf24; border-radius:4px; color:#000; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; }
+    .listening-position{ position:absolute; width:16px; height:16px; background:#ef4444; border-radius:50%; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; }
+    .measurement-line  { position:absolute; height:1px; background:rgba(0,0,0,.25); transform-origin:left center; }
+  </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+
+<!-- =====  MOBILE MENU  ===== -->
+<button id="mobile-menu-btn" class="mobile-menu-button fixed top-4 right-4 z-50 p-2 rounded-lg bg-gray-900/80 text-white backdrop-blur-sm">
+  <i class="fas fa-bars text-xl"></i>
+</button>
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+<!-- =====  SIDEBAR  ===== -->
+<aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold mb-2">Measurely</h1>
+    <p class="text-sm opacity-80">Room Acoustic Analysis</p>
+  </div>
+
+  <nav class="space-y-2">
+    <a href="index.html" class="nav-item"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
+    <a href="analysis.html" class="nav-item"><i class="fas fa-wave-square mr-3"></i>Frequency Analysis</a>
+    <a href="recommendations.html" class="nav-item"><i class="fas fa-lightbulb mr-3"></i>Recommendations</a>
+    <a href="room-setup.html" class="nav-item active"><i class="fas fa-home mr-3"></i>Room Setup</a>
+    <a href="sessions.html" class="nav-item"><i class="fas fa-history mr-3"></i>Sessions</a>
+    <a href="settings.html" class="nav-item"><i class="fas fa-cog mr-3"></i>Settings</a>
+  </nav>
+
+  <div class="absolute bottom-6 left-6 right-6">
+    <div class="bg-white bg-opacity-20 rounded-lg p-4">
+      <div class="flex items-center mb-2">
+        <div id="deviceStatusIndicator" class="status-indicator status-good pulse-animation"></div>
+        <span id="deviceStatusText" class="text-sm">System Ready</span>
+      </div>
+      <p class="text-xs opacity-80">Last updated: <span id="lastUpdated">Now</span></p>
+    </div>
+  </div>
+</aside>
+
+<!-- =====  MAIN CONTENT  ===== -->
+<div class="main-content ml-64 p-8">
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Room Setup Configuration</h2>
+    <p class="text-gray-600">Enter your room and speaker dimensions in metres for accurate acoustic calculations.</p>
+  </div>
+
+  <!-- Room Dimensions -->
+  <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-ruler-combined mr-2"></i>Room Dimensions</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label class="block text-gray-700 text-sm font-medium mb-2">Length (m)</label>
+        <input type="number" id="room-length" class="input-field w-full" placeholder="4.9" value="4.9" step="0.01">
+      </div>
+      <div>
+        <label class="block text-gray-700 text-sm font-medium mb-2">Width (m)</label>
+        <input type="number" id="room-width"  class="input-field w-full" placeholder="3.7" value="3.7" step="0.01">
+      </div>
+      <div>
+        <label class="block text-gray-700 text-sm font-medium mb-2">Height (m)</label>
+        <input type="number" id="room-height" class="input-field w-full" placeholder="2.4" value="2.4" step="0.01">
+      </div>
+    </div>
+    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg" onclick="updateRoomVisualization()">
+      <i class="fas fa-sync-alt mr-2"></i>Update Visualization
+    </button>
+  </div>
+
+  <!-- Speaker Configuration -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <div class="bg-white rounded-2xl shadow-lg p-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-volume-up mr-2"></i>Speaker Configuration</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-gray-700 text-sm font-medium mb-2">Distance from Front Wall (m)</label>
+          <input type="number" id="speaker-distance" class="input-field w-full" placeholder="0.6" value="0.6" step="0.01">
+        </div>
+        <div>
+          <label class="block text-gray-700 text-sm font-medium mb-2">Speaker Spacing (m)</label>
+          <input type="number" id="speaker-width"    class="input-field w-full" placeholder="1.5" value="1.5" step="0.01">
+        </div>
+        <div>
+          <label class="block text-gray-700 text-sm font-medium mb-2">Toe-in Angle (degrees)</label>
+          <input type="number" id="toe-angle"        class="input-field w-full" placeholder="30"  value="30"  step="1">
+        </div>
+        <div>
+          <label class="block text-gray-700 text-sm font-medium mb-2">Listening Distance (m)</label>
+          <input type="number" id="listening-distance" class="input-field w-full" placeholder="2.5" value="2.5" step="0.01">
+        </div>
+      </div>
+      <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mt-4" onclick="calculateOptimalPlacement()">
+        <i class="fas fa-calculator mr-2"></i>Calculate Optimal Placement
+      </button>
+    </div>
+
+    <!-- Room Visualization -->
+    <div class="bg-white rounded-2xl shadow-lg p-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-eye mr-2"></i>Room Layout</h3>
+      <div class="room-visual" id="room-visual"></div>
+      <div class="mt-4 text-sm text-gray-600">
+        <div class="flex items-center mb-1"><div class="w-4 h-4 bg-yellow-400 rounded mr-2"></div><span>Speakers</span></div>
+        <div class="flex items-center"><div class="w-4 h-4 bg-red-500 rounded-full mr-2"></div><span>Listening Position</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Acoustic Analysis -->
+  <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-chart-area mr-2"></i>Acoustic Analysis</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="text-center p-4 bg-blue-50 rounded-lg"><div class="text-2xl font-bold text-blue-600"   id="room-mode-1">--</div><div class="text-sm text-gray-600">Hz Axial Mode</div></div>
+      <div class="text-center p-4 bg-blue-50 rounded-lg"><div class="text-2xl font-bold text-blue-600"   id="room-mode-2">--</div><div class="text-sm text-gray-600">Hz Axial Mode</div></div>
+      <div class="text-center p-4 bg-green-50 rounded-lg"><div class="text-2xl font-bold text-green-600" id="reverb-time">--</div><div class="text-sm text-gray-600">Reverb Time (s)</div></div>
+      <div class="text-center p-4 bg-purple-50 rounded-lg"><div class="text-2xl font-bold text-purple-600" id="critical-distance">--</div><div class="text-sm text-gray-600">Critical Distance (m)</div></div>
+    </div>
+  </div>
+
+  <!-- Recommendations -->
+  <div class="bg-white rounded-2xl shadow-lg p-6">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-lightbulb mr-2"></i>Setup Recommendations</h2>
+    <div class="space-y-4" id="recommendations-list">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <!-- Save button -->
+  <div class="mt-6">
+    <button id="save-room-btn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+      <i class="fas fa-save mr-2"></i>Save Setup
+    </button>
+  </div>
+</div>
+
+<!-- =====  SCRIPTS  ===== -->
+<script>
+/* ----------  Sidebar toggle (same as other pages)  ---------- */
+const btn  = document.getElementById('mobile-menu-btn');
+const side = document.getElementById('sidebar');
+const over = document.getElementById('sidebar-overlay');
+function toggleMenu() {
+  side.classList.toggle('active'); over.classList.toggle('active');
+  document.body.style.overflow = side.classList.contains('active') ? 'hidden' : '';
+}
+btn.addEventListener('click', toggleMenu);
+over.addEventListener('click', toggleMenu);
+document.querySelectorAll('.nav-item').forEach(link=>{
+  link.addEventListener('click', ()=>{ if(window.innerWidth<=768) toggleMenu(); });
+});
+
+/* ----------  Toast helper  ---------- */
+function toast(msg, type='info'){
+  const box = document.createElement('div');
+  box.className = `fixed top-4 right-4 p-3 rounded text-white text-sm z-50 transition-all duration-300 ${
+    type==='error'?'bg-red-600':type==='success'?'bg-green-600':'bg-blue-600'}`;
+  box.textContent = msg;
+  document.body.appendChild(box);
+  setTimeout(()=>box.classList.add('opacity-0'),10);
+  setTimeout(()=>box.remove(),1000);
+}
+
+/* ----------  Save / Load room data  ---------- */
+const SESSION = 'latest';
+const API     = '/api/room';
+
+async function saveRoomSetup(){
+  const payload = {
+    length_m         : parseFloat(document.getElementById('room-length').value),
+    width_m          : parseFloat(document.getElementById('room-width').value),
+    height_m         : parseFloat(document.getElementById('room-height').value),
+    spk_front_m      : parseFloat(document.getElementById('speaker-distance').value),
+    spk_spacing_m    : parseFloat(document.getElementById('speaker-width').value),
+    listener_front_m : parseFloat(document.getElementById('listening-distance').value),
+    layout           : 'stereo'
+  };
+  const res = await fetch(`${API}/${SESSION}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  if(!res.ok) toast('Could not save setup','error');
+  else        toast('Setup saved','success');
+}
+
+async function loadRoomSetup(){
+  const res = await fetch(`${API}/${SESSION}`);
+  if(!res.ok) return;
+  const j = await res.json();
+  ['length_m','width_m','height_m','spk_front_m','spk_spacing_m','listener_front_m'].forEach(k=>{
+    if(j[k]!=null){
+      const el = document.getElementById(k.replace('_m','').replace('spk','speaker').replace('listener','listening'));
+      if(el) el.value = j[k].toFixed(2);
+    }
+  });
+}
+
+document.getElementById('save-room-btn').addEventListener('click',saveRoomSetup);
+document.addEventListener('DOMContentLoaded',loadRoomSetup);
+
+/* ----------  Room visualisation (unchanged logic, now uses metres)  ---------- */
+function updateRoomVisualization(){
+  const L = parseFloat(document.getElementById('room-length').value) || 4.9;
+  const W = parseFloat(document.getElementById('room-width').value)  || 3.7;
+  const H = parseFloat(document.getElementById('room-height').value) || 2.4;
+
+  const vis = document.getElementById('room-visual');
+  vis.innerHTML='';
+
+  const scale = Math.min(280/L, 280/W);
+  const rw = W*scale, rl=L*scale;
+  const ox=(300-rw)/2, oy=(300-rl)/2;
+
+  const room=document.createElement('div');
+  room.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${rw}px;height:${rl}px;border:2px solid rgba(0,0,0,.2);border-radius:4px`;
+  vis.appendChild(room);
+
+  const spkD = parseFloat(document.getElementById('speaker-distance').value)||0.6;
+  const spkW = parseFloat(document.getElementById('speaker-width').value)||1.5;
+  const lisD=parseFloat(document.getElementById('listening-distance').value)||2.5;
+
+  const spkY=oy+spkD*scale;
+  const leftX=ox+(rw-spkW*scale)/2;
+  const rightX=leftX+spkW*scale;
+
+  const leftSpk=document.createElement('div'); leftSpk.className='speaker';
+  leftSpk.style.cssText=`left:${leftX-10}px;top:${spkY-10}px`; leftSpk.innerHTML='L'; vis.appendChild(leftSpk);
+  const rightSpk=document.createElement('div'); rightSpk.className='speaker';
+  rightSpk.style.cssText=`left:${rightX-10}px;top:${spkY-10}px`; rightSpk.innerHTML='R'; vis.appendChild(rightSpk);
+
+  const lisY=oy+lisD*scale, lisX=ox+rw/2;
+  const lisPos=document.createElement('div'); lisPos.className='listening-position';
+  lisPos.style.cssText=`left:${lisX-8}px;top:${lisY-8}px`; lisPos.innerHTML='👂'; vis.appendChild(lisPos);
+
+  drawLine(vis,leftX,spkY,lisX,lisY); drawLine(vis,rightX,spkY,lisX,lisY);
+  updateAcousticAnalysis(L,W,H);
+}
+
+function drawLine(container,x1,y1,x2,y2){
+  const line=document.createElement('div'); line.className='measurement-line';
+  const len=Math.hypot(x2-x1,y2-y1);
+  const ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+  line.style.cssText=`position:absolute;left:${x1}px;top:${y1}px;width:${len}px;height:1px;background:rgba(0,0,0,.25);transform-origin:left center;transform:rotate(${ang}deg)`;
+  container.appendChild(line);
+}
+
+function updateAcousticAnalysis(L,W,H){
+  const c=343; // m/s
+  const axial1=c/(2*L);
+  const V=L*W*H, S=2*(L*W+L*H+W*H), T60=(0.161*V)/S, Dc=Math.sqrt(V);
+  document.getElementById('room-mode-1').textContent=axial1.toFixed(1);
+  document.getElementById('room-mode-2').textContent=(axial1*2).toFixed(1);
+  document.getElementById('reverb-time').textContent=T60.toFixed(2);
+  document.getElementById('critical-distance').textContent=Dc.toFixed(1);
+}
+
+function calculateOptimalPlacement(){
+  const L=parseFloat(document.getElementById('room-length').value)||4.9;
+  const optD=L*0.38;
+  document.getElementById('listening-distance').value=optD.toFixed(2);
+  document.getElementById('speaker-width').value=(optD*0.6).toFixed(2);
+  updateRoomVisualization();
+  toast('Optimal placement calculated','success');
+}
+
+/* ----------  Clock  ---------- */
+setInterval(()=>{
+  const el=document.getElementById('lastUpdated');
+  if(el) el.textContent=new Date().toLocaleTimeString();
+},1000);
+
+/* ----------  Init  ---------- */
+document.addEventListener('DOMContentLoaded',()=>{
+  loadRoomSetup();
+  updateRoomVisualization();
+});
+</script>
+</body>
+</html>

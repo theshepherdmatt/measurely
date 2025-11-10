@@ -1,932 +1,281 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Measurely - Enhanced Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.0.3/plotly.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .nav-item {
-            transition: all 0.3s ease;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
-        .nav-item:hover {
-            transform: translateY(-2px);
-        }
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.2);
-            border-left: 4px solid #fff;
-        }
-        .section-content {
-            display: none;
-        }
-        .section-content.active {
-            display: block;
-        }
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-        .status-online { background-color: #10b981; }
-        .status-offline { background-color: #ef4444; }
-        .status-scanning { background-color: #f59e0b; animation: pulse 2s infinite; }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .sweep-button {
-            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
-            transition: all 0.3s ease;
-        }
-        .sweep-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
-        }
-        
-        .sweep-button:disabled {
-            background: linear-gradient(45deg, #9ca3af, #6b7280);
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .metric-card {
-            transition: all 0.3s ease;
-        }
-        .metric-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Measurely – Dashboard</title>
+  <link rel="stylesheet" href="measurely.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.0.3/plotly.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-        /* Mobile Navigation Styles */
-        .mobile-menu-button {
-            display: none;
-            z-index: 60; /* Higher than sidebar */
-        }
-        
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 45;
-        }
-        
-        .sidebar {
-            z-index: 50; /* Higher than overlay */
-        }
-        
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .mobile-menu-button {
-                display: block;
-                position: fixed;
-                top: 20px;
-                left: 20px;
-                background: rgba(255, 255, 255, 0.95);
-                border: none;
-                border-radius: 8px;
-                padding: 12px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                cursor: pointer;
-            }
-            
-            .main-content {
-                margin-left: 0 !important;
-                padding: 80px 16px 16px 16px !important;
-            }
-            
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                will-change: transform;
-            }
-            
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            
-            .sidebar-overlay.open {
-                display: block;
-            }
-            
-            /* Mobile chart adjustments */
-            .chart-stack {
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 1.5rem !important;
-            }
-            
-            .chart-stack > div {
-                width: 100% !important;
-            }
-            
-            .mobile-chart-height {
-                height: 250px !important;
-            }
-            
-            /* Mobile form adjustments */
-            .mobile-form-grid {
-                grid-template-columns: 1fr !important;
-            }
-        }
-        
-        /* Tablet adjustments */
-        @media (max-width: 1024px) {
-            .main-content {
-                padding: 20px;
-            }
-        }
-    </style>
-</head>
-<body class="bg-gray-50 font-sans">
-    <!-- Mobile Menu Button -->
-    <button class="mobile-menu-button" id="mobile-menu-btn">
-        <i class="fas fa-bars text-gray-700 text-xl"></i>
-    </button>
+  <!-- =====  SMALL INLINE STYLES  ===== -->
+  <style>
+    /* visible chart theme */
+    .plot-container { background: transparent !important; }
+    /* static chart – no zoom / pan / hover bar */
+    .modebar { display: none !important; }
+    /* card colours */
+    .card-sky   { background-color: #f0f9ff; }   /* sky-50  */
+    .card-amber { background-color: #eef2ff; }   /* amber-100 */
     
-    <!-- Sidebar Overlay for Mobile -->
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    /* Progress bar styles */
+    .progress-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(0,0,0,0.1);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .progress-container.active {
+      opacity: 1;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+  </style>
+<base target="_blank">
+</head>
 
-    <!-- Navigation Sidebar -->
-    <div class="sidebar gradient-bg fixed left-0 top-0 h-full w-64 text-white">
-        <div class="p-6 h-full">
-            <div class="flex items-center justify-between mb-8">
-                <div class="flex items-center">
-                    <i class="fas fa-chart-line text-2xl mr-3"></i>
-                    <h1 class="text-xl font-bold">Measurely</h1>
-                </div>
-                <button class="md:hidden text-white p-2" id="close-sidebar" style="min-width: 32px; min-height: 32px;">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <nav class="space-y-2">
-                <div class="nav-item active p-3 rounded-lg" data-section="dashboard" style="touch-action: manipulation;">
-                    <i class="fas fa-tachometer-alt mr-3"></i>
-                    Dashboard
-                </div>
-                <div class="nav-item p-3 rounded-lg" data-section="analysis" style="touch-action: manipulation;">
-                    <i class="fas fa-wave-square mr-3"></i>
-                    Frequency Analysis
-                </div>
-                <div class="nav-item p-3 rounded-lg" data-section="recommendations" style="touch-action: manipulation;">
-                    <i class="fas fa-lightbulb mr-3"></i>
-                    Recommendations
-                </div>
-                <div class="nav-item p-3 rounded-lg" data-section="room-setup" style="touch-action: manipulation;">
-                    <i class="fas fa-home mr-3"></i>
-                    Room Setup
-                </div>
-                <div class="nav-item p-3 rounded-lg" data-section="sessions" style="touch-action: manipulation;">
-                    <i class="fas fa-history mr-3"></i>
-                    Sessions
-                </div>
-                <div class="nav-item p-3 rounded-lg" data-section="settings" style="touch-action: manipulation;">
-                    <i class="fas fa-cog mr-3"></i>
-                    Settings
-                </div>
-            </nav>
+<body class="bg-gray-50">
+  <!-- Progress Bar -->
+  <div id="progressContainer" class="progress-container">
+    <div id="progressBar" class="progress-bar"></div>
+  </div>
+
+  <!-- =====  SAME HEADER / MENU  ===== -->
+  <button id="mobile-menu-btn" class="mobile-menu-button fixed top-4 right-4 z-50 p-2 rounded-lg bg-gray-900/80 text-white backdrop-blur-sm">
+    <i class="fas fa-bars text-xl"></i>
+  </button>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold mb-2">Measurely</h1>
+      <p class="text-sm opacity-80">Room Acoustic Analysis</p>
+    </div>
+    <nav class="space-y-2">
+      <a href="index.html" class="nav-item active"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
+      <a href="analysis.html" class="nav-item"><i class="fas fa-wave-square mr-3"></i>Frequency Analysis</a>
+      <a href="recommendations.html" class="nav-item"><i class="fas fa-lightbulb mr-3"></i>Recommendations</a>
+      <a href="room-setup.html" class="nav-item"><i class="fas fa-home mr-3"></i>Room Setup</a>
+      <a href="sessions.html" class="nav-item"><i class="fas fa-history mr-3"></i>Sessions</a>
+      <a href="settings.html" class="nav-item"><i class="fas fa-cog mr-3"></i>Settings</a>
+    </nav>
+    <div class="absolute bottom-6 left-6 right-6">
+      <div class="bg-white bg-opacity-20 rounded-lg p-4">
+        <div class="flex items-center mb-2">
+          <div id="deviceStatusIndicator" class="status-indicator status-good pulse-animation"></div>
+          <span id="deviceStatusText" class="text-sm">System Ready</span>
         </div>
+        <p class="text-xs opacity-80">Last updated: <span id="lastUpdated">Now</span></p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- =====  MAIN CONTENT  ===== -->
+  <div class="main-content ml-64 p-8">
+    <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-800 mb-2">Room Acoustic Dashboard</h2>
+      <p class="text-gray-600">Comprehensive analysis of your listening environment</p>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content ml-64 p-8">
-        <!-- Dashboard Section -->
-        <div id="dashboard" class="section-content active">
-            <div class="mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Dashboard</h2>
-                <p class="text-gray-600">Real-time audio measurement and analysis</p>
-            </div>
-
-            <!-- Status Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="metric-card bg-white rounded-xl p-6 shadow-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Device Status</p>
-                            <p class="text-2xl font-bold text-gray-800" id="device-status">
-                                <span class="status-indicator status-offline"></span>Checking...
-                            </p>
-                        </div>
-                        <i class="fas fa-microphone text-3xl text-blue-500"></i>
-                    </div>
-                </div>
-                
-                <div class="metric-card bg-white rounded-xl p-6 shadow-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Last Sweep</p>
-                            <p class="text-2xl font-bold text-gray-800" id="last-sweep">--</p>
-                        </div>
-                        <i class="fas fa-clock text-3xl text-green-500"></i>
-                    </div>
-                </div>
-                
-                <div class="metric-card bg-white rounded-xl p-6 shadow-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Active Sessions</p>
-                            <p class="text-2xl font-bold text-gray-800" id="active-sessions">0</p>
-                        </div>
-                        <i class="fas fa-history text-3xl text-purple-500"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sweep Controls -->
-            <div class="bg-white rounded-xl p-6 shadow-lg mb-8">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">Sweep Controls</h3>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mobile-form-grid">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Frequency (Hz)</label>
-                        <input type="number" id="start-freq" value="20" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">End Frequency (Hz)</label>
-                        <input type="number" id="end-freq" value="20000" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration (s)</label>
-                        <input type="number" id="duration" value="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div class="flex items-end">
-                        <button id="run-sweep" class="sweep-button w-full text-white py-3 px-6 rounded-lg font-medium">
-                            <i class="fas fa-play mr-2"></i>Run Sweep
-                        </button>
-                    </div>
-                </div>
-                <div id="sweep-status" class="mt-4 p-3 rounded-lg hidden"></div>
-            </div>
-
-            <!-- Frequency Response Chart -->
-            <div class="bg-white rounded-xl p-6 shadow-lg">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">Frequency Response</h3>
-                <div id="frequency-chart" style="height: 400px;"></div>
-            </div>
+    <!-- Overall Score Card -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 card-hover">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-xl font-semibold text-gray-800 mb-2">Overall Room Score</h3>
+          <p class="text-gray-600 mb-4">Based on comprehensive acoustic analysis</p>
+          <div class="text-5xl font-bold text-blue-600 mb-2" id="overallScore">--</div>
+          <div class="flex items-center">
+            <span id="overallStatusIndicator" class="status-indicator status-warning"></span>
+            <span id="overallStatusText" class="text-sm text-gray-600">Loading...</span>
+          </div>
         </div>
-
-        <!-- Frequency Analysis Section -->
-        <div id="analysis" class="section-content">
-            <div class="mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Frequency Analysis</h2>
-                <p class="text-gray-600">Detailed frequency domain analysis and visualization</p>
-            </div>
-
-            <!-- Always stacked vertically -->
-            <div class="chart-stack">
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Spectrum Analyzer</h3>
-                    <div id="spectrum-chart" style="height: 300px;"></div>
-                </div>
-                
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">THD Analysis</h3>
-                    <div id="thd-chart" style="height: 300px;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recommendations Section -->
-        <div id="recommendations" class="section-content">
-            <div class="mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Recommendations</h2>
-                <p class="text-gray-600">AI-powered suggestions for optimal audio setup</p>
-            </div>
-
-            <div id="recommendations-content">
-                <div class="text-center py-8">
-                    <i class="fas fa-spinner fa-spin text-3xl text-blue-500 mb-4"></i>
-                    <p class="text-gray-600">Loading recommendations...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Room Setup Section -->
-        <div id="room-setup" class="section-content">
-            <div class="mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Room Setup</h2>
-                <p class="text-gray-600">Configure your room dimensions and speaker placement</p>
-            </div>
-
-            <!-- Always stacked vertically -->
-            <div class="chart-stack">
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Room Dimensions</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Length (m)</label>
-                            <input type="number" id="room-length" value="5.2" step="0.1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Width (m)</label>
-                            <input type="number" id="room-width" value="4.1" step="0.1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Height (m)</label>
-                            <input type="number" id="room-height" value="2.8" step="0.1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <button id="calculate-modes" class="w-full bg-blue-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-600 transition-colors">
-                            Calculate Room Modes
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Room Mode Calculator</h3>
-                    <div id="room-modes" class="space-y-2">
-                        <div class="p-3 bg-gray-50 rounded-lg">
-                            <span class="font-medium">Axial Modes:</span>
-                            <div id="axial-modes" class="text-sm text-gray-600 mt-1">Click calculate to show modes</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sessions Section -->
-        <div id="sessions" class="section-content">
-            <div class="mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Sessions</h2>
-                <p class="text-gray-600">Manage and review your measurement sessions</p>
-            </div>
-
-            <div class="bg-white rounded-xl p-6 shadow-lg">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                    <h3 class="text-xl font-bold text-gray-800">Recent Sessions</h3>
-                    <button id="new-session" class="bg-green-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-600 transition-colors whitespace-nowrap">
-                        <i class="fas fa-plus mr-2"></i>New Session
-                    </button>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b">
-                                <th class="text-left py-3 px-4 font-medium text-gray-700">Session</th>
-                                <th class="text-left py-3 px-4 font-medium text-gray-700">Date</th>
-                                <th class="text-left py-3 px-4 font-medium text-gray-700">Duration</th>
-                                <th class="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sessions-table">
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="py-3 px-4">Living Room Calibration</td>
-                                <td class="py-3 px-4">2024-01-15 14:30</td>
-                                <td class="py-3 px-4">5m 23s</td>
-                                <td class="py-3 px-4">
-                                    <button class="text-blue-500 hover:text-blue-700 mr-2">View</button>
-                                    <button class="text-red-500 hover:text-red-700">Delete</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Section -->
-        <div id="settings" class="section-content">
-            <div class="mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Settings</h2>
-                <p class="text-gray-600">Configure your measurement preferences</p>
-            </div>
-
-            <!-- Always stacked vertically -->
-            <div class="chart-stack">
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Audio Settings</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Sample Rate</label>
-                            <select class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <option>44100 Hz</option>
-                                <option>48000 Hz</option>
-                                <option>96000 Hz</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Buffer Size</label>
-                            <select class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <option>256 samples</option>
-                                <option>512 samples</option>
-                                <option>1024 samples</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Display Settings</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Theme</label>
-                            <select class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <option>Light</option>
-                                <option>Dark</option>
-                                <option>Auto</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Chart Refresh Rate</label>
-                            <select class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <option>Real-time</option>
-                                <option>1 second</option>
-                                <option>5 seconds</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div class="text-right"><div class="gauge-container" id="overallGauge"></div></div>
+      </div>
     </div>
 
-    <script>
-        // API Service Class
-        class APIService {
-            constructor() {
-                this.baseURL = '';
-            }
+    <!-- Quick Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
+        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Bandwidth</h4><i class="fas fa-signal text-blue-500 text-xl"></i></div>
+        <div class="text-3xl font-bold text-blue-600 mb-2" id="bandwidthScore">--</div>
+        <div class="text-sm text-gray-600 mb-3" id="bandwidthRange">Loading...</div>
+        <div class="flex items-center"><span id="bandwidthStatus" class="status-indicator status-poor"></span><span id="bandwidthStatusText" class="text-xs text-gray-500">Loading...</span></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
+        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Balance</h4><i class="fas fa-balance-scale text-orange-500 text-xl"></i></div>
+        <div class="text-3xl font-bold text-orange-600 mb-2" id="balanceScore">--</div>
+        <div class="text-sm text-gray-600 mb-3" id="balanceDescription">Loading...</div>
+        <div class="flex items-center"><span id="balanceStatus" class="status-indicator status-poor"></span><span id="balanceStatusText" class="text-xs text-gray-500">Loading...</span></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
+        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Smoothness</h4><i class="fas fa-wave-square text-green-500 text-xl"></i></div>
+        <div class="text-3xl font-bold text-green-600 mb-2" id="smoothnessScore">--</div>
+        <div class="text-sm text-gray-600 mb-3" id="smoothnessDescription">Loading...</div>
+        <div class="flex items-center"><span id="smoothnessStatus" class="status-indicator status-good"></span><span id="smoothnessStatusText" class="text-xs text-gray-500">Loading...</span></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
+        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Peaks & Dips</h4><i class="fas fa-mountain text-red-500 text-xl"></i></div>
+        <div class="text-3xl font-bold text-red-600 mb-2" id="peaksDipsScore">--</div>
+        <div class="text-sm text-gray-600 mb-3" id="peaksDipsDescription">Loading...</div>
+        <div class="flex items-center"><span id="peaksDipsStatus" class="status-indicator status-poor"></span><span id="peaksDipsStatusText" class="text-xs text-gray-500">Loading...</span></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
+        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Reflections</h4><i class="fas fa-echo text-yellow-500 text-xl"></i></div>
+        <div class="text-3xl font-bold text-yellow-600 mb-2" id="reflectionsScore">--</div>
+        <div class="text-sm text-gray-600 mb-3" id="reflectionsDescription">Loading...</div>
+        <div class="flex items-center"><span id="reflectionsStatus" class="status-indicator status-warning"></span><span id="reflectionsStatusText" class="text-xs text-gray-500">Loading...</span></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
+        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Reverb</h4><i class="fas fa-clock text-purple-500 text-xl"></i></div>
+        <div class="text-3xl font-bold text-purple-600 mb-2" id="reverbScore">--</div>
+        <div class="text-sm text-gray-600 mb-3" id="reverbDescription">Loading...</div>
+        <div class="flex items-center"><span id="reverbStatus" class="status-indicator status-good"></span><span id="reverbStatusText" class="text-xs text-gray-500">Loading...</span></div>
+      </div>
+    </div>
 
-            async getStatus() {
-                try {
-                    const response = await fetch('/api/status');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error getting status:', error);
-                    return null;
-                }
-            }
+    <!-- Frequency Response Chart (BLACK axes, no zoom) -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold">Frequency Response Analysis</h3>
+        <div class="flex space-x-2">
+          <button class="bg-white bg-opacity-20 px-4 py-2 rounded-lg text-sm hover:bg-opacity-30 transition-all" id="leftChannelBtn"><i class="fas fa-chart-line mr-2"></i>Left Channel</button>
+          <button class="bg-white bg-opacity-20 px-4 py-2 rounded-lg text-sm hover:bg-opacity-30 transition-all" id="rightChannelBtn"><i class="fas fa-chart-line mr-2"></i>Right Channel</button>
+          <button class="bg-white bg-opacity-20 px-4 py-2 rounded-lg text-sm hover:bg-opacity-30 transition-all" id="bothChannelsBtn"><i class="fas fa-chart-line mr-2"></i>Both Channels</button>
+        </div>
+      </div>
+      <div id="frequencyChart" style="height: 400px;"></div>
+    </div>
 
-            async runSweep(params) {
-                try {
-                    const response = await fetch('/api/run-sweep', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(params)
-                    });
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error running sweep:', error);
-                    return { ok: false, error: error.message };
-                }
-            }
+    <!-- Room Layout Analysis (COLOURED CARD) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <div class="rounded-2xl p-6 card-sky shadow-lg"> <!-- sky background -->
+        <h3 class="text-xl font-semibold mb-4">Room Layout Analysis</h3>
+        <div class="bg-white bg-opacity-60 rounded-lg p-4 mb-4">
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div><span class="opacity-80">Room Dimensions:</span><div id="roomDimensions" class="font-semibold">Loading...</div></div>
+            <div><span class="opacity-80">Speaker Distance:</span><div class="font-semibold">20 cm from front wall</div></div>
+            <div><span class="opacity-80">Listener Position:</span><div class="font-semibold">3.0 m from speakers</div></div>
+            <div><span class="opacity-80">Speaker Spacing:</span><div class="font-semibold">2.0 m apart</div></div>
+          </div>
+        </div>
+        <div class="bg-white bg-opacity-60 rounded-lg p-4">
+          <h4 class="font-semibold mb-2">First Axial Modes</h4>
+          <div class="space-y-1 text-sm">
+            <div class="flex justify-between"><span>Length:</span><span id="lengthMode" class="font-semibold">-- Hz</span></div>
+            <div class="flex justify-between"><span>Width:</span><span id="widthMode" class="font-semibold">-- Hz</span></div>
+            <div class="flex justify-between"><span>Height:</span><span id="heightMode" class="font-semibold">-- Hz</span></div>
+          </div>
+        </div>
+      </div>
 
-            async getSimple() {
-                try {
-                    const response = await fetch('/api/simple');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error getting simple data:', error);
-                    return null;
-                }
-            }
+      <!-- Improvement Recommendations (COLOURED CARD) -->
+      <div class="rounded-2xl p-6 card-amber shadow-lg"> <!-- amber background -->
+        <h3 class="text-xl font-semibold mb-4"><i class="fas fa-lightbulb mr-2"></i>Improvement Recommendations</h3>
+        <div class="space-y-4">
+          <div class="bg-white bg-opacity-60 rounded-lg p-4">
+            <div class="flex items-start">
+              <div class="bg-white bg-opacity-80 rounded-full p-2 mr-3 mt-1"><i class="fas fa-arrow-up text-sm"></i></div>
+              <div><h4 class="font-semibold mb-1">Speaker Positioning</h4><p class="text-sm opacity-90">Move speakers 10-20 cm closer to the front wall to extend bass response</p></div>
+            </div>
+          </div>
+          <div class="bg-white bg-opacity-60 rounded-lg p-4">
+            <div class="flex items-start">
+              <div class="bg-white bg-opacity-80 rounded-full p-2 mr-3 mt-1"><i class="fas fa-soft-soap text-sm"></i></div>
+              <div><h4 class="font-semibold mb-1">Add Absorption</h4><p class="text-sm opacity-90">Place soft materials at first side-wall reflection points</p></div>
+            </div>
+          </div>
+          <div class="bg-white bg-opacity-60 rounded-lg p-4">
+            <div class="flex items-start">
+              <div class="bg-white bg-opacity-80 rounded-full p-2 mr-3 mt-1"><i class="fas fa-subwoofer text-sm"></i></div>
+              <div><h4 class="font-semibold mb-1">Consider Subwoofer</h4><p class="text-sm opacity-90">Add a small sub to improve bass response below 200Hz</p></div>
+            </div>
+          </div>
+          <div class="bg-white bg-opacity-60 rounded-lg p-4">
+            <div class="flex items-start">
+              <div class="bg-white bg-opacity-80 rounded-full p-2 mr-3 mt-1"><i class="fas fa-chair text-sm"></i></div>
+              <div><h4 class="font-semibold mb-1">Seating Position</h4><p class="text-sm opacity-90">Try small seat moves (10-20 cm) to avoid bass dips</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            async getSessions() {
-                try {
-                    const response = await fetch('/api/sessions');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error getting sessions:', error);
-                    return [];
-                }
-            }
+    <!-- Detailed Analysis -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+      <h3 class="text-xl font-semibold text-gray-800 mb-6">Detailed Frequency Analysis</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div class="text-center"><div id="bassLevel" class="text-2xl font-bold text-blue-600 mb-1">-- dB</div><div class="text-sm text-gray-600">Bass (20-200Hz)</div><div id="bassBar" class="frequency-bar bg-blue-500 mt-2" style="width: 0%;"></div></div>
+        <div class="text-center"><div id="midLevel" class="text-2xl font-bold text-green-600 mb-1">-- dB</div><div class="text-sm text-gray-600">Mid (200-2kHz)</div><div id="midBar" class="frequency-bar bg-green-500 mt-2" style="width: 0%;"></div></div>
+        <div class="text-center"><div id="trebleLevel" class="text-2xl font-bold text-yellow-600 mb-1">-- dB</div><div class="text-sm text-gray-600">Treble (2-10kHz)</div><div id="trebleBar" class="frequency-bar bg-yellow-500 mt-2" style="width: 0%;"></div></div>
+        <div class="text-center"><div id="airLevel" class="text-2xl font-bold text-purple-600 mb-1">-- dB</div><div class="text-sm text-gray-600">Air (10-20kHz)</div><div id="airBar" class="frequency-bar bg-purple-500 mt-2" style="width: 0%;"></div></div>
+      </div>
+      <div class="bg-gray-50 rounded-lg p-4">
+        <h4 class="font-semibold text-gray-800 mb-2">Frequency Band Guide</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p><strong>Bass (20-200Hz):</strong> Low frequencies, bass instruments, subwoofer range</p>
+            <p><strong>Mid (200-2kHz):</strong> Most instruments, vocals, critical for clarity</p>
+          </div>
+          <div>
+            <p><strong>Treble (2-10kHz):</strong> High frequencies, cymbals, consonants, brightness</p>
+            <p><strong>Air (10-20kHz):</strong> Ultra-high frequencies, spatial cues, sparkle</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap gap-4">
+      <button id="runSweepBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center"><i class="fas fa-play mr-2"></i>Run New Sweep</button>
+      <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center" id="saveResultsBtn"><i class="fas fa-save mr-2"></i>Save Results</button>
+      <button class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center" id="exportReportBtn"><i class="fas fa-share mr-2"></i>Export Report</button>
+    </div>
+  </div>
+
+  <!-- =====  JAVASCRIPT  ===== -->
+  <script src="/js/dashboard.js"></script>
+  
+  <!-- =====  SAME SCRIPT BLOCK  ===== -->
+  <script>
+    const btn  = document.getElementById('mobile-menu-btn');
+    const side = document.getElementById('sidebar');
+    const over = document.getElementById('sidebar-overlay');
+
+    function toggleMenu() {
+      side.classList.toggle('active');
+      over.classList.toggle('active');
+      document.body.style.overflow = side.classList.contains('active') ? 'hidden' : '';
+    }
+    btn.addEventListener('click', toggleMenu);
+    over.addEventListener('click', toggleMenu);
+
+    /* auto-close on link click (mobile) */
+    document.querySelectorAll('.nav-item').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          side.classList.remove('active');
+          over.classList.remove('active');
+          document.body.style.overflow = '';
         }
+      });
+    });
 
-        const apiService = new APIService();
-
-        // Mobile menu functionality
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const sidebar = document.querySelector('.sidebar');
-        const sidebarOverlay = document.getElementById('sidebar-overlay');
-        const closeSidebarBtn = document.getElementById('close-sidebar');
-
-        function openSidebar() {
-            sidebar.classList.add('open');
-            sidebarOverlay.classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeSidebar() {
-            sidebar.classList.remove('open');
-            sidebarOverlay.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-
-        mobileMenuBtn.addEventListener('click', openSidebar);
-        closeSidebarBtn.addEventListener('click', closeSidebar);
-        sidebarOverlay.addEventListener('click', closeSidebar);
-
-        // Navigation functionality
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Remove active class from all nav items and sections
-                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-                document.querySelectorAll('.section-content').forEach(section => section.classList.remove('active'));
-                
-                // Add active class to clicked nav item
-                this.classList.add('active');
-                
-                // Show corresponding section
-                const sectionId = this.getAttribute('data-section');
-                document.getElementById(sectionId).classList.add('active');
-                
-                // Close mobile sidebar
-                closeSidebar();
-                
-                // Load section-specific data
-                loadSectionData(sectionId);
-            });
-        });
-
-        // Load section-specific data
-        function loadSectionData(sectionId) {
-            switch(sectionId) {
-                case 'recommendations':
-                    loadRecommendations();
-                    break;
-                case 'sessions':
-                    loadSessions();
-                    break;
-            }
-        }
-
-        // Initialize charts
-        function initializeCharts() {
-            // Frequency Response Chart - STATIC (Non-interactive)
-            const freqData = [{
-                x: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000],
-                y: [-3, -1, 0, 2, 1, 0, -1, -2, -3, -5],
-                type: 'scatter',
-                mode: 'lines',
-                name: 'Frequency Response',
-                line: { color: '#3b82f6', width: 3 }
-            }];
-
-            const freqLayout = {
-                title: '',
-                xaxis: { 
-                    title: 'Frequency (Hz)', 
-                    type: 'log',
-                    autorange: true,
-                    fixedrange: true  // Disable zoom/pan
-                },
-                yaxis: { 
-                    title: 'Magnitude (dB)',
-                    range: [-10, 5],
-                    fixedrange: true  // Disable zoom/pan
-                },
-                margin: { t: 20, r: 20, b: 60, l: 60 },
-                plot_bgcolor: 'rgba(0,0,0,0)',
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                showlegend: false,
-                hovermode: 'none'  // Disable hover interactions
-            };
-
-            const freqConfig = {
-                responsive: true,
-                displayModeBar: false,  // Hide the mode bar completely
-                staticPlot: true        // Make it completely static
-            };
-
-            Plotly.newPlot('frequency-chart', freqData, freqLayout, freqConfig);
-
-            // Spectrum Analyzer - STATIC (Non-interactive)
-            const spectrumData = [{
-                x: Array.from({length: 100}, (_, i) => i * 100),
-                y: Array.from({length: 100}, () => Math.random() * 40 - 20),
-                type: 'scatter',
-                mode: 'lines',
-                fill: 'tozeroy',
-                name: 'Spectrum',
-                line: { color: '#10b981' }
-            }];
-
-            const spectrumLayout = {
-                title: '',
-                xaxis: { 
-                    title: 'Frequency (Hz)',
-                    fixedrange: true  // Disable zoom/pan
-                },
-                yaxis: { 
-                    title: 'Magnitude (dB)',
-                    fixedrange: true  // Disable zoom/pan
-                },
-                margin: { t: 20, r: 20, b: 60, l: 60 },
-                plot_bgcolor: 'rgba(0,0,0,0)',
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                showlegend: false,
-                hovermode: 'none'  // Disable hover interactions
-            };
-
-            const spectrumConfig = {
-                responsive: true,
-                displayModeBar: false,  // Hide the mode bar completely
-                staticPlot: true        // Make it completely static
-            };
-
-            Plotly.newPlot('spectrum-chart', spectrumData, spectrumLayout, spectrumConfig);
-
-            // THD Chart - STATIC (Non-interactive)
-            const thdData = [{
-                x: [100, 200, 500, 1000, 2000, 5000],
-                y: [0.1, 0.05, 0.02, 0.01, 0.03, 0.08],
-                type: 'bar',
-                name: 'THD',
-                marker: { color: '#f59e0b' }
-            }];
-
-            const thdLayout = {
-                title: '',
-                xaxis: { 
-                    title: 'Frequency (Hz)',
-                    fixedrange: true  // Disable zoom/pan
-                },
-                yaxis: { 
-                    title: 'THD (%)',
-                    fixedrange: true  // Disable zoom/pan
-                },
-                margin: { t: 20, r: 20, b: 60, l: 60 },
-                plot_bgcolor: 'rgba(0,0,0,0)',
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                showlegend: false,
-                hovermode: 'none'  // Disable hover interactions
-            };
-
-            const thdConfig = {
-                responsive: true,
-                displayModeBar: false,  // Hide the mode bar completely
-                staticPlot: true        // Make it completely static
-            };
-
-            Plotly.newPlot('thd-chart', thdData, thdLayout, thdConfig);
-        }
-
-        // Load device status
-        async function loadDeviceStatus() {
-            const status = await apiService.getStatus();
-            const statusElement = document.getElementById('device-status');
-            
-            if (status && status.mic && status.dac) {
-                const micConnected = status.mic.connected;
-                const dacConnected = status.dac.connected;
-                
-                if (micConnected && dacConnected) {
-                    statusElement.innerHTML = '<span class="status-indicator status-online"></span>Online';
-                } else {
-                    statusElement.innerHTML = '<span class="status-indicator status-offline"></span>Devices Missing';
-                }
-            } else {
-                statusElement.innerHTML = '<span class="status-indicator status-offline"></span>Offline';
-            }
-        }
-
-        // Load recommendations
-        async function loadRecommendations() {
-            const data = await apiService.getSimple();
-            const container = document.getElementById('recommendations-content');
-            
-            if (data && data.ok) {
-                let html = '';
-                
-                // Overall score
-                if (data.overall !== undefined) {
-                    html += `
-                        <div class="bg-white rounded-xl p-6 shadow-lg mb-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-xl font-bold text-gray-800">Overall Room Score</h3>
-                                <div class="text-3xl font-bold text-blue-600">${data.overall.toFixed(1)}/10</div>
-                            </div>
-                            <p class="text-gray-600">${data.headline}</p>
-                        </div>
-                    `;
-                }
-                
-                // Top actions
-                if (data.top_actions && data.top_actions.length > 0) {
-                    html += '<div class="space-y-4">';
-                    data.top_actions.forEach((action, index) => {
-                        const colors = ['blue', 'green', 'purple', 'red', 'yellow'];
-                        const color = colors[index % colors.length];
-                        
-                        html += `
-                            <div class="bg-white rounded-xl p-6 shadow-lg">
-                                <div class="flex items-start">
-                                    <div class="bg-${color}-100 p-3 rounded-full mr-4 flex-shrink-0">
-                                        <i class="fas fa-lightbulb text-${color}-600 text-xl"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-lg font-bold text-gray-800 mb-2">${action.section || 'Recommendation'}</h3>
-                                        <p class="text-gray-600 mb-3">${action.advice}</p>
-                                        <span class="bg-${color}-100 text-${color}-800 px-3 py-1 rounded-full text-sm">High Impact</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    html += '</div>';
-                } else {
-                    html = `
-                        <div class="bg-white rounded-xl p-6 shadow-lg">
-                            <div class="text-center py-8">
-                                <i class="fas fa-chart-line text-4xl text-gray-400 mb-4"></i>
-                                <p class="text-gray-600">No recommendations available yet.</p>
-                                <p class="text-sm text-gray-500 mt-2">Run a sweep to get personalized recommendations.</p>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                container.innerHTML = html;
-            } else {
-                container.innerHTML = `
-                    <div class="bg-white rounded-xl p-6 shadow-lg">
-                        <div class="text-center py-8">
-                            <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-4"></i>
-                            <p class="text-gray-600">Unable to load recommendations.</p>
-                            <p class="text-sm text-gray-500 mt-2">Make sure you've run at least one sweep.</p>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // Load sessions
-        async function loadSessions() {
-            const sessions = await apiService.getSessions();
-            const tableBody = document.getElementById('sessions-table');
-            
-            if (sessions && sessions.length > 0) {
-                let html = '';
-                sessions.forEach(session => {
-                    const date = new Date().toLocaleDateString(); // Placeholder
-                    const time = new Date().toLocaleTimeString(); // Placeholder
-                    
-                    html += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="py-3 px-4">${session.id}</td>
-                            <td class="py-3 px-4">${date} ${time}</td>
-                            <td class="py-3 px-4">--</td>
-                            <td class="py-3 px-4">
-                                <button class="text-blue-500 hover:text-blue-700 mr-2" onclick="viewSession('${session.id}')">View</button>
-                                <button class="text-red-500 hover:text-red-700" onclick="deleteSession('${session.id}')">Delete</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                tableBody.innerHTML = html;
-            } else {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="py-8 text-center text-gray-500">
-                            <i class="fas fa-inbox text-3xl mb-2"></i>
-                            <p>No sessions found</p>
-                        </td>
-                    </tr>
-                `;
-            }
-        }
-
-        // Run sweep functionality
-        document.getElementById('run-sweep').addEventListener('click', async function() {
-            const startFreq = parseInt(document.getElementById('start-freq').value);
-            const endFreq = parseInt(document.getElementById('end-freq').value);
-            const duration = parseFloat(document.getElementById('duration').value);
-            
-            const button = this;
-            const statusDiv = document.getElementById('sweep-status');
-            
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Running Sweep...';
-            statusDiv.className = 'mt-4 p-3 rounded-lg bg-blue-50 text-blue-800';
-            statusDiv.textContent = 'Starting sweep...';
-            statusDiv.classList.remove('hidden');
-            
-            try {
-                // Get device status first
-                const deviceStatus = await apiService.getStatus();
-                if (!deviceStatus || !deviceStatus.mic.connected || !deviceStatus.dac.connected) {
-                    throw new Error('Audio devices not detected. Please check your microphone and speaker connections.');
-                }
-                
-                // Run sweep with parameters
-                const result = await apiService.runSweep({
-                    dur: duration,
-                    fs: 48000,
-                    prepad: 0.5,
-                    postpad: 1.0,
-                    in_dev: deviceStatus.mic.index,
-                    out_dev: deviceStatus.dac.index,
-                    backend: 'aplay',
-                    alsa_device: deviceStatus.dac.alsa
-                });
-                
-                if (result.ok) {
-                    statusDiv.className = 'mt-4 p-3 rounded-lg bg-green-50 text-green-800';
-                    statusDiv.innerHTML = `<i class="fas fa-check mr-2"></i>Sweep completed successfully! Session: ${result.session_id || 'Unknown'}`;
-                    
-                    // Update last sweep time
-                    document.getElementById('last-sweep').textContent = new Date().toLocaleTimeString();
-                    
-                    // Refresh recommendations if we're on that section
-                    const activeSection = document.querySelector('.section-content.active').id;
-                    if (activeSection === 'recommendations') {
-                        loadRecommendations();
-                    }
-                    
-                } else {
-                    throw new Error(result.error || 'Sweep failed with unknown error');
-                }
-                
-            } catch (error) {
-                statusDiv.className = 'mt-4 p-3 rounded-lg bg-red-50 text-red-800';
-                statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>Error: ${error.message}`;
-            } finally {
-                button.disabled = false;
-                button.innerHTML = '<i class="fas fa-play mr-2"></i>Run Sweep';
-                
-                // Hide status after 10 seconds
-                setTimeout(() => {
-                    statusDiv.classList.add('hidden');
-                }, 10000);
-            }
-        });
-
-        // Room mode calculator
-        document.getElementById('calculate-modes').addEventListener('click', function() {
-            const length = parseFloat(document.getElementById('room-length').value);
-            const width = parseFloat(document.getElementById('room-width').value);
-            const height = parseFloat(document.getElementById('room-height').value);
-            
-            const speedOfSound = 343; // m/s
-            
-            // Calculate axial modes
-            const axialModes = [];
-            for (let n = 1; n <= 5; n++) {
-                const f = (n * speedOfSound) / (2 * length);
-                if (f < 300) axialModes.push(f.toFixed(1));
-            }
-            
-            document.getElementById('axial-modes').innerHTML = axialModes.map(f => `${f} Hz`).join(', ');
-        });
-
-        // Session actions
-        function viewSession(sessionId) {
-            alert(`Viewing session: ${sessionId}`);
-        }
-
-        function deleteSession(sessionId) {
-            if (confirm(`Are you sure you want to delete session: ${sessionId}?`)) {
-                alert(`Deleting session: ${sessionId}`);
-                loadSessions();
-            }
-        }
-
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
-                closeSidebar();
-            }
-        });
-
-        // Initialize everything when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeCharts();
-            loadDeviceStatus();
-            
-            // Auto-refresh device status every 30 seconds
-            setInterval(loadDeviceStatus, 30000);
-            
-            // Update active sessions periodically
-            setInterval(() => {
-                const sessions = document.querySelectorAll('#sessions-table tr').length - 1; // Exclude header
-                document.getElementById('active-sessions').textContent = Math.max(0, sessions);
-            }, 5000);
-        });
-    </script>
+    // Update last updated time every second
+    setInterval(() => {
+      const el = document.getElementById('lastUpdated');
+      if (el) el.textContent = new Date().toLocaleTimeString();
+    }, 1000);
+  </script>
 </body>
 </html>

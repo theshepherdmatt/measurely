@@ -1,28 +1,14 @@
-// web/js/api.js
-// Tiny DOM helpers + API abstraction
+// web/js/api.js - API wrapper functions
 
-/* -------------------- DOM + Accessibility -------------------- */
-export const $ = (id) => document.getElementById(id);
+export function $(id) { return document.getElementById(id); }
 
-export function announce(msg) {
-  const live = $('sr-announcer');
-  if (!live) return;
-  live.textContent = '';
-  setTimeout(() => { live.textContent = msg; }, 10);
-}
-
-export function setBusy(el, b = true) {
+export function setDisabled(el, disabled) {
+  if (typeof el === 'string') el = $(el);
   if (!el) return;
-  el.setAttribute('aria-busy', b ? 'true' : 'false');
+  el.disabled = disabled;
+  el.classList.toggle('opacity-50', disabled);
 }
 
-export function setDisabled(el, d = true) {
-  if (!el) return;
-  el.disabled = d;
-  el.setAttribute('aria-disabled', d ? 'true' : 'false');
-}
-
-/* -------------------- JSON Fetcher (with retry support) -------------------- */
 export async function fetchJSON(url, opts = {}, retries = 0) {
   const init = { cache: 'no-store', ...opts };
 
@@ -46,23 +32,12 @@ export async function fetchJSON(url, opts = {}, retries = 0) {
   }
 }
 
-/* -------------------- Device Status -------------------- */
-// Single source of truth for current input/output/wifi status
-// Example:
-// {
-//   input: { connected: true, name: "UMIK-1" },
-//   output: { connected: true, name: "Hypex FA123" },
-//   wifi: { state: "connected", ssid: "MyWiFi" },
-//   ready: true,
-//   reason: ""
-// }
-
 export async function getStatus() {
   const data = await fetchJSON('/api/status', {}, 1); // retry once
   if (!data) return { ready: false, reason: 'no-status' };
 
-  const inputOk = !!data?.input?.connected;
-  const outputOk = !!data?.output?.connected;
+  const inputOk = !!data?.mic?.connected;
+  const outputOk = !!data?.dac?.connected;
 
   return {
     ...data,
@@ -71,49 +46,77 @@ export async function getStatus() {
   };
 }
 
-/* -------------------- Sweep + Sessions -------------------- */
 export async function runSweepAPI(payload = {}) {
   return fetchJSON('/api/run-sweep', { method: 'POST', body: payload });
 }
 
-export async function openSessionAPI(sessionId) {
+export async function openSession(sessionId) {
   return fetchJSON(`/api/session/${encodeURIComponent(sessionId)}`);
 }
 
-export async function fetchSessionsAPI() {
+export async function fetchSessions() {
   return fetchJSON('/api/sessions');
 }
 
-/* -------------------- Results -------------------- */
-export async function simpleResultAPI(sessionId = '') {
+export async function simpleResult(sessionId = '') {
   return fetchJSON(sessionId ? `/api/simple?sid=${encodeURIComponent(sessionId)}` : '/api/simple');
 }
 
-export async function geekResultAPI(sessionId = '') {
+export async function geekResult(sessionId = '') {
   return fetchJSON(sessionId ? `/api/geek?sid=${encodeURIComponent(sessionId)}` : '/api/geek');
 }
 
-/* -------------------- Filters -------------------- */
 export async function filterGenerate() {
   return fetchJSON('/api/filter', { method: 'POST' });
 }
 
-/* -------------------- Audio Quip / Speech -------------------- */
 export async function quipAndSpeak(savedDir) {
   if (!savedDir) return { ok: false, error: 'missing-dir' };
   return fetchJSON('/api/quip-and-speak', { method: 'POST', body: { dir: savedDir } });
 }
 
-/* -------------------- Device Name Normaliser -------------------- */
-export function niceDeviceName(s) {
-  if (!s) return '';
-  const t = String(s).replace(/\s*\([^)]*\)\s*/g, ' ').trim().toLowerCase();
+export async function scanWifi() {
+  return fetchJSON('/api/wifi/scan', { method: 'POST' });
+}
 
-  if (t.includes('hifiberry')) return 'HiFiBerry DAC';
-  if (t.includes('fa123') || t.includes('hypex')) return 'Hypex FA123';
-  if (t.includes('qutest') || t.includes('2qute')) return 'Chord DAC';
-  if (t.includes('usb audio')) return 'USB Audio DAC';
-  if (t.includes('codec') && t.includes('bcm')) return 'Pi audio';
+export async function connectWifi(ssid, password) {
+  return fetchJSON('/api/wifi/connect', { method: 'POST', body: { ssid, password } });
+}
 
-  return String(s).split(/[\n,]/)[0].trim().replace(/\s{2,}/g, ' ');
+export async function wifiStatus() {
+  return fetchJSON('/api/wifi/status');
+}
+
+export async function stopHotspot() {
+  return fetchJSON('/api/wifi/stop-hotspot', { method: 'POST' });
+}
+
+export function bindWifiSelect() {
+  const select = $('wifiSelect');
+  if (!select) return;
+  
+  select.addEventListener('change', () => {
+    const selected = select.options[select.selectedIndex];
+    const passwordInput = $('wifiPassword');
+    if (passwordInput) {
+      passwordInput.disabled = !selected.dataset.needsPassword;
+      if (!selected.dataset.needsPassword) passwordInput.value = '';
+    }
+  });
+}
+
+export function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+    type === 'error' ? 'bg-red-600 text-white' :
+    type === 'success' ? 'bg-green-600 text-white' :
+    'bg-blue-600 text-white'
+  }`;
+  toast.textContent = message;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
 }

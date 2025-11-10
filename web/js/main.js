@@ -1,13 +1,6 @@
 // web/js/main.js - Fixed for Enhanced Dashboard Integration
 
-import { $, setDisabled, runSweepAPI, quipAndSpeak, getStatus, simpleResultAPI, geekResultAPI, fetchSessionsAPI, filterGenerate } from './api.js';
-import { refreshStatus } from './devices.js';
-import { fetchSessions, openSession } from './sessions.js';
-import { loadRoom, saveRoom } from './room.js';
-import { scanWifi, connectWifi, stopHotspot, wifiStatus, bindWifiSelect } from './wifi.js';
-import { renderSimpleAndGeek } from './results.js';
-import { initDashboard, refreshDashboard } from './dashboard.js';
-import { initSpeakers, currentSpeakerKey } from './speakers.js';
+import { $, setDisabled, runSweepAPI, quipAndSpeak, getStatus, simpleResult, geekResult, fetchSessions, filterGenerate } from './api.js';
 
 // Configuration for dashboard selection
 window.DASH_CONFIG = {
@@ -99,13 +92,13 @@ class EnhancedDashboardApp {
       this.deviceStatus = await this.getStatus();
       
       // Load latest analysis
-      const simpleData = await this.simpleResultAPI();
+      const simpleData = await this.simpleResult();
       if (simpleData && simpleData.ok) {
         this.currentData = simpleData;
       }
       
       // Load sessions
-      const sessionsData = await this.fetchSessionsAPI();
+      const sessionsData = await this.fetchSessions();
       if (sessionsData) {
         this.sessions = sessionsData;
       }
@@ -209,7 +202,7 @@ class EnhancedDashboardApp {
 
   async refreshSessions() {
     try {
-      const sessionsData = await this.fetchSessionsAPI();
+      const sessionsData = await this.fetchSessions();
       if (sessionsData) {
         this.sessions = sessionsData;
         this.renderSessions();

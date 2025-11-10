@@ -1,74 +1,134 @@
-// web/js/sessions.js
-// Simplified sessions viewer — no oversized PNG graphs.
+// web/js/sessions.js - Session management
 
-import { $, announce, fetchJSON } from './api.js';
-import { renderSimpleAndGeek } from './results.js';
-import { tryRenderPrettyGraphs } from './graphs.js';
+import { $, fetchJSON, showToast } from './api.js';
 
-const urlParams = new URLSearchParams(location.search);
-const FULLBLEED = urlParams.has('fullbleed'); // ?fullbleed=1 for edge-to-edge view
+let sessions = [];
 
-function ensureGraphStyles(){
-  if (document.getElementById('sessions-graphs-style')) return;
-  const css = `
-    #graphs {
-      width: 100%;
-      max-width: 1800px;
-      margin: 28px auto 0;
-    }
-    .graphs-fullbleed #graphs {
-      width: 100vw;
-      max-width: 100vw;
-      margin-left: calc(50% - 50vw);
-    }
-  `;
-  const el = document.createElement('style');
-  el.id = 'sessions-graphs-style';
-  el.textContent = css;
-  document.head.appendChild(el);
-  if (FULLBLEED) document.documentElement.classList.add('graphs-fullbleed');
-}
-
-export async function fetchSessions(){
-  try{
-    const data = await fetchJSON('/api/sessions');
-    const el = $('sessions');
-    if(!Array.isArray(data) || !data.length){
-      el.textContent='(none)'; 
-      return;
-    }
-    el.classList.remove('muted');
-    el.innerHTML = data.map(s=>`<a href="#" data-sid="${s.id}">${s.id}</a>`).join('');
-    el.onclick = (e)=>{
-      const a = e.target.closest('a[data-sid]');
-      if(!a) return;
-      e.preventDefault();
-      openSession(a.dataset.sid);
-    };
-  }catch{
-    $('sessions').textContent='(error)';
-  }
-}
-
-export async function openSession(id){
-  ensureGraphStyles();
-
-  const d = await fetchJSON('/api/session/'+id).catch(()=>({}));
-  $('resultCard').style.display='block';
-  if ($('summary')) $('summary').textContent = d.summary || '(no summary)';
-
-  // Render textual + base graphs
-  await renderSimpleAndGeek(id);
-
-  // Replace only if pretty graphs load successfully
+export async function fetchSessions() {
   try {
-    const prettyOK = await tryRenderPrettyGraphs(id);
-    if (prettyOK) {
-      announce?.('Loaded high-quality analysis graphs.');
-    } else {
-      announce?.('Standard results shown.');
-    }
-  } catch {
-    announce?.('Standard results shown.');
+    const data = await fetchJSON('/api/sessions');
+    sessions = data || [];
+    renderSessionsList();
+    return sessions;
+  } catch (error) {
+    console.error('Error fetching sessions:', error);
+    showToast('Error fetching sessions', 'error');
+    return [];
   }
 }
+
+export async function openSession(sessionId) {
+  try {
+    const data = await fetchJSON(`/api/session/${encodeURIComponent(sessionId)}`);
+    if (data.ok) {
+      showToast(`Session ${sessionId} opened`, 'success');
+      return data;
+    } else {
+      throw new Error(data.error || 'Failed to open session');
+    }
+  } catch (error) {
+    console.error('Error opening session:', error);
+    showToast('Error opening session', 'error');
+    return null;
+  }
+}
+
+export async function deleteSession(sessionId) {
+  if (!confirm(`Delete session ${sessionId}?`)) return false;
+  
+  try {
+    const data = await fetchJSON(`/api/session/${encodeURIComponent(sessionId)}`, { method: 'DELETE' });
+    if (data.ok) {
+      showToast('Session deleted', 'success');
+      await fetchSessions(); // Refresh list
+      return true;
+    } else {
+      throw new Error(data.error || 'Failed to delete session');
+    }
+  } catch (error) {
+    console.error('Error deleting session:', error);
+    showToast('Error deleting session', 'error');
+    return false;
+  }
+}
+
+export async function clearAllSessions() {
+  if (!confirm('Delete all sessions? This cannot be undone.')) return false;
+  
+  try {
+    const data = await fetchJSON('/api/sessions', { method: 'DELETE' });
+    if (data.ok) {
+      showToast('All sessions deleted', 'success');
+      sessions = [];
+      renderSessionsList();
+      return true;
+    } else {
+      throw new Error(data.error || 'Failed to clear sessions');
+    }
+  } catch (error) {
+    console.error('Error clearing sessions:', error);
+    showToast('Error clearing sessions', 'error');
+    return false;
+  }
+}
+
+function renderSessionsList() {
+  const container = $('sessionsList');
+  const countEl = $('sessionCount');
+  
+  if (!container) return;
+  
+  if (countEl) {
+    countEl.textContent = sessions.length;
+  }
+  
+  if (sessions.length === 0) {
+    container.innerHTML = `
+      <div class="text-center text-white opacity-60 py-8">
+        <i class="fas fa-history text-4xl mb-4"></i>
+        <p>No sessions found. Run a sweep to create your first session.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = sessions.slice(0, 10).map(session => {
+    const date = new Date(session.id).toLocaleDateString();
+    const time = new Date(session.id).toLocaleTimeString();
+    const isComplete = session.has_analysis && session.has_summary;
+    
+    return `
+      <div class="session-card glass-card p-4 mb-4 rounded-lg">
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <div class="flex items-center mb-2">
+              <div class="w-3 h-3 rounded-full mr-3 ${
+                isComplete ? 'bg-green-500' : session.has_analysis ? 'bg-yellow-500' : 'bg-gray-500'
+              }"></div>
+              <h4 class="font-semibold text-white">Session ${session.id}</h4>
+            </div>
+            <p class="text-white opacity-80 text-sm">${date} at ${time}</p>
+            <div class="text-xs text-white opacity-60 mt-1">
+              ${session.has_analysis ? '✓ Analysis' : 'No analysis'} • 
+              ${session.has_summary ? '✓ Summary' : 'No summary'}
+            </div>
+          </div>
+          <div class="flex space-x-2">
+            <button class="btn-primary" onclick="openSession('${session.id}')">
+              <i class="fas fa-folder-open mr-1"></i>Open
+            </button>
+            <button class="btn-primary" onclick="deleteSession('${session.id}')">
+              <i class="fas fa-trash mr-1"></i>Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Global functions for HTML onclick handlers
+window.openSession = openSession;
+window.deleteSession = deleteSession;
+window.clearAllSessions = clearAllSessions;
+window.fetchSessions = fetchSessions;

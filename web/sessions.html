@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Measurely – Sessions</title>
+
+  <link rel="stylesheet" href="measurely.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* card hover shadow */
+    .session-card { transition: box-shadow .2s; }
+    .session-card:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1); }
+    /* status dot */
+    .status-dot { width: .75rem; height: .75rem; border-radius: 9999px; }
+    .status-great  { background: #10b981; }
+    .status-good   { background: #84cc16; }
+    .status-ok     { background: #f59e0b; }
+    .status-poor   { background: #ef4444; }
+  </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+
+<!-- =====  MOBILE MENU  ===== -->
+<button id="mobile-menu-btn" class="mobile-menu-button fixed top-4 right-4 z-50 p-2 rounded-lg bg-gray-900/80 text-white backdrop-blur-sm">
+  <i class="fas fa-bars text-xl"></i>
+</button>
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+<!-- =====  SIDEBAR  ===== -->
+<aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold mb-2">Measurely</h1>
+    <p class="text-sm opacity-80">Room Acoustic Analysis</p>
+  </div>
+
+  <nav class="space-y-2">
+    <a href="index.html" class="nav-item"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
+    <a href="analysis.html" class="nav-item"><i class="fas fa-wave-square mr-3"></i>Frequency Analysis</a>
+    <a href="recommendations.html" class="nav-item"><i class="fas fa-lightbulb mr-3"></i>Recommendations</a>
+    <a href="room-setup.html" class="nav-item"><i class="fas fa-home mr-3"></i>Room Setup</a>
+    <a href="sessions.html" class="nav-item active"><i class="fas fa-history mr-3"></i>Sessions</a>
+    <a href="settings.html" class="nav-item"><i class="fas fa-cog mr-3"></i>Settings</a>
+  </nav>
+
+  <div class="absolute bottom-6 left-6 right-6">
+    <div class="bg-white bg-opacity-20 rounded-lg p-4">
+      <div class="flex items-center mb-2">
+        <div id="deviceStatusIndicator" class="status-indicator status-good pulse-animation"></div>
+        <span id="deviceStatusText" class="text-sm">System Ready</span>
+      </div>
+      <p class="text-xs opacity-80">Last updated: <span id="lastUpdated">Now</span></p>
+    </div>
+  </div>
+</aside>
+
+<!-- =====  MAIN CONTENT  ===== -->
+<div class="main-content ml-64 p-8">
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Session Management</h2>
+    <p class="text-gray-600">Track your measurement sessions and analyze historical data</p>
+  </div>
+
+  <!-- Current Session (placeholder – no live sweep yet) -->
+  <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-semibold text-gray-800"><i class="fas fa-play-circle mr-2"></i>Current Session</h2>
+      <div class="flex space-x-2">
+        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg" onclick="startNewSession()">
+          <i class="fas fa-plus mr-2"></i>New Session
+        </button>
+        <button class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg" onclick="pauseCurrentSession()">
+          <i class="fas fa-pause mr-2"></i>Pause
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div class="text-center p-4 bg-gray-50 rounded-lg">
+        <div class="text-2xl font-bold text-gray-800" id="session-duration">--:--:--</div>
+        <div class="text-sm text-gray-600">Duration</div>
+      </div>
+      <div class="text-center p-4 bg-gray-50 rounded-lg">
+        <div class="text-2xl font-bold text-gray-800" id="measurements-count">0</div>
+        <div class="text-sm text-gray-600">Measurements</div>
+      </div>
+      <div class="text-center p-4 bg-gray-50 rounded-lg">
+        <div class="text-2xl font-bold text-gray-600" id="session-status">Idle</div>
+        <div class="text-sm text-gray-600">Status</div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <div class="flex justify-between text-sm text-gray-600 mb-2">
+        <span>Progress</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div id="progress-bar" class="bg-green-500 h-2 rounded-full" style="width: 0%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session History – populated from /api/sessions -->
+  <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-history mr-2"></i>Session History</h2>
+
+    <div id="sessions-list" class="space-y-3">
+      <!-- filled by JS -->
+    </div>
+
+    <!-- empty state -->
+    <div id="no-sessions" class="hidden text-center py-10 text-gray-500">
+      <i class="fas fa-inbox text-4xl mb-3"></i>
+      <p>No sessions yet – run your first sweep!</p>
+    </div>
+  </div>
+
+  <!-- Global Stats – also live -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
+      <div class="text-2xl font-bold text-gray-800" id="total-sessions">0</div>
+      <div class="text-sm text-gray-600">Total Sessions</div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
+      <div class="text-2xl font-bold text-gray-800" id="total-measurements">0</div>
+      <div class="text-sm text-gray-600">Total Measurements</div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
+      <div class="text-2xl font-bold text-gray-800" id="total-hours">0</div>
+      <div class="text-sm text-gray-600">Hours Analysed</div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
+      <div class="text-2xl font-bold text-green-600" id="avg-score">--</div>
+      <div class="text-sm text-gray-600">Avg Score</div>
+    </div>
+  </div>
+</div>
+
+<!-- =====  SCRIPTS  ===== -->
+<script>
+/* ----------  Sidebar toggle (same as other pages)  ---------- */
+const btn  = document.getElementById('mobile-menu-btn');
+const side = document.getElementById('sidebar');
+const over = document.getElementById('sidebar-overlay');
+
+function toggleMenu() {
+  side.classList.toggle('active');
+  over.classList.toggle('active');
+  document.body.style.overflow = side.classList.contains('active') ? 'hidden' : '';
+}
+btn.addEventListener('click', toggleMenu);
+over.addEventListener('click', toggleMenu);
+document.querySelectorAll('.nav-item').forEach(link =>
+  link.addEventListener('click', () => { if (window.innerWidth <= 768) toggleMenu(); })
+);
+
+/* ----------  Toast helper  ---------- */
+function toast(msg, type = 'info') {
+  const box = document.createElement('div');
+  box.className = `fixed top-4 right-4 p-3 rounded text-white text-sm z-50 transition-all duration-300 ${
+    type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-green-600' : 'bg-blue-600'}`;
+  box.textContent = msg;
+  document.body.appendChild(box);
+  setTimeout(() => box.classList.add('opacity-0'), 10);
+  setTimeout(() => box.remove(), 1000);
+}
+
+/* ----------  Session Clock (dummy – no live sweep yet)  ---------- */
+let sessionStart = null;
+let clockTimer   = null;
+
+function startDummyClock() {
+  if (clockTimer) return;
+  sessionStart = Date.now();
+  clockTimer = setInterval(() => {
+    const dur = Date.now() - sessionStart;
+    const h = String(Math.floor(dur / 3.6e6)).padStart(2, '0');
+    const m = String(Math.floor(dur / 6e4) % 60).padStart(2, '0');
+    const s = String(Math.floor(dur / 1e3) % 60).padStart(2, '0');
+    document.getElementById('session-duration').textContent = `${h}:${m}:${s}`;
+  }, 1000);
+}
+function stopDummyClock() {
+  clearInterval(clockTimer);
+  clockTimer = null;
+}
+
+/* ----------  Load / Render Sessions  ---------- */
+async function loadSessions() {
+  try {
+    const res = await fetch('/api/sessions');
+    if (!res.ok) throw new Error(res.statusText);
+    const list = await res.json();                 // array from Flask
+    renderSessions(list);
+  } catch (e) {
+    toast('Could not load sessions', 'error');
+    console.error(e);
+  }
+}
+
+function renderSessions(sessions) {
+  const container = document.getElementById('sessions-list');
+  const emptyBox  = document.getElementById('no-sessions');
+  const totalSes  = document.getElementById('total-sessions');
+  const totalMeas = document.getElementById('total-measurements');
+  const totalHrs  = document.getElementById('total-hours');
+  const avgScore  = document.getElementById('avg-score');
+
+  // globals
+  let totMeas = 0, totScore = 0, scoredSessions = 0;
+
+  if (!sessions.length) {
+    container.innerHTML = '';
+    emptyBox.classList.remove('hidden');
+    totalSes.textContent  = '0';
+    totalMeas.textContent = '0';
+    totalHrs.textContent  = '0';
+    avgScore.textContent  = '--';
+    return;
+  }
+
+  emptyBox.classList.add('hidden');
+  container.innerHTML = sessions.map(s => {
+    const when  = new Date(s.timestamp).toLocaleString();
+    const room  = s.room || 'Unknown Room';
+    const L     = s.length || 0, W = s.width || 0, H = s.height || 0;
+    const dims  = (L && W && H) ? `${L.toFixed(1)} × ${W.toFixed(1)} × ${H.toFixed(1)} m` : 'Dims N/A';
+    const score = s.overall_score;
+    const meas  = s.freq_hz ? s.freq_hz.length : 0;
+    const status= s.has_analysis ? 'Completed' : 'Paused';
+    const dot   = scoreColour(score);
+
+    totMeas += meas;
+    if (typeof score === 'number' && !isNaN(score)) { totScore += score; scoredSessions++; }
+
+    return `
+      <div class="session-card bg-gray-50 p-4 rounded-lg cursor-pointer">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <div class="status-dot ${dot} mr-3"></div>
+            <div>
+              <h3 class="text-gray-800 font-medium">${s.id}</h3>
+              <p class="text-gray-600 text-sm">${when}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-gray-800 font-semibold">${meas} measurements</div>
+            <div class="text-gray-500 text-sm">${status}</div>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center justify-between text-sm text-gray-600">
+          <span><i class="fas fa-map-marker-alt mr-2"></i>${room} • ${dims}</span>
+          <span><i class="fas fa-chart-line mr-2"></i>${scoreText(score)}</span>
+        </div>
+        <div class="mt-3 flex items-center justify-end space-x-2">
+          <button onclick="viewSession('${s.id}')" class="text-blue-600 hover:underline text-sm">View</button>
+          <button onclick="loadSession('${s.id}')" class="text-green-600 hover:underline text-sm">Load</button>
+          <button onclick="deleteSession('${s.id}')" class="text-red-600 hover:underline text-sm">Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  totalSes.textContent  = sessions.length;
+  totalMeas.textContent = totMeas;
+  totalHrs.textContent  = (totMeas / 48000 / 3600).toFixed(1);
+  avgScore.textContent  = scoredSessions ? (totScore / scoredSessions).toFixed(1) : '--';
+}
+
+/* ----------  helpers  ---------- */
+function scoreColour(score) {
+  if (typeof score !== 'number' || isNaN(score)) return '';
+  if (score >= 8) return 'status-great';
+  if (score >= 6) return 'status-good';
+  if (score >= 4) return 'status-ok';
+  return 'status-poor';
+}
+function scoreText(score) {
+  if (typeof score !== 'number' || isNaN(score)) return 'Score N/A';
+  return `Score: ${score.toFixed(1)}/10`;
+}
+
+/* ----------  actions  ---------- */
+async function viewSession(sessionId) {
+  const ok = await fetch(`/api/session/${sessionId}`).then(r => r.ok);
+  if (!ok) { toast('Session not found', 'error'); return; }
+  window.open(`session-detail.html?session=${sessionId}`, '_blank');
+}
+async function loadSession(sessionId) {
+  if (!confirm(`Load session “${sessionId}” and replace current data?`)) return;
+  const res = await fetch(`/api/session/${sessionId}/load`, { method: 'POST' });
+  if (!res.ok) { toast('Could not load session', 'error'); return; }
+  toast('Session loaded – refresh dashboard', 'success');
+  location.reload();          // simplest: reload so /api/latest now returns this session
+}
+async function deleteSession(sessionId) {
+  if (!confirm(`Delete session “${sessionId}” permanently?`)) return;
+  const res = await fetch(`/api/session/${sessionId}`, { method: 'DELETE' });
+  if (!res.ok) { toast('Could not delete', 'error'); return; }
+  toast('Session deleted', 'success');
+  loadSessions();
+}
+
+/* ----------  dummy current-session controls  ---------- */
+function startNewSession() {
+  if (!confirm('Start a new measurement session?')) return;
+  sessionStart = Date.now();
+  document.getElementById('session-status').textContent = 'Active';
+  document.getElementById('session-status').className = 'text-2xl font-bold text-green-600';
+  document.getElementById('measurements-count').textContent = '0';
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('progress-pct').textContent = '0%';
+  startDummyClock();
+}
+function pauseCurrentSession() {
+  const status = document.getElementById('session-status');
+  if (status.textContent === 'Active') {
+    status.textContent = 'Paused';
+    status.className = 'text-2xl font-bold text-yellow-600';
+    stopDummyClock();
+  } else {
+    status.textContent = 'Active';
+    status.className = 'text-2xl font-bold text-green-600';
+    startDummyClock();
+  }
+}
+
+/* ----------  init  ---------- */
+document.addEventListener('DOMContentLoaded', loadSessions);
+</script>
+</body>
+</html>
