@@ -222,36 +222,64 @@ class MeasurelyDashboard {
 
     updateScores() {
         const data = this.currentData;
-        
-        // Overall score
         const overallScore = data.overall_score || 5.0;
+
+        /* RIGHT – score + gauge + badges */
         document.getElementById('overallScore').textContent = overallScore.toFixed(1);
         this.updateStatusIndicator('overallStatus', overallScore);
-        
-        // Update status text
-        const statusText = this.getScoreStatusText(overallScore);
-        document.getElementById('overallStatusText').textContent = statusText;
-        
-        // Individual scores
-        const scores = {
-            bandwidthScore: data.bandwidth || 3.6,
-            balanceScore: data.balance || 1.6,
-            smoothnessScore: data.smoothness || 7.3,
-            peaksDipsScore: data.peaks_dips || 3.3,
-            reflectionsScore: data.reflections || 4.0,
-            reverbScore: data.reverb || 10.0
-        };
+        document.getElementById('overallStatusText').textContent = this.getScoreStatusText(overallScore);
+        this.drawGauge(overallScore);
 
-        Object.entries(scores).forEach(([id, value]) => {
-            document.getElementById(id).textContent = value.toFixed(1);
-            
-            // Update individual status indicators
-            const statusId = id.replace('Score', 'Status');
-            this.updateStatusIndicator(statusId, value);
+        const scores = {
+            bandwidthScore: data.bandwidth  || 3.6,
+            balanceScore:   data.balance    || 1.6,
+            smoothnessScore:data.smoothness || 7.3,
+            peaksDipsScore: data.peaks_dips || 3.3,
+            reflectionsScore:data.reflections||4.0,
+            reverbScore:    data.reverb     ||10.0
+        };
+        Object.entries(scores).forEach(([id, val]) => {
+            document.getElementById(id).textContent = val.toFixed(1);
+            this.updateStatusIndicator(id.replace('Score','Status'), val);
         });
 
-        // Update descriptions
+        const worst = [
+            {name:'Bandwidth',  val:scores.bandwidthScore},
+            {name:'Balance',    val:scores.balanceScore},
+            {name:'Peaks&Dips', val:scores.peaksDipsScore}
+        ].sort((a,b)=>a.val-b.val).slice(0,2);
+
+        const badge = (el, txt, score) => {
+            const colour = score >= 7 ? 'bg-emerald-100 text-emerald-800' :
+                        score >= 4 ? 'bg-amber-100 text-amber-800' :
+                                    'bg-rose-100 text-rose-800';
+            el.textContent = txt;
+            el.className = 'px-3 py-1 rounded-full text-xs font-medium ' + colour;
+        };
+        badge(document.getElementById('insight1'), `${worst[0].name} needs work`, worst[0].val);
+        badge(document.getElementById('insight2'), `${worst[1].name} low`,        worst[1].val);
+
+        const btn = document.getElementById('quickActionBtn');
+        if (overallScore < 6) btn.classList.remove('hidden'); else btn.classList.add('hidden');
+
+        /* legacy small-print descriptions */
         this.updateDescriptions(data);
+    }
+
+    drawGauge(score) {
+        const canvas = document.getElementById('overallGauge');
+        const ctx    = canvas.getContext('2d');
+        const c      = 60, r = 50;
+        const start  = Math.PI * 0.75, end = Math.PI * 2.25;
+        const angle  = start + (end - start) * (score / 10);
+
+        ctx.clearRect(0, 0, 120, 120);
+        ctx.beginPath(); ctx.arc(c, c, r, start, end); ctx.lineWidth = 10;
+        ctx.strokeStyle = '#e5e7eb'; ctx.stroke();                       // bg
+        ctx.beginPath(); ctx.arc(c, c, r, start, angle); ctx.lineWidth = 10;
+        ctx.strokeStyle = score >= 7 ? '#10b981' : score >= 4 ? '#f59e0b' : '#ef4444';
+        ctx.stroke();                                                      // score
+        document.getElementById('gaugeText').textContent = score.toFixed(1);
     }
 
     updateDescriptions(data) {
@@ -335,76 +363,58 @@ class MeasurelyDashboard {
 
     updateFrequencyChart() {
         const data = this.currentData;
-        
-        if (!data.freq_hz || !data.mag_db) {
-            console.warn('No frequency data available');
-            return;
-        }
+        if (!data) return;
 
-        console.log('Updating frequency chart with', data.freq_hz.length, 'data points');
-        
-        const trace = {
-            x: data.freq_hz,
-            y: data.mag_db,
+        const leftTrace = {
+            x: data.left_freq_hz || [],
+            y: data.left_mag_db  || [],
             type: 'scatter',
             mode: 'lines',
-            line: {
-                color: '#3b82f6',
-                width: 2
-            },
-            name: 'Frequency Response'
+            name: 'Left',
+            line: { color: '#7c3aed', width: 2.5 }   // violet (sidebar)
         };
+        const rightTrace = {
+            x: data.right_freq_hz || [],
+            y: data.right_mag_db  || [],
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Right',
+            line: { color: '#3b82f6', width: 2.5 }   // indigo (buttons)
+        };
+
+        let traces = [];
+        const active = document.querySelector('.channel-active')?.dataset.channel || 'both';
+        if (active === 'left')   traces = [leftTrace];
+        if (active === 'right')  traces = [rightTrace];
+        if (active === 'both')   traces = [leftTrace, rightTrace];
 
         const layout = {
-            xaxis: {
-                title: 'Frequency (Hz)',
-                type: 'log',
-                color: '#111',
-                gridcolor: '#e5e7eb',
-                tickfont: { color: '#111' }
-            },
-            yaxis: {
-                title: 'Magnitude (dB)',
-                color: '#111',
-                gridcolor: '#e5e7eb',
-                tickfont: { color: '#111' }
-            },
+            xaxis: { title: 'Frequency (Hz)', type: 'log', color: '#111', gridcolor: '#e5e7eb' },
+            yaxis: { title: 'Magnitude (dB)', color: '#111', gridcolor: '#e5e7eb' },
             margin: { t: 20, r: 20, b: 60, l: 60 },
-            plot_bgcolor: '#fff',
-            paper_bgcolor: '#fff',
+            plot_bgcolor: '#fff', paper_bgcolor: '#fff',
             font: { color: '#111' },
-            displayModeBar: false,
-            staticPlot: true
-        };
-
-        const config = {
-            responsive: true,
             displayModeBar: false
         };
 
-        Plotly.newPlot('frequencyChart', [trace], layout, config);
+        Plotly.newPlot('frequencyChart', traces, layout, { responsive: true });
     }
 
     updateRoomAnalysis() {
+        /* skip if room-analysis card is absent */
+        if (!document.getElementById('roomDimensions')) return;
+
         const data = this.currentData;
-        
-        // Room dimensions
         const length = data.length || 4.0;
-        const width = data.width || 4.0;
+        const width  = data.width  || 4.0;
         const height = data.height || 3.0;
-        
+
         document.getElementById('roomDimensions').textContent = `${length} × ${width} × ${height} m`;
-        
-        // Calculate axial modes (speed of sound / (2 * dimension))
-        const speedOfSound = 343; // m/s
-        
-        const lengthMode = (speedOfSound / (2 * length)).toFixed(1);
-        const widthMode = (speedOfSound / (2 * width)).toFixed(1);
-        const heightMode = (speedOfSound / (2 * height)).toFixed(1);
-        
-        document.getElementById('lengthMode').textContent = `${lengthMode} Hz`;
-        document.getElementById('widthMode').textContent = `${widthMode} Hz`;
-        document.getElementById('heightMode').textContent = `${heightMode} Hz`;
+
+        const speedOfSound = 343;
+        document.getElementById('lengthMode').textContent = `${(speedOfSound / (2 * length)).toFixed(1)} Hz`;
+        document.getElementById('widthMode').textContent  = `${(speedOfSound / (2 * width)).toFixed(1)} Hz`;
+        document.getElementById('heightMode').textContent = `${(speedOfSound / (2 * height)).toFixed(1)} Hz`;
     }
 
     updateDetailedAnalysis() {
@@ -465,9 +475,40 @@ class MeasurelyDashboard {
     }
 
     showChannel(channel) {
-        console.log(`Showing channel: ${channel}`);
-        // For now, just show a message
-        this.showInfo(`${channel.charAt(0).toUpperCase() + channel.slice(1)} channel selected`);
+        const data = this.currentData;
+        if (!data) return;
+
+        const leftTrace = {
+            x: data.left_freq_hz || [],
+            y: data.left_mag_db  || [],
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Left',
+            line: { color: '#3b82f6', width: 2 }
+        };
+        const rightTrace = {
+            x: data.right_freq_hz || [],
+            y: data.right_mag_db  || [],
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Right',
+            line: { color: '#ef4444', width: 2 }
+        };
+
+        let traces = [];
+        if (channel === 'left')   traces = [leftTrace];
+        if (channel === 'right')  traces = [rightTrace];
+        if (channel === 'both')   traces = [leftTrace, rightTrace];
+
+        const layout = {
+            xaxis: { title: 'Frequency (Hz)', type: 'log', color: '#111', gridcolor: '#e5e7eb' },
+            yaxis: { title: 'Magnitude (dB)', color: '#111', gridcolor: '#e5e7eb' },
+            margin: { t: 20, r: 20, b: 60, l: 60 },
+            plot_bgcolor: '#fff', paper_bgcolor: '#fff',
+            font: { color: '#111' }, displayModeBar: false, staticPlot: true
+        };
+
+        Plotly.newPlot('frequencyChart', traces, layout, { responsive: true });
     }
 
     saveResults() {

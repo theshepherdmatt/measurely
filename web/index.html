@@ -12,15 +12,11 @@
 
   <!-- =====  SMALL INLINE STYLES  ===== -->
   <style>
-    /* visible chart theme */
     .plot-container { background: transparent !important; }
-    /* static chart – no zoom / pan / hover bar */
     .modebar { display: none !important; }
-    /* card colours */
-    .card-sky   { background-color: #f0f9ff; }   /* sky-50  */
-    .card-amber { background-color: #eef2ff; }   /* amber-100 */
-    
-    /* Progress bar styles */
+    .card-sky   { background-color: #f0f9ff; }
+    .card-amber { background-color: #fffbeb; }
+
     .progress-container {
       position: fixed;
       top: 0;
@@ -32,9 +28,7 @@
       opacity: 0;
       transition: opacity 0.3s;
     }
-    .progress-container.active {
-      opacity: 1;
-    }
+    .progress-container.active { opacity: 1; }
     .progress-bar {
       height: 100%;
       background: linear-gradient(90deg, #3b82f6, #1d4ed8);
@@ -51,16 +45,19 @@
     <div id="progressBar" class="progress-bar"></div>
   </div>
 
-  <!-- =====  SAME HEADER / MENU  ===== -->
+  <!-- =====  HEADER / MENU  ===== -->
   <button id="mobile-menu-btn" class="mobile-menu-button fixed top-4 right-4 z-50 p-2 rounded-lg bg-gray-900/80 text-white backdrop-blur-sm">
     <i class="fas fa-bars text-xl"></i>
   </button>
   <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
   <aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
-    <div class="mb-8">
-      <h1 class="text-2xl font-bold mb-2">Measurely</h1>
-      <p class="text-sm opacity-80">Room Acoustic Analysis</p>
+    <div class="mb-8 flex items-center space-x-3">
+      <i class="fas fa-microchip text-4xl opacity-90"></i>
+      <div>
+        <h1 class="text-2xl font-bold">Measurely</h1>
+        <p class="text-sm opacity-80">Room Acoustic Analysis</p>
+      </div>
     </div>
     <nav class="space-y-2">
       <a href="index.html" class="nav-item active"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
@@ -88,21 +85,46 @@
       <p class="text-gray-600">Comprehensive analysis of your listening environment</p>
     </div>
 
-    <!-- Overall Score Card -->
-    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 card-hover">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-xl font-semibold text-gray-800 mb-2">Overall Room Score</h3>
-          <p class="text-gray-600 mb-4">Based on comprehensive acoustic analysis</p>
-          <div class="text-5xl font-bold text-blue-600 mb-2" id="overallScore">--</div>
-          <div class="flex items-center">
-            <span id="overallStatusIndicator" class="status-indicator status-warning"></span>
-            <span id="overallStatusText" class="text-sm text-gray-600">Loading...</span>
+  <!-- Overall Score Card – split layout -->
+  <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 card-hover">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+
+      <!-- LEFT – score + sentence -->
+      <div class="md:col-span-2">
+        <h3 class="text-xl font-semibold text-gray-800 mb-2">Overall Room Score</h3>
+        <p class="text-gray-600 mb-4">Based on comprehensive acoustic analysis</p>
+        <div class="text-5xl font-bold text-blue-600 mb-2" id="overallScore">--</div>
+        <div class="flex items-center mb-3">
+          <span id="overallStatusIndicator" class="status-indicator status-warning"></span>
+          <span id="overallStatusText" class="text-sm text-gray-600 ml-2">Loading…</span>
+        </div>
+        <p id="overallSummary" class="text-sm text-gray-600">Loading summary…</p>
+      </div>
+
+      <!-- RIGHT – gauge + badges + button -->
+      <div class="text-center">
+        <!-- radial gauge -->
+        <div class="relative inline-block mb-4">
+          <canvas id="overallGauge" width="120" height="120"></canvas>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span id="gaugeText" class="text-2xl font-bold text-gray-800"></span>
           </div>
         </div>
-        <div class="text-right"><div class="gauge-container" id="overallGauge"></div></div>
+
+        <!-- insight badges -->
+        <div class="flex gap-2 justify-center mb-4">
+          <span id="insight1" class="px-3 py-1 rounded-full text-xs font-medium"></span>
+          <span id="insight2" class="px-3 py-1 rounded-full text-xs font-medium"></span>
+        </div>
+
+        <!-- quick-jump button -->
+        <button id="quickActionBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hidden">
+          View quick fixes →
+        </button>
       </div>
+
     </div>
+  </div>
 
     <!-- Quick Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -157,60 +179,6 @@
       <div id="frequencyChart" style="height: 400px;"></div>
     </div>
 
-    <!-- Room Layout Analysis (COLOURED CARD) -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-      <div class="rounded-2xl p-6 card-sky shadow-lg"> <!-- sky background -->
-        <h3 class="text-xl font-semibold mb-4">Room Layout Analysis</h3>
-        <div class="bg-white bg-opacity-60 rounded-lg p-4 mb-4">
-          <div class="grid grid-cols-2 gap-4 text-sm">
-            <div><span class="opacity-80">Room Dimensions:</span><div id="roomDimensions" class="font-semibold">Loading...</div></div>
-            <div><span class="opacity-80">Speaker Distance:</span><div class="font-semibold">20 cm from front wall</div></div>
-            <div><span class="opacity-80">Listener Position:</span><div class="font-semibold">3.0 m from speakers</div></div>
-            <div><span class="opacity-80">Speaker Spacing:</span><div class="font-semibold">2.0 m apart</div></div>
-          </div>
-        </div>
-        <div class="bg-white bg-opacity-60 rounded-lg p-4">
-          <h4 class="font-semibold mb-2">First Axial Modes</h4>
-          <div class="space-y-1 text-sm">
-            <div class="flex justify-between"><span>Length:</span><span id="lengthMode" class="font-semibold">-- Hz</span></div>
-            <div class="flex justify-between"><span>Width:</span><span id="widthMode" class="font-semibold">-- Hz</span></div>
-            <div class="flex justify-between"><span>Height:</span><span id="heightMode" class="font-semibold">-- Hz</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Improvement Recommendations (COLOURED CARD) -->
-      <div class="rounded-2xl p-6 card-amber shadow-lg"> <!-- amber background -->
-        <h3 class="text-xl font-semibold mb-4"><i class="fas fa-lightbulb mr-2"></i>Improvement Recommendations</h3>
-        <div class="space-y-4">
-          <div class="bg-white bg-opacity-60 rounded-lg p-4">
-            <div class="flex items-start">
-              <div class="bg-white bg-opacity-80 rounded-full p-2 mr-3 mt-1"><i class="fas fa-arrow-up text-sm"></i></div>
-              <div><h4 class="font-semibold mb-1">Speaker Positioning</h4><p class="text-sm opacity-90">Move speakers 10-20 cm closer to the front wall to extend bass response</p></div>
-            </div>
-          </div>
-          <div class="bg-white bg-opacity-60 rounded-lg p-4">
-            <div class="flex items-start">
-              <div class="bg-white bg-opacity-80 rounded-full p-2 mr-3 mt-1"><i class="fas fa-soft-soap text-sm"></i></div>
-              <div><h4 class="font-semibold mb-1">Add Absorption</h4><p class="text-sm opacity-90">Place soft materials at first side-wall reflection points</p></div>
-            </div>
-          </div>
-          <div class="bg-white bg-opacity-60 rounded-lg p-4">
-            <div class="flex items-start">
-              <div class="bg-white bg-opacity-80 rounded-full p-2 mr-3 mt-1"><i class="fas fa-subwoofer text-sm"></i></div>
-              <div><h4 class="font-semibold mb-1">Consider Subwoofer</h4><p class="text-sm opacity-90">Add a small sub to improve bass response below 200Hz</p></div>
-            </div>
-          </div>
-          <div class="bg-white bg-opacity-60 rounded-lg p-4">
-            <div class="flex items-start">
-              <div class="bg-white bg-opacity-80 rounded-full p-2 mr-3 mt-1"><i class="fas fa-chair text-sm"></i></div>
-              <div><h4 class="font-semibold mb-1">Seating Position</h4><p class="text-sm opacity-90">Try small seat moves (10-20 cm) to avoid bass dips</p></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Detailed Analysis -->
     <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
       <h3 class="text-xl font-semibold text-gray-800 mb-6">Detailed Frequency Analysis</h3>
@@ -245,8 +213,6 @@
 
   <!-- =====  JAVASCRIPT  ===== -->
   <script src="/js/dashboard.js"></script>
-  
-  <!-- =====  SAME SCRIPT BLOCK  ===== -->
   <script>
     const btn  = document.getElementById('mobile-menu-btn');
     const side = document.getElementById('sidebar');
@@ -260,7 +226,6 @@
     btn.addEventListener('click', toggleMenu);
     over.addEventListener('click', toggleMenu);
 
-    /* auto-close on link click (mobile) */
     document.querySelectorAll('.nav-item').forEach(link => {
       link.addEventListener('click', () => {
         if (window.innerWidth <= 768) {
