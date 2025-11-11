@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Measurely – headless sweep runner (SSH-friendly, atomic writes)
-
 - Supports left / right / both channel sweeps.
 - Records slightly BEFORE playback to avoid missing sweep onset.
 - Detects sweep start via cross-correlation; trims pre-roll.
@@ -29,7 +28,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# ---------------------- utils / helpers ----------------------
+# ------------------------------------------------------------------
+#  utilities
+# ------------------------------------------------------------------
 def session_dir() -> str:
     root = Path.home() / "Measurely" / "measurements"
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
@@ -63,7 +64,9 @@ def fail(outdir, e, where=""):
     write_log(outdir, f"FATAL{(' @'+where) if where else ''}: {e}")
     raise
 
-# ---------------------- atomic file saving ----------------------
+# ------------------------------------------------------------------
+#  atomic file I/O
+# ------------------------------------------------------------------
 def _atomic_write_bytes(data: bytes, dest: Path):
     dest.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=str(dest.parent), delete=False) as tf:
@@ -100,7 +103,9 @@ def write_wav_atomic(dest: Path, data, fs: int):
         try: os.unlink(tmp)
         except FileNotFoundError: pass
 
-# ---------------------- graceful stop ----------------------
+# ------------------------------------------------------------------
+#  graceful shutdown
+# ------------------------------------------------------------------
 def _graceful_stop(sig, _frame):
     try:
         sd.stop()
@@ -110,15 +115,17 @@ def _graceful_stop(sig, _frame):
 signal.signal(signal.SIGINT, _graceful_stop)
 signal.signal(signal.SIGTERM, _graceful_stop)
 
-# ---------------------- sweep / playback / DSP ----------------------
+# ------------------------------------------------------------------
+#  DSP core
+# ------------------------------------------------------------------
 def gen_log_sweep(fs=48000, dur=8.0, f0=20.0, f1=20000.0):
-    t = np.linspace(0, dur, int(fs * dur), endpoint=False, dtype=np.float64)
-    K = dur / np.log(f1 / f0)
+    t   = np.linspace(0, dur, int(fs * dur), endpoint=False, dtype=np.float64)
+    K   = dur / np.log(f1 / f0)
     phase = 2.0 * np.pi * f0 * K * (np.exp(t / K) - 1.0)
     sweep = np.sin(phase).astype(np.float32)
     sweep /= np.max(np.abs(sweep)) + 1e-12
     sweep *= 0.7
-    inv = (sweep[::-1] / np.exp(t / K)).astype(np.float32)
+    inv   = (sweep[::-1] / np.exp(t / K)).astype(np.float32)
     return sweep, inv
 
 def xcorr_peak_index(rec, ref):
@@ -128,8 +135,8 @@ def xcorr_peak_index(rec, ref):
 
 def deconvolve(y, inv):
     ir = fftconvolve(y, inv, mode="full")
-    p = int(np.argmax(np.abs(ir)))
-    s = max(p - 2048, 0)
+    p  = int(np.argmax(np.abs(ir)))
+    s  = max(p - 2048, 0)
     ir = ir[s : s + len(y)]
     return (ir / (np.max(np.abs(ir)) + 1e-12)).astype(np.float32)
 
@@ -143,12 +150,15 @@ def mag_response(ir, fs):
     A[~np.isfinite(A)] = 0.0
     mag = 20.0 * np.log10(np.maximum(A, 1e-12))
     freqs = np.fft.rfftfreq(n, 1.0 / float(fs))[1:]
-    mag = mag[1:]
+    mag   = mag[1:]
     return freqs, mag
 
+# ------------------------------------------------------------------
+#  playback helpers
+# ------------------------------------------------------------------
 def write_temp_wav(stereo, fs):
     td = tempfile.TemporaryDirectory()
-    p = os.path.join(td.name, "sweep.wav")
+    p  = os.path.join(td.name, "sweep.wav")
     sf.write(p, stereo, fs, subtype="PCM_16")
     return td, p
 
@@ -157,46 +167,47 @@ def play_via_aplay(stereo, fs, alsa_device=None):
     try:
         device = alsa_device if alsa_device else "plughw:0,0"
         cmd = ["aplay", "-q", "-D", device, path]
-        try:
-            subprocess.run(cmd, check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
-            stderr = e.stderr.decode("utf-8", errors="ignore") if e.stderr else ""
-            write_log(td.name, f"Warning: aplay failed (device={device}): {stderr}")
+        print(f"[SWEEP] running: {' '.join(cmd)}")
+        subprocess.run(cmd, check=True, capture_output=True)
+        time.sleep(1.0)          # <-- NEW: let ALSA finish
     finally:
         td.cleanup()
 
 def play_via_portaudio(stereo, fs, out_dev=None):
+    print(f"[SWEEP] playing on device {out_dev}  name={sd.query_devices(out_dev)['name']}")
+    # BLOCKING so we hear the whole sweep
     sd.play(stereo.astype(np.float32, copy=False), fs, device=out_dev, blocking=True)
 
-# ---------------------- save mapping helpers ----------------------
+# ------------------------------------------------------------------
+#  file-target helpers
+# ------------------------------------------------------------------
 def _folder_targets(root: Path, channel: str):
     base = root / channel
     return {
-        "sweep":                base / "sweep.wav",
-        "mic_recording_raw":    base / "mic_recording_raw.wav",
-        "mic_recording_used":   base / "mic_recording_used.wav",
-        "impulse":              base / "impulse.wav",
-        "response_csv":         base / "response.csv",
-        "impulse_png":          base / "impulse_response.png",
-        "response_png":         base / "response.png",
-        "meta_json":            base / "meta.json",
+        "sweep": base / "sweep.wav",
+        "mic_recording_raw": base / "mic_recording_raw.wav",
+        "mic_recording_used": base / "mic_recording_used.wav",
+        "impulse": base / "impulse.wav",
+        "response_csv": base / "response.csv",
+        "impulse_png": base / "impulse_response.png",
+        "response_png": base / "response.png",
+        "meta_json": base / "meta.json",
     }
 
 def _flat_targets(root: Path, channel: str):
     pfx = f"{channel}-"
     return {
-        "sweep":                root / f"{pfx}sweep.wav",
-        "mic_recording_raw":    root / f"{pfx}mic_recording_raw.wav",
-        "mic_recording_used":   root / f"{pfx}mic_recording_used.wav",
-        "impulse":              root / f"{pfx}impulse.wav",
-        "response_csv":         root / f"{pfx}response.csv",
-        "impulse_png":          root / f"{pfx}impulse_response.png",
-        "response_png":         root / f"{pfx}response.png",
-        "meta_json":            root / f"{pfx}meta.json",
+        "sweep": f"{pfx}sweep.wav",
+        "mic_recording_raw": f"{pfx}mic_recording_raw.wav",
+        "mic_recording_used": f"{pfx}mic_recording_used.wav",
+        "impulse": f"{pfx}impulse.wav",
+        "response_csv": f"{pfx}response.csv",
+        "impulse_png": f"{pfx}impulse_response.png",
+        "response_png": f"{pfx}response.png",
+        "meta_json": f"{pfx}meta.json",
     }
 
 def _targets_for_layout(root: Path, channel: str, layout: str):
-    # returns list(s) of dicts to write to (one or two sets)
     if layout == "folders":
         return [_folder_targets(root, channel)]
     if layout == "flat":
@@ -205,34 +216,41 @@ def _targets_for_layout(root: Path, channel: str, layout: str):
         return [_folder_targets(root, channel), _flat_targets(root, channel)]
     raise ValueError(f"Unknown layout: {layout}")
 
-# ---------------------- single sweep run ----------------------
+# ------------------------------------------------------------------
+#  single sweep run
+# ------------------------------------------------------------------
 def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
     log_base = Path(session_root) / channel_label
     log_base.mkdir(parents=True, exist_ok=True)
-    log_print(log_base, f"Running sweep: {channel_label}", verbose=args.verbose)
+    print(f"[SWEEP] entered run_sweep, channel={channel_label}, playback={args.playback}, out_dev={args.out_dev}")
 
     try:
         sd.default.samplerate = fs
         total_rec_s = args.prepad + args.dur + args.postpad
         total_frames = int(fs * total_rec_s)
 
+        # --- 1. start recording (pre-pad) ------------------------------------
         rec = sd.rec(total_frames, channels=1, dtype="float32", device=args.in_dev, blocking=False)
 
+        print(f"[SWEEP] about to choose playback, args.playback={args.playback}, aplay avail={shutil.which('aplay') is not None}")
+
+        # --- 2. playback ------------------------------------------------------
         if args.playback == "aplay" or (args.playback == "auto" and shutil.which("aplay")):
             play_via_aplay(stereo_sweep, fs, args.alsa_device)
         else:
             play_via_portaudio(stereo_sweep, fs, args.out_dev)
 
-        sd.wait()
-        rec_raw = np.nan_to_num(np.asarray(rec, dtype=np.float32).flatten())
+        sd.wait()   # wait for record to finish
 
+        # --- 3. process recording -------------------------------------------
+        rec_raw = np.nan_to_num(np.asarray(rec, dtype=np.float32).flatten())
         rms = float(np.sqrt(np.mean(rec_raw**2))) if rec_raw.size else 0.0
         if rms < 1e-6:
             raise RuntimeError("Recording silent (RMS < 1e-6).")
 
         start_idx = xcorr_peak_index(rec_raw, sweep)
-        end_idx = min(start_idx + len(sweep) + int(fs * args.postpad), len(rec_raw))
-        rec_used = rec_raw[start_idx:end_idx].copy()
+        end_idx   = min(start_idx + len(sweep) + int(fs * args.postpad), len(rec_raw))
+        rec_used  = rec_raw[start_idx:end_idx].copy()
 
         ir = deconvolve(rec_used, inv)
         freqs, mag = mag_response(ir, fs)
@@ -254,7 +272,9 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
     except Exception as e:
         fail(log_base, e, where=f"sweep_{channel_label}")
 
-# ---------------------- plot + save bundle ----------------------
+# ------------------------------------------------------------------
+#  plot + save bundle
+# ------------------------------------------------------------------
 def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag, meta, layout):
     root = Path(session_root)
     target_sets = _targets_for_layout(root, channel, layout)
@@ -264,7 +284,6 @@ def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag
     lines += [f"{float(fr):.6f},{float(db):.2f}\n" for fr, db in zip(freqs, mag)]
     csv_text = "".join(lines)
 
-    # plot figures once (we'll save to multiple destinations if needed)
     # IR plot
     try:
         t = np.arange(len(ir)) / float(fs)
@@ -274,7 +293,7 @@ def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag
         ax.set(xlabel="Time (s)", ylabel="Amplitude", title=f"Impulse Response ({channel})")
         ax.grid(True, ls=":")
         fig_ir.tight_layout()
-    except Exception as e:
+    except Exception:
         fig_ir = None
 
     # FR plot
@@ -285,7 +304,7 @@ def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag
         ax.set(xlabel="Frequency (Hz)", ylabel="Magnitude (dB)", title=f"Frequency Response ({channel})")
         ax.grid(True, which="both", ls=":")
         fig_fr.tight_layout()
-    except Exception as e:
+    except Exception:
         fig_fr = None
 
     for targets in target_sets:
@@ -307,14 +326,16 @@ def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag
         # JSON
         write_json_atomic(meta, targets["meta_json"])
 
-    # close figures explicitly
+    # close figures
     try:
         if fig_ir: plt.close(fig_ir)
         if fig_fr: plt.close(fig_fr)
     except Exception:
         pass
 
-# ---------------------- CLI entry ----------------------
+# ------------------------------------------------------------------
+#  CLI entry
+# ------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser(description="Measurely: left/right/both sweep runner")
     ap.add_argument("--fs", type=int, default=48000)
@@ -339,6 +360,7 @@ def main():
 
     fs = 48000  # force for consistency
     sweep, inv = gen_log_sweep(fs, args.dur, args.f0, args.f1)
+    print(f"[SWEEP] stimulus shape={sweep.shape}  max={sweep.max():.3f}  rms={np.sqrt(np.mean(sweep**2)):.3f}")
     outdir = session_dir()
     Path(outdir).mkdir(parents=True, exist_ok=True)
 

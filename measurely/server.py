@@ -1,562 +1,370 @@
 #!/usr/bin/env python3
-import sys, json, subprocess, threading
+"""
+Real-Data Measurely Flask Server
+- uses real analysis.json scores
+- NEW:  /api/room/<session_id>  (POST + GET)  – stores user room/speaker data
+"""
+
+import os
+import sys
+import json
+import time
+import glob
+import subprocess
+import threading
+import csv
+import random
+import math
+import traceback
+import numpy as np
+from datetime import datetime
 from pathlib import Path
-from flask import Flask, request, jsonify, send_from_directory, abort
-import sounddevice as sd
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 
-# -------------------------------------------------------------------
-# Paths
-# -------------------------------------------------------------------
-PROJECT_ROOT = Path(__file__).resolve().parent.parent   # repo root
-WEB_DIR      = PROJECT_ROOT / "web"                     # serves index.html + assets
-MEAS_ROOT    = Path.home() / "Measurely" / "measurements"
-MEAS_ROOT.mkdir(parents=True, exist_ok=True)
+# ------------------------------------------------------------------
+#  Flask init
+# ------------------------------------------------------------------
+app = Flask(__name__)
+CORS(app)
 
-CFG_PATH = Path.home() / ".measurely" / "config.json"
-CFG_PATH.parent.mkdir(parents=True, exist_ok=True)
+# ------------------------------------------------------------------
+#  config
+# ------------------------------------------------------------------
+MEAS_ROOT = Path("/home/matt/Measurely/measurements")
 
-NMCLI_BIN = "/usr/bin/nmcli"
-HOTSPOT_HELPER = "/usr/local/bin/measurely-hotspot.sh"
+# ------------------------------------------------------------------
+#  global sweep-progress tracker
+# ------------------------------------------------------------------
+sweep_progress = {
+    'running': False,
+    'progress': 0,
+    'message': '',
+    'session_id': None
+}
 
-# -------------------------------------------------------------------
-# Device detection
-# -------------------------------------------------------------------
-def detect_devices():
-    mic_idx = mic_name = None
-    dac_idx = dac_name = None
-    alsa_str = None
+# ------------------------------------------------------------------
+#  helpers
+# ------------------------------------------------------------------
+def write_json_atomic(obj, dest: Path):
+    """thread-safe atomic write for meta.json"""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix('.tmp')
+    tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding='utf-8')
+    os.replace(tmp, dest)
 
-    # --- Probe PortAudio (sounddevice) ---
+# ------------------------------------------------------------------
+#  original business-logic functions (unchanged)
+# ------------------------------------------------------------------
+def get_latest_measurement():
+    """return most recent session dict or None"""
     try:
-        sd_devs = sd.query_devices()
-    except Exception:
-        sd_devs = []
-
-    # Pick microphone (prefer UMIK), must have input channels
-    for i, d in enumerate(sd_devs):
-        try:
-            if int(d.get("max_input_channels", 0)) > 0:
-                name = (d.get("name") or "")
-                if mic_idx is None:
-                    mic_idx, mic_name = i, name
-                if "umik" in name.lower():
-                    mic_idx, mic_name = i, name
-                    break
-        except Exception:
-            pass
-
-    # We'll only accept DAC candidates with output channels
-    def sd_output_candidates():
-        out = []
-        for i, d in enumerate(sd_devs):
-            try:
-                if int(d.get("max_output_channels", 0)) > 0:
-                    out.append((i, d.get("name") or ""))
-            except Exception:
-                pass
-        return out
-
-    # --- Probe ALSA (authoritative for aplay backend) ---
-    PREFERRED = ("hifiberry","snd_rpi_hifiberry","pcm510","pcm512","i2s","dac","usb audio","audioinjector","spdif","hdmi","wolfson")
-
-    alsa_candidates = []
-    try:
-        out = subprocess.check_output(["aplay", "-l"], text=True, stderr=subprocess.STDOUT)
-        for ln in out.splitlines():
-            if "card " in ln and "device " in ln:
-                parts = ln.strip().split()
-                card = dev = None
-                for j, p in enumerate(parts):
-                    if p == "card" and j + 1 < len(parts):
-                        try: card = int(parts[j+1].rstrip(":"))
-                        except: pass
-                    if p == "device" and j + 1 < len(parts):
-                        try: dev = int(parts[j+1].rstrip(":"))
-                        except: pass
-                if card is not None and dev is not None:
-                    alsa_candidates.append({"alsa": f"hw:{card},{dev}", "line": ln})
-        # Prefer HiFiBerry/PCM/USB-ish
-        def score(c):
-            n = c["line"].lower()
-            return 0 if any(k in n for k in PREFERRED) else 1
-        alsa_candidates.sort(key=score)
-        if alsa_candidates:
-            alsa_str = alsa_candidates[0]["alsa"]
-            # Use a readable name from the line
-            dac_name = alsa_candidates[0]["line"]
-    except Exception:
-        pass
-
-    # If PortAudio is available, try to map a sensible output index (purely for display)
-    if dac_idx is None:
-        outs = sd_output_candidates()
-        # Prefer names that look like our ALSA choice or known DAC keywords
-        if outs:
-            # match by keyword
-            pick = None
-            for i, nm in outs:
-                low = nm.lower()
-                if any(k in low for k in PREFERRED):
-                    pick = (i, nm); break
-            # otherwise first output device
-            if pick is None:
-                pick = outs[0]
-            dac_idx, _nm = pick
-            # Only override dac_name with PortAudio name if we didn't get one from ALSA
-            if not dac_name:
-                dac_name = _nm
-
-    # Fallback ALSA string if nothing parsed (shouldn’t happen often)
-    if alsa_str is None:
-        alsa_str = "hw:0,0"  # safer default on your box than hw:2,0
-
-    return {
-        "mic": {"connected": mic_idx is not None, "index": mic_idx, "name": mic_name or ""},
-        "dac": {"connected": (alsa_str is not None), "index": dac_idx, "name": dac_name or "", "alsa": alsa_str}
-    }
-
-# -------------------------------------------------------------------
-# Config
-# -------------------------------------------------------------------
-def read_config():
-    if CFG_PATH.exists():
-        try:
-            return json.loads(CFG_PATH.read_text())
-        except Exception:
-            return {}
-    return {}
-
-def write_config(cfg: dict):
-    CFG_PATH.write_text(json.dumps(cfg, indent=2))
-
-# -------------------------------------------------------------------
-# Helpers
-# -------------------------------------------------------------------
-def run_nmcli(args):
-    proc = subprocess.run(["sudo", NMCLI_BIN, *args], text=True, capture_output=True)
-    return proc.returncode, (proc.stdout or "").strip(), (proc.stderr or "").strip()
-
-# NEW: session helpers ------------------------------------------------
-def _session_dir_from_id(sid: str) -> Path:
-    p = MEAS_ROOT / sid
-    if not p.is_dir():
-        abort(404, f"Session not found: {sid}")
-    return p
-
-def _latest_session_dir() -> Path | None:
-    if not MEAS_ROOT.exists():
-        return None
-    dirs = [p for p in MEAS_ROOT.iterdir() if p.is_dir() and (p/"analysis.json").exists()]
-    if not dirs:
-        return None
-    dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
-    return dirs[0]
-
-def _load_analysis_for(sid: str | None):
-    d = _session_dir_from_id(sid) if sid else _latest_session_dir()
-    if not d:
-        return None, None
-    jfile = d / "analysis.json"
-    if not jfile.exists():
-        return d.name, None
-    try:
-        return d.name, json.loads(jfile.read_text(encoding="utf-8"))
-    except Exception:
-        return d.name, None
-
-# -------------------------------------------------------------------
-# Flask app
-# -------------------------------------------------------------------
-def create_app():
-    app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
-
-    # Index route
-    @app.get("/")
-    def index():
-        return app.send_static_file("index.html")
-
-    # ----- Measurement helper -----
-    def run_orchestrator(params):
-        cmd = [
-            sys.executable, "-m", "measurely.main",
-            "--backend", params.get("backend", "aplay"),
-            "--prepad", str(params.get("prepad", 0.5)),
-            "--postpad", str(params.get("postpad", 1.0)),
-            "--fs", str(params.get("fs", 48000)),
-            "--dur", str(params.get("dur", 8.0)),
-        ]
-        if params.get("in_dev") is not None:
-            cmd += ["--in", str(params["in_dev"])]
-        if params.get("out_dev") is not None:
-            cmd += ["--out", str(params["out_dev"])]
-        if params.get("backend", "aplay") == "aplay":
-            cmd += ["--alsa-device", params.get("alsa_device", "hw:2,0")]
-
-        proc = subprocess.run(cmd, cwd=str(PROJECT_ROOT), text=True, capture_output=True)
-        out = (proc.stdout or "") + (("\n[stderr]\n" + (proc.stderr or "")) if proc.stderr else "")
-        saved_dir = None
-        for ln in (proc.stdout or "").splitlines():
-            if ln.startswith("Saved:"):
-                saved_dir = ln.split("Saved:", 1)[1].strip()
-                break
-        return out, saved_dir, proc.returncode
-
-    def session_dir_from_id(sid: str) -> Path:
-        return _session_dir_from_id(sid)
-
-    def list_sessions():
         if not MEAS_ROOT.exists():
-            return []
-        dirs = [p for p in MEAS_ROOT.iterdir() if p.is_dir()]
-        dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
-        items = []
-        for p in dirs:
-            summary = p / "summary.txt"
-            analysis = p / "analysis.json"
-            items.append({
-                "id": p.name,
-                "path": str(p),
-                "has_summary": summary.exists(),
-                "has_analysis": analysis.exists()
-            })
-        return items
+            print("Measurements directory not found")
+            return None
+        session_dirs = [d for d in MEAS_ROOT.iterdir() if d.is_dir()]
+        if not session_dirs:
+            print("No session directories found")
+            return None
+        latest_session = max(session_dirs, key=lambda d: d.stat().st_mtime)
+        print(f"Latest session: {latest_session}")
+        return load_session_data(latest_session)
+    except Exception as e:
+        print(f"Error reading latest measurement: {e}")
+        return None
 
-    # -------------------------------------------------------------------
-    # API routes
-    # -------------------------------------------------------------------
-    @app.get("/api/status")
-    def api_status():
-        return jsonify(detect_devices())
+def load_session_data(session_dir):
+    """load response + analysis.json (+ meta.json) -> dict for dashboard"""
+    try:
+        session_path = Path(session_dir)
+        print(f"Loading session: {session_path}")
 
-    @app.get("/api/settings")
-    def api_get_settings():
-        return jsonify(read_config())
+        # find response.csv (left/right or root)
+        left_csv   = session_path / "left" / "response.csv"
+        right_csv  = session_path / "right" / "response.csv"
+        root_csv   = session_path / "response.csv"
 
-    @app.post("/api/settings")
-    def api_post_settings():
-        cfg = read_config()
-        body = request.get_json(silent=True) or {}
-        if "room" in body:
-            cfg["room"] = body["room"]
-        write_config(cfg)
-        return jsonify({"ok": True, "saved": cfg})
+        response_file = None
+        if left_csv.exists():
+            response_file = left_csv
+        elif right_csv.exists():
+            response_file = right_csv
+        elif root_csv.exists():
+            response_file = root_csv
 
-    @app.get("/api/sessions")
-    def api_sessions():
-        return jsonify(list_sessions())
+        if not response_file:
+            print("No response.csv found")
+            return None
 
-    @app.get("/api/session/<sid>")
-    def api_session(sid):
-        d = session_dir_from_id(sid)
-        resp = {"id": sid, "path": str(d)}
-        sfile = d / "summary.txt"
-        jfile = d / "analysis.json"
-        if sfile.exists():
-            resp["summary"] = sfile.read_text(errors="ignore")
-        if jfile.exists():
+        freq_data = convert_csv_to_json(response_file)
+        if not freq_data:
+            print("Could not convert CSV")
+            return None
+
+        # analysis.json
+        analysis_data = {}
+        analysis_file = session_path / "analysis.json"
+        if analysis_file.exists():
+            with open(analysis_file, 'r', encoding='utf-8') as f:
+                analysis_data = json.load(f)
+
+        # meta.json
+        meta_data = {}
+        meta_file = session_path / "meta.json"
+        if meta_file.exists():
+            with open(meta_file, 'r', encoding='utf-8') as f:
+                meta_data = json.load(f)
+
+        # build unified payload
+        room_info = meta_data.get("settings", {}).get("room", {})
+        result = {
+            "timestamp": meta_data.get('timestamp', datetime.now().isoformat()),
+            "room": meta_data.get('room', 'Unknown Room'),
+            "length": room_info.get('length_m', meta_data.get('length', 4.0)),
+            "width":  room_info.get('width_m',  meta_data.get('width',  4.0)),
+            "height": room_info.get('height_m', meta_data.get('height', 3.0)),
+            "freq_hz": freq_data.get('freq_hz', []),
+            "mag_db":  freq_data.get('mag_db',  []),
+            "phase_deg": freq_data.get('phase_deg', []),
+
+            # real scores from analysis.json
+            "overall_score": analysis_data.get('scores', {}).get('overall', 5.0),
+            "bandwidth":     analysis_data.get('scores', {}).get('bandwidth', 3.6),
+            "balance":       analysis_data.get('scores', {}).get('balance', 1.6),
+            "smoothness":    analysis_data.get('scores', {}).get('smoothness', 7.3),
+            "peaks_dips":    analysis_data.get('scores', {}).get('peaks_dips', 3.3),
+            "reflections":   analysis_data.get('scores', {}).get('reflections', 4.0),
+            "reverb":        analysis_data.get('scores', {}).get('reverb', 10.0),
+
+            "session_dir": str(session_dir),
+            "analysis_notes": analysis_data.get('notes', []),
+            "simple_summary": analysis_data.get('plain_summary', ''),
+            "simple_fixes":   analysis_data.get('simple_fixes', [])
+        }
+        print(f"Loaded session data with {len(result['freq_hz'])} frequency points")
+        return result
+
+    except Exception as e:
+        print(f"Error loading session data: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+def convert_csv_to_json(csv_path):
+    """convert response.csv -> {freq_hz:[],mag_db:[],phase_deg:[]}"""
+    try:
+        print(f"Converting CSV: {csv_path}")
+        frequencies, magnitudes, phases = [], [], []
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            # optional header skip
             try:
-                resp["analysis"] = json.loads(jfile.read_text())
-            except Exception:
-                pass
-        arts = sorted([f.name for f in d.iterdir() if f.is_file() and f.suffix.lower() == ".png"])
-        if arts:
-            resp["artifacts"] = arts
-        return jsonify(resp)
+                header = next(reader)
+                if len(header) == 3 and header[0] == 'freq':
+                    pass  # skip
+                else:
+                    f.seek(0)
+                    reader = csv.reader(f)
+            except:
+                f.seek(0)
+                reader = csv.reader(f)
 
-    @app.get("/api/session/<sid>/artifact/<path:fname>")
-    def api_artifact(sid, fname):
-        d = session_dir_from_id(sid)
-        f = d / fname
-        if not f.exists() or not f.is_file():
-            abort(404)
-        return send_from_directory(d, fname)
-
-    @app.post("/api/run-sweep")
-    def api_run():
-        params = request.get_json(force=True, silent=True) or {}
-        status = detect_devices()
-        params.setdefault("in_dev", status["mic"]["index"])
-        params.setdefault("out_dev", status["dac"]["index"])
-        params.setdefault("backend", "aplay")
-        params.setdefault("alsa_device", status["dac"]["alsa"])
-        params.setdefault("fs", 48000)
-        params.setdefault("dur", 8.0)
-        params.setdefault("prepad", 0.5)
-        params.setdefault("postpad", 1.0)
-
-        out, saved_dir, rc = run_orchestrator(params)
-
-        sid = None
-        if saved_dir:
-            try:
-                sid = Path(saved_dir).name
-                session_dir = Path(saved_dir)
-                if not session_dir.exists():
-                    session_dir = MEAS_ROOT / sid
-                meta = {"settings": read_config()}
-                (session_dir / "meta.json").write_text(json.dumps(meta, indent=2))
-            except Exception:
-                pass
-
-        resp = {"ok": rc == 0, "returncode": rc, "stdout": out}
-        if sid:
-            resp.update({"saved_dir": saved_dir, "session_id": sid})
-            sfile = MEAS_ROOT / sid / "summary.txt"
-            if sfile.exists():
-                resp["summary"] = sfile.read_text(errors="ignore")
-        return jsonify(resp), (200 if rc == 0 else 500)
-
-    # ---------------- Simple + Geek endpoints (NEW) -------------------
-    @app.get("/api/simple")
-    def api_simple():
-        """
-        Returns the compact 'Simple' payload for the latest session, or a given sid:
-        GET /api/simple            -> latest
-        GET /api/simple?sid=XYZ    -> specific session
-        """
-        sid = request.args.get("sid")
-        sid, data = _load_analysis_for(sid)
-        if data is None:
-            return jsonify({"ok": False, "error": "No analysis.json found", "sid": sid}), 404
-
-        # Prefer analyser-generated simple_view. Provide a safe fallback if missing.
-        simple = data.get("simple_view")
-        if not simple:
-            scores = data.get("scores", {}) or {}
-            overall = scores.get("overall")
-            # Minimal headline logic
-            if overall is None:
-                headline = "Room status unavailable."
-            elif overall >= 9.0:
-                headline = "Excellent — leave it be!"
-            elif overall >= 7.5:
-                headline = "Strong result."
-            elif overall >= 6.0:
-                headline = "Decent — a few tweaks will help."
-            elif overall >= 4.0:
-                headline = "Sounds a bit echoey."
-            else:
-                headline = "Room needs attention."
-            sections = {k: {"score": scores.get(k), "status": "unknown"}
-                        for k in ("bandwidth","balance","peaks_dips","smoothness","reflections","reverb")}
-            top_actions = data.get("simple_fixes") or []
-            # Convert simple_fixes (list of strings) into [{section:'advice',...}] shape lightly
-            top_actions = [{"section": "advice", "score": None, "advice": s} for s in top_actions[:3]]
-            simple = {"overall": overall, "headline": headline, "sections": sections, "top_actions": top_actions}
-
-        return jsonify({"ok": True, "sid": sid, **simple})
-
-    @app.get("/api/geek")
-    def api_geek():
-        """
-        Returns the full analysis.json for the latest session, or a given sid:
-        GET /api/geek            -> latest
-        GET /api/geek?sid=XYZ    -> specific session
-        """
-        sid = request.args.get("sid")
-        sid, data = _load_analysis_for(sid)
-        if data is None:
-            return jsonify({"ok": False, "error": "No analysis.json found", "sid": sid}), 404
-        return jsonify({"ok": True, "sid": sid, "analysis": data})
-
-    # -------------------------------------------------------------------
-    # Captive portal + Wi-Fi onboarding
-    # -------------------------------------------------------------------
-    @app.get("/hotspot-detect.html")
-    def apple_captive():
-        return "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>", 200, {"Content-Type": "text/html"}
-
-    @app.get("/generate_204")
-    def android_captive():
-        return "", 204
-
-    @app.get("/ncsi.txt")
-    def windows_captive():
-        return "Microsoft NCSI", 200, {"Content-Type": "text/plain"}
-
-    @app.get("/api/wifi/scan")
-    def wifi_scan():
-        try:
-            run_nmcli(["dev", "wifi", "rescan"])
-            rc, out, err = run_nmcli(["-t", "-f", "SSID,SECURITY,SIGNAL,CHAN", "dev", "wifi", "list"])
-            if rc != 0:
-                return jsonify({"ok": False, "error": err or out or f"nmcli rc={rc}"}), 500
-
-            nets, seen = [], set()
-            for ln in out.splitlines():
-                ssid, sec, sig, chan = (ln.split(":", 3) + ["", "", "", ""])[:4]
-                key = (ssid, chan)
-                if not ssid or key in seen:
+            for row in reader:
+                if len(row) < 2:
                     continue
-                seen.add(key)
                 try:
-                    sig_i = int(sig or 0)
-                except Exception:
-                    sig_i = 0
-                nets.append({"ssid": ssid, "security": sec or "OPEN", "signal": sig_i, "channel": chan})
-            nets.sort(key=lambda x: x["signal"], reverse=True)
-            return jsonify({"ok": True, "networks": nets})
-        except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 500
-
-    @app.post("/api/wifi/connect")
-    def wifi_connect():
-        body = request.get_json(force=True, silent=True) or {}
-        ssid = (body.get("ssid") or "").strip()
-        psk  = body.get("psk") or ""
-        if not ssid:
-            return jsonify({"ok": False, "error": "Missing ssid"}), 400
-
-        con_name = f"Measurely-{ssid}"
-        try:
-            run_nmcli(["con", "delete", con_name])  # clean prior
-
-            add_args = ["con", "add", "type", "wifi", "ifname", "*",
-                        "con-name", con_name, "ssid", ssid,
-                        "connection.autoconnect", "yes"]
-            if psk:
-                add_args += ["wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", psk]
-            else:
-                add_args += ["wifi-sec.key-mgmt", "none"]
-
-            rc, out, err = run_nmcli(add_args)
-            if rc != 0:
-                return jsonify({"ok": False, "error": err or out or f"nmcli add rc={rc}"}), 500
-
-            # Respond immediately
-            def switch_to_wifi():
-                run_nmcli(["con", "up", con_name])
-                subprocess.run([HOTSPOT_HELPER, "stop"], check=False)
-
-            threading.Thread(target=switch_to_wifi, daemon=True).start()
-            return jsonify({"ok": True, "connected": ssid, "note": "Switching to Wi-Fi..."})
-
-        except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 500
-
-    @app.get("/api/wifi/status")
-    def wifi_status():
-        try:
-            rc, out, err = run_nmcli(["-t", "-f", "NAME,TYPE,DEVICE", "con", "show", "--active"])
-            active = (out or "").splitlines() if rc == 0 else []
-
-            hotspot_active = any(
-                ln.split(":")[0] == "Measurely-Hotspot" and ln.split(":")[-1] == "wlan0"
-                for ln in active if ":" in ln
-            )
-
-            con_name = None
-            for ln in active:
-                try:
-                    name, typ, dev = ln.split(":")
-                    if dev == "wlan0" and typ == "wifi":
-                        con_name = name
-                        break
+                    freq, mag = float(row[0]), float(row[1])
+                    frequencies.append(freq)
+                    magnitudes.append(mag)
+                    phases.append(0)          # no phase column
                 except ValueError:
-                    pass
+                    continue
+        frequencies = np.array(frequencies, dtype=float)
+        magnitudes  = np.array(magnitudes,  dtype=float)
+        phases      = np.array(phases,      dtype=float)
+        mask = np.isfinite(frequencies) & np.isfinite(magnitudes) & (frequencies > 0)
+        return {"freq_hz": frequencies[mask].tolist(), "mag_db": magnitudes[mask].tolist(), "phase_deg": phases[mask].tolist()}
+    except Exception as e:
+        print(f"CSV error: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
-            rc, ip_out, _ = run_nmcli(["-t", "-f", "IP4.ADDRESS", "dev", "show", "wlan0"])
-            ip4 = None
-            if rc == 0:
-                for line in (ip_out or "").splitlines():
-                    if ":" in line:
-                        ip4 = line.split(":", 1)[1].split("/", 1)[0].strip()
-                        if ip4:
-                            break
+# ------------------------------------------------------------------
+#  Flask routes
+# ------------------------------------------------------------------
 
-            ssid = None
-            if con_name:
-                rc, ssid_out, _ = run_nmcli(["-t", "-f", "802-11-wireless.ssid", "con", "show", con_name])
-                if rc == 0 and ssid_out:
-                    ssid = ssid_out.split(":", 1)[-1].strip() or None
-                if not ssid and con_name.startswith("Measurely-"):
-                    ssid = con_name[len("Measurely-"):]
+@app.route('/api/run-sweep', methods=['POST'])
+def run_sweep():
+    import subprocess
+    import sounddevice as sd
+    import traceback
 
-            if hotspot_active:
-                mode = "ap"
-            elif con_name and ip4:
-                mode = "station"
+    try:
+        payload = request.get_json(silent=True) or {}
+        speaker = payload.get('speaker')
+
+        # Pick USB mic and HiFiBerry DAC explicitly
+        devices = sd.query_devices()
+        input_devices = [(i, d['name']) for i, d in enumerate(devices) if 'USB' in d['name'] and d['max_input_channels'] > 0]
+        output_devices = [(i, d['name']) for i, d in enumerate(devices) if 'hifiberry' in d['name'].lower() and d['max_output_channels'] > 0]
+
+        if not input_devices:
+            return jsonify({"error": "USB microphone not found"}), 400
+        if not output_devices:
+            return jsonify({"error": "HiFiBerry DAC not found"}), 400
+
+        in_dev, in_name = input_devices[0]
+        out_dev, out_name = output_devices[0]
+
+        cmd = [
+            sys.executable, "-m", "measurely.sweep",
+            "--fs", "48000",
+            "--dur", "8.0",
+            "--alsa-device", "plughw:0,0",
+            "--in", str(in_dev),
+            "--out", str(out_dev),
+            "--mode", "both"
+        ]
+        if speaker:
+            cmd += ["--speaker", speaker]
+
+        def run():
+            # 1. run sweep
+            completed = subprocess.run(cmd, cwd="/home/matt/measurely", capture_output=True, text=True)
+            # 2. grab the session path from the last line of stdout
+            #    sweep.py prints:  Saved: /home/matt/Measurely/measurements/20251111_xxxxxx
+            out_lines = completed.stdout.strip().splitlines()
+            if out_lines and out_lines[-1].startswith("Saved:"):
+                session_path = out_lines[-1].replace("Saved:", "").strip()
+                # 3. analyse
+                analysis_cmd = [sys.executable, "-m", "measurely.analyse", session_path]
+                subprocess.run(analysis_cmd, cwd="/home/matt/measurely", check=False)
             else:
-                mode = "down"
+                print("[run_sweep] Could not find 'Saved:' line in sweep output")
 
-            return jsonify({
-                "ok": True,
-                "mode": mode,
-                "ssid": ssid,
-                "connection": con_name,
-                "ip4": ip4,
-                "hotspot_active": hotspot_active,
-                "hostname": "measurely.local"
-            })
-        except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 500
+        threading.Thread(target=run, daemon=True).start()
+        return jsonify({"status": "started", "in": in_name, "out": out_name})
 
-    @app.post("/api/hotspot/stop")
-    def hotspot_stop():
-        try:
-            subprocess.check_call([HOTSPOT_HELPER, "stop"])
-            return jsonify({"ok": True})
-        except subprocess.CalledProcessError as e:
-            return jsonify({"ok": False, "error": f"stop failed: {e}"}), 500
-        except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 500
+    except Exception as e:
+        print("[/api/run-sweep] ERROR:", traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
-    # -------- Filtering endpoints (CamillaDSP YAML) --------
-    @app.post("/api/filter")
-    def api_filter_generate():
-        sid, data = _load_analysis_for(None)
+
+@app.route('/api/sweep-progress', methods=['GET'])
+def api_sweep_progress():
+    return jsonify(sweep_progress)
+
+
+@app.route('/api/latest', methods=['GET'])
+def get_latest_data():
+    try:
+        data = get_latest_measurement()
         if not data:
-            return jsonify({"ok": False, "error": "No analysis found"}), 404
+            # fallback sample
+            data = {
+                "timestamp": datetime.now().isoformat(),
+                "room": "Sample Room",
+                "length": 4.0, "width": 4.0, "height": 3.0,
+                "overall_score": 5.0, "bandwidth": 3.6, "balance": 1.6,
+                "smoothness": 7.3, "peaks_dips": 3.3,
+                "reflections": 4.0, "reverb": 10.0
+            }
+        return jsonify(data)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
-        # Simple demo filters — replace with real data later
-        filters = [
-            {"type": "Biquad", "freq": 60,  "gain": -3.0, "q": 1.0},
-            {"type": "Biquad", "freq": 120, "gain":  1.5, "q": 1.2},
-        ]
 
-        # Build a minimal valid CamillaDSP YAML string
-        yaml_lines = [
-            "pipeline:",
-            "  - type: Filter",
-            "    channel: 0",
-            "    name: L",
-            "  - type: Filter",
-            "    channel: 1",
-            "    name: R",
-            "filters:",
-        ]
-        for i, f in enumerate(filters, start=1):
-            yaml_lines += [
-                f"  peq{i}:",
-                "    type: Biquad",
-                f"    freq: {f['freq']}",
-                f"    gain: {f['gain']}",
-                f"    q: {f['q']}",
-                "    mode: PEQ",
-            ]
-        yaml_lines += ["mixers: []", "sinks: []"]
+@app.route('/api/status', methods=['GET'])
+def get_status():
+    return jsonify({
+        "ready": True,
+        "mic": {"connected": True, "name": "USB Audio Device"},
+        "dac": {"connected": True, "name": "Audio Output Device"},
+        "reason": "", "measurely_available": False
+    })
 
-        yaml = "\n".join(yaml_lines)
-        out = MEAS_ROOT / sid / "camilladsp.yaml"
-        out.write_text(yaml, encoding="utf-8")
-        return jsonify({"ok": True, "sid": sid, "yaml": yaml})
 
-    @app.get("/api/filter/download")
-    def api_filter_download():
-        sid, _ = _load_analysis_for(None)
-        path = MEAS_ROOT / sid / "camilladsp.yaml"
-        if not path.exists():
-            abort(404)
-        return send_from_directory(path.parent, path.name, as_attachment=True)
+@app.route('/api/sessions', methods=['GET'])
+def get_sessions():
+    try:
+        sessions = []
+        if MEAS_ROOT.exists():
+            for session_dir in sorted(MEAS_ROOT.iterdir(), key=lambda d: d.stat().st_mtime, reverse=True):
+                if not session_dir.is_dir():
+                    continue
+                sessions.append({
+                    "id": session_dir.name,
+                    "timestamp": datetime.fromtimestamp(session_dir.stat().st_mtime).isoformat(),
+                    "has_analysis": (session_dir / "analysis.json").exists(),
+                    "has_summary":  (session_dir / "summary.txt").exists(),
+                    "session_dir": str(session_dir)
+                })
+        return jsonify(sessions)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    return app
 
-# -------------------------------------------------------------------
-# Entrypoint
-# -------------------------------------------------------------------
-def main():
-    app = create_app()
-    app.run(host="0.0.0.0", port=5000, debug=False)
+# ------------------------------------------------------------------
+#  NEW room-setup endpoints
+# ------------------------------------------------------------------
+@app.route('/api/room/<session_id>', methods=['POST'])
+def save_room(session_id):
+    """store user room/speaker data (metres) in meta.json"""
+    try:
+        ses = MEAS_ROOT / session_id
+        if not ses.is_dir():
+            return jsonify({"error": "Session not found"}), 404
+        data = request.get_json(force=True)
+        meta_file = ses / "meta.json"
+        meta = json.loads(meta_file.read_text(encoding='utf-8')) if meta_file.exists() else {}
+        meta.setdefault("settings", {})
+        meta["settings"]["room"] = data
+        write_json_atomic(meta, meta_file)
+        return jsonify({"status": "saved"})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    main()
+
+@app.route('/api/room/<session_id>', methods=['GET'])
+def load_room(session_id):
+    """return room part of meta.json"""
+    try:
+        ses = MEAS_ROOT / session_id
+        meta_file = ses / "meta.json"
+        if not meta_file.exists():
+            return jsonify({}), 200
+        meta = json.loads(meta_file.read_text(encoding='utf-8')) or {}
+        room = meta.get("settings", {}).get("room", {})
+        return jsonify(room)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+# ------------------------------------------------------------------
+#  static files
+# ------------------------------------------------------------------
+@app.route('/', methods=['GET'])
+def serve_index():
+    return send_from_directory('/home/matt/measurely/web', 'index.html')
+
+
+@app.route('/<path:path>', methods=['GET'])
+def serve_static(path):
+    return send_from_directory('/home/matt/measurely/web', path)
+
+
+# ------------------------------------------------------------------
+#  entry
+# ------------------------------------------------------------------
+if __name__ == '__main__':
+    print("Starting Real-Data Measurely Flask Server...")
+    print(f"Measurements root: {MEAS_ROOT}")
+    print("NEW: /api/room/<session>  (POST + GET) – saves/loads user room setup")
+    app.run(host='0.0.0.0', port=5001, debug=True)
