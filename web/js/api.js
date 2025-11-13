@@ -36,6 +36,10 @@ export async function buddyPhrases() {
   return fetchJSON('/buddy_phrases.json');
 }
 
+export async function footTags() {
+  return fetchJSON('/foot_tags.json');
+}
+
 export async function getStatus() {
   const data = await fetchJSON('/api/status', {}, 1); // retry once
   if (!data) return { ready: false, reason: 'no-status' };

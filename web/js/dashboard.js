@@ -11,8 +11,21 @@ class MeasurelyDashboard {
         this.deviceStatus = {};
         this.updateInterval = null;
         this.sweepCheckInterval = null;
-        
+
+        this.loadFootTags();   // <-- add this line
         this.init();
+    }
+
+    /* ---------- load foot tag-lines once ---------- */
+    async loadFootTags() {
+        try {
+            const res = await fetch('/foot_tags.json');
+            if (!res.ok) throw new Error(res.status);
+            window.footBank = await res.json();
+            console.log("foot_tags loaded");
+        } catch {
+            window.footBank = {};
+        }
     }
 
     async init() {
@@ -90,6 +103,7 @@ class MeasurelyDashboard {
         }
     }
 
+    
     async runSweep() {
         if (this.isSweepRunning) {
             this.showInfo('Sweep already in progress');
@@ -197,6 +211,7 @@ class MeasurelyDashboard {
         }
     }
 
+
     updateDashboard() {
         if (!this.currentData) {
             console.warn('No data to update dashboard');
@@ -222,112 +237,209 @@ class MeasurelyDashboard {
 
     updateScores() {
         const data = this.currentData;
-        if (!data) return;          // safety
+        if (!data) return;
 
-        // 1. big overall score card
+        /* ---------- OVERALL SCORE CARD ---------- */
         const overall = data.overall_score ?? 5.0;
-        document.getElementById('overallScore').textContent = overall.toFixed(1);
+
+        // big number
+        const overallEl = document.getElementById('overallScore');
+        if (overallEl) overallEl.textContent = overall.toFixed(1);
+
+        // coloured dot
         this.updateStatusIndicator('overallStatus', overall);
-        this.pickOverallPhrase(overall).then(p => {
-            document.getElementById('overallStatusText').textContent = p;
+
+        // plain-English verdict
+        const overallStatusText = document.getElementById('overallStatusText');
+        if (overallStatusText) {
+            overallStatusText.innerHTML = this.getScoreStatusText(overall);
+        }
+
+        /* ---------- BUDDY PHRASE + ICON + FOOTER ---------- */
+        this.pickOverallPhrase(overall).then(phrase => {
+            const phraseEl = document.getElementById('overallBuddyPhrase');
+            if (phraseEl) phraseEl.textContent = phrase;
+
+            // score → bucket
+            const bucket =
+                overall < 5 ? 'cold' :
+                overall < 7 ? 'cool' :
+                overall < 9 ? 'warm' :
+                'hot';
+
+            // icons
+            const buddyIcons = {
+                cold: "❄️",
+                cool: "🌤️",
+                warm: "🔥",
+                hot:  "☕"
+            };
+
+            // set icon
+            const iconEl = document.getElementById('buddyIcon');
+            if (iconEl) iconEl.textContent = buddyIcons[bucket] || "🎧";
+
+            // FOOTER TEXT (this is the missing bit)
+            const footerEl = document.getElementById('buddyFooter');
+            if (footerEl) {
+                const footerReasons = {
+                    cold: "Your room needs warmth, lots of easy wins here.",
+                    cool: "Good foundation, a few tweaks will lift it nicely.",
+                    warm: "Strong acoustics, only minor refinements left.",
+                    hot:  "Studio-level response, you're basically done."
+                };
+                footerEl.textContent = footerReasons[bucket] || "";
+            }
         });
 
-        // 2. six small cards
+        /* ---------- SIX SMALL SCORE CARDS (NUMBER + DOTS) ---------- */
         const scores = {
-            bandwidthScore:  data.bandwidth   ?? 3.6,
-            balanceScore:    data.balance     ?? 1.6,
-            smoothnessScore: data.smoothness  ?? 7.3,
-            peaksDipsScore:  data.peaks_dips  ?? 3.3,
-            reflectionsScore:data.reflections ?? 4.0,
-            reverbScore:     data.reverb      ?? 10.0
+            bandwidthScore:   data.bandwidth   ?? 0,
+            balanceScore:     data.balance     ?? 0,
+            smoothnessScore:  data.smoothness  ?? 0,
+            peaksDipsScore:   data.peaks_dips  ?? 0,
+            reflectionsScore: data.reflections ?? 0,
+            reverbScore:      data.reverb      ?? 0
         };
 
         Object.entries(scores).forEach(([id, val]) => {
-            document.getElementById(id).textContent = val.toFixed(1);
-            this.updateStatusIndicator(id.replace('Score', 'Status'), val);
+            const el = document.getElementById(id);
+            if (el) el.textContent = val.toFixed(1);
+
+            const statusId = id.replace('Score', 'Status');
+            this.updateStatusIndicator(statusId, val);
         });
 
-        // 3. descriptive text under each card
-        this.updateDescriptions(data);
+        /* ---------- DESCRIPTIONS + BUDDY TIPS + FOOTERS ---------- */
+        if (window.footBank && Object.keys(window.footBank).length > 0) {
+            this.updateDescriptions(data);
+        } else {
+            setTimeout(() => this.updateDescriptions(data), 150);
+        }
     }
+
+
 
     updateDescriptions(data) {
-        // Bandwidth description
-        const bandwidth = data.bandwidth || 3.6;
-        const bandwidthRange = bandwidth > 6 ? "Wide frequency range" : "Limited frequency range";
-        document.getElementById('bandwidthRange').textContent = bandwidthRange;
-        
-        const bandwidthStatusText = bandwidth > 6 ? "Good coverage" : "Needs extension";
-        document.getElementById('bandwidthStatusText').textContent = bandwidthStatusText;
-        
-        // Balance description
-        const balance = data.balance || 1.6;
-        let balanceDesc = "Well balanced";
-        if (balance < 3) {
-            balanceDesc = "Voices stronger than bass";
-        } else if (balance > 7) {
-            balanceDesc = "Bass stronger than voices";
+    /* ---------- 1. Bandwidth ---------- */
+    const bandwidth = data.bandwidth || 3.6;
+    document.getElementById('bandwidthSummary').textContent =
+        bandwidth > 6 ? 'Wide frequency range' : 'Limited frequency range';
+    document.getElementById('bandwidthStatusText').textContent =
+        bandwidth > 6 ? 'Good coverage' : 'Needs extension';
+
+    /* ---------- 2. Balance ---------- */
+    const balance = data.balance || 1.6;
+    document.getElementById('balanceSummary').textContent =
+        balance < 3 ? 'Voices stronger than bass' :
+        balance > 7 ? 'Bass stronger than voices' : 'Well balanced';
+    document.getElementById('balanceStatusText').textContent =
+        balance > 3 && balance < 7 ? 'Well balanced' : 'Needs adjustment';
+
+    /* ---------- 3. Smoothness ---------- */
+    const smoothness = data.smoothness || 7.3;
+    document.getElementById('smoothnessSummary').textContent =
+        `${(10 - smoothness).toFixed(1)} dB std deviation`;
+    document.getElementById('smoothnessStatusText').textContent =
+        smoothness > 6 ? 'Good consistency' : 'Some variation';
+
+    /* ---------- 4. Peaks & Dips ---------- */
+    const peaksDips = data.peaks_dips || 3.3;
+    document.getElementById('peaksDipsSummary').textContent =
+        peaksDips > 5 ? 'Pretty smooth' : 'Some notes jump out';
+    document.getElementById('peaksDipsStatusText').textContent =
+        peaksDips > 5 ? 'OK' : 'Treat';
+
+    /* ---------- 5. Reflections ---------- */
+    const reflections = data.reflections || 4.0;
+    document.getElementById('reflectionsSummary').textContent =
+        reflections > 6 ? 'Few reflections' : 'Some reflections detected';
+    document.getElementById('reflectionsStatusText').textContent =
+        reflections > 6 ? 'Good control' : 'Some treatment needed';
+
+    /* ---------- 6. Reverb ---------- */
+    const reverb = data.reverb || 10.0;
+    document.getElementById('reverbSummary').textContent =
+        `${(reverb / 100).toFixed(2)}s EDT`;
+    document.getElementById('reverbStatusText').textContent =
+        reverb > 7 ? 'Excellent control' : 'May be too live';
+
+    /* ---------- buddy tips ---------- */
+    this.injectBuddyPhrase('bandwidthBuddy',   bandwidth > 6 ? 'fix' : 'boom');
+    this.injectBuddyPhrase('balanceBuddy',     balance > 3 && balance < 7 ? 'fix' : 'mid');
+    this.injectBuddyPhrase('smoothnessBuddy',  smoothness > 6 ? 'fix' : 'top');
+    this.injectBuddyPhrase('peaksDipsBuddy',   peaksDips > 5 ? 'fix' : 'boom');
+    this.injectBuddyPhrase('reflectionsBuddy', reflections > 6 ? 'fix' : 'echo');
+    this.injectBuddyPhrase('reverbBuddy',      reverb > 7 ? 'fix' : 'echo');
+
+    /* ---------- foot tag-lines ---------- */
+    const safeSet = (id, key) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (window.footBank && window.footBank[key]) {
+            el.textContent = window.footBank[key];
         }
-        document.getElementById('balanceDescription').textContent = balanceDesc;
-        
-        const balanceStatusText = balance > 3 && balance < 7 ? "Well balanced" : "Needs adjustment";
-        document.getElementById('balanceStatusText').textContent = balanceStatusText;
-        
-        // Smoothness description
-        const smoothness = data.smoothness || 7.3;
-        const smoothnessDesc = `${(10 - smoothness).toFixed(1)} dB std deviation`;
-        document.getElementById('smoothnessDescription').textContent = smoothnessDesc;
-        
-        const smoothnessStatusText = smoothness > 6 ? "Good consistency" : "Some variation";
-        document.getElementById('smoothnessStatusText').textContent = smoothnessStatusText;
-        
-        // Peaks & dips description
-        const peaksDips = data.peaks_dips || 3.3;
-        const peaksDipsDesc = peaksDips > 5 ? "Few room modes" : "Room modes present";
-        document.getElementById('peaksDipsDescription').textContent = peaksDipsDesc;
-        
-        const peaksDipsStatusText = peaksDips > 5 ? "Well controlled" : "Needs treatment";
-        document.getElementById('peaksDipsStatusText').textContent = peaksDipsStatusText;
-        
-        // Reflections description
-        const reflections = data.reflections || 4.0;
-        const reflectionsDesc = reflections > 6 ? "Few reflections" : "Some reflections detected";
-        document.getElementById('reflectionsDescription').textContent = reflectionsDesc;
-        
-        const reflectionsStatusText = reflections > 6 ? "Good control" : "Some treatment needed";
-        document.getElementById('reflectionsStatusText').textContent = reflectionsStatusText;
-        
-        // Reverb description
-        const reverb = data.reverb || 10.0;
-        const reverbDesc = `${(reverb / 100).toFixed(2)}s EDT`;
-        document.getElementById('reverbDescription').textContent = reverbDesc;
-        
-        const reverbStatusText = reverb > 7 ? "Excellent control" : "May be too live";
-        document.getElementById('reverbStatusText').textContent = reverbStatusText;
+    };
+
+    safeSet('peaksDipsFoot',   'peaksDips');
+    safeSet('reflectionsFoot', 'reflections');
+    safeSet('bandwidthFoot',   'bandwidth');
+    safeSet('balanceFoot',     'balance');
+    safeSet('smoothnessFoot',  'smoothness');
+    safeSet('reverbFoot',      'reverb');
     }
 
-    updateStatusIndicator(elementId, score) {
-        const element = document.getElementById(elementId);
-        if (!element) return;
+    updateStatusIndicator(prefix, value) {
+        const el = document.getElementById(prefix + 'Indicator') ||
+                document.getElementById(prefix);
 
-        // Remove existing status classes
-        element.className = element.className.replace(/status-\w+/g, '');
-        
-        // Add appropriate status class based on score
-        if (score >= 7) {
-            element.classList.add('status-good');
-        } else if (score >= 4) {
-            element.classList.add('status-warning');
+        if (!el) return;
+
+        // Remove all existing status classes
+        el.classList.remove('status-good', 'status-warning', 'status-poor');
+
+        // Apply correct one
+        if (value >= 7) {
+            el.classList.add('status-good');
+        } else if (value >= 4) {
+            el.classList.add('status-warning');
         } else {
-            element.classList.add('status-poor');
+            el.classList.add('status-poor');
         }
     }
+
+
+    // tiny helper to fetch & inject a random buddy phrase
+    async injectBuddyPhrase(elId, bucket) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+
+        try {
+            const res = await fetch('/buddy_phrases.json');
+            if (!res.ok) throw 0;
+
+            const bank = await res.json();
+            const choices = bank[bucket] || [];
+
+            el.textContent =
+                choices.length
+                    ? choices[Math.floor(Math.random() * choices.length)]
+                    : '';
+        } catch {
+            // IMPORTANT: DO NOT LET THIS CRASH updateDescriptions()
+            el.textContent = '';
+        }
+    }
+
 
     getScoreStatusText(score) {
-        if (score >= 8) return "Excellent acoustics";
-        if (score >= 6) return "Good room response";
-        if (score >= 4) return "Room for improvement";
-        return "Needs significant treatment";
+        let verdict = '';
+        if (score >= 8) verdict = 'Excellent acoustics';
+        else if (score >= 6) verdict = 'Good room response';
+        else if (score >= 4) verdict = 'Room for improvement';
+        else verdict = 'Needs significant treatment';
+
+        return `<strong>Verdict:</strong> ${verdict}`;
     }
 
     /* ----------  NEW : buddy-style dynamic status  ---------- */

@@ -35,28 +35,44 @@
       width: 0%;
       transition: width 0.3s ease;
     }
+    @media (max-width: 640px) {
+      #frequencyChart { display: none; }
+      .chart-btn-group { display: none; }
+    }
   </style>
+
 <base target="_blank">
 </head>
 
 <body class="bg-gray-50">
-  <!-- Progress Bar -->
-  <div id="progressContainer" class="progress-container">
-    <div id="progressBar" class="progress-bar"></div>
+
+  <!-- Mobile-only banner -->
+  <div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm 
+              flex items-center justify-between px-4 z-50">
+
+    <!-- LEFT: Icon + name grouped together -->
+    <div class="flex items-center space-x-2">
+      <i class="fas fa-microchip text-xl text-white opacity-90"></i>
+      <span class="text-white font-semibold text-sm">Measurely</span>
+    </div>
+
+    <!-- RIGHT: Menu button -->
+    <button id="mobile-menu-btn" class="p-2 rounded-lg text-white hover:bg-white/10 transition">
+      <i class="fas fa-bars text-lg"></i>
+    </button>
+
   </div>
 
+
   <!-- =====  HEADER / MENU  ===== -->
-  <button id="mobile-menu-btn" class="mobile-menu-button fixed top-4 right-4 z-50 p-2 rounded-lg bg-gray-900/80 text-white backdrop-blur-sm">
-    <i class="fas fa-bars text-xl"></i>
-  </button>
   <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
   <aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
     <div class="mb-8 flex items-center space-x-3">
-      <img src="logo.png" alt="Audio Buddy Logo" class="w-10 h-10 opacity-90">
+      <i class="fas fa-microchip text-4xl opacity-90"></i>
       <div>
-        <h1 class="text-2xl font-bold">Audio Buddy</h1>
-        <p class="text-sm opacity-80">Your Room Tuning Pal</p>
+        <h1 class="text-2xl font-bold">Measurely</h1>
+        <p class="text-sm opacity-80">Room Acoustic Analysis</p>
       </div>
     </div>
     <nav class="space-y-2">
@@ -78,85 +94,266 @@
   </aside>
 
   <!-- =====  MAIN CONTENT  ===== -->
-  <div class="main-content ml-64 p-8">
+  <div class="main-content md:ml-64 p-8">
     <div class="mb-8">
       <h2 class="text-3xl font-bold text-gray-800 mb-2">Room Acoustic Dashboard</h2>
       <p class="text-gray-600">Comprehensive analysis of your listening environment</p>
     </div>
 
-  <div id="analysisSpinner" class="analysis-spinner">
-    <div class="spinner-card">
-      <div class="pint">🍻</div>
-      <div>Audio-Buddy is pouring advice…</div>
-    </div>
-  </div>
-
   <!-- TWO-CARD TOP ROW -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
     <!-- LEFT : what is Measurely -->
-    <div class="bg-white rounded-2xl shadow-lg p-8 flex items-center">
-      <div>
-        <h3 class="text-xl font-semibold text-gray-800 mb-3">What is Measurely?</h3>
-        <p class="text-gray-600">
-          We can’t replace your ears, but we can show you exactly what to move, treat, or tweak
-          so your music comes alive. Run a sweep, check the results, move a few things around,
-          and hear the difference.
-        </p>
-      </div>
-    </div>
-
-    <!-- RIGHT : overall score (centred) -->
-    <div class="bg-white rounded-2xl shadow-lg p-8 flex flex-col items-center justify-center text-center">
-      <div class="text-6xl font-bold text-indigo-600 mb-2" id="overallScore">--</div>
-      <div class="flex items-center justify-center mb-1">
-        <span id="overallStatusIndicator" class="status-indicator mr-2"></span>
-        <span id="overallStatusText" class="text-sm text-gray-600">Loading…</span>
-      </div>
-      <p class="text-xs text-gray-500 mt-2">Overall room score</p>
-    </div>
-
+  <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between">
+    <h3 class="text-md font-bold text-gray-800 mb-2 flex items-center">
+      <i class="fas fa-info-circle text-indigo-500 mr-2"></i>
+      What is Measurely?
+    </h3>
+    <p class="text-sm text-gray-600 leading-relaxed">
+      We show you exactly what to move, treat, or tweak so your music comes alive.
+      Run a sweep, view the results, and follow simple steps for better sound.
+    </p>
   </div>
 
-    <!-- Quick Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
-        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Bandwidth</h4><i class="fas fa-signal text-blue-500 text-xl"></i></div>
-        <div class="text-3xl font-bold text-blue-600 mb-2" id="bandwidthScore">--</div>
-        <div class="text-sm text-gray-600 mb-3" id="bandwidthRange">Loading...</div>
-        <div class="flex items-center"><span id="bandwidthStatus" class="status-indicator status-poor"></span><span id="bandwidthStatusText" class="text-xs text-gray-500">Loading...</span></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
-        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Balance</h4><i class="fas fa-balance-scale text-orange-500 text-xl"></i></div>
-        <div class="text-3xl font-bold text-orange-600 mb-2" id="balanceScore">--</div>
-        <div class="text-sm text-gray-600 mb-3" id="balanceDescription">Loading...</div>
-        <div class="flex items-center"><span id="balanceStatus" class="status-indicator status-poor"></span><span id="balanceStatusText" class="text-xs text-gray-500">Loading...</span></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
-        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Smoothness</h4><i class="fas fa-wave-square text-green-500 text-xl"></i></div>
-        <div class="text-3xl font-bold text-green-600 mb-2" id="smoothnessScore">--</div>
-        <div class="text-sm text-gray-600 mb-3" id="smoothnessDescription">Loading...</div>
-        <div class="flex items-center"><span id="smoothnessStatus" class="status-indicator status-good"></span><span id="smoothnessStatusText" class="text-xs text-gray-500">Loading...</span></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
-        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Peaks & Dips</h4><i class="fas fa-mountain text-red-500 text-xl"></i></div>
-        <div class="text-3xl font-bold text-red-600 mb-2" id="peaksDipsScore">--</div>
-        <div class="text-sm text-gray-600 mb-3" id="peaksDipsDescription">Loading...</div>
-        <div class="flex items-center"><span id="peaksDipsStatus" class="status-indicator status-poor"></span><span id="peaksDipsStatusText" class="text-xs text-gray-500">Loading...</span></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
-        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Reflections</h4><i class="fas fa-square-caret-left text-yellow-500 text-xl"></i></div>
-        <div class="text-3xl font-bold text-yellow-600 mb-2" id="reflectionsScore">--</div>
-        <div class="text-sm text-gray-600 mb-3" id="reflectionsDescription">Loading...</div>
-        <div class="flex items-center"><span id="reflectionsStatus" class="status-indicator status-warning"></span><span id="reflectionsStatusText" class="text-xs text-gray-500">Loading...</span></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
-        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Reverb</h4><i class="fas fa-clock text-purple-500 text-xl"></i></div>
-        <div class="text-3xl font-bold text-purple-600 mb-2" id="reverbScore">--</div>
-        <div class="text-sm text-gray-600 mb-3" id="reverbDescription">Loading...</div>
-        <div class="flex items-center"><span id="reverbStatus" class="status-indicator status-good"></span><span id="reverbStatusText" class="text-xs text-gray-500">Loading...</span></div>
+
+    <!-- NEW: Overall score -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between">
+      <h3 class="text-lg font-semibold text-gray-800 mb-2">Overall room score</h3>
+
+      <div class="text-5xl font-bold text-indigo-600 mb-1" id="overallScore">--</div>
+
+      <div class="flex items-center text-sm text-gray-600">
+        <span id="overallStatus" class="status-indicator mr-2"></span>
+        <span id="overallStatusText">Loading…</span>
       </div>
     </div>
+
+    <!-- Buddy Card -->
+    <div id="buddyCard" class="bg-white rounded-2xl shadow-lg p-6">
+
+      <!-- Header -->
+      <h3 class="text-xs uppercase tracking-wide text-gray-400 mb-3">
+        Buddy says
+      </h3>
+
+      <!-- Icon + Phrase -->
+      <div class="flex items-start gap-3">
+        <div id="buddyIcon" class="text-3xl leading-none">🎧</div>
+
+        <p id="overallBuddyPhrase"
+          class="text-gray-800 text-base font-medium leading-snug">
+          …
+        </p>
+      </div>
+
+      <!-- Footer note -->
+      <div id="buddyFooter"
+          class="mt-4 text-xs text-gray-500 italic">
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- =====  METRIC DETAILS ===== -->
+  <div class="mt-10">
+  <h3 class="text-xs uppercase tracking-wide text-gray-400 mb-4">Deep dive</h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+
+    <!-- 1. Peaks & Dips -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="text-lg font-semibold text-gray-800">Peaks & Dips</h4>
+        <i class="fas fa-mountain text-red-500 text-xl"></i>
+      </div>
+
+      <div class="text-3xl font-bold text-red-600 mb-1" id="peaksDipsScore">--</div>
+      <div class="text-sm text-gray-700 mb-2" id="peaksDipsSummary">--</div>
+      <div class="text-xs text-gray-500 mb-2">
+        <span class="italic">tip:</span>
+        <span id="peaksDipsBuddy" class="italic">--</span>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex items-center text-xs text-gray-500 mb-1">
+          <span id="peaksDipsStatus" class="status-indicator mr-2"></span>
+          <span id="peaksDipsStatusText">--</span>
+        </div>
+        <div id="peaksDipsFoot" class="text-xs text-gray-400 mb-2"></div>
+      </div>
+
+      <button type="button" class="absolute bottom-4 right-4 text-gray-400 hover:text-gray-600"
+              onclick="togglePopup('popup-peaks')">
+        <i class="fas fa-info-circle"></i>
+      </button>
+      <div id="popup-peaks" class="hidden absolute bottom-full right-0 mb-2 w-64
+          bg-gray-800 text-white text-xs rounded-lg p-3 shadow-xl z-50">
+        Room-shaped bumps that make certain notes jump out or vanish. Treat with panels or move speakers.
+      </div>
+    </div>
+
+    <!-- 2. Reflections -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="text-lg font-semibold text-gray-800">Reflections</h4>
+        <i class="fas fa-square-caret-left text-yellow-500 text-xl"></i>
+      </div>
+
+      <div class="text-3xl font-bold text-yellow-600 mb-1" id="reflectionsScore">--</div>
+      <div class="text-sm text-gray-700 mb-2" id="reflectionsSummary">--</div>
+      <div class="text-xs text-gray-500 mb-2">
+        <span class="italic">tip:</span>
+        <span id="reflectionsBuddy" class="italic">--</span>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex items-center text-xs text-gray-500 mb-1">
+          <span id="reflectionsStatus" class="status-indicator mr-2"></span>
+          <span id="reflectionsStatusText">--</span>
+        </div>
+        <div id="reflectionsFoot" class="text-xs text-gray-400 mb-2"></div>
+      </div>
+
+      <button type="button" class="absolute bottom-4 right-4 text-gray-400 hover:text-gray-600"
+              onclick="togglePopup('popup-reflections')">
+        <i class="fas fa-info-circle"></i>
+      </button>
+      <div id="popup-reflections" class="hidden absolute bottom-full right-0 mb-2 w-64
+          bg-gray-800 text-white text-xs rounded-lg p-3 shadow-xl z-50">
+        Sound bouncing off walls can smear vocals and stereo image. Curtains or a rug tame them fast.
+      </div>
+    </div>
+
+    <!-- 3. Bandwidth -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="text-lg font-semibold text-gray-800">Bandwidth</h4>
+        <i class="fas fa-signal text-blue-500 text-xl"></i>
+      </div>
+
+      <div class="text-3xl font-bold text-blue-600 mb-1" id="bandwidthScore">--</div>
+      <div class="text-sm text-gray-700 mb-2" id="bandwidthSummary">--</div>
+      <div class="text-xs text-gray-500 mb-2">
+        <span class="italic">tip:</span>
+        <span id="bandwidthBuddy" class="italic">--</span>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex items-center text-xs text-gray-500 mb-1">
+          <span id="bandwidthStatus" class="status-indicator mr-2"></span>
+          <span id="bandwidthStatusText">--</span>
+        </div>
+        <div id="bandwidthFoot" class="text-xs text-gray-400 mb-2"></div>
+      </div>
+
+      <button type="button" class="absolute bottom-4 right-4 text-gray-400 hover:text-gray-600"
+              onclick="togglePopup('popup-bandwidth')">
+        <i class="fas fa-info-circle"></i>
+      </button>
+      <div id="popup-bandwidth" class="hidden absolute bottom-full right-0 mb-2 w-64
+          bg-gray-800 text-white text-xs rounded-lg p-3 shadow-xl z-50">
+        How deep the bass goes and how high the cymbals sparkle. Wider = more “wow”.
+      </div>
+    </div>
+
+    <!-- 4. Balance -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="text-lg font-semibold text-gray-800">Balance</h4>
+        <i class="fas fa-balance-scale text-orange-500 text-xl"></i>
+      </div>
+
+      <div class="text-3xl font-bold text-orange-600 mb-1" id="balanceScore">--</div>
+      <div class="text-sm text-gray-700 mb-2" id="balanceSummary">--</div>
+      <div class="text-xs text-gray-500 mb-2">
+        <span class="italic">tip:</span>
+        <span id="balanceBuddy" class="italic">--</span>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex items-center text-xs text-gray-500 mb-1">
+          <span id="balanceStatus" class="status-indicator mr-2"></span>
+          <span id="balanceStatusText">--</span>
+        </div>
+        <div id="balanceFoot" class="text-xs text-gray-400 mb-2"></div>
+      </div>
+
+      <button type="button" class="absolute bottom-4 right-4 text-gray-400 hover:text-gray-600"
+              onclick="togglePopup('popup-balance')">
+        <i class="fas fa-info-circle"></i>
+      </button>
+      <div id="popup-balance" class="hidden absolute bottom-full right-0 mb-2 w-64
+          bg-gray-800 text-white text-xs rounded-lg p-3 shadow-xl z-50">
+        Are the lows, mids and highs playing at the same loudness? A toe-in or rug can fix it.
+      </div>
+    </div>
+
+    <!-- 5. Smoothness -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="text-lg font-semibold text-gray-800">Smoothness</h4>
+        <i class="fas fa-wave-square text-green-500 text-xl"></i>
+      </div>
+
+      <div class="text-3xl font-bold text-green-600 mb-1" id="smoothnessScore">--</div>
+      <div class="text-sm text-gray-700 mb-2" id="smoothnessSummary">--</div>
+      <div class="text-xs text-gray-500 mb-2">
+        <span class="italic">tip:</span>
+        <span id="smoothnessBuddy" class="italic">--</span>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex items-center text-xs text-gray-500 mb-1">
+          <span id="smoothnessStatus" class="status-indicator mr-2"></span>
+          <span id="smoothnessStatusText">--</span>
+        </div>
+        <div id="smoothnessFoot" class="text-xs text-gray-400 mb-2"></div>
+      </div>
+
+      <button type="button" class="absolute bottom-4 right-4 text-gray-400 hover:text-gray-600"
+              onclick="togglePopup('popup-smoothness')">
+        <i class="fas fa-info-circle"></i>
+      </button>
+      <div id="popup-smoothness" class="hidden absolute bottom-full right-0 mb-2 w-64
+          bg-gray-800 text-white text-xs rounded-lg p-3 shadow-xl z-50">
+        Fewer sudden holes or spikes = easier to trust what you hear. Panels or EQ can help.
+      </div>
+    </div>
+
+    <!-- 6. Reverb -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="text-lg font-semibold text-gray-800">Reverb</h4>
+        <i class="fas fa-clock text-purple-500 text-xl"></i>
+      </div>
+
+      <div class="text-3xl font-bold text-purple-600 mb-1" id="reverbScore">--</div>
+      <div class="text-sm text-gray-700 mb-2" id="reverbSummary">--</div>
+      <div class="text-xs text-gray-500 mb-2">
+        <span class="italic">tip:</span>
+        <span id="reverbBuddy" class="italic">--</span>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex items-center text-xs text-gray-500 mb-1">
+          <span id="reverbStatus" class="status-indicator mr-2"></span>
+          <span id="reverbStatusText">--</span>
+        </div>
+        <div id="reverbFoot" class="text-xs text-gray-400 mb-2"></div>
+      </div>
+
+      <button type="button" class="absolute bottom-4 right-4 text-gray-400 hover:text-gray-600"
+              onclick="togglePopup('popup-reverb')">
+        <i class="fas fa-info-circle"></i>
+      </button>
+      <div id="popup-reverb" class="hidden absolute bottom-full right-0 mb-2 w-64
+          bg-gray-800 text-white text-xs rounded-lg p-3 shadow-xl z-50">
+        How long the room holds a note after you stop playing it. A little = cosy; too much = mushy.
+      </div>
+    </div>
+
+  </div>   <!-- metric grid ends -->
+  </div>     <!-- spacer wrapper ends -->
 
     <!-- Frequency Response Chart (BLACK axes, no zoom) -->
     <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
@@ -173,25 +370,60 @@
 
     <!-- Detailed Analysis -->
     <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
-      <h3 class="text-xl font-semibold text-gray-800 mb-6">Detailed Frequency Analysis</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div class="text-center"><div id="bassLevel" class="text-2xl font-bold text-blue-600 mb-1">-- dB</div><div class="text-sm text-gray-600">Bass (20-200Hz)</div><div id="bassBar" class="frequency-bar bg-blue-500 mt-2" style="width: 0%;"></div></div>
-        <div class="text-center"><div id="midLevel" class="text-2xl font-bold text-green-600 mb-1">-- dB</div><div class="text-sm text-gray-600">Mid (200-2kHz)</div><div id="midBar" class="frequency-bar bg-green-500 mt-2" style="width: 0%;"></div></div>
-        <div class="text-center"><div id="trebleLevel" class="text-2xl font-bold text-yellow-600 mb-1">-- dB</div><div class="text-sm text-gray-600">Treble (2-10kHz)</div><div id="trebleBar" class="frequency-bar bg-yellow-500 mt-2" style="width: 0%;"></div></div>
-        <div class="text-center"><div id="airLevel" class="text-2xl font-bold text-purple-600 mb-1">-- dB</div><div class="text-sm text-gray-600">Air (10-20kHz)</div><div id="airBar" class="frequency-bar bg-purple-500 mt-2" style="width: 0%;"></div></div>
-      </div>
-      <div class="bg-gray-50 rounded-lg p-4">
-        <h4 class="font-semibold text-gray-800 mb-2">Frequency Band Guide</h4>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <p><strong>Bass (20-200Hz):</strong> Low frequencies, bass instruments, subwoofer range</p>
-            <p><strong>Mid (200-2kHz):</strong> Most instruments, vocals, critical for clarity</p>
+      <h3 class="text-xl font-semibold text-gray-800 mb-6">What You’ll Hear</h3>
+
+      <!-- 4 big numbers + bars -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6 text-center">
+        <!-- Bass -->
+        <div>
+          <div id="bassLevel" class="text-3xl font-bold text-blue-600 mb-1">-- dB</div>
+          <div class="text-sm text-gray-600 mb-2">Bass (20-200 Hz)</div>
+          <div class="w-full bg-gray-200 rounded h-2">
+            <div id="bassBar" class="h-2 rounded bg-blue-500" style="width: 0%"></div>
           </div>
-          <div>
-            <p><strong>Treble (2-10kHz):</strong> High frequencies, cymbals, consonants, brightness</p>
-            <p><strong>Air (10-20kHz):</strong> Ultra-high frequencies, spatial cues, sparkle</p>
-          </div>
+          <p class="text-xs text-gray-500 mt-2">The thump you feel in your chest.</p>
         </div>
+
+        <!-- Mid -->
+        <div>
+          <div id="midLevel" class="text-3xl font-bold text-green-600 mb-1">-- dB</div>
+          <div class="text-sm text-gray-600 mb-2">Mid (200-2 kHz)</div>
+          <div class="w-full bg-gray-200 rounded h-2">
+            <div id="midBar" class="h-2 rounded bg-green-500" style="width: 0%"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Where voices and guitars live.</p>
+        </div>
+
+        <!-- Treble -->
+        <div>
+          <div id="trebleLevel" class="text-3xl font-bold text-yellow-600 mb-1">-- dB</div>
+          <div class="text-sm text-gray-600 mb-2">Treble (2-10 kHz)</div>
+          <div class="w-full bg-gray-200 rounded h-2">
+            <div id="trebleBar" class="h-2 rounded bg-yellow-500" style="width: 0%"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Cymbals, consonants, brightness.</p>
+        </div>
+
+        <!-- Air -->
+        <div>
+          <div id="airLevel" class="text-3xl font-bold text-purple-600 mb-1">-- dB</div>
+          <div class="text-sm text-gray-600 mb-2">Air (10-20 kHz)</div>
+          <div class="w-full bg-gray-200 rounded h-2">
+            <div id="airBar" class="h-2 rounded bg-purple-500" style="width: 0%"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Sparkle and room “feel”.</p>
+        </div>
+      </div>
+
+      <!-- quick guide -->
+      <div class="bg-gray-50 rounded-lg p-4">
+        <h4 class="font-semibold text-gray-800 mb-2">Quick Listen Guide</h4>
+        <ul class="text-sm text-gray-600 space-y-1 list-disc list-inside">
+          <li><span class="font-medium text-blue-600">Bass low?</span>  Kick drum feels weak → move speakers away from wall.</li>
+          <li><span class="font-medium text-green-600">Mid bump?</span>  Vocals jump out → add rug or tilt speakers in.</li>
+          <li><span class="font-medium text-yellow-600">Treble dull?</span>  Lift tweeters to ear height or remove heavy curtains.</li>
+          <li><span class="font-medium text-purple-600">Air missing?</span>  Open a door or add a diffuser behind you.</li>
+        </ul>
       </div>
     </div>
 
@@ -217,6 +449,10 @@
     }
     btn.addEventListener('click', toggleMenu);
     over.addEventListener('click', toggleMenu);
+
+    function togglePopup(id) {
+      document.getElementById(id).classList.toggle('hidden');
+    }
 
     document.querySelectorAll('.nav-item').forEach(link => {
       link.addEventListener('click', () => {

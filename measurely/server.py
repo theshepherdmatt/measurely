@@ -352,6 +352,13 @@ def get_sessions():
 @app.route('/buddy_phrases.json')
 def serve_buddy_phrases():
     return send_from_directory('/home/matt/measurely/measurely', 'buddy_phrases.json')
+
+# ----------------------------------------------------------
+#  serve foot_tags.json from project root
+# ----------------------------------------------------------
+@app.route('/foot_tags.json')
+def serve_foot_tags():
+    return send_from_directory('/home/matt/measurely/measurely', 'foot_tags.json')
     
 # ------------------------------------------------------------------
 #  LOAD (make live) a previous session

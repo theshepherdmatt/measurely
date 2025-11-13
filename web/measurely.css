@@ -1,30 +1,51 @@
-/* ---------- sidebar (desktop default) ---------- */
+/* ============================================================
+   MEASURELY – CONSOLIDATED, SAFE, CLEAN CSS
+   (No Tailwind class overrides, no .grid hijacking)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+:root {
+  --font-main: 'Inter', sans-serif;
+  --gray-50: #f9fafb;
+  --gray-500: #6b7280;
+  --gray-900: #111827;
+  --indigo-600: #7c3aed;
+  --indigo-50: #f5f3ff;
+}
+
+/* ------------------------------------------------------------
+   BASE
+------------------------------------------------------------ */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  background: var(--gray-50);
+  color: var(--gray-900);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ------------------------------------------------------------
+   SIDEBAR
+------------------------------------------------------------ */
 .sidebar {
   position: fixed;
   top: 0;
-  left: 0;                 /* desktop: stick left */
+  left: 0;
   height: 100%;
   width: 16rem;
-  background: #7c3aed;
+  background: var(--indigo-600);
   padding: 1.5rem;
   z-index: 40;
   color: #fff;
 }
 
-/* ---------- mobile override (RIGHT) ---------- */
-@media (max-width: 768px) {
-  .sidebar {
-    left: auto;            /* remove left anchor */
-    right: 0;              /* stick to right edge */
-    transform: translateX(100%); /* start off-screen RIGHT */
-    transition: transform .3s ease;
-  }
-  .sidebar.active {
-    transform: translateX(0);    /* slide IN from right */
-  }
+.sidebar nav {
+  margin-top: 3.5rem;
 }
 
-/* ---------- nav items ---------- */
 .nav-item {
   display: flex;
   align-items: center;
@@ -32,79 +53,216 @@
   border-radius: 0.5rem;
   transition: background 0.2s;
   color: #fff;
+  font-size: 0.875rem;
 }
+
 .nav-item:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
 .nav-item.active {
   background: rgba(255, 255, 255, 0.2);
   font-weight: 600;
 }
 
-/* =====  MOBILE  ===== */
-@media (max-width: 768px) {
-  /* let main content use full width */
-  .main-content {
-    margin-left: 0 !important;   /* kill the 16-rem left gap */
-    padding: 1.25rem;            /* slightly smaller gutters */
-  }
+/* ------------------------------------------------------------
+   MAIN CONTENT WRAPPER
+------------------------------------------------------------ */
+.main-content {
+  margin-left: 16rem;
+  padding: 2rem;
 }
 
-#mobile-menu-btn {
-  background: rgba(0,0,0,.7); /* any dark tone you like */
-  backdrop-filter: blur(4px); /* optional glass effect */
-}
-
-/* hide hamburger on desktop */
-@media (min-width: 769px) {
-  #mobile-menu-btn {
-    display: none;
-  }
-}
-
-/* ---------- mobile-safe chart buttons ---------- */
-.chart-btn-group {
-  display: flex;
-  flex-wrap: wrap;          /* let buttons wrap */
-  gap: 0.5rem;              /* tidy gap when stacked */
-  justify-content: flex-end;
-}
-.chart-btn-group button {
-  white-space: nowrap;      /* keep text on one line */
-  padding: 0.4rem 0.75rem;  /* slightly smaller hit-area */
-  font-size: 0.8125rem;     /* 13px – still readable */
-}
-
-/* ----------  ANALYSIS  SPINNER  ---------- */
-.analysis-spinner {
-  position: fixed;
-  inset: 0;                                    /* full viewport */
-  background: rgba(0, 0, 0, 0.55);
-  display: none;                               /* hidden by default */
-  place-items: center;
-  z-index: 9999;
-}
-
-.analysis-spinner.active {
-  display: grid;                              /* show when .active */
-}
-
-.spinner-card {
-  background: #1e1e2f;                       /* dark card */
-  color: #fff;
-  padding: 2rem 3rem;
+/* ------------------------------------------------------------
+   TOP-ROW CARD SYSTEM
+------------------------------------------------------------ */
+#whatIsMeasurely,
+#overallScoreCard,
+#buddySaysCard {
+  background: #fff;
   border-radius: 1rem;
-  text-align: center;
-  font-size: 1.25rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.06);
 }
 
-.spinner-card .pint {
-  font-size: 2.5rem;
+#whatIsMeasurely h3,
+#overallScoreCard h3,
+#buddySaysCard h3 {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  margin: 0 0 0.5rem;
+}
+
+#overallScore {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--indigo-600);
+  margin: 0.25rem 0;
+}
+
+#overallStatusText,
+#overallBuddyPhrase,
+#whatIsMeasurely p {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--gray-900);
+}
+
+#overallBuddyPhrase {
+  font-style: italic;
+}
+
+/* ------------------------------------------------------------
+   METRIC CARDS
+------------------------------------------------------------ */
+.card-hover {
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #e5e7eb;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.25);
+}
+
+/* ------------------------------------------------------------
+   STATUS DOTS
+------------------------------------------------------------ */
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
   display: inline-block;
-  animation: pint-pour 1.2s ease-in-out infinite;
+  margin-right: 0.4rem;
 }
 
-@keyframes pint-pour {
-  0%, 100% { transform: rotate(-8deg) scale(1); }
-  50%      { transform: rotate(8deg)  scale(1.08); }
+.status-good    { background: #22c55e; }
+.status-warning { background: #f59e0b; }
+.status-poor    { background: #ef4444; }
+
+/* ------------------------------------------------------------
+   MOBILE HEADER (PURPLE TOP BAR)
+------------------------------------------------------------ */
+.mobile-banner {
+  background: var(--indigo-600);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------
+   PROGRESS BAR
+------------------------------------------------------------ */
+.progress-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: rgba(0,0,0,0.1);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.progress-container.active {
+  opacity: 1;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* ------------------------------------------------------------
+   FOOT TAGS
+------------------------------------------------------------ */
+.dynamic-foot {
+  margin-top: 1rem;
+}
+
+/* ------------------------------------------------------------
+   SIDEBAR OVERLAY (MOBILE)
+------------------------------------------------------------ */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 30;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ------------------------------------------------------------
+   MOBILE BREAKPOINT BEHAVIOUR (NO GRID OVERRIDES!)
+------------------------------------------------------------ */
+@media (max-width: 768px) {
+
+  /* Sidebar slides from the right on mobile */
+  .sidebar {
+    left: auto;
+    right: 0;
+    transform: translateX(100%);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 1.25rem !important;
+  }
+
+  body {
+    padding-top: 3.5rem;
+  }
+
+  /* Ensure top-row cards stay full width on mobile */
+  #whatIsMeasurely,
+  #overallScoreCard,
+  #buddySaysCard {
+    width: 100%;
+  }
+
+  /* Sidebar layering */
+  #sidebar {
+    z-index: 60 !important;
+  }
+
+  .sidebar-overlay {
+    z-index: 50;
+  }
+
+  /* Keep card padding tight */
+  .card-hover {
+    padding: 1rem;
+  }
+}
+
+#buddyCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+#buddyIcon {
+  min-width: 2rem;
+  line-height: 1;
+}
+
+#buddyFooter {
+  margin-top: 0.75rem;
 }
