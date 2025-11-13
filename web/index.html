@@ -53,15 +53,14 @@
 
   <aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
     <div class="mb-8 flex items-center space-x-3">
-      <i class="fas fa-microchip text-4xl opacity-90"></i>
+      <img src="logo.png" alt="Audio Buddy Logo" class="w-10 h-10 opacity-90">
       <div>
-        <h1 class="text-2xl font-bold">Measurely</h1>
-        <p class="text-sm opacity-80">Room Acoustic Analysis</p>
+        <h1 class="text-2xl font-bold">Audio Buddy</h1>
+        <p class="text-sm opacity-80">Your Room Tuning Pal</p>
       </div>
     </div>
     <nav class="space-y-2">
       <a href="index.html" class="nav-item active"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
-      <a href="analysis.html" class="nav-item"><i class="fas fa-wave-square mr-3"></i>Frequency Analysis</a>
       <a href="recommendations.html" class="nav-item"><i class="fas fa-lightbulb mr-3"></i>Recommendations</a>
       <a href="room-setup.html" class="nav-item"><i class="fas fa-home mr-3"></i>Room Setup</a>
       <a href="sessions.html" class="nav-item"><i class="fas fa-history mr-3"></i>Sessions</a>
@@ -85,45 +84,38 @@
       <p class="text-gray-600">Comprehensive analysis of your listening environment</p>
     </div>
 
-  <!-- Overall Score Card – split layout -->
-  <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 card-hover">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-
-      <!-- LEFT – score + sentence -->
-      <div class="md:col-span-2">
-        <h3 class="text-xl font-semibold text-gray-800 mb-2">Overall Room Score</h3>
-        <p class="text-gray-600 mb-4">Based on comprehensive acoustic analysis</p>
-        <div class="text-5xl font-bold text-blue-600 mb-2" id="overallScore">--</div>
-        <div class="flex items-center mb-3">
-          <span id="overallStatusIndicator" class="status-indicator status-warning"></span>
-          <span id="overallStatusText" class="text-sm text-gray-600 ml-2">Loading…</span>
-        </div>
-        <p id="overallSummary" class="text-sm text-gray-600">Loading summary…</p>
-      </div>
-
-      <!-- RIGHT – gauge + badges + button -->
-      <div class="text-center">
-        <!-- radial gauge -->
-        <div class="relative inline-block mb-4">
-          <canvas id="overallGauge" width="120" height="120"></canvas>
-          <div class="absolute inset-0 flex items-center justify-center">
-            <span id="gaugeText" class="text-2xl font-bold text-gray-800"></span>
-          </div>
-        </div>
-
-        <!-- insight badges -->
-        <div class="flex gap-2 justify-center mb-4">
-          <span id="insight1" class="px-3 py-1 rounded-full text-xs font-medium"></span>
-          <span id="insight2" class="px-3 py-1 rounded-full text-xs font-medium"></span>
-        </div>
-
-        <!-- quick-jump button -->
-        <button id="quickActionBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hidden">
-          View quick fixes →
-        </button>
-      </div>
-
+  <div id="analysisSpinner" class="analysis-spinner">
+    <div class="spinner-card">
+      <div class="pint">🍻</div>
+      <div>Audio-Buddy is pouring advice…</div>
     </div>
+  </div>
+
+  <!-- TWO-CARD TOP ROW -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+
+    <!-- LEFT : what is Measurely -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 flex items-center">
+      <div>
+        <h3 class="text-xl font-semibold text-gray-800 mb-3">What is Measurely?</h3>
+        <p class="text-gray-600">
+          We can’t replace your ears, but we can show you exactly what to move, treat, or tweak
+          so your music comes alive. Run a sweep, check the results, move a few things around,
+          and hear the difference.
+        </p>
+      </div>
+    </div>
+
+    <!-- RIGHT : overall score (centred) -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 flex flex-col items-center justify-center text-center">
+      <div class="text-6xl font-bold text-indigo-600 mb-2" id="overallScore">--</div>
+      <div class="flex items-center justify-center mb-1">
+        <span id="overallStatusIndicator" class="status-indicator mr-2"></span>
+        <span id="overallStatusText" class="text-sm text-gray-600">Loading…</span>
+      </div>
+      <p class="text-xs text-gray-500 mt-2">Overall room score</p>
+    </div>
+
   </div>
 
     <!-- Quick Stats Grid -->
@@ -153,7 +145,7 @@
         <div class="flex items-center"><span id="peaksDipsStatus" class="status-indicator status-poor"></span><span id="peaksDipsStatusText" class="text-xs text-gray-500">Loading...</span></div>
       </div>
       <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
-        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Reflections</h4><i class="fas fa-echo text-yellow-500 text-xl"></i></div>
+        <div class="flex items-center justify-between mb-4"><h4 class="text-lg font-semibold text-gray-800">Reflections</h4><i class="fas fa-square-caret-left text-yellow-500 text-xl"></i></div>
         <div class="text-3xl font-bold text-yellow-600 mb-2" id="reflectionsScore">--</div>
         <div class="text-sm text-gray-600 mb-3" id="reflectionsDescription">Loading...</div>
         <div class="flex items-center"><span id="reflectionsStatus" class="status-indicator status-warning"></span><span id="reflectionsStatusText" class="text-xs text-gray-500">Loading...</span></div>
@@ -170,7 +162,7 @@
     <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-xl font-semibold">Frequency Response Analysis</h3>
-        <div class="flex space-x-2">
+        <div class="chart-btn-group">
           <button class="bg-white bg-opacity-20 px-4 py-2 rounded-lg text-sm hover:bg-opacity-30 transition-all" id="leftChannelBtn"><i class="fas fa-chart-line mr-2"></i>Left Channel</button>
           <button class="bg-white bg-opacity-20 px-4 py-2 rounded-lg text-sm hover:bg-opacity-30 transition-all" id="rightChannelBtn"><i class="fas fa-chart-line mr-2"></i>Right Channel</button>
           <button class="bg-white bg-opacity-20 px-4 py-2 rounded-lg text-sm hover:bg-opacity-30 transition-all" id="bothChannelsBtn"><i class="fas fa-chart-line mr-2"></i>Both Channels</button>

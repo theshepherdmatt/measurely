@@ -61,3 +61,50 @@
     display: none;
   }
 }
+
+/* ---------- mobile-safe chart buttons ---------- */
+.chart-btn-group {
+  display: flex;
+  flex-wrap: wrap;          /* let buttons wrap */
+  gap: 0.5rem;              /* tidy gap when stacked */
+  justify-content: flex-end;
+}
+.chart-btn-group button {
+  white-space: nowrap;      /* keep text on one line */
+  padding: 0.4rem 0.75rem;  /* slightly smaller hit-area */
+  font-size: 0.8125rem;     /* 13px – still readable */
+}
+
+/* ----------  ANALYSIS  SPINNER  ---------- */
+.analysis-spinner {
+  position: fixed;
+  inset: 0;                                    /* full viewport */
+  background: rgba(0, 0, 0, 0.55);
+  display: none;                               /* hidden by default */
+  place-items: center;
+  z-index: 9999;
+}
+
+.analysis-spinner.active {
+  display: grid;                              /* show when .active */
+}
+
+.spinner-card {
+  background: #1e1e2f;                       /* dark card */
+  color: #fff;
+  padding: 2rem 3rem;
+  border-radius: 1rem;
+  text-align: center;
+  font-size: 1.25rem;
+}
+
+.spinner-card .pint {
+  font-size: 2.5rem;
+  display: inline-block;
+  animation: pint-pour 1.2s ease-in-out infinite;
+}
+
+@keyframes pint-pour {
+  0%, 100% { transform: rotate(-8deg) scale(1); }
+  50%      { transform: rotate(8deg)  scale(1.08); }
+}

@@ -124,6 +124,7 @@ def load_session_data(session_dir):
         room_info = meta_data.get("settings", {}).get("room", {})
 
         out = {
+            # (keep everything you already have)
             "id": path.name,
             "timestamp": meta_data.get("timestamp", datetime.now().isoformat()),
             "room": meta_data.get("room", "Unknown Room"),
@@ -153,6 +154,13 @@ def load_session_data(session_dir):
             "analysis_notes": ana_data.get("notes", []),
             "simple_summary": ana_data.get("plain_summary", ""),
             "simple_fixes":   ana_data.get("simple_fixes", []),
+
+            "band_levels_db": ana_data.get("band_levels_db", {}),
+            "modes": ana_data.get("modes", []),
+
+            # NEW: buddy-friendly keys
+            "buddy_summary": ana_data.get("buddy_summary", ""),
+            "buddy_actions": ana_data.get("buddy_actions", []),
 
             "has_analysis": ana.exists(),
             "has_summary":  (path / "summary.txt").exists(),
@@ -338,6 +346,13 @@ def get_sessions():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+# ----------------------------------------------------------
+#  serve buddy_phrases.json from project root
+# ----------------------------------------------------------
+@app.route('/buddy_phrases.json')
+def serve_buddy_phrases():
+    return send_from_directory('/home/matt/measurely/measurely', 'buddy_phrases.json')
+    
 # ------------------------------------------------------------------
 #  LOAD (make live) a previous session
 # ------------------------------------------------------------------
@@ -425,4 +440,4 @@ if __name__ == '__main__':
     print("Starting Real-Data Measurely Flask Server...")
     print(f"Measurements root: {MEAS_ROOT}")
     print("NEW: /api/room/<session>  (POST + GET) – saves/loads user room setup")
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=False)

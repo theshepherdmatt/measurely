@@ -6,12 +6,9 @@
   <title>Measurely – Recommendations</title>
   <link rel="stylesheet" href="measurely.css">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.0.3/plotly.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    .card-sky   { background-color: #f0f9ff; }
-    .card-amber { background-color: #fffbeb; }
     .toast {
       position:fixed;top:1rem;right:1rem;padding:.75rem 1rem;border-radius:.5rem;color:#fff;font-size:.875rem;z-index:50;
       transform:translateX(120%);opacity:0;transition:transform .3s, opacity .3s;
@@ -24,30 +21,23 @@
 </head>
 
 <body class="bg-gray-50">
-<!-- ----------  MOBILE MENU  ---------- -->
+
+<!-- =========  HEADER / MENU  (unchanged)  ========= -->
 <button id="mobile-menu-btn" class="mobile-menu-button fixed top-4 right-4 z-50 p-2 rounded-lg bg-gray-900/80 text-white backdrop-blur-sm">
   <i class="fas fa-bars text-xl"></i>
 </button>
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-  <!-- =====  SAME HEADER / MENU  ===== -->
-  <button id="mobile-menu-btn" class="mobile-menu-button fixed top-4 right-4 z-50 p-2 rounded-lg bg-gray-900/80 text-white backdrop-blur-sm">
-    <i class="fas fa-bars text-xl"></i>
-  </button>
-  <div id="sidebar-overlay" class="sidebar-overlay"></div>
-
-  <aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
-    <div class="mb-8 flex items-center space-x-3">
-      <i class="fas fa-microchip text-3xl opacity-90"></i>
-      <div>
-        <h1 class="text-2xl font-bold">Measurely</h1>
-        <p class="text-sm opacity-80">Room Acoustic Analysis</p>
-      </div>
+<aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
+  <div class="mb-8 flex items-center space-x-3">
+    <i class="fas fa-microchip text-4xl opacity-90"></i>
+    <div>
+      <h1 class="text-2xl font-bold">Measurely</h1>
+      <p class="text-sm opacity-80">Room Acoustic Analysis</p>
     </div>
-
+  </div>
   <nav class="space-y-2">
     <a href="index.html" class="nav-item"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
-    <a href="analysis.html" class="nav-item"><i class="fas fa-wave-square mr-3"></i>Frequency Analysis</a>
     <a href="recommendations.html" class="nav-item active"><i class="fas fa-lightbulb mr-3"></i>Recommendations</a>
     <a href="room-setup.html" class="nav-item"><i class="fas fa-home mr-3"></i>Room Setup</a>
     <a href="sessions.html" class="nav-item"><i class="fas fa-history mr-3"></i>Sessions</a>
@@ -64,54 +54,47 @@
   </div>
 </aside>
 
-<!-- ----------  MAIN CONTENT  ---------- -->
+<!-- =================  MAIN CONTENT  ================= -->
 <div class="main-content ml-64 p-8">
   <div class="mb-8">
     <h2 class="text-3xl font-bold text-gray-800 mb-2">Recommendations</h2>
     <p class="text-gray-600">Suggestions to optimise your audio setup based on your measurements</p>
   </div>
 
-  <!-- Live-scored status card -->
-  <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-chart-pie mr-2"></i>Current Audio Health Score</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center" id="scoreGrid">
-      <!-- filled by JS -->
-    </div>
-  </div>
-
-  <!-- Priority recommendations (built from live notes/simple_fixes) -->
+  <!-- 1.  PRIORITY  (buddy headline + fixes)  -->
   <div class="mb-8">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-exclamation-triangle mr-2"></i>Priority Recommendations</h2>
-    <div id="priorityCards">
-      <!-- filled by JS -->
-    </div>
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+      <i class="fas fa-exclamation-triangle mr-2"></i>Priority Recommendations
+    </h2>
+    <div id="priorityCards" class="space-y-4"><!-- live --></div>
   </div>
 
-  <!-- Detailed frequency issues -->
+  <!-- 2.  FREQUENCY ISSUES  (per-band delta)  -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <div class="bg-white rounded-2xl shadow-lg p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-chart-line mr-2"></i>Frequency Response Issues</h3>
-      <div id="freqIssues" class="space-y-3 text-sm">
-        <!-- filled by JS -->
-      </div>
-      <div class="mt-4 p-3 bg-gray-100 rounded-lg text-sm text-gray-800" id="freqComment"></div>
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        <i class="fas fa-chart-line mr-2"></i>Frequency Response Issues
+      </h3>
+      <div id="freqIssues" class="space-y-3 text-sm"><!-- live --></div>
+      <div class="mt-4 p-3 bg-gray-100 rounded-lg text-sm text-gray-800" id="freqComment"><!-- live --></div>
     </div>
 
+    <!-- 3.  TREATMENT PRIORITY  (ordered list)  -->
     <div class="bg-white rounded-2xl shadow-lg p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-home mr-2"></i>Treatment Priority Guide</h3>
-      <div id="treatmentSteps" class="space-y-4 text-sm">
-        <!-- filled by JS -->
-      </div>
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        <i class="fas fa-home mr-2"></i>Treatment Priority Guide
+      </h3>
+      <div id="treatmentSteps" class="space-y-4 text-sm"><!-- live --></div>
     </div>
   </div>
 
-  <!-- Action plan -->
+  <!-- 4.  ACTION PLAN  (week-by-week)  -->
   <div class="bg-white rounded-2xl shadow-lg p-6">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-tasks mr-2"></i>Your Personalised Action Plan</h2>
-    <div id="actionPlan" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-      <!-- filled by JS -->
-    </div>
-    <div class="mt-4 p-4 bg-green-100 rounded-lg text-sm text-gray-800" id="expectedResult"></div>
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+      <i class="fas fa-tasks mr-2"></i>Your Personalised Action Plan
+    </h2>
+    <div id="actionPlan" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm"><!-- live --></div>
+    <div class="mt-4 p-4 bg-green-100 rounded-lg text-sm text-gray-800" id="expectedResult"><!-- live --></div>
   </div>
 </div>
 
@@ -150,29 +133,14 @@ async function load() {
   } catch (e) { toast('Could not load recommendations', 'error'); console.error(e); }
 }
 function render() {
-  renderScores(); renderPriorities(); renderFreqIssues(); renderTreatment(); renderActionPlan();
-}
-function scoreColour(s) { return s>=7?'green':s>=4?'yellow':'red'; }
-function scoreWord(s)  { return s>=7?'Good':s>=4?'Fair':'Poor'; }
-
-/* ----------  Top-row score cards ---------- */
-function renderScores() {
-  const sections = ['overall','bandwidth','balance','smoothness','peaks_dips','reflections','reverb'];
-  const grid = document.getElementById('scoreGrid');
-  grid.innerHTML = sections.map(k => {
-    const v = (data[k]||0).toFixed(1);
-    const col = scoreColour(v);
-    return `<div class="p-4 bg-${col}-50 rounded-lg">
-              <div class="text-2xl font-bold text-${col}-600">${v}</div>
-              <div class="text-sm text-gray-600">${k.replace('_',' ')}</div>
-            </div>`;
-  }).join('');
+  renderPriorities(); renderFreqIssues(); renderTreatment(); renderActionPlan();
 }
 
-/* ----------  Priority recommendation cards ---------- */
+/* ----------  1.  PRIORITY  (buddy headline + fixes)  ---------- */
 function renderPriorities() {
-  const notes = data.analysis_notes||[], fixes = data.simple_fixes||[];
-  const combined = [...notes, ...fixes];
+  const headline = (data.buddy_summary || "").trim() || data.notes?.[0] || "All good";
+  const fixes    = data.buddy_actions  || data.simple_fixes || [];
+  const combined = [headline, ...fixes];
   const container = document.getElementById('priorityCards');
   if (!combined.length) { container.innerHTML = '<p class="text-gray-600">No specific recommendations at the moment.</p>'; return; }
   container.innerHTML = combined.map((txt,i) => {
@@ -191,69 +159,98 @@ function renderPriorities() {
   }).join('');
 }
 
-/* ----------  Frequency-band issues ---------- */
+/* ----------  2.  FREQUENCY-BAND ISSUES  ---------- */
 function renderFreqIssues() {
-  const bl = data.band_levels_db||{};
-  const issues = document.getElementById('freqIssues');
   const bands = [
-    {name:'20-80 Hz (Sub-bass)',     key:'bass_20_200',   good:[-4,4]},
-    {name:'200-500 Hz (Low mids)',  key:'mid_200_2k',    good:[-3,3]},
-    {name:'2-8 kHz (Presence)',     key:'treble_2k_10k', good:[-2,2]},
-    {name:'8-20 kHz (Air)',         key:'air_10k_20k',   good:[-4,4]}
+    {name:'20-200 Hz (Bass)',      key:'bass_20_200',   good:[-4,4]},
+    {name:'200-2 kHz (Mids)',      key:'mid_200_2k',    good:[-3,3]},
+    {name:'2-10 kHz (Treble)',     key:'treble_2k_10k', good:[-2,2]},
+    {name:'10-20 kHz (Air)',       key:'air_10k_20k',   good:[-4,4]}
   ];
+  const bl = data.band_levels_db || {};
+  const issues = document.getElementById('freqIssues');
   issues.innerHTML = bands.map(b => {
-    const v = (bl[b.key]||0).toFixed(1);
+    const v = (bl[b.key] ?? 0).toFixed(1);
     const delta = v>0?`+${v} dB`: `${v} dB`;
-    const ok = v>=b.good[0]&&v<=b.good[1];
+    const ok = v>=b.good[0] && v<=b.good[1];
     const col = ok?'green':(Math.abs(v)>8?'red':'yellow');
     return `<div class="flex justify-between"><span class="text-gray-700">${b.name}</span><span class="text-${col}-600 font-medium">${delta}</span></div>`;
   }).join('');
-  document.getElementById('freqComment').innerHTML =
-    `<strong>What this means:</strong> ${data.plain_summary||'Your room response is reasonably flat.'}`;
+
+  /* friendly blurb */
+  const modes = data.modes || [];
+  const boomy = modes.some(m => m.type==='peak' && m.freq_hz<120);
+  const harsh = modes.some(m => m.type==='peak' && m.freq_hz>2000 && m.freq_hz<8000);
+  const dull  = modes.some(m => m.type==='dip' && m.freq_hz>8000);
+  let blurb = data.plain_summary || 'Your room response is reasonably flat.';
+  if (boomy) blurb += '  A little boom below 120 Hz – pull speakers away from the wall.';
+  if (harsh) blurb += '  Some harshness 2–8 kHz – try angling tweeters at ear height.';
+  if (dull)  blurb += '  Top-end roll-off – add a rug or curtains to liven highs.';
+  document.getElementById('freqComment').innerHTML = `<strong>What this means:</strong> ${blurb}`;
 }
 
-/* ----------  Treatment priority list ---------- */
+/* ----------  3.  TREATMENT PRIORITY  ---------- */
 function renderTreatment() {
-  const steps = [
-    {prio:1,title:'Corner Bass Traps',        desc:'Install in all four corners, floor to ceiling'},
-    {prio:2,title:'First Reflection Points',  desc:'Treat side walls at speaker height'},
-    {prio:3,title:'Ceiling Cloud',            desc:'Absorption above listening position'},
-    {prio:4,title:'Rear Wall Diffusion',      desc:'Scatter reflections behind you'}
-  ];
-  const container = document.getElementById('treatmentSteps');
+  const overall = data.overall_score || 0;
+  const modes   = data.modes || [];
+  const refs    = data.reflections_ms || [];
+
+  let steps = [
+    {prio:1, title:'Corner Bass Traps',        desc:'Floor-to-ceiling super-chunks eat low-end modes.',        show: overall < 6 || modes.some(m=>m.freq_hz<120) },
+    {prio:2, title:'First-Reflection Panels',  desc:'Kill side-wall and ceiling echoes; widens stereo image.', show: refs.length > 5 },
+    {prio:3, title:'Ceiling Cloud',            desc:'Absorber above listening position tames vertical flutter.', show: overall < 7 },
+    {prio:4, title:'Rear-Wall Diffusion',      desc:'Scatter reflections behind you to keep room “alive”.',    show: overall >= 7 }
+  ].filter(s=>s.show);   // only show relevant steps
+
   const colours = {1:'red',2:'yellow',3:'green',4:'blue'};
-  container.innerHTML = steps.map(s => `
+  const container = document.getElementById('treatmentSteps');
+  container.innerHTML = steps.map((s,i) => `
     <div class="flex items-start">
-      <div class="w-6 h-6 bg-${colours[s.prio]}-500 rounded-full text-white text-xs font-bold flex items-center justify-center mr-3 mt-0.5">${s.prio}</div>
+      <div class="w-6 h-6 bg-${colours[s.prio]}-500 rounded-full text-white text-xs font-bold flex items-center justify-center mr-3 mt-0.5">${i+1}</div>
       <div><h4 class="font-medium text-gray-800">${s.title}</h4><p class="text-gray-600">${s.desc}</p></div>
     </div>`).join('');
 }
 
-/* ----------  Action plan ---------- */
+/* ----------  4.  ACTION PLAN  (week-by-week)  ---------- */
 function renderActionPlan() {
-  const weeks = [
-    {w:'Week 1-2', tasks:['Install corner bass traps','Measure improvements','Adjust speaker positioning']},
-    {w:'Week 3-4', tasks:['Add first-reflection panels','Fine-tune speaker angles','Test with reference tracks']},
-    {w:'Month 2',  tasks:['Install ceiling treatment','Add rear-wall diffusion','Final optimisation sweep']}
+  /* pick plan based on biggest problem */
+  const overall = data.overall_score || 0;
+  const refs    = (data.reflections_ms || []).length;
+  const rt60    = data.rt60_s;
+  let weeks = [
+    {w:'Week 1', tasks:['Run a sweep','Note biggest problem','Move speakers 20 cm from wall']},
+    {w:'Week 2', tasks:['Install corner bass traps','Re-measure','Celebrate lower boom']},
+    {w:'Week 3', tasks:['Add first-reflection panels','Check stereo image','Fine-tune toe-in']}
   ];
+  if (overall < 5) weeks = [
+    {w:'Week 1', tasks:['Install 4× corner traps','Add rug','Re-sweep']},
+    {w:'Week 2', tasks:['Treat side walls','Cloud above head','Re-sweep']},
+    {w:'Week 3', tasks:['Diffuse rear wall','Final sweep','Mix a song!']}
+  ];
+  if (refs > 15) weeks[0].tasks.unshift('Add thick rug + curtains');   /* lots of early energy */
+  if (rt60 && rt60 > 0.6) weeks[1].tasks.push('Hang ceiling cloud'); /* too live */
+
   document.getElementById('actionPlan').innerHTML = weeks.map(wk => `
     <div class="bg-gray-100 p-4 rounded-lg">
       <h4 class="font-semibold text-gray-800 mb-2">${wk.w}</h4>
       <ul class="text-gray-700 space-y-1">${wk.tasks.map(t=>`<li>• ${t}</li>`).join('')}</ul>
     </div>`).join('');
+
+  /* expected outcome */
+  const gain = Math.min(2.5, (10 - overall) * 0.4);
   document.getElementById('expectedResult').innerHTML =
     `<i class="fas fa-lightbulb mr-2 text-green-600"></i><strong>Expected result:</strong>
-     Following this plan should improve your overall score from <strong>${(data.overall||0).toFixed(1)}</strong>
-     to around <strong>${Math.min(10,(data.overall||0)+2.5).toFixed(1)}</strong>, giving you a much more accurate mixing environment.`;
+     Following this plan should lift your overall score from <strong>${overall.toFixed(1)}</strong>
+     to around <strong>${Math.min(10, overall + gain).toFixed(1)}</strong>, giving you a much more accurate mixing environment.`;
 }
 
-/* ----------  Clock ---------- */
+/* ----------  Clock  ---------- */
 setInterval(() => {
   const el = document.getElementById('lastUpdated');
   if (el) el.textContent = new Date().toLocaleTimeString();
 }, 1000);
 
-/* ----------  Init ---------- */
+/* ----------  Boot  ---------- */
 document.addEventListener('DOMContentLoaded', load);
 </script>
 </body>

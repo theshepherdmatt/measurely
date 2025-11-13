@@ -222,64 +222,33 @@ class MeasurelyDashboard {
 
     updateScores() {
         const data = this.currentData;
-        const overallScore = data.overall_score || 5.0;
+        if (!data) return;          // safety
 
-        /* RIGHT – score + gauge + badges */
-        document.getElementById('overallScore').textContent = overallScore.toFixed(1);
-        this.updateStatusIndicator('overallStatus', overallScore);
-        document.getElementById('overallStatusText').textContent = this.getScoreStatusText(overallScore);
-        this.drawGauge(overallScore);
-
-        const scores = {
-            bandwidthScore: data.bandwidth  || 3.6,
-            balanceScore:   data.balance    || 1.6,
-            smoothnessScore:data.smoothness || 7.3,
-            peaksDipsScore: data.peaks_dips || 3.3,
-            reflectionsScore:data.reflections||4.0,
-            reverbScore:    data.reverb     ||10.0
-        };
-        Object.entries(scores).forEach(([id, val]) => {
-            document.getElementById(id).textContent = val.toFixed(1);
-            this.updateStatusIndicator(id.replace('Score','Status'), val);
+        // 1. big overall score card
+        const overall = data.overall_score ?? 5.0;
+        document.getElementById('overallScore').textContent = overall.toFixed(1);
+        this.updateStatusIndicator('overallStatus', overall);
+        this.pickOverallPhrase(overall).then(p => {
+            document.getElementById('overallStatusText').textContent = p;
         });
 
-        const worst = [
-            {name:'Bandwidth',  val:scores.bandwidthScore},
-            {name:'Balance',    val:scores.balanceScore},
-            {name:'Peaks&Dips', val:scores.peaksDipsScore}
-        ].sort((a,b)=>a.val-b.val).slice(0,2);
-
-        const badge = (el, txt, score) => {
-            const colour = score >= 7 ? 'bg-emerald-100 text-emerald-800' :
-                        score >= 4 ? 'bg-amber-100 text-amber-800' :
-                                    'bg-rose-100 text-rose-800';
-            el.textContent = txt;
-            el.className = 'px-3 py-1 rounded-full text-xs font-medium ' + colour;
+        // 2. six small cards
+        const scores = {
+            bandwidthScore:  data.bandwidth   ?? 3.6,
+            balanceScore:    data.balance     ?? 1.6,
+            smoothnessScore: data.smoothness  ?? 7.3,
+            peaksDipsScore:  data.peaks_dips  ?? 3.3,
+            reflectionsScore:data.reflections ?? 4.0,
+            reverbScore:     data.reverb      ?? 10.0
         };
-        badge(document.getElementById('insight1'), `${worst[0].name} needs work`, worst[0].val);
-        badge(document.getElementById('insight2'), `${worst[1].name} low`,        worst[1].val);
 
-        const btn = document.getElementById('quickActionBtn');
-        if (overallScore < 6) btn.classList.remove('hidden'); else btn.classList.add('hidden');
+        Object.entries(scores).forEach(([id, val]) => {
+            document.getElementById(id).textContent = val.toFixed(1);
+            this.updateStatusIndicator(id.replace('Score', 'Status'), val);
+        });
 
-        /* legacy small-print descriptions */
+        // 3. descriptive text under each card
         this.updateDescriptions(data);
-    }
-
-    drawGauge(score) {
-        const canvas = document.getElementById('overallGauge');
-        const ctx    = canvas.getContext('2d');
-        const c      = 60, r = 50;
-        const start  = Math.PI * 0.75, end = Math.PI * 2.25;
-        const angle  = start + (end - start) * (score / 10);
-
-        ctx.clearRect(0, 0, 120, 120);
-        ctx.beginPath(); ctx.arc(c, c, r, start, end); ctx.lineWidth = 10;
-        ctx.strokeStyle = '#e5e7eb'; ctx.stroke();                       // bg
-        ctx.beginPath(); ctx.arc(c, c, r, start, angle); ctx.lineWidth = 10;
-        ctx.strokeStyle = score >= 7 ? '#10b981' : score >= 4 ? '#f59e0b' : '#ef4444';
-        ctx.stroke();                                                      // score
-        document.getElementById('gaugeText').textContent = score.toFixed(1);
     }
 
     updateDescriptions(data) {
@@ -359,6 +328,23 @@ class MeasurelyDashboard {
         if (score >= 6) return "Good room response";
         if (score >= 4) return "Room for improvement";
         return "Needs significant treatment";
+    }
+
+    /* ----------  NEW : buddy-style dynamic status  ---------- */
+    async pickOverallPhrase(score) {
+        try {
+            const res = await fetch('/buddy_phrases.json');
+            if (!res.ok) throw new Error('phrases missing');
+            const bank = await res.json();
+            const bucket = score < 5 ? 'cold' : score < 7 ? 'cool' : score < 9 ? 'warm' : 'hot';
+            const choices = bank[bucket] || ['Room sounds fine.'];
+            return choices[Math.floor(Math.random() * choices.length)];
+        } catch {
+            // 404 or bad JSON – just give a static sentence
+            return score < 5 ? 'Room needs love.' :
+                score < 7 ? 'Not bad at all.' :
+                score < 9 ? 'Room is cosy.' : 'Studio-grade!';
+        }
     }
 
     updateFrequencyChart() {

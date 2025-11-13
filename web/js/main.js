@@ -4,13 +4,18 @@ import { $, setDisabled, runSweepAPI, quipAndSpeak, getStatus, simpleResult, gee
 
 // Configuration for dashboard selection
 window.DASH_CONFIG = {
-  useEnhancedDashboard: true,  // Set to false to use original dashboard
+  useDashboard: true,  // Set to false to use original dashboard
   debugMode: 1,               // Enable debug logging
   demoMode: false             // Set to true for demo mode
 };
 
 // Enhanced Dashboard Class
-let enhancedDashboard = null;
+let Dashboard = null;
+
+function toggleAnalysisSpinner(show = true) {
+  const sp = document.getElementById('analysisSpinner');
+  if (sp) sp.classList.toggle('active', show);
+}
 
 /* -------------------- Actions -------------------- */
 async function runSweep() {
@@ -48,8 +53,8 @@ async function runSweep() {
     await refreshStatus();
     
     // Refresh both dashboards if available
-    if (window.DASH_CONFIG.useEnhancedDashboard && enhancedDashboard) {
-      await enhancedDashboard.refresh();
+    if (window.DASH_CONFIG.useDashboard && Dashboard) {
+      await Dashboard.refresh();
     } else {
       await refreshDashboard();
     }
@@ -66,7 +71,7 @@ async function runSweep() {
 }
 
 /* -------------------- Enhanced Dashboard Class -------------------- */
-class EnhancedDashboardApp {
+class DashboardApp {
   constructor() {
     this.currentSection = 'dashboard';
     this.deviceStatus = {};
@@ -272,46 +277,50 @@ class EnhancedDashboardApp {
 
   async runSweep() {
     if (this.isSweepRunning) return;
-    
-    const btn = document.getElementById('runSweepBtn');
+
+    const btn   = document.getElementById('runSweepBtn');
     const stopBtn = document.getElementById('stopSweepBtn');
     const logsEl = document.getElementById('logs');
-    
+
     this.isSweepRunning = true;
     if (btn) {
       btn.disabled = true;
       btn.classList.add('opacity-50');
     }
     if (stopBtn) stopBtn.classList.remove('hidden');
-    
     if (logsEl) logsEl.textContent = 'Starting sweep...\n';
-    
+
     try {
-      const speaker = document.getElementById('speakerSelect');
-      const speakerValue = speaker ? speaker.value : null;
-      const payload = { speaker: speakerValue || null };
-      
-      const data = await this.runSweepAPI(payload);
-      
-      if (data.ok) {
-        if (logsEl) logsEl.textContent += data.stdout || 'Sweep completed';
-        
-        // Refresh data after successful sweep
-        setTimeout(async () => {
-          await this.loadInitialData();
-          this.render();
-        }, 1000);
-        
-      } else {
-        throw new Error(data.error || 'Sweep failed');
-      }
-      
-    } catch (error) {
-      console.error('Sweep error:', error);
-      if (logsEl) logsEl.textContent += `\nError: ${error.message}`;
-      this.showError('Sweep failed: ' + error.message);
+      const speakerVal = document.getElementById('speakerSelect')?.value || null;
+      const data = await this.runSweepAPI({ speaker: speakerVal });
+
+      if (!data.ok) throw new Error(data.error || 'Sweep failed');
+
+      /* 1.  show spinner while analysis runs  */
+      toggleAnalysisSpinner(true);
+      if (logsEl) logsEl.textContent += '\nAnalysing…\n';
+
+      /* 2.  wait for analysis to finish  */
+      await this.waitForAnalysis(data.session_id);   // helper below
+
+      /* 3.  hide spinner  */
+      toggleAnalysisSpinner(false);
+
+      if (logsEl) logsEl.textContent += data.stdout || 'Sweep completed';
+
+      // refresh UI
+      setTimeout(async () => {
+        await this.loadInitialData();
+        this.render();
+      }, 500);
+
+    } catch (err) {
+      console.error('Sweep error:', err);
+      if (logsEl) logsEl.textContent += `\nError: ${err.message}`;
+      this.showError('Sweep failed: ' + err.message);
     } finally {
       this.isSweepRunning = false;
+      toggleAnalysisSpinner(false);          // belt-and-braces
       if (btn) {
         btn.disabled = false;
         btn.classList.remove('opacity-50');
@@ -320,6 +329,15 @@ class EnhancedDashboardApp {
     }
   }
 
+  /* helper: poll until analysis.ready == true */
+  async waitForAnalysis(sessionId) {
+    for (let i = 0; i < 60; i++) {          // 60 × 1 s = 60 s max
+      const st = await this.getStatus();
+      if (st.ready) return;                 // analysis finished
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    throw new Error('Analysis timed out');
+  }
   stopSweep() {
     console.log('Stop sweep requested');
     this.showInfo('Sweep stop requested - feature coming soon');
@@ -480,15 +498,16 @@ class EnhancedDashboardApp {
   }
 }
 
+
 /* -------------------- Bootstrapping -------------------- */
 document.addEventListener('DOMContentLoaded', async () => {
   // Check if enhanced dashboard should be used
-  if (window.DASH_CONFIG.useEnhancedDashboard) {
+  if (window.DASH_CONFIG.useDashboard) {
     console.log('[Main] Using enhanced dashboard');
     
     // Initialize enhanced dashboard
-    enhancedDashboard = new EnhancedDashboardApp();
-    window.dashboard = enhancedDashboard;
+    Dashboard = new DashboardApp();
+    window.dashboard = Dashboard;
     
   } else {
     console.log('[Main] Using original dashboard');
@@ -523,5 +542,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* -------------------- Export for Enhanced Dashboard -------------------- */
-export { EnhancedDashboardApp };
-export default EnhancedDashboardApp;
+function toggleAnalysisSpinner(show = true) {
+  const sp = document.getElementById('analysisSpinner');
+  if (sp) sp.classList.toggle('active', show);
+}
+
+/*  always boot the single dashboard  */
+const dashboard = new DashboardApp();
+dashboard.init();
