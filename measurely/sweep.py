@@ -323,8 +323,14 @@ def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag
         if fig_fr is not None:
             savefig_atomic(fig_fr, targets["response_png"], dpi=150)
 
-        # JSON
+        # JSON **inside the loop**
         write_json_atomic(meta, targets["meta_json"])
+
+        print(f"[DEBUG] save_all called, meta_json={targets['meta_json']}")
+
+
+    # JSON
+    write_json_atomic(meta, targets["meta_json"])
 
     # close figures
     try:
@@ -366,6 +372,34 @@ def main():
 
     write_log(outdir, ["IN_DEV_INFO:", dev_info(args.in_dev, 'input'),
                        "OUT_DEV_INFO:", dev_info(args.out_dev, 'output')])
+    
+    # ------------------------------------------------------------------
+    #  read user room & speaker config
+    # ------------------------------------------------------------------
+    latest_meta = Path.home() / "Measurely" / "measurements" / "latest" / "meta.json"
+
+    if latest_meta.exists():
+        print(f"[SWEEP] loading room config from {latest_meta}")
+        user_meta = json.loads(latest_meta.read_text())
+        room = user_meta.get("settings", {}).get("room", {})
+        room_len = float(room.get("length_m", 4.0))
+        speaker_key = room.get("speaker_key")
+    else:
+        print("[SWEEP] WARNING: no /latest/meta.json found — using defaults")
+        room_len = 4.0
+        speaker_key = None
+
+    # tailor sweep length to room size
+    args.dur = max(4.0, room_len * 1.2)          # ~5 m room → 6 s sweep
+
+    # tailor frequency limits to speaker profile
+    from measurely.speaker import load_target_curve
+    if speaker_key:
+        curve = load_target_curve(speaker_key)
+        if curve is not None:
+            args.f0 = float(curve.x[0])
+            args.f1 = float(curve.x[-1])
+            print(f"[SWEEP] using {speaker_key} limits {args.f0:.0f} Hz – {args.f1:.0f} Hz")
 
     if args.mode in ("left", "both"):
         run_sweep(outdir, sweep, inv, fs, args, "left", route_to_left(sweep))
@@ -373,6 +407,7 @@ def main():
         run_sweep(outdir, sweep, inv, fs, args, "right", route_to_right(sweep))
 
     print("Saved:", outdir)
+
 
 if __name__ == "__main__":
     main()

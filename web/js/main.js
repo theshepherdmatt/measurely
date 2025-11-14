@@ -2,6 +2,34 @@
 
 import { $, setDisabled, runSweepAPI, quipAndSpeak, getStatus, simpleResult, geekResult, fetchSessions, filterGenerate } from './api.js';
 
+// ---- Buddy Tip De-duplication System ----
+window.usedBuddyTips = new Set();
+
+window.pickUniqueTip = function(allTips) {
+  // 1. If we've used everything, reset.
+  if (window.usedBuddyTips.size >= allTips.length) {
+    window.usedBuddyTips.clear();
+  }
+
+  // 2. Keep picking until we find one not used yet
+  let tip = null;
+  for (let i = 0; i < 20; i++) {
+    const t = allTips[Math.floor(Math.random() * allTips.length)];
+    if (!window.usedBuddyTips.has(t)) {
+      tip = t;
+      break;
+    }
+  }
+
+  // 3. Fallback
+  if (!tip) tip = allTips[0];
+
+  // 4. Record and return
+  window.usedBuddyTips.add(tip);
+  return tip;
+};
+
+
 // Configuration for dashboard selection
 window.DASH_CONFIG = {
   useDashboard: true,  // Set to false to use original dashboard

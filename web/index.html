@@ -63,6 +63,17 @@
 
   </div>
 
+  <!-- Progress bar (hidden by default) -->
+  <div id="progressContainer" class="fixed top-4 left-1/2 -translate-x-1/2 w-80 bg-white/90 backdrop-blur rounded-lg shadow-lg p-3 hidden z-50">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-sm font-medium text-gray-700">Running sweep...</span>
+      <span id="progressPercent" class="text-sm text-gray-600">0%</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-2.5">
+      <div id="progressBar" class="bg-green-600 h-2.5 rounded-full" style="width: 0%"></div>
+    </div>
+  </div>
+
 
   <!-- =====  HEADER / MENU  ===== -->
   <div id="sidebar-overlay" class="sidebar-overlay"></div>
@@ -103,24 +114,30 @@
   <!-- TWO-CARD TOP ROW -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
-    <!-- LEFT : what is Measurely -->
+  <!-- LEFT : Welcome to Measurely Buddy -->
   <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between">
     <h3 class="text-md font-bold text-gray-800 mb-2 flex items-center">
-      <i class="fas fa-info-circle text-indigo-500 mr-2"></i>
-      What is Measurely?
+      Welcome to Measurely
     </h3>
-    <p class="text-sm text-gray-600 leading-relaxed">
-      We show you exactly what to move, treat, or tweak so your music comes alive.
-      Run a sweep, view the results, and follow simple steps for better sound.
+
+    <p class="text-sm text-gray-600 leading-relaxed flex items-start">
+      <i class="fas fa-robot text-purple-600 mr-2 mt-0.5"
+        aria-label="Measurely Buddy says:"></i>
+      <span>
+        Hi, I’m your Measurely Buddy! You’ll see tips and comments from me as we go along.
+        Think of me as your friendly algorithmic helper. I calculate your room sizes and
+        speaker profiles during sweeps, so we can fine-tune your sound step by step.
+      </span>
     </p>
   </div>
 
 
     <!-- NEW: Overall score -->
     <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between">
-      <h3 class="text-lg font-semibold text-gray-800 mb-2">Overall room score</h3>
+      <h3 class="text-md font-bold text-gray-800 mb-2 flex items-center">
+        Your overall score</h3>
 
-      <div class="text-5xl font-bold text-indigo-600 mb-1" id="overallScore">--</div>
+      <div class="text-15xl font-bold text-indigo-600 mb-1" id="overallScore">--</div>
 
       <div class="flex items-center text-sm text-gray-600">
         <span id="overallStatus" class="status-indicator mr-2"></span>
@@ -132,8 +149,8 @@
     <div id="buddyCard" class="bg-white rounded-2xl shadow-lg p-6">
 
       <!-- Header -->
-      <h3 class="text-xs uppercase tracking-wide text-gray-400 mb-3">
-        Buddy says
+      <h3 class="text-md font-bold text-gray-800 mb-2 flex items-center">
+        Measurely-Buddy says
       </h3>
 
       <!-- Icon + Phrase -->
@@ -153,6 +170,53 @@
 
     </div>
   </div>
+
+<div id="scoreKeyCard" class="bg-white rounded-xl shadow p-4 my-6">
+
+  <h3 class="text-md font-bold text-gray-800 mb-2 flex items-center">
+    Score key
+  </h3>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+
+    <!-- Excellent -->
+    <div class="flex items-start">
+      <span class="w-2.5 h-2.5 rounded-full bg-green-500 mt-1 mr-2"></span>
+      <div>
+        <p class="font-semibold text-gray-900">Excellent</p>
+        <p class="text-gray-600 text-xs leading-snug">8–10 · Studio-clean room behaviour.</p>
+      </div>
+    </div>
+
+    <!-- Good -->
+    <div class="flex items-start">
+      <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 mt-1 mr-2"></span>
+      <div>
+        <p class="font-semibold text-gray-900">Good</p>
+        <p class="text-gray-600 text-xs leading-snug">6–7.9 · Balanced with minor tweaks.</p>
+      </div>
+    </div>
+
+    <!-- Fair -->
+    <div class="flex items-start">
+      <span class="w-2.5 h-2.5 rounded-full bg-orange-500 mt-1 mr-2"></span>
+      <div>
+        <p class="font-semibold text-gray-900">Fair</p>
+        <p class="text-gray-600 text-xs leading-snug">4–5.9 · Noticeable room issues.</p>
+      </div>
+    </div>
+
+    <!-- Poor -->
+    <div class="flex items-start">
+      <span class="w-2.5 h-2.5 rounded-full bg-red-500 mt-1 mr-2"></span>
+      <div>
+        <p class="font-semibold text-gray-900">Poor</p>
+        <p class="text-gray-600 text-xs leading-snug">0–3.9 · Strong room interactions.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 
   <!-- =====  METRIC DETAILS ===== -->

@@ -97,10 +97,11 @@ body {
 }
 
 #overallScore {
-  font-size: 3rem;
+  font-size: clamp(4rem, 8vw, 8rem);
   font-weight: 800;
   color: var(--indigo-600);
   margin: 0.25rem 0;
+  line-height: 1;
 }
 
 #overallStatusText,
@@ -265,4 +266,77 @@ body {
 
 #buddyFooter {
   margin-top: 0.75rem;
+}
+
+/* ============================================================
+   MEASURELY RECOMMENDATIONS VISUAL UPGRADE
+   (Brighter cards, Buddy colours, stronger headers)
+   ============================================================ */
+
+/* Soft background like Dashboard */
+body.recommendations-page {
+  background: linear-gradient(to bottom right, #f8f7ff, #eef4ff);
+}
+
+/* Section headers – add purple underline */
+.section-title {
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.section-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(to right, #7c3aed, #6366f1);
+  border-radius: 999px;
+}
+
+/* Card styling – brighter, cleaner, Dashboard style */
+.measurely-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid var(--indigo-600);
+}
+
+/* Softer Buddy translation boxes */
+.buddy-box {
+  background: var(--indigo-50);
+  color: var(--indigo-600);
+  padding: 1rem;
+  font-size: 0.9rem;
+  border-radius: 0.75rem;
+  font-style: italic;
+  margin-top: 1rem;
+  border: 1px solid rgba(124,58,237,0.15);
+}
+
+/* Deep Dive left accent */
+.deep-dive-card {
+  border-left: 5px solid #8b5cf6;
+}
+
+/* Improve readability of technical text */
+.measurely-tech-text {
+  color: var(--gray-900);
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+/* Improve spacing between blocks */
+.measurely-block {
+  margin-bottom: 1.25rem;
+}
+
+.speaker-profile-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 6px 18px -6px rgba(0,0,0,0.1);
+  border-left: 4px solid #7c3aed;
 }

@@ -351,14 +351,29 @@ def get_sessions():
 # ----------------------------------------------------------
 @app.route('/buddy_phrases.json')
 def serve_buddy_phrases():
-    return send_from_directory('/home/matt/measurely/measurely', 'buddy_phrases.json')
+    return send_from_directory('/home/matt/measurely/measurely/phrases', 'buddy_phrases.json')
 
 # ----------------------------------------------------------
 #  serve foot_tags.json from project root
 # ----------------------------------------------------------
 @app.route('/foot_tags.json')
 def serve_foot_tags():
-    return send_from_directory('/home/matt/measurely/measurely', 'foot_tags.json')
+    return send_from_directory('/home/matt/measurely/measurely/phrases', 'foot_tags.json')
+
+# ----------------------------------------------------------
+#  serve foot_tags.json from project root
+# ----------------------------------------------------------
+@app.route('/buddy_recommends.json')
+def serve_buddy_recommends():
+    return send_from_directory('/home/matt/measurely/measurely/phrases', 'buddy_recommends.json')
+
+# ----------------------------------------------------------
+#  serve speakers.json from project root
+# ----------------------------------------------------------
+
+@app.route('/speakers/<path:filename>')
+def serve_speakers(filename):
+    return send_from_directory('/home/matt/measurely/speakers', filename)
     
 # ------------------------------------------------------------------
 #  LOAD (make live) a previous session
@@ -398,10 +413,12 @@ def save_room(session_id):
         if not ses.is_dir():
             return jsonify({"error": "Session not found"}), 404
         data = request.get_json(force=True)
+        print("📥 Received room data:", data)
         meta_file = ses / "meta.json"
         meta = json.loads(meta_file.read_text(encoding='utf-8')) if meta_file.exists() else {}
         meta.setdefault("settings", {})
-        meta["settings"]["room"] = data
+        meta["settings"].setdefault("room", {})
+        meta["settings"]["room"].update(data)
         write_json_atomic(meta, meta_file)
         return jsonify({"status": "saved"})
     except Exception as e:

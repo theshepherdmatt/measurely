@@ -1,5 +1,7 @@
 import json, random, os
-_PHRASE_FILE = os.path.expanduser("~/measurely/measurely/buddy_phrases.json")
+from pathlib import Path
+
+_PHRASE_FILE = Path(__file__).resolve().parent.parent / "phrases" / "buddy_phrases.json"
 _bank = json.load(open(_PHRASE_FILE))
 
 def _pick(tag):          # fallback if bank grows

@@ -1,8 +1,38 @@
-/**
- * Measurely Dashboard - Real-time frequency response data integration
- * Handles API calls, data visualization, and user interactions
- * Updated to work with actual measurely sweep system
- */
+window.usedBuddyTips = {
+  boom: new Set(),
+  mid: new Set(),
+  top: new Set(),
+  echo: new Set(),
+  fix: new Set(),
+  cold: new Set(),
+  cool: new Set(),
+  warm: new Set(),
+  hot: new Set()
+};
+
+window.pickUniqueTip = function(bucket, allTips) {
+  if (!allTips || allTips.length === 0) return '';
+
+  const used = window.usedBuddyTips[bucket];
+
+  // Reset if we’ve used all
+  if (used.size >= allTips.length) used.clear();
+
+  let tip = null;
+  for (let i = 0; i < 20; i++) {
+    const c = allTips[Math.floor(Math.random() * allTips.length)];
+    if (!used.has(c)) {
+      tip = c;
+      break;
+    }
+  }
+
+  if (!tip) tip = allTips[0];
+
+  used.add(tip);
+  return tip;
+};
+
 
 class MeasurelyDashboard {
     constructor() {
@@ -11,10 +41,11 @@ class MeasurelyDashboard {
         this.deviceStatus = {};
         this.updateInterval = null;
         this.sweepCheckInterval = null;
-
-        this.loadFootTags();   // <-- add this line
+        this.loadFootTags();
+        this.loadBuddyPhrases();
         this.init();
     }
+    
 
     /* ---------- load foot tag-lines once ---------- */
     async loadFootTags() {
@@ -27,6 +58,18 @@ class MeasurelyDashboard {
             window.footBank = {};
         }
     }
+
+    async loadBuddyPhrases() {
+    try {
+        const res = await fetch('/buddy_phrases.json');
+        if (!res.ok) throw new Error(res.status);
+        window.buddyBank = await res.json();
+        console.log("buddy_phrases loaded");
+    } catch {
+        window.buddyBank = {};
+    }
+    }
+
 
     async init() {
         console.log('Initializing Measurely Dashboard...');
@@ -75,33 +118,44 @@ class MeasurelyDashboard {
     async loadData() {
         try {
             console.log('Loading latest measurement data...');
-            
-            // Show loading state
+
+            // Set loading state on score UI
             this.showLoadingState();
-            
-            // Fetch latest data
+
+            // Fetch latest analysis JSON from backend
             const response = await fetch('/api/latest');
-            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
+            // Parse JSON into dashboard state
             this.currentData = await response.json();
-            
-            // Update UI with new data
+
+            // --- ROOM DATA DEBUG ---
+            if (this.currentData.room) {
+                console.log("ROOM DATA:", this.currentData.room);
+                console.log("Room length:", this.currentData.room.length);
+                console.log("Room width :", this.currentData.room.width);
+                console.log("Room height:", this.currentData.room.height);
+            } else {
+                console.log("No room data in analysis.json");
+            }
+
+            // Push new data into the UI
             this.updateDashboard();
-            
+
             console.log('Data loaded successfully:', this.currentData);
-            
+
         } catch (error) {
             console.error('Error loading data:', error);
             this.showError('Failed to load measurement data');
-            
-            // Load fallback sample data
+
+            // Fallback to built-in sample data
             this.currentData = this.generateSampleData();
             this.updateDashboard();
         }
     }
+
 
     
     async runSweep() {
@@ -211,27 +265,27 @@ class MeasurelyDashboard {
         }
     }
 
-
     updateDashboard() {
-        if (!this.currentData) {
-            console.warn('No data to update dashboard');
+        const data = this.currentData;
+
+        if (!data) {
+            console.warn('No data available to update dashboard');
             return;
         }
 
         console.log('Updating dashboard with new data...');
-        
-        // Update scores
+
+        // Core UI updates
         this.updateScores();
-        
-        // Update frequency chart
         this.updateFrequencyChart();
-        
-        // Update room analysis
         this.updateRoomAnalysis();
-        
-        // Update detailed analysis
         this.updateDetailedAnalysis();
-        
+
+        // --- Step 2: Update the room layout visual if supported ---
+        if (window.updateRoomCanvas && data.room) {
+            window.updateRoomCanvas(data.room);
+        }
+
         console.log('Dashboard updated successfully');
     }
 
@@ -311,11 +365,8 @@ class MeasurelyDashboard {
         });
 
         /* ---------- DESCRIPTIONS + BUDDY TIPS + FOOTERS ---------- */
-        if (window.footBank && Object.keys(window.footBank).length > 0) {
-            this.updateDescriptions(data);
-        } else {
-            setTimeout(() => this.updateDescriptions(data), 150);
-        }
+        this.updateDescriptions(data);
+
     }
 
 
@@ -414,23 +465,30 @@ class MeasurelyDashboard {
         const el = document.getElementById(elId);
         if (!el) return;
 
-        try {
-            const res = await fetch('/buddy_phrases.json');
-            if (!res.ok) throw 0;
+        const bank = window.buddyBank || {};
+        const choices = bank[bucket] || [];
 
-            const bank = await res.json();
-            const choices = bank[bucket] || [];
-
-            el.textContent =
-                choices.length
-                    ? choices[Math.floor(Math.random() * choices.length)]
-                    : '';
-        } catch {
-            // IMPORTANT: DO NOT LET THIS CRASH updateDescriptions()
+        if (choices.length === 0) {
             el.textContent = '';
+            return;
         }
-    }
 
+        const tip = window.pickUniqueTip(bucket, choices);
+        el.textContent = tip;
+
+        // -------------------------
+        // DEBUG: Log all 6 card tips
+        // -------------------------
+        if (!window.debugBuddy) window.debugBuddy = {};
+
+        window.debugBuddy[elId] = {
+            element: elId,
+            bucket: bucket,
+            tip: tip
+        };
+
+        console.log("Buddy Tips Used:", window.debugBuddy);
+    }
 
     getScoreStatusText(score) {
         let verdict = '';
@@ -444,19 +502,23 @@ class MeasurelyDashboard {
 
     /* ----------  NEW : buddy-style dynamic status  ---------- */
     async pickOverallPhrase(score) {
-        try {
-            const res = await fetch('/buddy_phrases.json');
-            if (!res.ok) throw new Error('phrases missing');
-            const bank = await res.json();
-            const bucket = score < 5 ? 'cold' : score < 7 ? 'cool' : score < 9 ? 'warm' : 'hot';
-            const choices = bank[bucket] || ['Room sounds fine.'];
-            return choices[Math.floor(Math.random() * choices.length)];
-        } catch {
-            // 404 or bad JSON – just give a static sentence
+        const bucket =
+            score < 5 ? 'cold' :
+            score < 7 ? 'cool' :
+            score < 9 ? 'warm' :
+            'hot';
+
+        const bank = window.buddyBank || {};
+        const choices = bank[bucket] || [];
+
+        if (choices.length === 0) {
             return score < 5 ? 'Room needs love.' :
                 score < 7 ? 'Not bad at all.' :
                 score < 9 ? 'Room is cosy.' : 'Studio-grade!';
         }
+
+        // Use the SAME global uniqueness engine used by all other cards
+        return window.pickUniqueTip(bucket, choices);
     }
 
     updateFrequencyChart() {
@@ -499,20 +561,38 @@ class MeasurelyDashboard {
     }
 
     updateRoomAnalysis() {
-        /* skip if room-analysis card is absent */
+
+        // Skip if the card doesn't exist
         if (!document.getElementById('roomDimensions')) return;
 
-        const data = this.currentData;
-        const length = data.length || 4.0;
-        const width  = data.width  || 4.0;
-        const height = data.height || 3.0;
+        const data = this.currentData || {};
+        const room = {
+            length: data.length,
+            width: data.width,
+            height: data.height
+        };
 
-        document.getElementById('roomDimensions').textContent = `${length} × ${width} × ${height} m`;
 
-        const speedOfSound = 343;
-        document.getElementById('lengthMode').textContent = `${(speedOfSound / (2 * length)).toFixed(1)} Hz`;
-        document.getElementById('widthMode').textContent  = `${(speedOfSound / (2 * width)).toFixed(1)} Hz`;
-        document.getElementById('heightMode').textContent = `${(speedOfSound / (2 * height)).toFixed(1)} Hz`;
+        // Extract + normalise to numbers
+        const length = Number(room.length) || 4.0;
+        const width  = Number(room.width)  || 4.0;
+        const height = Number(room.height) || 3.0;
+
+        // Update text display
+        document.getElementById('roomDimensions').textContent =
+            `${length} × ${width} × ${height} m`;
+
+        // Basic modal frequencies
+        const c = 343; // speed of sound m/s
+
+        document.getElementById('lengthMode').textContent =
+            `${(c / (2 * length)).toFixed(1)} Hz`;
+
+        document.getElementById('widthMode').textContent  =
+            `${(c / (2 * width)).toFixed(1)} Hz`;
+
+        document.getElementById('heightMode').textContent =
+            `${(c / (2 * height)).toFixed(1)} Hz`;
     }
 
     updateDetailedAnalysis() {

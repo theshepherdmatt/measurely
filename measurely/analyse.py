@@ -27,7 +27,15 @@ log = logging.getLogger("measurely")
 
 def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     freq, mag, ir, fs, label = load_session(session_dir)
+    print("=== ANALYSE: Loaded session ===")
+    print(f"Session folder: {session_dir}")
+    print(f"Label: {label}")
+    print(f"Impulse length: {len(ir)} samples")
+    print(f"Raw response points: {len(freq)}")
+
     freq, mag = log_bins(freq, mag, ppo=ppo)
+    print(f"After log-binning: {len(freq)} points, {ppo} PPO")
+
 
     bands = {
         "bass_20_200":   band_mean(freq, mag, 20, 200),
@@ -96,6 +104,102 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "buddy_treat_blurb":  buddy_full.get("treat", ""),
         "buddy_action_blurb": buddy_full.get("action", ""),
     }
+
+    # --- load room data from meta.json ---
+    print("\n--- ROOM CONFIG LOADING ---")
+
+    # Primary source: latest/meta.json
+    latest_meta = Path.home() / "Measurely" / "measurements" / "latest" / "meta.json"
+
+    if latest_meta.exists():
+        print(f"Loading room config from LATEST: {latest_meta}")
+        meta = json.loads(latest_meta.read_text())
+        room = meta.get("settings", {}).get("room", {})
+
+        print("Raw latest/meta.json contents:")
+        print(json.dumps(meta, indent=2))
+
+    else:
+        print("WARNING: latest/meta.json not found — falling back to session folder")
+        meta_path = Path(session_dir) / "meta.json"
+        if meta_path.exists():
+            print(f"Loading fallback room config from: {meta_path}")
+            meta = json.loads(meta_path.read_text())
+            room = meta.get("settings", {}).get("room", {})
+        else:
+            print("No room config found anywhere.")
+            room = {}
+
+    # ---- print parsed values ----
+    print("\nParsed room settings:")
+    print(f"  Room length (m):       {room.get('length_m')}")
+    print(f"  Room width (m):        {room.get('width_m')}")
+    print(f"  Room height (m):       {room.get('height_m')}")
+    print(f"  Listener distance (m): {room.get('listener_front_m')}")
+    print(f"  Speaker front dist (m):{room.get('spk_front_m')}")
+    print(f"  Speaker spacing (m):   {room.get('spk_spacing_m')}")
+    print(f"  Toe-in angle (deg):    {room.get('toe_in_deg')}")
+    print(f"  Speaker profile:       {room.get('speaker_key')}")
+
+    export["room"] = room
+
+    # --- AUTO-SELECT SPEAKER KEY FROM ROOM CONFIG ---
+    if not speaker_key:
+        speaker_key = room.get("speaker_key")
+        print(f"\nAuto-selected speaker key from room config: {speaker_key}")
+
+    # --- SPEAKER PROFILE DEBUG ---
+    print("\n--- SPEAKER PROFILE LOADING ---")
+    print(f"Requested speaker key: {speaker_key}")
+
+    # Load curve again so we can inspect it
+    curve = load_target_curve(speaker_key)
+
+    # Print where the speaker catalogue lives
+    from measurely.speaker import SPEAKER_DIR
+    print(f"SPEAKER_DIR: {SPEAKER_DIR}")
+
+    # Print speakers.json
+    catalogue_path = SPEAKER_DIR / "speakers.json"
+    if catalogue_path.exists():
+        print(f"Found speakers.json at: {catalogue_path}")
+        try:
+            catalogue = json.loads(catalogue_path.read_text())
+            print("speakers.json contents (beautified):")
+            print(json.dumps(catalogue, indent=2))
+        except Exception as e:
+            print(f"ERROR reading speakers.json: {e}")
+    else:
+        print("ERROR: speakers.json NOT FOUND")
+
+    # Now print the specific entry used
+    if speaker_key and speaker_key in catalogue:
+        entry = catalogue[speaker_key]
+        print(f"\nSpeaker entry for '{speaker_key}':")
+        print(json.dumps(entry, indent=2))
+
+        target_file = SPEAKER_DIR / entry["folder"] / entry["target_curve"]
+        print(f"Target curve file resolved to: {target_file}")
+    else:
+        print(f"No catalogue entry found for speaker key '{speaker_key}'")
+
+    # Print actual curve data (interpolated)
+    if curve is None:
+        print("Curve load FAILED — no curve available.")
+    else:
+        print("\nCurve load SUCCESS.")
+        try:
+            print(f"Curve frequency range: {curve.x[0]} Hz → {curve.x[-1]} Hz")
+            print("First 10 frequencies:", np.round(curve.x[:10], 2))
+            print("First 10 targets (dB):", np.round(curve.y[:10], 2))
+            print("Last 10 frequencies:", np.round(curve.x[-10:], 2))
+            print("Last 10 targets (dB):", np.round(curve.y[-10:], 2))
+        except Exception as e:
+            print(f"ERROR inspecting curve: {e}")
+
+    # Make sure export sees it:
+    export["speaker_profile"] = speaker_key
+
 
     # --- write files ---
     write_text_summary(session_dir, export)

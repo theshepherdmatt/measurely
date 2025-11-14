@@ -11,7 +11,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    /* tiny inline styles so the page still looks identical */
     .room-visual       { position:relative; width:100%; height:300px; background:#f9fafb; border-radius:8px; overflow:hidden; }
     .speaker           { position:absolute; width:20px; height:20px; background:#fbbf24; border-radius:4px; color:#000; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; }
     .listening-position{ position:absolute; width:16px; height:16px; background:#ef4444; border-radius:50%; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; }
@@ -24,32 +23,25 @@
 <!-- Mobile-only banner -->
 <div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm 
             flex items-center justify-between px-4 z-50">
-
-  <!-- LEFT: Icon + name grouped together -->
   <div class="flex items-center space-x-2">
     <i class="fas fa-microchip text-xl text-white opacity-90"></i>
     <span class="text-white font-semibold text-sm">Measurely</span>
   </div>
-
-  <!-- RIGHT: Menu button -->
   <button id="mobile-menu-btn" class="p-2 rounded-lg text-white hover:bg-white/10 transition">
     <i class="fas fa-bars text-lg"></i>
   </button>
-
 </div>
-
 
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-
-  <aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
-    <div class="mb-8 flex items-center space-x-3">
-      <i class="fas fa-microchip text-4xl opacity-90"></i>
-      <div>
-        <h1 class="text-2xl font-bold">Measurely</h1>
-        <p class="text-sm opacity-80">Room Acoustic Analysis</p>
-      </div>
+<aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
+  <div class="mb-8 flex items-center space-x-3">
+    <i class="fas fa-microchip text-4xl opacity-90"></i>
+    <div>
+      <h1 class="text-2xl font-bold">Measurely</h1>
+      <p class="text-sm opacity-80">Room Acoustic Analysis</p>
     </div>
+  </div>
 
   <nav class="space-y-2">
     <a href="index.html" class="nav-item"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
@@ -94,71 +86,66 @@
         <input type="number" id="room-height" class="input-field w-full" placeholder="2.4" value="2.4" step="0.01">
       </div>
     </div>
-    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg" onclick="updateRoomVisualization()">
-      <i class="fas fa-sync-alt mr-2"></i>Update Visualization
-    </button>
   </div>
 
-  <!-- Speaker Configuration -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-    <div class="bg-white rounded-2xl shadow-lg p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-volume-up mr-2"></i>Speaker Configuration</h3>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-gray-700 text-sm font-medium mb-2">Distance from Front Wall (m)</label>
-          <input type="number" id="speaker-distance" class="input-field w-full" placeholder="0.6" value="0.6" step="0.01">
+  <!-- Speaker Profile (standalone card) -->
+  <section class="speaker-profile-card mb-8">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      <i class="fas fa-microchip mr-2 text-indigo-600"></i>Speaker Profile
+    </h3>
+
+    <label for="speakerSel" class="block text-sm font-medium text-gray-700 mb-2">
+      Choose profile for sweep limits & target curve
+    </label>
+    <select id="speakerSel" class="input-field w-full"></select>
+
+    <p id="speakerHint" class="text-xs text-gray-500 mt-2">Loading profiles…</p>
+  </section>
+
+  <!-- Speaker Configuration (no profile dropdown here) -->
+  <section class="card compact" aria-labelledby="room-heading">
+    <h2 id="room-heading" class="sr-only">Room & speaker placement</h2>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <!-- LEFT: controls -->
+      <div class="bg-white rounded-2xl shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+          <i class="fas fa-volume-up mr-2"></i>Speaker Configuration
+        </h3>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-gray-700 text-sm font-medium mb-2">Distance from Front Wall (m)</label>
+            <input type="number" id="speaker-distance" class="input-field w-full" placeholder="0.6" value="0.6" step="0.01">
+          </div>
+
+          <div>
+            <label class="block text-gray-700 text-sm font-medium mb-2">Speaker Spacing (m)</label>
+            <input type="number" id="speaker-width" class="input-field w-full" placeholder="1.5" value="1.5" step="0.01">
+          </div>
+
+          <div>
+            <label class="block text-gray-700 text-sm font-medium mb-2">Toe-in Angle (degrees)</label>
+            <input type="number" id="toe-angle" class="input-field w-full" placeholder="30" value="30" step="1">
+          </div>
+
+          <div>
+            <label class="block text-gray-700 text-sm font-medium mb-2">Listening Distance (m)</label>
+            <input type="number" id="listening-distance" class="input-field w-full" placeholder="2.5" value="2.5" step="0.01">
+          </div>
         </div>
-        <div>
-          <label class="block text-gray-700 text-sm font-medium mb-2">Speaker Spacing (m)</label>
-          <input type="number" id="speaker-width"    class="input-field w-full" placeholder="1.5" value="1.5" step="0.01">
-        </div>
-        <div>
-          <label class="block text-gray-700 text-sm font-medium mb-2">Toe-in Angle (degrees)</label>
-          <input type="number" id="toe-angle"        class="input-field w-full" placeholder="30"  value="30"  step="1">
-        </div>
-        <div>
-          <label class="block text-gray-700 text-sm font-medium mb-2">Listening Distance (m)</label>
-          <input type="number" id="listening-distance" class="input-field w-full" placeholder="2.5" value="2.5" step="0.01">
-        </div>
+
       </div>
-      <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mt-4" onclick="calculateOptimalPlacement()">
-        <i class="fas fa-calculator mr-2"></i>Calculate Optimal Placement
-      </button>
-    </div>
-
-    <!-- Room Visualization -->
-    <div class="bg-white rounded-2xl shadow-lg p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-eye mr-2"></i>Room Layout</h3>
-      <div class="room-visual" id="room-visual"></div>
-      <div class="mt-4 text-sm text-gray-600">
-        <div class="flex items-center mb-1"><div class="w-4 h-4 bg-yellow-400 rounded mr-2"></div><span>Speakers</span></div>
-        <div class="flex items-center"><div class="w-4 h-4 bg-red-500 rounded-full mr-2"></div><span>Listening Position</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Acoustic Analysis -->
-  <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-chart-area mr-2"></i>Acoustic Analysis</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="text-center p-4 bg-blue-50 rounded-lg"><div class="text-2xl font-bold text-blue-600"   id="room-mode-1">--</div><div class="text-sm text-gray-600">Hz Axial Mode</div></div>
-      <div class="text-center p-4 bg-blue-50 rounded-lg"><div class="text-2xl font-bold text-blue-600"   id="room-mode-2">--</div><div class="text-sm text-gray-600">Hz Axial Mode</div></div>
-      <div class="text-center p-4 bg-green-50 rounded-lg"><div class="text-2xl font-bold text-green-600" id="reverb-time">--</div><div class="text-sm text-gray-600">Reverb Time (s)</div></div>
-      <div class="text-center p-4 bg-purple-50 rounded-lg"><div class="text-2xl font-bold text-purple-600" id="critical-distance">--</div><div class="text-sm text-gray-600">Critical Distance (m)</div></div>
-    </div>
-  </div>
 
   <!-- Recommendations -->
   <div class="bg-white rounded-2xl shadow-lg p-6">
     <h2 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-lightbulb mr-2"></i>Setup Recommendations</h2>
-    <div class="space-y-4" id="recommendations-list">
-      <!-- filled by JS -->
-    </div>
+    <div class="space-y-4" id="recommendations-list"><!-- filled by JS --></div>
   </div>
 
   <!-- Save button -->
   <div class="mt-6">
-    <button id="save-room-btn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
+    <button id="save-all-btn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold">
       <i class="fas fa-save mr-2"></i>Save Setup
     </button>
   </div>
@@ -166,7 +153,7 @@
 
 <!-- =====  SCRIPTS  ===== -->
 <script>
-/* ----------  Sidebar toggle (same as other pages)  ---------- */
+/* ----------  Sidebar toggle  ---------- */
 const btn  = document.getElementById('mobile-menu-btn');
 const side = document.getElementById('sidebar');
 const over = document.getElementById('sidebar-overlay');
@@ -195,41 +182,115 @@ function toast(msg, type='info'){
 const SESSION = 'latest';
 const API     = '/api/room';
 
-async function saveRoomSetup(){
+document.getElementById('save-all-btn').addEventListener('click', saveAllSetup);
+
+async function saveAllSetup() {
   const payload = {
-    length_m         : parseFloat(document.getElementById('room-length').value),
-    width_m          : parseFloat(document.getElementById('room-width').value),
-    height_m         : parseFloat(document.getElementById('room-height').value),
-    spk_front_m      : parseFloat(document.getElementById('speaker-distance').value),
-    spk_spacing_m    : parseFloat(document.getElementById('speaker-width').value),
-    listener_front_m : parseFloat(document.getElementById('listening-distance').value),
-    layout           : 'stereo'
+    // Room dims
+    length_m:  parseFloat(document.getElementById('room-length').value),
+    width_m:   parseFloat(document.getElementById('room-width').value),
+    height_m:  parseFloat(document.getElementById('room-height').value),
+
+    // Speaker placement
+    spk_front_m:      parseFloat(document.getElementById('speaker-distance').value),
+    spk_spacing_m:    parseFloat(document.getElementById('speaker-width').value),
+    toe_in_deg:       parseFloat(document.getElementById('toe-angle').value),
+    listener_front_m: parseFloat(document.getElementById('listening-distance').value),
+        // Speaker placement
+    spk_front_m:      parseFloat(document.getElementById('speaker-distance').value),
+    spk_spacing_m:    parseFloat(document.getElementById('speaker-width').value),
+    toe_in_deg:       parseFloat(document.getElementById('toe-angle').value),
+    listener_front_m: parseFloat(document.getElementById('listening-distance').value),
+
+    // Profile
+    speaker_key: document.getElementById('speakerSel').value,
+    layout: 'stereo'
   };
-  const res = await fetch(`${API}/${SESSION}`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
+
+  console.log("💾 Saving all:", payload);
+
+  const res = await fetch('/api/room/latest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
   });
-  if(!res.ok) toast('Could not save setup','error');
-  else        toast('Setup saved','success');
+
+  if (!res.ok) {
+    const text = await res.text();
+    toast('Save failed: ' + text, 'error');
+  } else {
+    toast('Room & speakers saved', 'success');
+  }
 }
 
 async function loadRoomSetup(){
   const res = await fetch(`${API}/${SESSION}`);
   if(!res.ok) return;
   const j = await res.json();
-  ['length_m','width_m','height_m','spk_front_m','spk_spacing_m','listener_front_m'].forEach(k=>{
-    if(j[k]!=null){
-      const el = document.getElementById(k.replace('_m','').replace('spk','speaker').replace('listener','listening'));
-      if(el) el.value = j[k].toFixed(2);
+
+  // ONLY map fields we trust – no regex magic
+  const fields = {
+    length_m:  'room-length',
+    width_m:   'room-width',
+    height_m:  'room-height',
+    spk_front_m:      'speaker-distance',
+    spk_spacing_m:    'speaker-width',
+    toe_in_deg:       'toe-angle',
+    listener_front_m: 'listening-distance'
+  };
+
+  Object.entries(fields).forEach(([jsonKey, inputId]) => {
+    if (j[jsonKey] != null) {
+      const el = document.getElementById(inputId);
+      if (el) el.value = j[jsonKey].toFixed(2);
     }
   });
+
+  // speaker profile dropdown
+  document.getElementById('speakerSel').value = j.speaker_key || '';
 }
 
-document.getElementById('save-room-btn').addEventListener('click',saveRoomSetup);
+async function saveSpeakerConfig() {
+  const payload = {
+    spk_front_m:      parseFloat(document.getElementById('speaker-distance').value),
+    spk_spacing_m:    parseFloat(document.getElementById('speaker-width').value),
+    toe_in_deg:       parseFloat(document.getElementById('toe-angle').value),
+    listener_front_m: parseFloat(document.getElementById('listening-distance').value)
+  };
+
+  console.log("🔊 Speaker payload:", payload);
+
+  const res = await fetch('/api/room/latest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("❌ Speaker save failed:", text);
+    toast('Speaker save failed: ' + text, 'error');
+  } else {
+    toast('Speakers saved', 'success');
+    console.log("✅ Speakers saved");
+  }
+}
+
+// 🔥 Wire the button
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('save-speakers-btn');
+  if (btn) {
+    btn.addEventListener('click', saveSpeakerConfig);
+    console.log("✅ Speaker save button wired");
+  } else {
+    console.error("❌ save-speakers-btn not found");
+  }
+});
+
+document.getElementById('save-all-btn').addEventListener('click', saveAllSetup);
 document.addEventListener('DOMContentLoaded',loadRoomSetup);
 
-/* ----------  Room visualisation (unchanged logic, now uses metres)  ---------- */
+/* ----------  Room visualisation  ---------- */
 function updateRoomVisualization(){
   const L = parseFloat(document.getElementById('room-length').value) || 4.9;
   const W = parseFloat(document.getElementById('room-width').value)  || 3.7;
@@ -306,5 +367,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   updateRoomVisualization();
 });
 </script>
+
+<script type="module">
+  import { initSpeakers } from '/js/speakers.js';
+  document.addEventListener('DOMContentLoaded', async () => {
+    await initSpeakers();   // fills the standalone speaker-profile card
+  });
+</script>
+
 </body>
 </html>

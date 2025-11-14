@@ -13,13 +13,25 @@ let currentRoom = {
 
 export async function loadRoom() {
   try {
-    const data = await fetchJSON('/api/room');
-    if (data.ok && data.room) {
-      currentRoom = { ...currentRoom, ...data.room };
+    const data = await fetchJSON('/api/room/latest');
+
+    if (data) {
+      currentRoom = {
+        ...currentRoom,
+        length: data.length_m ?? currentRoom.length,
+        width: data.width_m ?? currentRoom.width,
+        height: data.height_m ?? currentRoom.height,
+        speakerDistance: data.spk_front_m ?? currentRoom.speakerDistance,
+        speakerSpacing: data.spk_spacing_m ?? currentRoom.speakerSpacing,
+        seatingDistance: data.listener_front_m ?? currentRoom.seatingDistance
+      };
+
       updateRoomForm();
       updateRoomVisualization();
     }
+
     return currentRoom;
+
   } catch (error) {
     console.error('Error loading room:', error);
     showToast('Error loading room configuration', 'error');
@@ -27,19 +39,27 @@ export async function loadRoom() {
   }
 }
 
+
 export async function saveRoom() {
   try {
-    const data = await fetchJSON('/api/room', { 
-      method: 'POST', 
-      body: { room: currentRoom } 
+    const payload = {
+      length_m: currentRoom.length,
+      width_m: currentRoom.width,
+      height_m: currentRoom.height,
+      spk_front_m: currentRoom.speakerDistance,
+      spk_spacing_m: currentRoom.speakerSpacing,
+      listener_front_m: currentRoom.seatingDistance
+    };
+
+    await fetchJSON(`/api/room/${window.activeSessionId}`, {
+      method: 'POST',
+      body: payload
     });
-    
-    if (data.ok) {
-      showToast('Room configuration saved', 'success');
-      return true;
-    } else {
-      throw new Error(data.error || 'Failed to save room');
-    }
+
+
+    showToast('Room configuration saved', 'success');
+    return true;
+
   } catch (error) {
     console.error('Error saving room:', error);
     showToast('Error saving room configuration', 'error');
@@ -47,11 +67,13 @@ export async function saveRoom() {
   }
 }
 
+
+
 function updateRoomForm() {
-  const elements = {
-    roomLength: $('roomLength'),
-    roomWidth: $('roomWidth'),
-    roomHeight: $('roomHeight'),
+const elements = {
+    roomLength: $('room-length'),
+    roomWidth: $('room-width'),
+    roomHeight: $('room-height'),
     seatingDistance: $('seatingDistance'),
     speakerDistance: $('speakerDistance'),
     speakerSpacing: $('speakerSpacing')
@@ -71,10 +93,10 @@ function updateRoomForm() {
 }
 
 export function updateRoomFromForm() {
-  const elements = {
-    roomLength: $('roomLength'),
-    roomWidth: $('roomWidth'),
-    roomHeight: $('roomHeight'),
+const elements = {
+    roomLength: $('room-length'),
+    roomWidth: $('room-width'),
+    roomHeight: $('room-height'),
     seatingDistance: $('seatingDistance'),
     speakerDistance: $('speakerDistance'),
     speakerSpacing: $('speakerSpacing')
@@ -176,9 +198,56 @@ export function setupRoomFormHandlers() {
       await saveRoom();
     });
   }
+
+  // Auto-save on input change
+  const inputs = [
+    'room-length',
+    'room-width',
+    'room-height',
+    'seatingDistance',
+    'speakerDistance',
+    'speakerSpacing'
+  ];
+
+  inputs.forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.addEventListener('change', () => {
+        updateRoomFromForm();
+        updateRoomVisualization();
+      });
+    }
+  });
+
+  // Optimal placement
+  const optimalBtn = $('optimalPlacementBtn');
+  if (optimalBtn) {
+    optimalBtn.addEventListener('click', calculateOptimalPlacement);
+  }
+
+  // *** THIS IS THE MISSING BUTTON ***
+  const updateBtn = $('updateRoomBtn');     // <-- must match your HTML button ID
+  if (updateBtn) {
+    updateBtn.addEventListener('click', async () => {
+      updateRoomFromForm();
+      updateRoomVisualization();
+      await saveRoom();
+    });
+  }
+  
+  // Save-setup button
+  const saveBtn = document.getElementById('save-room-btn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+      updateRoomFromForm();          // grab current form values
+      await saveRoom();              // persist to /api/room/latest
+    });
+  }
+}
+
   
   // Auto-save on input change
-  const inputs = ['roomLength', 'roomWidth', 'roomHeight', 'seatingDistance', 'speakerDistance', 'speakerSpacing'];
+  const inputs = ['room-length', 'room-width', 'room-height', 'seatingDistance', 'speakerDistance', 'speakerSpacing'];
   inputs.forEach(id => {
     const element = $(id);
     if (element) {
@@ -194,13 +263,48 @@ export function setupRoomFormHandlers() {
   if (optimalBtn) {
     optimalBtn.addEventListener('click', calculateOptimalPlacement);
   }
-}
+
 
 // Initialize room functionality
 export function initRoom() {
   setupRoomFormHandlers();
   loadRoom();
 }
+
+window.updateRoomCanvas = function(room) {
+    const length = Number(room.length) || 4.0;
+    const width  = Number(room.width)  || 4.0;
+
+    const canvas = document.getElementById("room-layout-canvas");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    // Clear old drawing
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Scale room to fit
+    const scale = Math.min(
+        canvas.width / length,
+        canvas.height / width
+    );
+
+    const drawLength = length * scale;
+    const drawWidth  = width  * scale;
+
+    // Draw room border
+    ctx.strokeStyle = "#888";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+        (canvas.width  - drawLength) / 2,
+        (canvas.height - drawWidth)  / 2,
+        drawLength,
+        drawWidth
+    );
+
+    // TODO later: draw speakers + ear using real saved coordinates
+};
+
 
 // Global functions for HTML handlers
 window.calculateOptimalPlacement = calculateOptimalPlacement;
