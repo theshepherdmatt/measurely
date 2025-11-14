@@ -7,7 +7,11 @@ window.usedBuddyTips = {
   cold: new Set(),
   cool: new Set(),
   warm: new Set(),
-  hot: new Set()
+  hot: new Set(),
+  overall_excellent: new Set(),
+  overall_good: new Set(),
+  overall_fair: new Set(),
+  overall_poor: new Set()
 };
 
 window.pickUniqueTip = function(bucket, allTips) {
@@ -311,39 +315,38 @@ class MeasurelyDashboard {
 
         /* ---------- BUDDY PHRASE + ICON + FOOTER ---------- */
         this.pickOverallPhrase(overall).then(phrase => {
-            const phraseEl = document.getElementById('overallBuddyPhrase');
-            if (phraseEl) phraseEl.textContent = phrase;
 
-            // score → bucket
-            const bucket =
-                overall < 5 ? 'cold' :
-                overall < 7 ? 'cool' :
-                overall < 9 ? 'warm' :
-                'hot';
+            // Insert phrase
+            // Use backend-generated buddy_summary if available
+            if (this.currentData.buddy_summary) {
+                const phraseEl = document.getElementById('overallBuddyPhrase');
+                if (phraseEl) phraseEl.textContent = this.currentData.buddy_summary;
+                return;  // Skip the old phrase engine
+            }
 
-            // icons
+
+            // Score → bucket (new overall buckets)
+            let bucket;
+            if (overall >= 8) bucket = 'overall_excellent';
+            else if (overall >= 6) bucket = 'overall_good';
+            else if (overall >= 4) bucket = 'overall_fair';
+            else bucket = 'overall_poor';
+
+            // Icons mapped to overall buckets
             const buddyIcons = {
-                cold: "❄️",
-                cool: "🌤️",
-                warm: "🔥",
-                hot:  "☕"
+                overall_excellent: "☕",     // relaxed, nailed it
+                overall_good:      "🔥",     // warm, nearly there
+                overall_fair:      "🌤️",    // okay-ish, needs tweaks
+                overall_poor:      "❄️"      // cold room issues
             };
 
-            // set icon
+            // Update icon
             const iconEl = document.getElementById('buddyIcon');
             if (iconEl) iconEl.textContent = buddyIcons[bucket] || "🎧";
 
-            // FOOTER TEXT (this is the missing bit)
+            // REMOVE FOOTER COMPLETELY
             const footerEl = document.getElementById('buddyFooter');
-            if (footerEl) {
-                const footerReasons = {
-                    cold: "Your room needs warmth, lots of easy wins here.",
-                    cool: "Good foundation, a few tweaks will lift it nicely.",
-                    warm: "Strong acoustics, only minor refinements left.",
-                    hot:  "Studio-level response, you're basically done."
-                };
-                footerEl.textContent = footerReasons[bucket] || "";
-            }
+            if (footerEl) footerEl.textContent = "";
         });
 
         /* ---------- SIX SMALL SCORE CARDS (NUMBER + DOTS) ---------- */
@@ -502,24 +505,35 @@ class MeasurelyDashboard {
 
     /* ----------  NEW : buddy-style dynamic status  ---------- */
     async pickOverallPhrase(score) {
-        const bucket =
-            score < 5 ? 'cold' :
-            score < 7 ? 'cool' :
-            score < 9 ? 'warm' :
-            'hot';
 
+        // 1. Pick the correct overall bucket
+        let bucket;
+        if (score >= 8) {
+            bucket = 'overall_excellent';
+        } else if (score >= 6) {
+            bucket = 'overall_good';
+        } else if (score >= 4) {
+            bucket = 'overall_fair';
+        } else {
+            bucket = 'overall_poor';
+        }
+
+        // 2. Fetch phrases from buddy JSON
         const bank = window.buddyBank || {};
         const choices = bank[bucket] || [];
 
+        // 3. Fallback if empty
         if (choices.length === 0) {
-            return score < 5 ? 'Room needs love.' :
-                score < 7 ? 'Not bad at all.' :
-                score < 9 ? 'Room is cosy.' : 'Studio-grade!';
+            if (bucket === 'overall_excellent') return 'Superb acoustics — nothing fighting the music.';
+            if (bucket === 'overall_good')      return 'Strong performance — just a few tiny tweaks.';
+            if (bucket === 'overall_fair')      return 'Decent start — room interactions still audible.';
+            return 'Room needs some love, loads of easy wins ahead.';
         }
 
-        // Use the SAME global uniqueness engine used by all other cards
+        // 4. Use your uniqueness engine
         return window.pickUniqueTip(bucket, choices);
     }
+
 
     updateFrequencyChart() {
         const data = this.currentData;

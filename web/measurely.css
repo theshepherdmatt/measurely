@@ -85,17 +85,6 @@ body {
   box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.06);
 }
 
-#whatIsMeasurely h3,
-#overallScoreCard h3,
-#buddySaysCard h3 {
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--gray-500);
-  margin: 0 0 0.5rem;
-}
-
 #overallScore {
   font-size: clamp(4rem, 8vw, 8rem);
   font-weight: 800;
@@ -210,8 +199,6 @@ body {
    MOBILE BREAKPOINT BEHAVIOUR (NO GRID OVERRIDES!)
 ------------------------------------------------------------ */
 @media (max-width: 768px) {
-
-  /* Sidebar slides from the right on mobile */
   .sidebar {
     left: auto;
     right: 0;
@@ -225,11 +212,9 @@ body {
   .main-content {
     margin-left: 0;
     padding: 1.25rem !important;
+    margin-top: 3.5rem;   /* <-- FIX: moves content under banner */
   }
-
-  body {
-    padding-top: 3.5rem;
-  }
+}
 
   /* Ensure top-row cards stay full width on mobile */
   #whatIsMeasurely,
@@ -251,7 +236,6 @@ body {
   .card-hover {
     padding: 1rem;
   }
-}
 
 #buddyCard {
   display: flex;
@@ -339,4 +323,52 @@ body.recommendations-page {
   padding: 1.5rem;
   box-shadow: 0 6px 18px -6px rgba(0,0,0,0.1);
   border-left: 4px solid #7c3aed;
+}
+
+.card-header {
+  font-size: 0.95rem;        /* same as Welcome card */
+  font-weight: 700;
+  color: #111827;            /* dark gray */
+  margin-bottom: 0.5rem;
+  letter-spacing: 0;
+  text-transform: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.section-block {
+  margin-top: 4rem;    /* space above a new section */
+  margin-bottom: 2rem; /* space before content starts */
+}
+
+.section-title-dashboard {
+  font-size: 1.875rem;   /* text-3xl */
+  font-weight: 700;
+  color: #1f2937;        /* gray-800 */
+  margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+  font-size: 0.95rem;
+  color: #6b7280;        /* gray-600 */
+}
+
+.section-block:first-of-type {
+  margin-top: 1rem;  /* or 0 if you want it flush */
+}
+
+.sidebar .sidebar-logo {
+  margin-top: 2rem;   /* adjust up/down as you like */
+}
+
+.buddy-tip-box {
+  background: #f3f4f6;             /* light gray (Tailwind gray-100/200 blend) */
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  color: #4b5563;                  /* gray-600 */
+  display: flex;
+  align-items: center;
+  line-height: 1.3;
 }
