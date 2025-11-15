@@ -159,8 +159,9 @@ def load_session_data(session_dir):
             "modes": ana_data.get("modes", []),
 
             # NEW: buddy-friendly keys
-            "buddy_summary": ana_data.get("buddy_summary", ""),
-            "buddy_actions": ana_data.get("buddy_actions", []),
+            "buddy_freq_blurb":   ana_data.get("buddy_freq_blurb", ""),
+            "buddy_treat_blurb":  ana_data.get("buddy_treat_blurb", ""),
+            "buddy_action_blurb": ana_data.get("buddy_action_blurb", ""),
 
             "has_analysis": ana.exists(),
             "has_summary":  (path / "summary.txt").exists(),
@@ -231,6 +232,37 @@ def _clean(arr):
 # ------------------------------------------------------------------
 #  Flask routes
 # ------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+#  FETCH A SINGLE SESSION'S ANALYSIS + FREQUENCY DATA
+# ------------------------------------------------------------------
+@app.route('/api/session/<session_id>', methods=['GET'])
+def api_get_session(session_id):
+    """
+    Return the full session data (analysis + left/right traces)
+    so the frontend can compare sessions.
+    """
+    try:
+        if session_id == "latest":
+            # follow latest symlink
+            ses = MEAS_ROOT / "latest"
+        else:
+            ses = MEAS_ROOT / session_id
+
+        if not ses.exists():
+            return jsonify({"error": f"Session not found: {session_id}"}), 404
+
+        data = load_session_data(ses)
+        if not data:
+            return jsonify({"error": "Failed to load session"}), 500
+
+        return jsonify(data)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/run-sweep', methods=['POST'])
 def run_sweep():

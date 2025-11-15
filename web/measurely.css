@@ -66,14 +66,6 @@ body {
 }
 
 /* ------------------------------------------------------------
-   MAIN CONTENT WRAPPER
------------------------------------------------------------- */
-.main-content {
-  margin-left: 16rem;
-  padding: 2rem;
-}
-
-/* ------------------------------------------------------------
    TOP-ROW CARD SYSTEM
 ------------------------------------------------------------ */
 #whatIsMeasurely,
@@ -132,14 +124,6 @@ body {
 .status-good    { background: #22c55e; }
 .status-warning { background: #f59e0b; }
 .status-poor    { background: #ef4444; }
-
-/* ------------------------------------------------------------
-   MOBILE HEADER (PURPLE TOP BAR)
------------------------------------------------------------- */
-.mobile-banner {
-  background: var(--indigo-600);
-  color: #fff;
-}
 
 /* ------------------------------------------------------------
    PROGRESS BAR
@@ -203,16 +187,16 @@ body {
     left: auto;
     right: 0;
     transform: translateX(100%);
-  }
+  } 
 
   .sidebar.active {
     transform: translateX(0);
   }
 
   .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
     padding: 1.25rem !important;
-    margin-top: 3.5rem;   /* <-- FIX: moves content under banner */
+    margin-top: 90px !important;
   }
 }
 
@@ -346,12 +330,13 @@ body.recommendations-page {
   font-size: 1.875rem;   /* text-3xl */
   font-weight: 700;
   color: #1f2937;        /* gray-800 */
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
 }
 
 .section-subtitle {
   font-size: 0.95rem;
   color: #6b7280;        /* gray-600 */
+  margin-top: 0;
 }
 
 .section-block:first-of-type {
@@ -372,3 +357,4 @@ body.recommendations-page {
   align-items: center;
   line-height: 1.3;
 }
+

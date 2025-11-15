@@ -12,20 +12,33 @@ def _warm_phrase(score: float) -> str:
     return random.choice(_bank[bucket])
 
 def ask_buddy(notes, scores) -> tuple[str, list[str]]:
-    tips = []
-    if any("Boom ~100 Hz" in n for n in notes):
-        tips.append(_pick("boom"))
-    if any("Mid forward vs bass" in n for n in notes):
-        tips.append(_pick("mid"))
-    if any("Top roll-off" in n for n in notes):
-        tips.append(_pick("top"))
-    if any("RT60" in n for n in notes) and scores.get("reverb", 10) < 8:
-        tips.append(_pick("echo"))
-    if tips:
-        tips.append(_pick("fix"))
-    headline = " ".join(tips[:3]) or "All good — nothing scary showed up."
-    headline = " ".join(tips[:2]) + " " + _warm_phrase(scores.get("overall", 5))
-    return headline, tips
+    """
+    Generate ONLY the overall bucket headline for the dashboard’s 3rd card.
+    Do NOT mix boom/mid/top/echo/fix here — those are for the 6 small cards.
+    """
+
+    # Determine overall bucket from overall score
+    overall = scores.get("overall", 5)
+    if overall < 5:
+        bucket = "overall_poor"
+    elif overall < 7:
+        bucket = "overall_fair"
+    elif overall < 8:
+        bucket = "overall_good"
+    else:
+        bucket = "overall_excellent"
+
+    # Pull phrases from JSON
+    phrases = _bank.get(bucket, [])
+
+    # Safety fallback
+    if not phrases:
+        headline = "Your room has potential — easy wins ahead."
+    else:
+        headline = random.choice(phrases)
+
+    # We still return actions (empty list for now)
+    return headline, []
 
 def ask_buddy_full(ana: dict) -> dict[str, str]:
     headline, _ = ask_buddy(ana.get("notes", []), ana.get("scores", {}))
