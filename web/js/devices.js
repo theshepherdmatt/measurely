@@ -1,4 +1,4 @@
-// web/js/devices.js - Device status management
+// web/js/devices.js – Device status management (updated for full sidebar indicators)
 
 import { $, fetchJSON } from './api.js';
 
@@ -18,48 +18,101 @@ export async function refreshStatus() {
   }
 }
 
+/* ---------------------------------------------------------
+   UPDATE SIDEBAR STATUS BOX (System, IP, DAC, USB Mic, Clock)
+--------------------------------------------------------- */
 function updateStatusDisplay(status) {
-  const indicator = $('deviceStatusIndicator');
-  const statusText = $('deviceStatusText');
-  const statusDetails = $('deviceStatusDetails');
-  
-  const inputOk = status?.mic?.connected;
-  const outputOk = status?.dac?.connected;
-  const ready = inputOk && outputOk;
-  
-  if (indicator && statusText) {
-    if (ready) {
-      indicator.className = 'status-indicator status-good pulse-animation';
-      statusText.textContent = 'System Ready';
-    } else if (status.reason === 'error') {
-      indicator.className = 'status-indicator status-poor pulse-animation';
-      statusText.textContent = 'Connection Error';
+  const micOk = status?.mic?.connected;
+  const dacOk = status?.dac?.connected;
+  const systemReady = micOk && dacOk;
+
+  /* ------------------------------
+     SYSTEM READY
+  ------------------------------- */
+  const systemDot = $('systemReadyDot');
+  const systemText = $('systemReadyText');
+
+  if (systemDot && systemText) {
+    if (systemReady) {
+      // Excellent = GREEN
+      systemDot.className = "status-indicator bg-green-500 pulse-animation";
+      systemText.textContent = "System Ready";
     } else {
-      indicator.className = 'status-indicator status-warning pulse-animation';
-      statusText.textContent = 'Device Check Required';
+      // Okay-but-not-ready = BLUE
+      systemDot.className = "status-indicator bg-blue-400 pulse-animation";
+      systemText.textContent = "Device Check Required";
     }
   }
-  
-  // Update device details if available
-  const inputDevice = $('inputDevice');
-  const outputDevice = $('outputDevice');
-  
-  if (inputDevice) {
-    inputDevice.textContent = inputOk ? 
-      (status.mic?.name || 'Connected') : 'Not Connected';
-    inputDevice.className = inputOk ? 'text-green-600' : 'text-red-600';
+
+  /* ------------------------------
+     IP ADDRESS
+  ------------------------------- */
+  const ipDot = $('ipStatusDot');
+  const ipText = $('ipAddressText');
+
+  const ip = status?.ip;
+
+  if (ipDot && ipText) {
+    if (ip) {
+      // IP present = BLUE (Okay)
+      ipDot.className = "status-indicator bg-blue-400";
+      ipText.textContent = `IP: ${ip}`;
+    } else {
+      // No IP = RED
+      ipDot.className = "status-indicator bg-red-500";
+      ipText.textContent = "IP: Not Found";
+    }
   }
-  
-  if (outputDevice) {
-    outputDevice.textContent = outputOk ? 
-      (status.dac?.name || 'Connected') : 'Not Connected';
-    outputDevice.className = outputOk ? 'text-green-600' : 'text-red-600';
+
+  /* ------------------------------
+     DAC CONNECTED
+  ------------------------------- */
+  const dacDot = $('dacStatusDot');
+  const dacText = $('dacStatusText');
+
+  if (dacDot && dacText) {
+    if (dacOk) {
+      // DAC OK = YELLOW (Good)
+      dacDot.className = "status-indicator bg-yellow-500";
+      dacText.textContent = `DAC: ${status.dac.name}`;
+    } else {
+      // DAC missing = RED
+      dacDot.className = "status-indicator bg-red-500";
+      dacText.textContent = "DAC: Not Connected";
+    }
   }
-  
-  // Update sweep button state
+
+  /* ------------------------------
+     USB MIC CONNECTED
+  ------------------------------- */
+  const usbDot = $('usbStatusDot');
+  const usbText = $('usbStatusText');
+
+  if (usbDot && usbText) {
+    if (micOk) {
+      // Mic OK = GREEN
+      usbDot.className = "status-indicator bg-green-500";
+      usbText.textContent = `USB Mic: ${status.mic.name}`;
+    } else {
+      // Mic missing = RED
+      usbDot.className = "status-indicator bg-red-500";
+      usbText.textContent = "USB Mic: Not Connected";
+    }
+  }
+
+  /* ------------------------------
+     CLOCK UPDATE
+  ------------------------------- */
+  const clock = $('lastUpdated');
+  if (clock) clock.textContent = "Just now";
+
+  /* ------------------------------
+     SWEEP BUTTON ENABLE / DISABLE
+  ------------------------------- */
+  const ready = systemReady;
   const runBtn = $('runBtn');
   const sweepBtn = $('runSweepBtn');
-  
+
   [runBtn, sweepBtn].forEach(btn => {
     if (btn) {
       btn.disabled = !ready;
@@ -68,14 +121,16 @@ function updateStatusDisplay(status) {
   });
 }
 
+/* ---------------------------------------------------------
+   POLLING LOOP
+--------------------------------------------------------- */
 export function startStatusPolling() {
   if (statusInterval) return;
-  
+
   statusInterval = setInterval(() => {
     refreshStatus();
   }, 4000);
-  
-  // Initial refresh
+
   refreshStatus();
 }
 
@@ -90,11 +145,16 @@ export function getCurrentStatus() {
   return deviceStatus;
 }
 
+/* ---------------------------------------------------------
+   API CALL
+--------------------------------------------------------- */
 async function getStatus() {
   return fetchJSON('/api/status', {}, 1);
 }
 
-// Auto-start status polling when module loads
+/* ---------------------------------------------------------
+   AUTO START
+--------------------------------------------------------- */
 if (typeof window !== 'undefined') {
   startStatusPolling();
 }

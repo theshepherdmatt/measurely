@@ -17,6 +17,7 @@ import random
 import math
 import traceback
 import numpy as np
+import sounddevice as sd
 from datetime import datetime
 from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
@@ -230,6 +231,23 @@ def _clean(arr):
     return [float(x) for x in arr if isinstance(x, (int, float)) and math.isfinite(x)]
 
 # ------------------------------------------------------------------
+#  IP Detection Helper
+# ------------------------------------------------------------------
+import socket
+
+def get_ip_address():
+    """Return the Pi's LAN IP address (eth0 or wlan0)"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return None
+
+
+# ------------------------------------------------------------------
 #  Flask routes
 # ------------------------------------------------------------------
 
@@ -349,12 +367,53 @@ def get_latest_data():
 
 @app.route('/api/status', methods=['GET'])
 def get_status():
+    ip = get_ip_address()
+
+    try:
+        devices = sd.query_devices()
+
+        # Detect USB Mic
+        usb_mics = [
+            d for d in devices
+            if "usb" in d["name"].lower() and d["max_input_channels"] > 0
+        ]
+        mic_connected = len(usb_mics) > 0
+        mic_name = usb_mics[0]["name"] if mic_connected else None
+
+        # Detect HiFiBerry DAC
+        dacs = [
+            d for d in devices
+            if "hifiberry" in d["name"].lower() and d["max_output_channels"] > 0
+        ]
+        dac_connected = len(dacs) > 0
+        dac_name = dacs[0]["name"] if dac_connected else None
+
+    except Exception as e:
+        print("Device detection error:", e)
+        mic_connected = False
+        dac_connected = False
+        mic_name = None
+        dac_name = None
+
+    ready = mic_connected and dac_connected
+
     return jsonify({
-        "ready": True,
-        "mic": {"connected": True, "name": "USB Audio Device"},
-        "dac": {"connected": True, "name": "Audio Output Device"},
-        "reason": "", "measurely_available": False
+        "ready": ready,
+        "ip": ip if ip else None,
+
+        "mic": {
+            "connected": mic_connected,
+            "name": mic_name
+        },
+        "dac": {
+            "connected": dac_connected,
+            "name": dac_name
+        },
+
+        "reason": "" if ready else "Missing audio devices",
+        "measurely_available": True
     })
+
 
 
 @app.route('/api/sessions', methods=['GET'])

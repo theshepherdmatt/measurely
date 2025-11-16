@@ -622,24 +622,24 @@ class MeasurelyDashboard {
        ============================================================ */
     statusClasses = {
         green:  {
-            text: "text-green-600",
+            text: "text-green-500",
             dot:  "bg-green-500",
-            icon: "text-green-600"
+            icon: "text-green-500"
         },
         yellow: {
-            text: "text-yellow-600",
+            text: "text-yellow-500",
             dot:  "bg-yellow-500",
-            icon: "text-yellow-600"
+            icon: "text-yellow-500"
         },
         orange: {
-            text: "text-orange-600",
-            dot:  "bg-orange-500",
-            icon: "text-orange-600"
+            text: "text-blue-400",
+            dot:  "bg-blue-400",
+            icon: "text-blue-400"
         },
         red: {
-            text: "text-red-600",
+            text: "text-red-500",
             dot:  "bg-red-500",
-            icon: "text-red-600"
+            icon: "text-red-500"
         }
     };
 
@@ -1089,20 +1089,69 @@ class MeasurelyDashboard {
     }
 
     updateDeviceStatusDisplay() {
-        const status = this.deviceStatus;
-        const indicator = document.getElementById('deviceStatusIndicator');
-        const text = document.getElementById('deviceStatusText');
+        const s = this.deviceStatus;
+        if (!s) return;
 
-        if (!indicator || !text) return;
+        /* -------------------------------------------
+        SYSTEM READY
+        ------------------------------------------- */
+        const sysDot = document.getElementById('systemReadyDot');
+        const sysTxt = document.getElementById('systemReadyText');
 
-        if (status.ready) {
-            indicator.className = 'status-indicator status-good pulse-animation';
-            text.textContent = 'System Ready';
-        } else {
-            indicator.className = 'status-indicator status-warning pulse-animation';
-            text.textContent = 'Device Check Required';
+        if (sysDot && sysTxt) {
+            if (s.ready) {
+                sysDot.className = "status-indicator bg-green-500 pulse-animation";
+                sysTxt.textContent = "System Ready";
+            } else {
+                sysDot.className = "status-indicator bg-red-500 pulse-animation";
+                sysTxt.textContent = "System Check Required";
+            }
+        }
+
+        /* -------------------------------------------
+        IP ADDRESS
+        ------------------------------------------- */
+        const ipDot = document.getElementById('ipStatusDot');
+        const ipTxt = document.getElementById('ipAddressText');
+
+        if (ipDot && ipTxt) {
+            const hasIP = Boolean(s.ip);
+
+            ipDot.className = "status-indicator " + (hasIP ? "bg-blue-400" : "bg-red-500");
+            ipTxt.textContent = "IP: " + (hasIP ? s.ip : "--.--.--.--");
+        }
+
+        /* -------------------------------------------
+        DAC CONNECTED
+        ------------------------------------------- */
+        const dacDot = document.getElementById('dacStatusDot');
+        const dacTxt = document.getElementById('dacStatusText');
+
+        if (dacDot && dacTxt) {
+            dacDot.className = "status-indicator " + (s.dac ? "bg-yellow-500" : "bg-red-500");
+            dacTxt.textContent = s.dac ? "DAC: Connected" : "DAC: Not Found";
+        }
+
+        /* -------------------------------------------
+        USB MIC CONNECTED
+        ------------------------------------------- */
+        const usbDot = document.getElementById('usbStatusDot');
+        const usbTxt = document.getElementById('usbStatusText');
+
+        if (usbDot && usbTxt) {
+            usbDot.className = "status-indicator " + (s.usb ? "bg-green-500" : "bg-red-500");
+            usbTxt.textContent = s.usb ? "USB Mic: Connected" : "USB Mic: Not Connected";
+        }
+
+        /* -------------------------------------------
+        LAST UPDATED CLOCK
+        ------------------------------------------- */
+        const clock = document.getElementById('lastUpdated');
+        if (clock) {
+            clock.textContent = new Date().toLocaleTimeString();
         }
     }
+
 
     /* ============================================================
        SAMPLE DATA (used when API is missing / errors)
