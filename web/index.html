@@ -10,75 +10,15 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- =====  SMALL INLINE STYLES  ===== -->
   <style>
-    .plot-container { background: transparent !important; }
-    .modebar { display: none !important; }
-    .card-sky   { background-color: #f0f9ff; }
-    .card-amber { background-color: #fffbeb; }
-
-    .progress-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: rgba(0,0,0,0.1);
-      z-index: 1000;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-    .progress-container.active { opacity: 1; }
-    .progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #3b82f6, #1d4ed8);
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-
-    /* =====  CHART  ===== */
-    #frequencyChart {
-      height: 360px;
-      background: #f3f4f6;
-      border-radius: 8px;
-    }
-
-    /* thick, high-contrast traces */
-    #frequencyChart .scatterlayer path {
-      stroke-width: 3.5 !important;
-      stroke: #6D28D9 !important;           /* left  */
-    }
-    #frequencyChart .scatterlayer g:nth-of-type(2) path {
-      stroke: #3B82F6 !important;           /* right */
-    }
-
-    /* =====  MOBILE CHART  ===== */
-    @media (max-width: 640px) {
-      #frequencyChart {
-        height: 240px;              /* shorter canvas */
-      }
-      #frequencyChart .scatterlayer path {
-        stroke-width: 4 !important; /* fatter lines */
-      }
-      #frequencyChart .xtitle,
-      #frequencyChart .ytitle {
-        font-size: 0.75rem !important; /* smaller axis labels */
-      }
-      #frequencyChart .xtick text,
-      #frequencyChart .ytick text {
-        font-size: 0.65rem !important;
-      }
-    }
-
   </style>
 
 <base target="_blank">
 </head>
 
 <body class="bg-gray-50">
-
-<!-- Mobile-only banner -->
-<div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm 
+<!-- Mobile banner -->
+<div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm
             flex items-center justify-between px-4 z-50">
   <div class="flex items-center space-x-2">
     <img src="buddy-icon-100-white.svg" class="w-10 h-10" alt="Dave">
@@ -89,118 +29,108 @@
   </button>
 </div>
 
-  <!-- Progress bar (hidden by default) -->
-  <div id="progressContainer" class="fixed top-4 left-1/2 -translate-x-1/2 w-80 bg-white/90 backdrop-blur rounded-lg shadow-lg p-3 hidden z-50">
-    <div class="flex items-center justify-between mb-2">
-      <span class="text-sm font-medium text-gray-700">Running sweep...</span>
-      <span id="progressPercent" class="text-sm text-gray-600">0%</span>
-    </div>
-    <div class="w-full bg-gray-200 rounded-full h-2.5">
-      <div id="progressBar" class="bg-green-600 h-2.5 rounded-full" style="width: 0%"></div>
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+<aside id="sidebar" class="sidebar">
+  <div class="sidebar-logo mb-8 flex items-center space-x-3">
+    <img src="buddy-icon-100-white.svg" class="w-12 h-12" alt="Measurely Buddy">
+    <div>
+      <h1 class="text-2xl font-bold">Measurely</h1>
+      <p class="text-sm opacity-80">Simple Room Audio</p>
     </div>
   </div>
+  <nav class="space-y-2">
+    <a href="index.html" class="nav-item"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
+    <a href="room-setup.html" class="nav-item"><i class="fas fa-home mr-3"></i>Room Setup</a>
+    <a href="tipsandtweaks.html" class="nav-item"><i class="fas fa-lightbulb mr-3"></i>Tips and Tweaks</a>
+  </nav>
+<!-- ===== SIDEBAR STATUS PANEL ===== -->
+<div class="absolute bottom-6 left-6 right-6">
 
+  <div class="bg-white/20 backdrop-blur-md rounded-lg p-4 space-y-3">
 
-  <!-- =====  HEADER / MENU  ===== -->
-  <div id="sidebar-overlay" class="sidebar-overlay"></div>
-
-  <aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
-    <div class="sidebar-logo mb-8 flex items-center space-x-3">
-      <img src="buddy-icon-100-white.svg" class="w-12 h-12" alt="Measurely Buddy">
-      <div>
-        <h1 class="text-2xl font-bold">Measurely</h1>
-        <p class="text-sm opacity-80">Simple Room Audio</p>
-      </div>
-    </div>
-    <nav class="space-y-2">
-      <a href="index.html" class="nav-item active"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
-      <a href="room-setup.html" class="nav-item"><i class="fas fa-home mr-3"></i>Room Setup</a>
-      <a href="tipsandtweaks.html" class="nav-item"><i class="fas fa-lightbulb mr-3"></i>Tips and Tweaks</a>
-    </nav>
-    <div class="absolute bottom-6 left-6 right-6">
-      <div class="bg-white bg-opacity-20 rounded-lg p-4 space-y-3">
-
-        <!-- SYSTEM READY -->
-        <div class="flex items-center">
-          <div id="systemReadyDot" class="status-indicator status-good pulse-animation"></div>
-          <span id="systemReadyText" class="text-sm">System Ready</span>
-        </div>
-
-        <!-- IP ADDRESS -->
-        <div class="flex items-center">
-          <div id="ipStatusDot" class="status-indicator bg-blue-400"></div>
-          <span id="ipAddressText" class="text-sm">IP: 0.0.0.0</span>
-        </div>
-
-        <!-- DAC CONNECTED -->
-        <div class="flex items-center">
-          <div id="dacStatusDot" class="status-indicator bg-yellow-400"></div>
-          <span id="dacStatusText" class="text-sm">DAC: Not Found</span>
-        </div>
-
-        <!-- USB MIC CONNECTED -->
-        <div class="flex items-center">
-          <div id="usbStatusDot" class="status-indicator bg-red-400"></div>
-          <span id="usbStatusText" class="text-sm">USB Mic: Not Connected</span>
-        </div>
-
-        <!-- CLOCK -->
-        <p class="text-xs opacity-80">
-          Last updated: <span id="lastUpdated">Now</span>
-        </p>
-
-      </div>
+    <!-- 1. SYSTEM READY -->
+    <div class="flex items-center">
+      <div id="systemReadyDot" class="status-indicator status-good pulse-animation"></div>
+      <span id="systemReadyText" class="text-sm">System Ready</span>
     </div>
 
-  </aside>
+    <!-- 2. IP ADDRESS -->
+    <div class="flex items-center">
+      <div id="ipStatusDot" class="status-indicator bg-blue-400"></div>
+      <span id="ipAddressText" class="text-sm">IP: 0.0.0.0</span>
+    </div>
+
+    <!-- 3. THAT CONNECTED (DAC / device) -->
+    <div class="flex items-center">
+      <div id="dacStatusDot" class="status-indicator bg-yellow-400"></div>
+      <span id="dacStatusText" class="text-sm">That: Not Found</span>
+    </div>
+
+    <!-- 4. USB MIC CONNECTED -->
+    <div class="flex items-center">
+      <div id="usbStatusDot" class="status-indicator bg-red-400"></div>
+      <span id="usbStatusText" class="text-sm">USB Mic: Not Connected</span>
+    </div>
+
+    <!-- 5. CLOCK -->
+    <p class="text-xs opacity-80">
+      Last updated: <span id="lastUpdated">Now</span>
+    </p>
+
+  </div>
+
+</div>
+
+</aside>
 
   <!-- =====  MAIN CONTENT  ===== -->
   <div class="main-content md:ml-64 p-8">
 
     <!-- Page Title -->
-    <div class="section-block">
-      <h2 class="section-title-dashboard">Your Room Overview</h2>
-      <p class="section-subtitle">A clear, honest snapshot of how your room is behaving right now.</p>
+    <div class="page-title-block">
+      <h1 class="page-title">Welcome to Measurely</h1>
+      <p class="page-subtitle">Measurely gives you a quick, honest read of how your room shapes your sound,
+      and the simplest ways to fix it.</p>
     </div>
 
-    <!-- THREE-CARD TOP ROW -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <!-- ===== TOP SECTION: MAIN CARD WRAPPER ===== -->
+  <!-- DAVE INTRO MAIN CARD -->
+  <div class="card mb-8">
 
-      <!-- 1: Welcome to Measurely -->
-      <!-- 1: Welcome to Measurely -->
-      <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between">
+    <!-- Outer header -->
+    <div class="mb-4">
+      <h2 class="text-xl font-semibold text-gray-800">Introduction to Dave</h2>
+      <p class="text-sm text-gray-600">
+        Dave helps translate your sweep into simple, plain-English nudges.
+      </p>
+    </div>
 
-        <h3 class="card-header flex items-center gap-3">
+    <!-- 3 inner cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- MEET DAVE -->
+      <div class="card">
+        <h3 class="text-xl font-semibold mb-1">👋 Meet Dave</h3>
+        <p class="text-xs text-gray-500 mb-3">Your friendly guide through each sweep.</p>
+
+        <div class="buddy-box flex items-start gap-3">
           <img src="buddy-icon-100.svg"
-              class="w-12 h-12"
-              alt="Measurely Buddy">
-
-          <!-- Smaller text + nudged downward -->
-          <span class="relative top-1 text-lg font-semibold">
-            Welcome to Measurely
-          </span>
-        </h3>
-
-
-        <p class="text-sm text-gray-600 leading-relaxed mt-3">
-          Hi, I’m Dave. I’ll pop up with small nudges and plain-English pointers as you go.
-          Every sweep tells me a bit more about your room and your speakers, and I’ll help you fine-tune things step by step, no jargon, no faff, just results.
-        </p>
-
+              class="w-10 h-10 opacity-90"
+              alt="Dave">
+          <p class="text-gray-800 text-base leading-snug italic">
+            I’m the voice that pops up after each sweep, pointing out the quick wins
+            without the techy waffle.
+          </p>
+        </div>
       </div>
 
-
-
-      <!-- 2: Overall Score -->
-      <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between">
-
-        <h3 class="card-header">
-          <span class="text-indigo-500">📊</span>
-          Your overall score
-        </h3>
+      <!-- DAVE HAS SCORED YOU -->
+      <div class="card">
+        <h3 class="text-xl font-semibold mb-1">📈 Dave's Scored You</h3>
+        <p class="text-xs text-gray-500 mb-3">Scores are out of 10, higher = better room response.</p>
 
         <div id="overallScore"
-            class="font-bold text-indigo-600 mb-1"
+            class="font-bold text-indigo-600 mb-3"
             style="font-size: clamp(4rem, 8vw, 8rem); line-height: 1;">
           --
         </div>
@@ -209,90 +139,92 @@
           <span id="overallStatus" class="status-indicator mr-2"></span>
           <span id="overallStatusText">Loading…</span>
         </div>
-
       </div>
 
-      <!-- 3: Buddy Phrase Card -->
-      <div id="buddySaysCard" class="bg-white rounded-2xl shadow-lg p-6 flex flex-col">
+      <!-- DAVE SAYS -->
+      <div class="card">
+        <h3 class="text-xl font-semibold mb-1">💬 Dave Says</h3>
+        <p class="text-xs text-gray-500 mb-3">Dave’s read on what stood out in your sweep.</p>
 
-        <h3 class="card-header">
-          <img src="buddy-icon-100.svg" class="w-6 h-6" alt="Measurely Buddy">
-          Dave says
-        </h3>
-
-        <!-- Buddy phrase in light grey box -->
-        <div class="bg-gray-100 rounded-lg p-3 mt-2">
+        <div class="buddy-box mt-3">
+          <img src="buddy-icon-100.svg"
+              class="w-10 h-10 opacity-90"
+              alt="Dave">
           <p id="overallBuddyPhrase"
             class="text-gray-800 text-base leading-snug italic">
-            …
+            “…” 
           </p>
         </div>
       </div>
+
     </div>
-
-<!-- Scores Section Header -->
-<div class="section-block mt-10 mb-4">
-  <h2 class="section-title-dashboard">How we score</h2>
-    <p class="section-subtitle">Your numbers at a glance, simple ranges, clear meaning.</p>
-
-</div>
-
-<!-- Scores Key Card -->
-<div id="scoreKeyCard" class="bg-white rounded-xl shadow p-4 mb-8">
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-
-    <!-- Excellent -->
-    <div class="flex items-center">
-      <span class="w-4 h-4 rounded-full bg-green-500 mr-3"></span>
-      <div>
-        <p class="font-semibold text-gray-900">Excellent</p>
-        <p class="text-gray-600 text-xs">8–10</p>
-      </div>
-    </div>
-
-    <!-- Good -->
-    <div class="flex items-center">
-      <span class="w-4 h-4 rounded-full bg-yellow-500 mr-3"></span>
-      <div>
-        <p class="font-semibold text-gray-900">Good</p>
-        <p class="text-gray-600 text-xs">6–7.9</p>
-      </div>
-    </div>
-
-    <!-- Okay -->
-    <div class="flex items-center">
-      <span class="w-4 h-4 rounded-full bg-blue-400 mr-3"></span>
-      <div>
-        <p class="font-semibold text-gray-900">Okay</p>
-        <p class="text-gray-600 text-xs">4–5.9</p>
-      </div>
-    </div>
-
-    <!-- Needs Work -->
-    <div class="flex items-center">
-      <span class="w-4 h-4 rounded-full bg-red-500 mr-3"></span>
-      <div>
-        <p class="font-semibold text-gray-900">Needs work</p>
-        <p class="text-gray-600 text-xs">0–3.9</p>
-      </div>
-    </div>
-
   </div>
 
+
+<!-- card-in-card: title + legend -->
+<div class="card mb-8">
+  <!-- card header -->
+  <div class="mb-4">
+    <h3 class="text-lg font-semibold text-gray-800">How We Score</h3>
+    <p class="text-sm text-gray-600">Your numbers at a glance, simple ranges, clear meaning.</p>
+  </div>
+
+  <!-- legend inset -->
+  <div class="score-legend">
+    <div class="score-legend-grid">
+      <div class="score-legend-item">
+        <span class="score-legend-dot bg-green-500"></span>
+        <div>
+          <p class="score-legend-label">Excellent</p>
+          <p class="score-legend-range">8–10</p>
+        </div>
+      </div>
+
+      <div class="score-legend-item">
+        <span class="score-legend-dot bg-yellow-500"></span>
+        <div>
+          <p class="score-legend-label">Good</p>
+          <p class="score-legend-range">6–7.9</p>
+        </div>
+      </div>
+
+      <div class="score-legend-item">
+        <span class="score-legend-dot bg-blue-400"></span>
+        <div>
+          <p class="score-legend-label">Okay</p>
+          <p class="score-legend-range">4–5.9</p>
+        </div>
+      </div>
+
+      <div class="score-legend-item">
+        <span class="score-legend-dot bg-red-500"></span>
+        <div>
+          <p class="score-legend-label">Needs work</p>
+          <p class="score-legend-range">0–3.9</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-
-<!-- SECTION: Detailed Room Metrics -->
-<div class="mt-12 mb-6">
-  <h2 class="text-3xl font-bold text-gray-800 mb-2">Room scores</h2>
-  <p class="section-subtitle">These six cards give you a clear snapshot of how your room is shaping the sound, highlighting what’s working and where the easy wins are.</p>
+<!-- Page Title -->
+<div class="page-title-block">
+  <h1 class="page-title">Your Room Results</h1>
+  <p class="page-subtitle">All your measured scores and sound characteristics in one clear view.</p>
 </div>
+
+<!-- card-in-card: title + 6-metric grid -->
+<div class="card mb-8">
+  <!-- card header -->
+  <div class="mb-4">
+    <h2 class="text-xl font-semibold text-gray-800">Room Scores</h2>
+    <p class="text-sm text-gray-600">These six cards give you a clear snapshot of how your room is shaping the sound, highlighting what’s working and where the easy wins are.</p>
+  </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
 
   <!-- 1. Peaks & Dips -->
-  <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+  <div class="score-legend">
 
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Peaks & Dips</h4>
@@ -308,7 +240,7 @@
          data-color-summary="peaksDips">--</div>
 
     <!-- Buddy box -->
-    <div class="flex items-start bg-gray-100 rounded-lg p-2 text-xs text-gray-700 mb-3">
+    <div class="buddy-box">
       <img src="buddy-icon-100.svg"
            class="w-4 h-4 mr-2 opacity-90 mt-0.5"
            alt="Buddy tip">
@@ -339,7 +271,7 @@
 
 
   <!-- 2. Reflections -->
-  <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+  <div class="score-legend">
 
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Reflections</h4>
@@ -354,8 +286,8 @@
          class="text-sm mb-2"
          data-color-summary="reflections">--</div>
 
-    <div class="flex items-start bg-gray-100 rounded-lg p-2 text-xs text-gray-700 mb-3">
-      <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+    <div class="buddy-box">
+      <img src="buddy-icon-100.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="reflectionsBuddy" class="italic">--</span>
     </div>
 
@@ -382,7 +314,7 @@
 
 
   <!-- 3. Bandwidth -->
-  <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+  <div class="score-legend">
 
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Bandwidth</h4>
@@ -397,8 +329,8 @@
          class="text-sm mb-2"
          data-color-summary="bandwidth">--</div>
 
-    <div class="flex items-start bg-gray-100 rounded-lg p-2 text-xs text-gray-700 mb-3">
-      <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+    <div class="buddy-box">
+      <img src="buddy-icon-100.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="bandwidthBuddy" class="italic">--</span>
     </div>
 
@@ -425,7 +357,7 @@
 
 
   <!-- 4. Balance -->
-  <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+  <div class="score-legend">
 
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Balance</h4>
@@ -440,8 +372,8 @@
          class="text-sm mb-2"
          data-color-summary="balance">--</div>
 
-    <div class="flex items-start bg-gray-100 rounded-lg p-2 text-xs text-gray-700 mb-3">
-      <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+    <div class="buddy-box">
+      <img src="buddy-icon-100.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="balanceBuddy" class="italic">--</span>
     </div>
 
@@ -468,7 +400,7 @@
 
 
   <!-- 5. Smoothness -->
-  <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+  <div class="score-legend">
 
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Smoothness</h4>
@@ -483,8 +415,8 @@
          class="text-sm mb-2"
          data-color-summary="smoothness">--</div>
 
-    <div class="flex items-start bg-gray-100 rounded-lg p-2 text-xs text-gray-700 mb-3">
-      <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+    <div class="buddy-box">
+      <img src="buddy-icon-100.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="smoothnessBuddy" class="italic">--</span>
     </div>
 
@@ -511,7 +443,7 @@
 
 
   <!-- 6. Reverb -->
-  <div class="bg-white rounded-2xl shadow-lg p-6 card-hover relative">
+  <div class="score-legend">
 
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Reverb</h4>
@@ -526,8 +458,8 @@
          class="text-sm mb-2"
          data-color-summary="reverb">--</div>
 
-    <div class="flex items-start bg-gray-100 rounded-lg p-2 text-xs text-gray-700 mb-3">
-      <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+    <div class="buddy-box">
+      <img src="buddy-icon-100.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="reverbBuddy" class="italic">--</span>
     </div>
 
@@ -551,64 +483,81 @@
       Shows how long your room holds onto sound. Shorter usually means a cleaner listen.
     </div>
   </div>
-
+  </div>
 </div>
 
-<!-- SECTION: Detailed Room Metrics -->
-<div class="mt-12 mb-6">
-  <h2 class="text-3xl font-bold text-gray-800 mb-2">What we heard in your room</h2>
-  <p class="section-subtitle">Your room’s influence, broken down into the four parts your ears actually notice, bass, mids, treble, and air.</p>
-</div>
+<!-- =========================================== -->
+<!--  WHAT WE HEARD IN YOUR ROOM (FULL SECTION)  -->
+<!-- =========================================== -->
 
-<!-- Detailed Analysis (Improved, Friendlier) -->
-<div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+<div class="card mb-8">
 
-  <!-- 4 big numbers + bars -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 text-center">
+  <!-- Header -->
+  <div class="mb-4">
+    <h2 class="text-xl font-semibold text-gray-800">What We Heard In Your Room</h2>
+    <p class="text-sm text-gray-600">
+      Your room’s influence, broken down into the four parts your ears actually notice:
+      bass, mids, treble, and air.
+    </p>
+  </div>
 
-    <!-- Bass -->
-    <div>
-      <div id="bassLevel" class="text-3xl font-bold text-blue-400 mb-1">-- dB</div>
-      <div class="text-sm text-gray-600 mb-2">Bass (20–200 Hz)</div>
-      <div class="w-full bg-gray-200 rounded h-2">
-        <div id="bassBar" class="h-2 rounded bg-blue-400" style="width: 0%"></div>
+  <!-- ===================== -->
+  <!-- INNER CARD – 4 BANDS  -->
+  <!-- ===================== -->
+  <div class="inner-card mb-6">
+
+    <!-- 4 big numbers + bars -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-2 text-center">
+
+      <!-- Bass -->
+      <div>
+        <div id="bassLevel" class="text-3xl font-bold text-blue-400 mb-1">-- dB</div>
+        <div class="text-sm text-gray-600 mb-2">Bass (20–200 Hz)</div>
+        <div class="w-full bg-gray-200 rounded h-2">
+          <div id="bassBar" class="h-2 rounded bg-blue-400" style="width: 0%"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">The punch and weight in the room.</p>
       </div>
-      <p class="text-xs text-gray-500 mt-2">The punch and weight in the room.</p>
-    </div>
 
-    <!-- Mid -->
-    <div>
-      <div id="midLevel" class="text-3xl font-bold text-green-500 mb-1">-- dB</div>
-      <div class="text-sm text-gray-600 mb-2">Mid (200–2 kHz)</div>
-      <div class="w-full bg-gray-200 rounded h-2">
-        <div id="midBar" class="h-2 rounded bg-green-500" style="width: 0%"></div>
+      <!-- Mid -->
+      <div>
+        <div id="midLevel" class="text-3xl font-bold text-green-500 mb-1">-- dB</div>
+        <div class="text-sm text-gray-600 mb-2">Mid (200–2 kHz)</div>
+        <div class="w-full bg-gray-200 rounded h-2">
+          <div id="midBar" class="h-2 rounded bg-green-500" style="width: 0%"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Vocals, guitars, the “meat” of the music.</p>
       </div>
-      <p class="text-xs text-gray-500 mt-2">Vocals, guitars, the “meat” of the music.</p>
-    </div>
 
-    <!-- Treble -->
-    <div>
-      <div id="trebleLevel" class="text-3xl font-bold text-yellow-500 mb-1">-- dB</div>
-      <div class="text-sm text-gray-600 mb-2">Treble (2–10 kHz)</div>
-      <div class="w-full bg-gray-200 rounded h-2">
-        <div id="trebleBar" class="h-2 rounded bg-yellow-500" style="width: 0%"></div>
+      <!-- Treble -->
+      <div>
+        <div id="trebleLevel" class="text-3xl font-bold text-yellow-500 mb-1">-- dB</div>
+        <div class="text-sm text-gray-600 mb-2">Treble (2–10 kHz)</div>
+        <div class="w-full bg-gray-200 rounded h-2">
+          <div id="trebleBar" class="h-2 rounded bg-yellow-500" style="width: 0%"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Cymbals, clarity, sparkle.</p>
       </div>
-      <p class="text-xs text-gray-500 mt-2">Cymbals, clarity, sparkle.</p>
-    </div>
 
-    <!-- Air -->
-    <div>
-      <div id="airLevel" class="text-3xl font-bold text-purple-600 mb-1">-- dB</div>
-      <div class="text-sm text-gray-600 mb-2">Air (10–20 kHz)</div>
-      <div class="w-full bg-gray-200 rounded h-2">
-        <div id="airBar" class="h-2 rounded bg-purple-600" style="width: 0%"></div>
+      <!-- Air -->
+      <div>
+        <div id="airLevel" class="text-3xl font-bold text-purple-600 mb-1">-- dB</div>
+        <div class="text-sm text-gray-600 mb-2">Air (10–20 kHz)</div>
+        <div class="w-full bg-gray-200 rounded h-2">
+          <div id="airBar" class="h-2 rounded bg-purple-600" style="width: 0%"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Sense of space and openness.</p>
       </div>
-      <p class="text-xs text-gray-500 mt-2">Sense of space and openness.</p>
+
     </div>
 
   </div>
+  <!-- END inner-card -->
 
-  <!-- Quick Listen Guide -->
+
+  <!-- ======================== -->
+  <!-- QUICK LISTEN GUIDE BOX  -->
+  <!-- ======================== -->
   <div class="bg-gray-50 rounded-lg p-4">
     <h4 class="font-semibold text-gray-800 mb-2">Quick Listen Guide</h4>
     <p class="text-sm text-gray-600 mb-2">
@@ -634,30 +583,32 @@
 
       <li>
         <span class="font-medium text-purple-600">Missing “air”?</span>
-        Add something reflective or open behind your seat, or try a diffuser.
+        Add something reflective behind your seat, or try a diffuser.
       </li>
 
     </ul>
   </div>
 
 </div>
+<!-- END full section card -->
 
 
-<!-- SECTION: Detailed Room Metrics -->
-<div class="mt-12 mb-6">
-  <h2 class="text-3xl font-bold text-gray-800 mb-2">Nerds corner</h2>
-  <p class="section-subtitle">Uncover the differences and fine tune your sound.</p>
-</div>
+<!-- card-in-card: title + chart -->
+<div class="card mb-8">
+  <div class="mb-4">
+    <h2 class="text-xl font-semibold text-gray-800">Nerds Corner</h2>
+    <p class="text-sm text-gray-600">Uncover the differences and fine-tune your sound.</p>
+  </div>
 
 <!-- SECTION: Left & Right Sound Comparison -->
-<div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+<div class="inner-card">
 
   <!-- Heading + Channel Buttons -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
 
     <!-- Title + Sub -->
     <div class="mb-2 md:mb-0">
-      <h3 class="text-xl font-semibold">Left and right sound comparison.</h3>
+      <h3 class="text-xl font-semibold">Left And Right Sound Comparison.</h3>
       <p class="text-sm text-gray-600 mt-1">
         See how each speaker behaves, spot the differences, and bring them into line.
       </p>
@@ -674,7 +625,7 @@
         data-channel="left"
         class="channel-btn px-4 py-2 rounded-lg text-sm text-white transition-all"
         style="background-color:#6D28D9;">
-        <i class="fas fa-chart-line mr-2"></i>Left Channel
+        <i class="fas fa-chart-line mr-2"></i>Left
       </button>
 
       <!-- RIGHT BUTTON -->
@@ -683,7 +634,7 @@
         data-channel="right"
         class="channel-btn px-4 py-2 rounded-lg text-sm text-white transition-all"
         style="background-color:#3B82F6;">
-        <i class="fas fa-chart-line mr-2"></i>Right Channel
+        <i class="fas fa-chart-line mr-2"></i>Right
       </button>
 
       <!-- BOTH BUTTON -->
@@ -758,7 +709,7 @@
       These stats and the chart update instantly when you click.
     </p>
   </div>
-
+</div>
 
 </div>
 
@@ -779,10 +730,17 @@
     const over = document.getElementById('sidebar-overlay');
 
     function toggleMenu() {
-      side.classList.toggle('active');
-      over.classList.toggle('active');
-      document.body.style.overflow = side.classList.contains('active') ? 'hidden' : '';
+      const side = document.getElementById("sidebar");
+      const over = document.getElementById("sidebar-overlay");
+
+      side.classList.toggle("active");
+      over.classList.toggle("active");
+
+      // Lock scroll when menu open
+      document.body.style.overflow =
+        side.classList.contains("active") ? "hidden" : "";
     }
+
     btn.addEventListener('click', toggleMenu);
     over.addEventListener('click', toggleMenu);
 

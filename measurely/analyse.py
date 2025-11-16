@@ -27,6 +27,28 @@ log = logging.getLogger("measurely")
 
 def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     freq, mag, ir, fs, label = load_session(session_dir)
+
+    # --- ROOM CONFIG LOADING (MUST BE ABOVE DSP) ---
+    room = {}
+
+    latest_meta = Path.home() / "Measurely" / "measurements" / "latest" / "meta.json"
+
+    if latest_meta.exists():
+        meta = json.loads(latest_meta.read_text())
+        room = meta.get("settings", {}).get("room", {})
+        print("\nLoaded room settings from LATEST/meta.json")
+    else:
+        meta_path = Path(session_dir) / "meta.json"
+        if meta_path.exists():
+            meta = json.loads(meta_path.read_text())
+            room = meta.get("settings", {}).get("room", {})
+            print("\nLoaded room settings from session meta.json")
+        else:
+            print("\nNo room settings found — using empty room config")
+            room = {}
+
+
+
     print("=== ANALYSE: Loaded session ===")
     print(f"Session folder: {session_dir}")
     print(f"Label: {label}")
@@ -47,7 +69,21 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     mods     = modes(freq, mag)
     sm       = smoothness(freq, mag)
     refs     = early_reflections(ir, fs)
+    # --- Room impact: furnishings modify reflection intensity ---
+    if refs:
+        if room.get("opt_hardfloor"): refs = [r * 1.10 for r in refs]
+        if room.get("opt_barewalls"): refs = [r * 1.08 for r in refs]
+        if room.get("opt_rug"):       refs = [r * 0.90 for r in refs]
+        if room.get("opt_curtains"):  refs = [r * 0.85 for r in refs]
+        if room.get("opt_sofa"):      refs = [r * 0.95 for r in refs]
+
     rt       = rt60_edt(ir, fs)
+    # --- Room impact: echo slider adjusts RT60 ---
+    if isinstance(rt, dict) and rt.get("rt60"):
+        echo_pct = room.get("echo_pct", 50)
+        rt_mod = (echo_pct - 50) / 200.0     # -0.25 → +0.25
+        rt["rt60"] *= (1 + rt_mod)
+
 
     notes = []
     if any(80 <= m["freq_hz"] <= 120 and m["type"] == "peak" for m in mods):
@@ -70,16 +106,50 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "reflections": score_ref(refs),
         "reverb":      score_reverb(rt["rt60"], rt["edt"]),
     }
+
+    # room damping modifies reflection score
+    damping = 0
+    if room.get("opt_rug"): damping += 0.2
+    if room.get("opt_curtains"): damping += 0.2
+    if room.get("opt_sofa"): damping += 0.1
+    if room.get("opt_hardfloor"): damping -= 0.2
+    if room.get("opt_barewalls"): damping -= 0.2
+
+    scores["reflections"] *= (1 - damping)
+
     scores["overall"] = round(np.mean(list(scores.values())), 1)
 
     # friendly text
     buddy_headline, buddy_actions = ask_buddy(notes, scores)
-    if not buddy_headline:               # LLM offline
+    if not buddy_headline:
         buddy_headline, buddy_actions = plain_summary({
             "band_levels_db": bands,
             "reflections_ms": refs,
             "rt60_s": rt["rt60"],
         })
+
+    # Furnishing-aware buddy text
+    room_bits = []
+    if room.get("opt_hardfloor"):
+        room_bits.append("Your hardwood/laminate floor increases early reflections.")
+    if room.get("opt_rug"):
+        room_bits.append("Your rug helps reduce first reflections and smooths the mids.")
+    if room.get("opt_curtains"):
+        room_bits.append("Curtains soften top-end reflections and reduce RT60.")
+    if room.get("opt_barewalls"):
+        room_bits.append("Bare walls mean sound has less absorption, making the room lively.")
+    if room.get("opt_wallart"):
+        room_bits.append("Wall art or shelves help scatter reflections slightly.")
+    if room.get("opt_sofa"):
+        room_bits.append("Your sofa absorbs some midrange energy and controls decay.")
+    if room.get("echo_pct", 50) > 60:
+        room_bits.append("Your room is on the lively/echoey side — expect more reflections.")
+    if room.get("echo_pct", 50) < 40:
+        room_bits.append("Your room is on the damped side — reflections will be lower.")
+
+    # ---> merge into notes
+    notes.extend(room_bits)
+
     buddy_full = ask_buddy_full({
         "band_levels_db": bands,
         "modes": mods,
@@ -87,6 +157,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "rt60_s": rt["rt60"],
         "scores": scores,
     })
+
 
     export = {
         "freq": freq, "mag": mag, "ir": ir, "fs": fs, "label": label,
@@ -105,32 +176,6 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "buddy_action_blurb": buddy_full.get("action", ""),
     }
 
-    # --- load room data from meta.json ---
-    print("\n--- ROOM CONFIG LOADING ---")
-
-    # Primary source: latest/meta.json
-    latest_meta = Path.home() / "Measurely" / "measurements" / "latest" / "meta.json"
-
-    if latest_meta.exists():
-        print(f"Loading room config from LATEST: {latest_meta}")
-        meta = json.loads(latest_meta.read_text())
-        room = meta.get("settings", {}).get("room", {})
-
-        print("Raw latest/meta.json contents:")
-        print(json.dumps(meta, indent=2))
-
-    else:
-        print("WARNING: latest/meta.json not found — falling back to session folder")
-        meta_path = Path(session_dir) / "meta.json"
-        if meta_path.exists():
-            print(f"Loading fallback room config from: {meta_path}")
-            meta = json.loads(meta_path.read_text())
-            room = meta.get("settings", {}).get("room", {})
-        else:
-            print("No room config found anywhere.")
-            room = {}
-
-    # ---- print parsed values ----
     print("\nParsed room settings:")
     print(f"  Room length (m):       {room.get('length_m')}")
     print(f"  Room width (m):        {room.get('width_m')}")
@@ -140,6 +185,14 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     print(f"  Speaker spacing (m):   {room.get('spk_spacing_m')}")
     print(f"  Toe-in angle (deg):    {room.get('toe_in_deg')}")
     print(f"  Speaker profile:       {room.get('speaker_key')}")
+    print(f"  Echo slider (%):       {room.get('echo_pct')}")
+    print(f"  Hard floor:            {room.get('opt_hardfloor')}")
+    print(f"  Rug:                   {room.get('opt_rug')}")
+    print(f"  Curtains:              {room.get('opt_curtains')}")
+    print(f"  Bare walls:            {room.get('opt_barewalls')}")
+    print(f"  Wall art:              {room.get('opt_wallart')}")
+    print(f"  Sofa:                  {room.get('opt_sofa')}")
+
 
     export["room"] = room
 

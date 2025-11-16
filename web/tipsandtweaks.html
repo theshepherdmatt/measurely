@@ -11,31 +11,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-  body { font-family: 'Inter', sans-serif; }
-  .toast {
-    position:fixed;top:1rem;right:1rem;padding:.75rem 1rem;
-    border-radius:.5rem;color:#fff;font-size:.875rem;z-index:50;
-    transform:translateX(120%);opacity:0;
-    transition:transform .3s, opacity .3s;
-  }
-  .toast.show { transform:translateX(0);opacity:1; }
-  .toast.error   { background:#ef4444; }
-  .toast.success { background:#10b981; }
-  .toast.info    { background:#3b82f6; }
-
-  .measurely-card {
-    background:white;
-    border-radius:1rem;
-    padding:1.5rem;
-    box-shadow:0 4px 16px rgba(0,0,0,0.08);
-  }
 </style>
 </head>
-
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <body class="bg-gray-50">
-
 <!-- Mobile banner -->
-<div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm 
+<div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm
             flex items-center justify-between px-4 z-50">
   <div class="flex items-center space-x-2">
     <img src="buddy-icon-100-white.svg" class="w-10 h-10" alt="Dave">
@@ -46,10 +27,8 @@
   </button>
 </div>
 
-<!-- Sidebar -->
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
-
-<aside id="sidebar" class="sidebar gradient-bg fixed top-0 right-0 h-full w-64 text-white p-6 z-40">
+<aside id="sidebar" class="sidebar">
   <div class="sidebar-logo mb-8 flex items-center space-x-3">
     <img src="buddy-icon-100-white.svg" class="w-12 h-12" alt="Measurely Buddy">
     <div>
@@ -57,90 +36,98 @@
       <p class="text-sm opacity-80">Simple Room Audio</p>
     </div>
   </div>
-
   <nav class="space-y-2">
-    <a href="index.html" class="nav-item"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
-    <a href="room-setup.html" class="nav-item"><i class="fas fa-home mr-3"></i>Room Setup</a>
+    <a href="index.html" class="nav-item active"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
+    <a href="room-setup.html" class="nav-item active"><i class="fas fa-home mr-3"></i>Room Setup</a>
     <a href="tipsandtweaks.html" class="nav-item active"><i class="fas fa-lightbulb mr-3"></i>Tips and Tweaks</a>
   </nav>
+  <!-- ===== SIDEBAR STATUS PANEL ===== -->
+  <div class="absolute bottom-6 left-6 right-6">
+
+    <div class="bg-white/20 backdrop-blur-md rounded-lg p-4 space-y-3">
+
+      <!-- 1. SYSTEM READY -->
+      <div class="flex items-center">
+        <div id="systemReadyDot" class="status-indicator status-good pulse-animation"></div>
+        <span id="systemReadyText" class="text-sm">System Ready</span>
+      </div>
+
+      <!-- 2. IP ADDRESS -->
+      <div class="flex items-center">
+        <div id="ipStatusDot" class="status-indicator bg-blue-400"></div>
+        <span id="ipAddressText" class="text-sm">IP: 0.0.0.0</span>
+      </div>
+
+      <!-- 3. THAT CONNECTED (DAC / device) -->
+      <div class="flex items-center">
+        <div id="dacStatusDot" class="status-indicator bg-yellow-400"></div>
+        <span id="dacStatusText" class="text-sm">That: Not Found</span>
+      </div>
+
+      <!-- 4. USB MIC CONNECTED -->
+      <div class="flex items-center">
+        <div id="usbStatusDot" class="status-indicator bg-red-400"></div>
+        <span id="usbStatusText" class="text-sm">USB Mic: Not Connected</span>
+      </div>
+
+      <!-- 5. CLOCK -->
+      <p class="text-xs opacity-80">
+        Last updated: <span id="lastUpdated">Now</span>
+      </p>
+
+    </div>
+
+  </div>
+
 </aside>
 
-<!-- MAIN -->
+<!-- =====  MAIN CONTENT  ===== -->
 <div class="main-content md:ml-64 p-8">
 
-  <!-- Header -->
-  <div class="mb-8">
-    <h2 class="text-3xl font-bold text-gray-800 mb-2">Tips and Tweaks</h2>
-    <p class="text-gray-600">Dave focuses on your three weakest acoustic areas and gives practical, no-nonsense solutions based on real measurements.</p>
+  <!-- universal title -->
+  <div class="page-title-block">
+    <h1 class="page-title">Tips & Tweaks</h1>
+    <p class="page-subtitle">Dave uses your sweep to highlight issues, explain what’s going on, and give practical advice.</p>
   </div>
 
-  <!-- KEY FINDINGS -->
-  <div class="mb-8">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-      <i class="fas fa-exclamation-triangle mr-2 text-blue-600"></i>
-      Dave’s advice
-    </h2>
-    <div id="priorityCards" class="space-y-4"></div>
+  <!-- 1. What’s Wrong -->
+  <div class="card mb-8">
+    <div class="mb-4 flex items-center gap-2">
+      <i class="fas fa-search text-indigo-600 text-xl"></i>
+      <h2 class="text-xl font-semibold text-gray-800">What’s Wrong?</h2>
+    </div>
+    <p class="text-sm text-gray-600">Your three weakest areas based on real measurements.</p>
+    <div id="priorityCards" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"></div>
   </div>
 
-    <!-- BUDDY DEEP DIVE -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-        <img src="buddy-icon-100.svg" class="w-12 h-12 mr-3 opacity-90" alt="Dave">
-        Dave’s Deep Dive
-    </h2>
-    <div id="buddyDeepDive" class="space-y-4 text-sm text-gray-700"></div>
+  <!-- 2. Dave’s Take -->
+  <div class="card mb-8">
+    <div class="mb-4 flex items-center gap-2">
+      <i class="fas fa-lightbulb text-indigo-600 text-xl"></i>
+      <h2 class="text-xl font-semibold text-gray-800">Dave’s Take</h2>
     </div>
-
-
-  <!-- INSIGHTS -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-
-    <!-- FREQUENCY -->
-    <div class="measurely-card">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">
-        <i class="fas fa-chart-line mr-2"></i>Frequency Response Insights
-      </h3>
-      <div id="freqIssues" class="space-y-4 text-sm"></div>
-    </div>
-
-    <!-- ROOM BEHAVIOUR -->
-    <div class="measurely-card">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">
-        <i class="fas fa-home mr-2"></i>Room Behaviour Summary
-      </h3>
-      <div id="roomIssues" class="space-y-4 text-sm"></div>
-    </div>
-
+    <p class="text-sm text-gray-600">Dave breaks down what’s going on and why it matters.</p>
+    <div id="deepDiveCards" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3"></div>
   </div>
 
-  <!-- ACTION PLAN -->
-  <div class="measurely-card mb-8">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4">
-      <i class="fas fa-tasks mr-2 text-blue-600"></i>Your Action Plan
-    </h2>
+  <!-- 3. Dave’s Fixes -->
+  <div class="card mb-8">
+    <div class="mb-4 flex items-center gap-2">
+      <i class="fas fa-tools text-indigo-600 text-xl"></i>
+      <h2 class="text-xl font-semibold text-gray-800">Dave’s Fixes</h2>
+    </div>
+    <p class="text-sm text-gray-600">Simple, room-friendly tweaks based on your results.</p>
     <div id="actionPlan" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm"></div>
   </div>
 
+
 </div>
+
 
 <div id="toast-container"></div>
 
 
 <script>
-/* -------------------- SIDEBAR --------------------- */
-const btn = document.getElementById('mobile-menu-btn');
-const side = document.getElementById('sidebar');
-const overlay = document.getElementById('sidebar-overlay');
-
-btn.addEventListener('click', () => {
-  side.classList.toggle('active');
-  overlay.classList.toggle('active');
-});
-overlay.addEventListener('click', () => {
-  side.classList.remove('active');
-  overlay.classList.remove('active');
-});
 
 /* -------------------- GLOBALS --------------------- */
 let Solutions = {};
@@ -150,7 +137,6 @@ async function loadSolutions() {
   const r = await fetch('/buddy_phrases.json');
   Solutions = await r.json();
 }
-
 async function loadLatest() {
   const r = await fetch('/api/latest');
   data = await r.json();
@@ -170,100 +156,81 @@ function severityFromScore(n) {
   return "needs_work";
 }
 
+function pickFinding(cat, sev) {
+  const arr = Solutions[cat]?.[sev];
+  if (!arr) return "";
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 function pickSolution(cat, sev) {
   const key = `${cat}_solutions`;
-  if (!Solutions[key] || !Solutions[key][sev]) return "";
-  const arr = Solutions[key][sev];
+  const arr = Solutions[key]?.[sev];
+  if (!arr) return "";
   return arr[Math.floor(Math.random()*arr.length)];
 }
 
 function getWorstThree() {
-  const cats = [
-    "peaks_dips",
-    "reflections",
-    "bandwidth",
-    "balance",
-    "smoothness",
-    "reverb"
-  ];
-  const scored = cats.map(c => ({
-    category: c,
-    score: data[c]
-  }));
-  scored.sort((a,b) => a.score - b.score);
-  return scored.slice(0,3);
+  const cats = ["peaks_dips","reflections","bandwidth","balance","smoothness","reverb"];
+  return cats.map(c => ({category:c, score:data[c]}))
+             .sort((a,b)=>a.score-b.score)
+             .slice(0,3);
 }
 
-/* -------------------- COLOURCARDS --------------------- */
-
 function getColorClassForScore(score) {
-  if (score >= 8) {
-    return {
-      ring: "border-green-500",
-      text: "text-green-600",
-      dot: "bg-green-500",
-      light: "bg-green-50 text-green-800"
-    };
-  }
-  if (score >= 6) {
-    return {
-      ring: "border-yellow-500",
-      text: "text-yellow-600",
-      dot: "bg-yellow-500",
-      light: "bg-yellow-50 text-yellow-800"
-    };
-  }
-  if (score >= 4) {
-    return {
-      ring: "border-orange-500",
-      text: "text-orange-600",
-      dot: "bg-orange-500",
-      light: "bg-orange-50 text-orange-800"
-    };
-  }
-  return {
-    ring: "border-red-500",
-    text: "text-red-600",
-    dot: "bg-red-500",
-    light: "bg-red-50 text-red-800"
-  };
+  if (score >= 8) return {ring:"border-green-500",text:"text-green-600",light:"bg-green-50 text-green-800"};
+  if (score >= 6) return {ring:"border-yellow-500",text:"text-yellow-600",light:"bg-yellow-50 text-yellow-800"};
+  if (score >= 4) return {ring:"border-blue-500",text:"text-blue-600",light:"bg-blue-50 text-blue-800"};
+  return {ring:"border-red-500",text:"text-red-600",light:"bg-red-50 text-red-800"};
 }
 
 /* -------------------- RENDER ALL --------------------- */
 function renderAll() {
   renderKeyFindings();
   renderBuddyDeepDive();
-  renderFreqInsights();
-  renderRoomBehaviour();
   renderActionPlan();
 }
 
-/* -------------------- KEY FINDINGS --------------------- */
+/* -------------------- SECTION 1 — WHAT’S WRONG --------------------- */
 function renderKeyFindings() {
   const C = document.getElementById('priorityCards');
   const worst = getWorstThree();
 
   C.innerHTML = worst.map(w => {
+    const col = getColorClassForScore(w.score);
     const sev = severityFromScore(w.score);
-    const sol = pickSolution(w.category, sev);
-    const col = getColorClassForScore(w.score);   // << GET COLOUR
+    const sol = pickFinding(w.category, sev);
 
-    const name = ({
-      peaks_dips: "Peaks & Dips",
-      reflections: "Reflections",
-      bandwidth: "Bandwidth",
-      balance: "Balance",
-      smoothness: "Smoothness",
-      reverb: "Reverb"
-    })[w.category];
+    const name = {
+      peaks_dips:"Peaks & Dips",
+      reflections:"Reflections",
+      bandwidth:"Bandwidth",
+      balance:"Balance",
+      smoothness:"Smoothness",
+      reverb:"Reverb"
+    }[w.category];
+
+    const icon = {
+      peaks_dips:"fa-mountain",
+      reflections:"fa-wave-square",
+      bandwidth:"fa-sliders-h",
+      balance:"fa-arrows-left-right",
+      smoothness:"fa-water",
+      reverb:"fa-bell"
+    }[w.category];
 
     return `
-      <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 ${col.ring}">
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">${name}</h3>
-        <p class="text-gray-700 mb-3">Score: ${w.score.toFixed(1)}</p>
+      <div class="card">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold ${col.text}">${name}</h3>
+          <i class="fas ${icon} text-3xl ${col.text}"></i>
+        </div>
 
-        <div class="flex items-start bg-gray-100 rounded-lg p-3 text-sm text-gray-700">
-          <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
+        <div class="mt-3 mb-3 text-3xl font-bold ${col.text}">
+          ${w.score.toFixed(1)}
+        </div>
+
+        <div class="buddy-box mt-2">
+          <img src="buddy-icon-100.svg" class="w-5 h-5">
           <span class="italic">${sol}</span>
         </div>
       </div>
@@ -271,126 +238,80 @@ function renderKeyFindings() {
   }).join('');
 }
 
-/* -------------------- DAVE DEEP DIVE --------------------- */
+
+/* -------------------- SECTION 2 — DAVE’S DEEP DIVE --------------------- */
 function renderBuddyDeepDive() {
-  const C = document.getElementById('buddyDeepDive');
+  const C = document.getElementById('deepDiveCards');
   const worst = getWorstThree();
 
   C.innerHTML = worst.map(w => {
+    const col = getColorClassForScore(w.score);
     const sev = severityFromScore(w.score);
     const sol = pickSolution(w.category, sev);
 
+    const name = {
+      peaks_dips:"Peaks & Dips",
+      reflections:"Reflections",
+      bandwidth:"Bandwidth",
+      balance:"Balance",
+      smoothness:"Smoothness",
+      reverb:"Reverb"
+    }[w.category];
+
+    const icon = {
+      peaks_dips:"fa-mountain",
+      reflections:"fa-wave-square",
+      bandwidth:"fa-sliders-h",
+      balance:"fa-arrows-left-right",
+      smoothness:"fa-water",
+      reverb:"fa-bell"
+    }[w.category];
+
     return `
-      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 leading-relaxed flex items-start">
-        <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
-        <span class="italic">${sol}</span>
+      <div class="card leading-relaxed">
+
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-semibold ${col.text}">${name}</h3>
+          <i class="fas ${icon} text-3xl ${col.text}"></i>
+        </div>
+
+        <div class="buddy-box mt-2">
+          <img src="buddy-icon-100.svg" class="w-5 h-5">
+          <span class="italic">${sol}</span>
+        </div>
+
       </div>
     `;
   }).join('');
 }
 
-/* -------------------- FREQUENCY INSIGHTS --------------------- */
-function renderFreqInsights() {
-  const C = document.getElementById('freqIssues');
-  const bits = [];
 
-  if (data.peaks_dips < 6) {
-    const sev = severityFromScore(data.peaks_dips);
-    bits.push({
-      tech: "Your frequency response shows peaks or dips caused by room interactions and speaker distances.",
-      sol: pickSolution("peaks_dips", sev)
-    });
-  }
-
-  if (data.bandwidth < 6) {
-    const sev = severityFromScore(data.bandwidth);
-    bits.push({
-      tech: "Bandwidth is limited in places, reducing punch and sparkle across the range.",
-      sol: pickSolution("bandwidth", sev)
-    });
-  }
-
-  if (bits.length === 0) {
-    C.innerHTML = `<p class="text-gray-700">Your frequency response looks clean with no major issues.</p>`;
-    return;
-  }
-
-  C.innerHTML = bits.map(b => `
-    <div class="mb-4">
-      <p class="text-gray-700">${b.tech}</p>
-
-      <div class="flex items-start bg-gray-100 rounded-lg p-3 text-sm text-gray-700 mt-2">
-        <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
-        <span class="italic">${b.sol}</span>
-      </div>
-
-    </div>
-  `).join('');
-}
-
-/* -------------------- ROOM BEHAVIOUR --------------------- */
-function renderRoomBehaviour() {
-  const C = document.getElementById('roomIssues');
-  const bits = [];
-
-  if (data.reflections < 6) {
-    const sev = severityFromScore(data.reflections);
-    bits.push({
-      tech: "Reflections are affecting clarity and imaging.",
-      sol: pickSolution("reflections", sev)
-    });
-  }
-
-  if (data.reverb < 6) {
-    const sev = severityFromScore(data.reverb);
-    bits.push({
-      tech: "Room decay characteristics could be improved for a cleaner response.",
-      sol: pickSolution("reverb", sev)
-    });
-  }
-
-  if (bits.length === 0) {
-    C.innerHTML = `<p class="text-gray-700">The room behaviour appears well-controlled.</p>`;
-    return;
-  }
-
-  C.innerHTML = bits.map(b => `
-    <div class="mb-4">
-      <p class="text-gray-700">${b.tech}</p>
-
-      <div class="flex items-start bg-gray-100 rounded-lg p-3 text-sm text-gray-700 mt-2">
-        <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
-        <span class="italic">${b.sol}</span>
-      </div>
-
-    </div>
-  `).join('');
-}
-
-/* -------------------- ACTION PLAN --------------------- */
+/* -------------------- SECTION 3 — ACTION PLAN --------------------- */
 function renderActionPlan() {
   const C = document.getElementById('actionPlan');
   const worst = getWorstThree();
 
   C.innerHTML = worst.map(w => {
+    const col = getColorClassForScore(w.score);
     const sev = severityFromScore(w.score);
     const sol = pickSolution(w.category, sev);
 
-    const name = ({
-      peaks_dips: "Peaks & Dips",
-      reflections: "Reflections",
-      bandwidth: "Bandwidth",
-      balance: "Balance",
-      smoothness: "Smoothness",
-      reverb: "Reverb"
-    })[w.category];
+    const name = {
+      peaks_dips:"Peaks & Dips",
+      reflections:"Reflections",
+      bandwidth:"Bandwidth",
+      balance:"Balance",
+      smoothness:"Smoothness",
+      reverb:"Reverb"
+    }[w.category];
 
     return `
-      <div class="bg-gray-100 p-4 rounded-lg">
-        <h4 class="font-semibold text-gray-800 mb-2">${name}</h4>
+      <div class="card p-4">
 
-        <div class="flex items-start bg-gray-200 rounded-lg p-3 text-sm text-gray-700">
-          <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
+        <h4 class="font-semibold ${col.text} mb-2">${name}</h4>
+
+        <div class="buddy-box mt-2">
+          <img src="buddy-icon-100.svg" class="w-5 h-5">
           <span class="italic">${sol}</span>
         </div>
 
@@ -400,5 +321,62 @@ function renderActionPlan() {
 }
 
 </script>
+
+<!-- =====  JAVASCRIPT  ===== -->
+
+<!-- Load the Dashboard class FIRST -->
+<script src="/js/dashboard.js"></script>
+
+<!-- Load device polling SECOND -->
+<script type="module" src="/js/devices.js"></script>
+
+<!-- Now bootstrap the dashboard instance -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (!window.dashboard) {
+        window.dashboard = new MeasurelyDashboard();
+    }
+});
+</script>
+
+<!-- Your sidebar + menu JS -->
+<script>
+  const btn  = document.getElementById('mobile-menu-btn');
+  const side = document.getElementById('sidebar');
+  const over = document.getElementById('sidebar-overlay');
+
+  function toggleMenu() {
+    side.classList.toggle("active");
+    over.classList.toggle("active");
+
+    document.body.style.overflow =
+      side.classList.contains("active") ? "hidden" : "";
+  }
+
+  btn.addEventListener('click', toggleMenu);
+  over.addEventListener('click', toggleMenu);
+
+  function togglePopup(id) {
+    document.getElementById(id).classList.toggle('hidden');
+  }
+
+  document.querySelectorAll('.nav-item').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        side.classList.remove('active');
+        over.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+
+  setInterval(() => {
+    const el = document.getElementById('lastUpdated');
+    if (el) el.textContent = new Date().toLocaleTimeString();
+  }, 1000);
+</script>
+
 </body>
 </html>
+
+

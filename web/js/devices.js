@@ -18,31 +18,108 @@ export async function refreshStatus() {
   }
 }
 
-/* ---------------------------------------------------------
-   UPDATE SIDEBAR STATUS BOX (System, IP, DAC, USB Mic, Clock)
---------------------------------------------------------- */
-function updateStatusDisplay(status) {
-  const micOk = status?.mic?.connected;
-  const dacOk = status?.dac?.connected;
-  const systemReady = micOk && dacOk;
+  /* ---------------------------------------------------------
+    UPDATE SIDEBAR STATUS BOX (System, IP, DAC, USB Mic, Clock)
+  --------------------------------------------------------- */
+  function updateStatusDisplay(status) {
 
-  /* ------------------------------
-     SYSTEM READY
-  ------------------------------- */
-  const systemDot = $('systemReadyDot');
-  const systemText = $('systemReadyText');
-
-  if (systemDot && systemText) {
-    if (systemReady) {
-      // Excellent = GREEN
-      systemDot.className = "status-indicator bg-green-500 pulse-animation";
-      systemText.textContent = "System Ready";
-    } else {
-      // Okay-but-not-ready = BLUE
-      systemDot.className = "status-indicator bg-blue-400 pulse-animation";
-      systemText.textContent = "Device Check Required";
+    // 🚫 If the sidebar indicators are NOT present on this page,
+    //     do NOT update anything (Dashboard only!)
+    if (!document.getElementById('systemReadyDot')) {
+      return;
     }
+
+    const micOk = status?.mic?.connected;
+    const dacOk = status?.dac?.connected;
+    const systemReady = micOk && dacOk;
+
+    /* ------------------------------
+      SYSTEM READY
+    ------------------------------- */
+    const systemDot = $('systemReadyDot');
+    const systemText = $('systemReadyText');
+
+    if (systemDot && systemText) {
+      if (systemReady) {
+        systemDot.className = "status-indicator bg-green-500 pulse-animation";
+        systemText.textContent = "System Ready";
+      } else {
+        systemDot.className = "status-indicator bg-blue-400 pulse-animation";
+        systemText.textContent = "Device Check Required";
+      }
+    }
+
+    /* ------------------------------
+      IP ADDRESS
+    ------------------------------- */
+    const ipDot = $('ipStatusDot');
+    const ipText = $('ipAddressText');
+
+    const ip = status?.ip;
+
+    if (ipDot && ipText) {
+      if (ip) {
+        ipDot.className = "status-indicator bg-blue-400";
+        ipText.textContent = `IP: ${ip}`;
+      } else {
+        ipDot.className = "status-indicator bg-red-500";
+        ipText.textContent = "IP: Not Found";
+      }
+    }
+
+    /* ------------------------------
+      DAC CONNECTED
+    ------------------------------- */
+    const dacDot = $('dacStatusDot');
+    const dacText = $('dacStatusText');
+
+    if (dacDot && dacText) {
+      if (dacOk) {
+        dacDot.className = "status-indicator bg-yellow-500";
+        dacText.textContent = `DAC: ${status.dac.name}`;
+      } else {
+        dacDot.className = "status-indicator bg-red-500";
+        dacText.textContent = "DAC: Not Connected";
+      }
+    }
+
+    /* ------------------------------
+      USB MIC CONNECTED
+    ------------------------------- */
+    const usbDot = $('usbStatusDot');
+    const usbText = $('usbStatusText');
+
+    if (usbDot && usbText) {
+      if (micOk) {
+        usbDot.className = "status-indicator bg-green-500";
+        usbText.textContent = `USB Mic: ${status.mic.name}`;
+      } else {
+        usbDot.className = "status-indicator bg-red-500";
+        usbText.textContent = "USB Mic: Not Connected";
+      }
+    }
+
+    /* ------------------------------
+      CLOCK UPDATE
+    ------------------------------- */
+    const clock = $('lastUpdated');
+    if (clock) clock.textContent = "Just now";
+
+    /* ------------------------------
+      SWEEP BUTTON ENABLE / DISABLE
+    ------------------------------- */
+    const ready = systemReady;
+    const runBtn = $('runBtn');
+    const sweepBtn = $('runSweepBtn');
+
+    [runBtn, sweepBtn].forEach(btn => {
+      if (btn) {
+        btn.disabled = !ready;
+        btn.classList.toggle('opacity-50', !ready);
+      }
+    });
   }
+
 
   /* ------------------------------
      IP ADDRESS
@@ -119,7 +196,6 @@ function updateStatusDisplay(status) {
       btn.classList.toggle('opacity-50', !ready);
     }
   });
-}
 
 /* ---------------------------------------------------------
    POLLING LOOP

@@ -135,48 +135,6 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       EVENT LISTENERS
-       ============================================================ */
-    setupEventListeners() {
-        // Run sweep
-        document.getElementById('runSweepBtn')
-            .addEventListener('click', () => this.runSweep());
-
-        // Channel buttons
-        document.getElementById('leftChannelBtn')
-            .addEventListener('click', () => this.showChannel('left'));
-
-        document.getElementById('rightChannelBtn')
-            .addEventListener('click', () => this.showChannel('right'));
-
-        document.getElementById('bothChannelsBtn')
-            .addEventListener('click', () => this.showChannel('both'));
-
-        // Save / Export
-        document.getElementById('saveResultsBtn')
-            .addEventListener('click', () => this.saveResults());
-
-        document.getElementById('exportReportBtn')
-            .addEventListener('click', () => this.exportReport());
-
-
-        const latestBtn   = document.getElementById('sessionLatestBtn');
-        const previousBtn = document.getElementById('sessionPreviousBtn');
-        const lastBtn     = document.getElementById('sessionLastBtn');
-
-        if (latestBtn)
-            latestBtn.addEventListener('click', () => this.loadSessionByIndex(0));
-
-        if (previousBtn)
-            previousBtn.addEventListener('click', () => this.loadSessionByIndex(1));
-
-        if (lastBtn)
-            lastBtn.addEventListener('click', () => this.loadSessionByIndex(2));
-
-    }
-
-
-    /* ============================================================
        LOAD DATA
        ============================================================ */
     async loadData() {
@@ -395,6 +353,11 @@ class MeasurelyDashboard {
        CARD SUMMARIES + BUDDY TIPS
        ============================================================ */
     updateDescriptions(data) {
+
+        // SAFETY GUARD — this page does NOT have these elements.
+        if (!document.getElementById('bandwidthSummary')) {
+            return;   // <-- instantly exit on non-dashboard pages
+        }
 
         /* ---------- Extract ---------- */
         const bandwidth   = data.bandwidth   ?? 3;
@@ -700,6 +663,10 @@ class MeasurelyDashboard {
        FREQUENCY RESPONSE CHART
        ============================================================ */
     updateFrequencyChart() {
+        const chart = document.getElementById('frequencyChart');
+        if (!chart) {
+            return; // <-- skip whole function on Tips & Tweaks page
+        }
         const data = this.currentData;
         if (!data) return;
 
@@ -853,9 +820,12 @@ class MeasurelyDashboard {
        DETAILED BAND ANALYSIS (Bass / Mid / Treble / Air)
        ============================================================ */
     updateDetailedAnalysis() {
+        if (!document.getElementById('bassLevel')) {
+            return;   // <-- Not the dashboard page, exit safely
+        }
+
         const data = this.currentData;
         if (!data.freq_hz || !data.mag_db) return;
-
         const freqHz = data.freq_hz;
         const magDb  = data.mag_db;
 
@@ -903,9 +873,14 @@ class MeasurelyDashboard {
     /* ============================================================
        SHOW CHANNEL (Left / Right / Both)
        ============================================================ */
-    showChannel(channel) {
-        const data = this.currentData;
-        if (!data) return;
+        showChannel(channel) {
+
+            const chart = document.getElementById('frequencyChart');
+            if (!chart) return;
+
+            const data = this.currentData;
+            if (!data) return;
+
 
         /* ---------------------------------------------------------
         BUILD TRACES
@@ -1117,7 +1092,7 @@ class MeasurelyDashboard {
         if (ipDot && ipTxt) {
             const hasIP = Boolean(s.ip);
 
-            ipDot.className = "status-indicator " + (hasIP ? "bg-blue-400" : "bg-red-500");
+            ipDot.className = "status-indicator " + (hasIP ? "bg-green-500" : "bg-red-500");
             ipTxt.textContent = "IP: " + (hasIP ? s.ip : "--.--.--.--");
         }
 
@@ -1128,20 +1103,21 @@ class MeasurelyDashboard {
         const dacTxt = document.getElementById('dacStatusText');
 
         if (dacDot && dacTxt) {
-            dacDot.className = "status-indicator " + (s.dac ? "bg-yellow-500" : "bg-red-500");
+            dacDot.className = "status-indicator " + (s.dac ? "bg-green-500" : "bg-red-500");
             dacTxt.textContent = s.dac ? "DAC: Connected" : "DAC: Not Found";
         }
 
         /* -------------------------------------------
         USB MIC CONNECTED
         ------------------------------------------- */
-        const usbDot = document.getElementById('usbStatusDot');
-        const usbTxt = document.getElementById('usbStatusText');
+        const micOk = s?.mic?.connected;          // true / false
+        const usbDot = document.getElementById('usbStatusDot');   // ← you dropped this
+        const usbTxt = document.getElementById('usbStatusText');  // ← and this
 
-        if (usbDot && usbTxt) {
-            usbDot.className = "status-indicator " + (s.usb ? "bg-green-500" : "bg-red-500");
-            usbTxt.textContent = s.usb ? "USB Mic: Connected" : "USB Mic: Not Connected";
-        }
+        usbDot.className = "status-indicator " + (micOk ? "bg-green-500" : "bg-red-500");
+        usbTxt.textContent = micOk
+                ? "USB Mic: connected"
+                : "USB Mic: Not Connected";
 
         /* -------------------------------------------
         LAST UPDATED CLOCK
@@ -1195,6 +1171,33 @@ class MeasurelyDashboard {
             reverb: 8.5
         };
     }
+
+    /* ============================================================
+    EVENT LISTENERS — SAFE ON ALL PAGES
+    ============================================================ */
+    setupEventListeners() {
+
+        const safe = (id, handler) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('click', handler);
+        };
+
+        // Sweep controls — only on Dashboard
+        safe('runSweepBtn', () => this.runSweep());
+        safe('saveResultsBtn', () => this.saveResults());
+        safe('exportReportBtn', () => this.exportReport());
+
+        // Channel buttons — only on Dashboard
+        safe('leftChannelBtn',  () => this.showChannel('left'));
+        safe('rightChannelBtn', () => this.showChannel('right'));
+        safe('bothChannelsBtn', () => this.showChannel('both'));
+
+        // Session comparison — only on Dashboard
+        safe('sessionLatestBtn',   () => this.loadSessionByIndex(0));
+        safe('sessionPreviousBtn', () => this.loadSessionByIndex(1));
+        safe('sessionLastBtn',     () => this.loadSessionByIndex(2));
+    }
+
 
     /* ============================================================
        TOAST MESSAGES
