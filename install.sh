@@ -23,6 +23,9 @@ apt-get update -qq
 apt-get -y full-upgrade
 
 msg "Installing runtime dependencies…"
+# system libs first
+apt-get -y install libportaudio2 libasound2-dev
+# python + tools
 apt-get -y install python3-venv python3-dev python3-pip \
      nginx git curl ufw dnsmasq hostapd libsystemd-dev
 
@@ -36,15 +39,33 @@ chown -R measurely:measurely "$SERVICE_DIR" /var/log/measurely
 msg "Creating venv and installing measurely…"
 python3 -m venv "$VENV_DIR"
 "$VENV_DIR/bin/pip" install --quiet --upgrade pip setuptools wheel
-# install project (as root, path is readable)
+# runtime python deps
+"$VENV_DIR/bin/pip" install --quiet flask flask-cors sounddevice gunicorn
+# install project (editable so local src is used)
 cd "$REPO_DIR"
 "$VENV_DIR/bin/pip" install --quiet -e .
-# fix perms
+# copy static/web folder into service dir so 404 disappears
+if [[ -d "$REPO_DIR/web" ]]; then
+    rsync -a --delete "$REPO_DIR/web/" "$SERVICE_DIR/web/"
+    chown -R measurely:measurely "$SERVICE_DIR/web"
+fi
+# fix global perms
 chown -R measurely:measurely "$SERVICE_DIR"
 
-# 4. systemd units
+# 4. discover correct gunicorn target (fallback to server:app)
+msg "Detecting gunicorn target…"
+GUNICORN_TARGET="$("$VENV_DIR/bin/python" -c "
+import measurely.server as ms, inspect
+if inspect.isfunction(getattr(ms, 'create_app', None)):
+    print('measurely.server:create_app()')
+else:
+    print('measurely.server:app')
+" 2>/dev/null || echo "measurely.server:app")"
+msg "Using $GUNICORN_TARGET"
+
+# 5. systemd units
 msg "Installing systemd services…"
-cat >/etc/systemd/system/measurely.service <<'EOF'
+cat >/etc/systemd/system/measurely.service <<EOF
 [Unit]
 Description=Measurely web application
 After=network-online.target
@@ -55,7 +76,7 @@ Type=notify
 User=measurely
 Group=measurely
 WorkingDirectory=/opt/measurely
-ExecStart=/opt/measurely/venv/bin/gunicorn -b 0.0.0.0:8000 --access-logfile - "measurely:create_app()"
+ExecStart=/opt/measurely/venv/bin/gunicorn -b 0.0.0.0:8000 --access-logfile - $GUNICORN_TARGET
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 
@@ -81,7 +102,7 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-# 5. onboard portal files (create if missing)
+# 6. onboard portal files (create if missing)
 msg "Installing on-boarding portal…"
 PORTAL_DIR="$SERVICE_DIR/onboard"
 mkdir -p "$PORTAL_DIR"
@@ -170,7 +191,7 @@ if __name__ == "__main__":
 EOF
 chmod +x "$PORTAL_DIR/ap.py"
 
-# 6. dnsmasq snippet (kept disabled – ap.py starts it when needed)
+# 7. dnsmasq snippet (kept disabled – ap.py starts it when needed)
 msg "Configuring dnsmasq…"
 cat >/etc/dnsmasq.d/onboard.conf <<'EOF'
 interface=wlan0
@@ -179,12 +200,12 @@ address=/#/192.168.4.1
 EOF
 systemctl disable --now dnsmasq   # keep it off until AP is up
 
-# 7. enable & start
+# 8. enable & start
 msg "Enabling services…"
 systemctl daemon-reload
 systemctl enable --now measurely-onboard.service measurely.service
 
-# 8. final status
+# 9. final status
 msg "Installation complete."
 if systemctl -q is-active measurely-onboard.service measurely.service; then
     echo -e "${GRN}✔${NC}  measurely-onboard.service  $(systemctl is-active measurely-onboard.service)"
