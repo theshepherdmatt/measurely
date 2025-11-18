@@ -52,6 +52,18 @@ fi
 # fix global perms
 chown -R measurely:measurely "$SERVICE_DIR"
 
+# 3b. copy buddy-phrase banks
+if [[ -d "$REPO_DIR/phrases" ]]; then
+    rsync -a --delete "$REPO_DIR/phrases/" "$SERVICE_DIR/phrases/"
+    chown -R measurely:measurely "$SERVICE_DIR/phrases"
+fi
+
+# 3c. copy speaker catalogue
+if [[ -d "$REPO_DIR/speakers" ]]; then
+    rsync -a --delete "$REPO_DIR/speakers/" "$SERVICE_DIR/speakers/"
+    chown -R measurely:measurely "$SERVICE_DIR/speakers"
+fi
+
 # 4. discover correct gunicorn target (fallback to server:app)
 msg "Detecting gunicorn target…"
 GUNICORN_TARGET="$("$VENV_DIR/bin/python" -c "

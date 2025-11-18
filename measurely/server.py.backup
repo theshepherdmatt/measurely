@@ -31,13 +31,13 @@ app = Flask(__name__)
 CORS(app)
 
 # ------------------------------------------------------------------
-#  point the server at the user tree the sweep already populates
+#  NEW:  base paths inside /opt/measurely (service dir)
 # ------------------------------------------------------------------
-SERVICE_ROOT = Path.home() / "Measurely"          # ~/Measurely
-MEAS_ROOT    = SERVICE_ROOT / "measurements"      # ~/Measurely/measurements
-PHRASES_DIR  = SERVICE_ROOT / "phrases"           # ~/Measurely/phrases
-WEB_DIR      = SERVICE_ROOT / "web"               # ~/Measurely/web
-SPEAKERS_DIR = SERVICE_ROOT / "speakers"          # ~/Measurely/speakers
+SERVICE_ROOT = Path("/opt/measurely")
+MEAS_ROOT    = SERVICE_ROOT / "measurements"          # csv/json data
+PHRASES_DIR  = SERVICE_ROOT / "phrases"               # buddy_*.json
+SPEAKERS_DIR = SERVICE_ROOT / "speakers"              # speaker images
+WEB_DIR      = SERVICE_ROOT / "web"                   # index.html, css, js
 
 # ------------------------------------------------------------------
 #  Ensure folders exist (installer may have copied them, but be safe)
