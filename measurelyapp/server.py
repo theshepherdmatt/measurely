@@ -31,13 +31,15 @@ app = Flask(__name__)
 CORS(app)
 
 # ------------------------------------------------------------------
-#  point the server at the user tree the sweep already populates
+#  Single, unified Measurely root
 # ------------------------------------------------------------------
-SERVICE_ROOT = Path.home() / "Measurely"          # ~/Measurely
-MEAS_ROOT    = SERVICE_ROOT / "measurements"      # ~/Measurely/measurements
-PHRASES_DIR  = SERVICE_ROOT / "phrases"           # ~/Measurely/phrases
-WEB_DIR      = SERVICE_ROOT / "web"               # ~/Measurely/web
-SPEAKERS_DIR = SERVICE_ROOT / "speakers"          # ~/Measurely/speakers
+APP_ROOT      = Path(__file__).resolve().parent        # /home/matt/measurely/measurelyapp
+SERVICE_ROOT  = APP_ROOT.parent                        # /home/matt/measurely
+
+MEAS_ROOT     = SERVICE_ROOT / "measurements"
+PHRASES_DIR   = APP_ROOT / "phrases"                   # ← CORRECT!!
+WEB_DIR       = SERVICE_ROOT / "web"
+SPEAKERS_DIR  = SERVICE_ROOT / "speakers"
 
 # ------------------------------------------------------------------
 #  Ensure folders exist (installer may have copied them, but be safe)
@@ -64,6 +66,11 @@ sweep_progress = {
 # ------------------------------------------------------------------
 #  helpers
 # ------------------------------------------------------------------
+def get_latest_measurement():
+    import os, pprint
+    print("DEBUG: MEAS_ROOT =", os.environ.get("MEASURELY_MEAS_ROOT"))
+    print("DEBUG: real path  =", MEAS_ROOT)
+
 def write_json_atomic(obj, dest: Path):
     """thread-safe atomic write for meta.json"""
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -329,15 +336,16 @@ def run_sweep():
 
         def run():
             # 1. run sweep
-            completed = subprocess.run(cmd, cwd="/opt/measurely", capture_output=True, text=True)
+            completed = subprocess.run(cmd, cwd="/home/matt/measurely", capture_output=True, text=True)
             # 2. grab the session path from the last line of stdout
-            #    sweep.py prints:  Saved: /opt/Measurely/measurements/20251111_xxxxxx
+            #    sweep.py prints:  Saved: /home/matt/measurely/measurements/20251111_xxxxxx
             out_lines = completed.stdout.strip().splitlines()
             if out_lines and out_lines[-1].startswith("Saved:"):
                 session_path = out_lines[-1].replace("Saved:", "").strip()
                 # 3. analyse
                 analysis_cmd = [sys.executable, "-m", "measurely.analyse", session_path]
-                subprocess.run(analysis_cmd, cwd="/opt/measurely", check=False)
+                subprocess.run(["ln", "-sfn", session_path, "/home/matt/measurely/measurements/latest"])
+                subprocess.run(analysis_cmd, cwd="/home/matt/measurely", check=False)
             else:
                 print("[run_sweep] Could not find 'Saved:' line in sweep output")
 
@@ -565,4 +573,4 @@ if __name__ == '__main__':
     print("Starting Real-Data Measurely Flask Server...")
     print(f"Measurements root: {MEAS_ROOT}")
     print("NEW: /api/room/<session>  (POST + GET) – saves/loads user room setup")
-    app.run(host='0.0.0.0', port=5001, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Measurely – headless sweep runner (SSH-friendly, atomic writes)
+measurely – headless sweep runner (SSH-friendly, atomic writes)
 - Supports left / right / both channel sweeps.
 - Records slightly BEFORE playback to avoid missing sweep onset.
 - Detects sweep start via cross-correlation; trims pre-roll.
@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 #  utilities
 # ------------------------------------------------------------------
 def session_dir() -> str:
-    root = Path.home() / "Measurely" / "measurements"
+    root = Path.home() / "measurely" / "measurements"
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
     return str(root / stamp)
 
@@ -324,8 +324,6 @@ def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag
             savefig_atomic(fig_fr, targets["response_png"], dpi=150)
 
         # JSON **inside the loop**
-        write_json_atomic(meta, targets["meta_json"])
-
         print(f"[DEBUG] save_all called, meta_json={targets['meta_json']}")
 
 
@@ -343,7 +341,7 @@ def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag
 #  CLI entry
 # ------------------------------------------------------------------
 def main():
-    ap = argparse.ArgumentParser(description="Measurely: left/right/both sweep runner")
+    ap = argparse.ArgumentParser(description="measurely: left/right/both sweep runner")
     ap.add_argument("--fs", type=int, default=48000)
     ap.add_argument("--dur", type=float, default=8.0)
     ap.add_argument("--f0", type=float, default=20.0)
@@ -376,7 +374,7 @@ def main():
     # ------------------------------------------------------------------
     #  read user room & speaker config
     # ------------------------------------------------------------------
-    latest_meta = Path.home() / "Measurely" / "measurements" / "latest" / "meta.json"
+    latest_meta = Path.home() / "measurely" / "measurements" / "latest" / "meta.json"
 
     if latest_meta.exists():
         print(f"[SWEEP] loading room config from {latest_meta}")

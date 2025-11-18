@@ -15,12 +15,12 @@ from pathlib import Path
 import numpy as np
 
 # our own tiny SDK
-from measurely.io import load_session
-from measurely.signal import log_bins, band_mean, modes, bandwidth_3db, smoothness, early_reflections, rt60_edt
-from measurely.score import score_bandwidth, score_balance, score_modes, score_smooth, score_ref, score_reverb
-from measurely.speaker import load_target_curve
-from measurely.writer import _atomic_write, write_text_summary, yaml_camilla
-from measurely.buddy import ask_buddy, ask_buddy_full, plain_summary
+from measurelyapp.io import load_session
+from measurelyapp.signal import log_bins, band_mean, modes, bandwidth_3db, smoothness, early_reflections, rt60_edt
+from measurelyapp.score import score_bandwidth, score_balance, score_modes, score_smooth, score_ref, score_reverb
+from measurelyapp.speaker import load_target_curve
+from measurelyapp.writer import _atomic_write, write_text_summary, yaml_camilla
+from measurelyapp.buddy import ask_buddy, ask_buddy_full, plain_summary
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(message)s", stream=sys.stdout)
 log = logging.getLogger("measurely")
@@ -31,29 +31,22 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     # --- ROOM CONFIG LOADING (MUST BE ABOVE DSP) ---
     room = {}
 
-    latest_meta = Path.home() / "Measurely" / "measurements" / "latest" / "meta.json"
+    latest_meta = Path.home() / "measurely" / "measurements" / "latest" / "meta.json"
 
     if latest_meta.exists():
+        print("\nLoaded room settings from LATEST/meta.json")
         meta = json.loads(latest_meta.read_text())
         room = meta.get("settings", {}).get("room", {})
-        print("\nLoaded room settings from LATEST/meta.json")
     else:
-        meta_path = Path(session_dir) / "meta.json"
-        if meta_path.exists():
-            meta = json.loads(meta_path.read_text())
-            room = meta.get("settings", {}).get("room", {})
-            print("\nLoaded room settings from session meta.json")
-        else:
-            print("\nNo room settings found — using empty room config")
-            room = {}
+        print("\nERROR: latest/meta.json not found. Using empty room settings.")
+        room = {}
 
 
-
-    print("=== ANALYSE: Loaded session ===")
-    print(f"Session folder: {session_dir}")
-    print(f"Label: {label}")
-    print(f"Impulse length: {len(ir)} samples")
-    print(f"Raw response points: {len(freq)}")
+        print("=== ANALYSE: Loaded session ===")
+        print(f"Session folder: {session_dir}")
+        print(f"Label: {label}")
+        print(f"Impulse length: {len(ir)} samples")
+        print(f"Raw response points: {len(freq)}")
 
     freq, mag = log_bins(freq, mag, ppo=ppo)
     print(f"After log-binning: {len(freq)} points, {ppo} PPO")
@@ -209,7 +202,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     curve = load_target_curve(speaker_key)
 
     # Print where the speaker catalogue lives
-    from measurely.speaker import SPEAKER_DIR
+    from measurelyapp.speaker import SPEAKER_DIR
     print(f"SPEAKER_DIR: {SPEAKER_DIR}")
 
     # Print speakers.json
@@ -261,6 +254,8 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     export_out = {k: v for k, v in export.items() if k not in {"freq", "mag", "ir"}}
     _atomic_write(session_dir / "analysis.json", json.dumps(export_out, indent=2, default=str))
     _atomic_write(session_dir / "camilladsp.yaml", yaml_camilla(export_out, target=target))
+    _atomic_write(session_dir / "meta.json",     json.dumps(export_out, indent=2, default=str))   # <--- ADD THIS LINE
+
 
     print("Analysis complete →", session_dir)
     return export
@@ -268,7 +263,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
 
 # ---------- CLI ----------------------------------------------------
 def main():
-    ap = argparse.ArgumentParser(description="Measurely – headache-proof analyser")
+    ap = argparse.ArgumentParser(description="measurely – headache-proof analyser")
     ap.add_argument("session", help="folder with response.csv + impulse.wav  (or left/ right/ sub-dirs)")
     ap.add_argument("--speaker", help="speaker key in ~/measurely/speakers/speakers.json")
     ap.add_argument("--ppo", type=int, default=48, help="points per octave")

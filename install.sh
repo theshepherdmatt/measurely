@@ -1,228 +1,118 @@
 #!/usr/bin/env bash
-# Install file for measurely – run on a fresh Raspberry Pi OS (Bookworm+)
+# Measurely installer (pure, minimal, no folder creation)
+
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_DIR="/opt/measurely/venv"
-SERVICE_DIR="/opt/measurely"
-STATE_FILE="$SERVICE_DIR/onboard/state.json"
-
-# colours
+# Colours
 GRN='\033[1;32m'; RED='\033[1;31m'; YLW='\033[1;33m'; NC='\033[0m'
-
 msg(){ echo -e "${GRN}[measurely-install]${NC} $*"; }
 warn(){ echo -e "${YLW}[measurely-install]${NC} $*"; }
-die(){ echo -e "${RED}[measurely-install] $*${NC}" >&2; exit 1;}
+die(){ echo -e "${RED}[measurely-install] $*${NC}" >&2; exit 1; }
 
-# 0. must be root
-[[ $EUID -eq 0 ]] || die "Please run as root (sudo)."
+[[ $EUID -eq 0 ]] || die "Run with sudo."
 
-# 1. base deps
-msg "Updating system packages…"
+# Where is the repo?
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Real (non-root) user
+if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
+  APP_USER="$SUDO_USER"
+else
+  APP_USER="$(logname 2>/dev/null || echo root)"
+fi
+
+APP_HOME="$(getent passwd "$APP_USER" | cut -d: -f6)"
+[[ -n "$APP_HOME" ]] || die "Could not determine home directory."
+
+VENV_DIR="$REPO_DIR/venv"
+
+msg "Repo directory : $REPO_DIR"
+msg "Run-as user    : $APP_USER"
+msg "Home directory : $APP_HOME"
+msg "Venv location  : $VENV_DIR"
+
+# --------------------------------------------
+# OS dependencies
+# --------------------------------------------
+msg "Installing OS dependencies…"
 apt-get update -qq
-apt-get -y full-upgrade
+apt-get install -y python3-venv python3-pip python3-dev \
+                   libportaudio2 libasound2-dev \
+                   git
 
-msg "Installing runtime dependencies…"
-# system libs first
-apt-get -y install libportaudio2 libasound2-dev
-# python + tools
-apt-get -y install python3-venv python3-dev python3-pip \
-     nginx git curl ufw dnsmasq hostapd libsystemd-dev
+# --------------------------------------------
+# Virtualenv
+# --------------------------------------------
+msg "Creating virtualenv…"
+sudo -u "$APP_USER" python3 -m venv "$VENV_DIR"
 
-# 2. service user & directories
-msg "Creating service user & directories…"
-mkdir -p "$SERVICE_DIR" "$VENV_DIR" /var/log/measurely
-useradd -r -s /bin/false measurely 2>/dev/null || true
-chown -R measurely:measurely "$SERVICE_DIR" /var/log/measurely
+msg "Upgrading pip/setuptools…"
+sudo -u "$APP_USER" "$VENV_DIR/bin/pip" install --quiet --upgrade pip setuptools wheel
 
-# 3. python venv + project
-msg "Creating venv and installing measurely…"
-python3 -m venv "$VENV_DIR"
-"$VENV_DIR/bin/pip" install --quiet --upgrade pip setuptools wheel
-# runtime python deps
-"$VENV_DIR/bin/pip" install --quiet flask flask-cors sounddevice gunicorn
-# install project (editable so local src is used)
-cd "$REPO_DIR"
-"$VENV_DIR/bin/pip" install --quiet -e .
-# copy static/web folder into service dir so 404 disappears
-if [[ -d "$REPO_DIR/web" ]]; then
-    rsync -a --delete "$REPO_DIR/web/" "$SERVICE_DIR/web/"
-    chown -R measurely:measurely "$SERVICE_DIR/web"
-fi
-# fix global perms
-chown -R measurely:measurely "$SERVICE_DIR"
-
-# 3b. copy buddy-phrase banks
-if [[ -d "$REPO_DIR/phrases" ]]; then
-    rsync -a --delete "$REPO_DIR/phrases/" "$SERVICE_DIR/phrases/"
-    chown -R measurely:measurely "$SERVICE_DIR/phrases"
+# --------------------------------------------
+# Python packages
+# --------------------------------------------
+if [[ -f "$REPO_DIR/requirements.txt" ]]; then
+  msg "Installing Python requirements…"
+  sudo -u "$APP_USER" "$VENV_DIR/bin/pip" install --quiet -r "$REPO_DIR/requirements.txt"
+else
+  msg "Installing base Python deps…"
+  sudo -u "$APP_USER" "$VENV_DIR/bin/pip" install --quiet flask flask-cors sounddevice numpy scipy matplotlib
 fi
 
-# 3c. copy speaker catalogue
-if [[ -d "$REPO_DIR/speakers" ]]; then
-    rsync -a --delete "$REPO_DIR/speakers/" "$SERVICE_DIR/speakers/"
-    chown -R measurely:measurely "$SERVICE_DIR/speakers"
-fi
+# --------------------------------------------
+# Editable install
+# --------------------------------------------
+msg "Installing Measurely (editable)…"
+sudo -u "$APP_USER" "$VENV_DIR/bin/pip" install --quiet -e "$REPO_DIR"
 
-# 4. discover correct gunicorn target (fallback to server:app)
-msg "Detecting gunicorn target…"
-GUNICORN_TARGET="$("$VENV_DIR/bin/python" -c "
-import measurely.server as ms, inspect
-if inspect.isfunction(getattr(ms, 'create_app', None)):
-    print('measurely.server:create_app()')
-else:
-    print('measurely.server:app')
-" 2>/dev/null || echo "measurely.server:app")"
-msg "Using $GUNICORN_TARGET"
+# --------------------------------------------
+# Systemd service
+# --------------------------------------------
+msg "Writing systemd unit…"
 
-# 5. systemd units
-msg "Installing systemd services…"
-cat >/etc/systemd/system/measurely.service <<'EOF'
+cat >/etc/systemd/system/measurely.service <<EOF
 [Unit]
-Description=Measurely web application
+Description=Measurely Flask Web Server
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=notify
-User=measurely
-Group=measurely
-WorkingDirectory=/opt/measurely
-ExecStart=/opt/measurely/venv/bin/gunicorn -b 0.0.0.0:8000 --access-logfile - $GUNICORN_TARGET
-ExecReload=/bin/kill -HUP $MAINPID
+Type=simple
+User=$APP_USER
+WorkingDirectory=$REPO_DIR
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=$REPO_DIR
+Environment=MEASURELY_MEAS_ROOT=$REPO_DIR/measurements
+ExecStart=$VENV_DIR/bin/python -m measurely.server
 Restart=on-failure
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-cat >/etc/systemd/system/measurely-onboard.service <<'EOF'
-[Unit]
-Description=Measurely Wi-Fi on-boarding AP
-After=network-pre.target
-Before=measurely.service
+# --------------------------------------------
+# Clean old services
+# --------------------------------------------
+msg "Cleaning old Measurely services…"
+systemctl disable --now measurely-onboard.service 2>/dev/null || true
+systemctl disable --now measurely.service 2>/dev/null || true
+systemctl disable --now nginx 2>/dev/null || true
 
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStartPre=/opt/measurely/onboard/check-and-run.sh
-ExecStart=/opt/measurely/venv/bin/python /opt/measurely/onboard/ap.py
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# 6. onboard portal files (create if missing)
-msg "Installing on-boarding portal…"
-PORTAL_DIR="$SERVICE_DIR/onboard"
-mkdir -p "$PORTAL_DIR"
-
-# -- check-and-run.sh
-cat >"$PORTAL_DIR/check-and-run.sh" <<'EOF'
-#!/bin/bash
-# exit 0 = we have Wi-Fi  -> systemd will skip the service
-# exit 1 = no Wi-Fi       -> service starts AP
-ip route get 1 2>/dev/null | grep -q wlan0 && exit 0
-exit 1
-EOF
-chmod +x "$PORTAL_DIR/check-and-run.sh"
-
-# -- ap.py  (ASCII-only, Python 3)
-cat >"$PORTAL_DIR/ap.py" <<'EOF'
-#!/usr/bin/env python3
-import subprocess, socket, os, urllib.parse
-from http.server import HTTPServer, BaseHTTPRequestHandler
-
-AP_IF    = "wlan0"
-AP_SSID  = "measurely-setup"
-AP_PSK   = "setup1234"
-AP_IP    = "192.168.4.1/24"
-PORTAL   = 80
-CFG_FILE = "/etc/wpa_supplicant/wpa_supplicant-wlan0.conf"
-STATE    = "/opt/measurely/onboard/state.json"
-
-def sh(cmd): subprocess.run(cmd, shell=True, check=False)
-
-def start_ap():
-    sh(f"systemctl stop wpa_supplicant@{AP_IF}")
-    sh(f"ip addr flush dev {AP_IF}")
-    sh(f"ip addr add {AP_IP} dev {AP_IF}")
-    sh("rfkill unblock wifi")
-    with open("/tmp/hostapd.conf","w") as f:
-        f.write(f"""interface={AP_IF}
-driver=nl80211
-ssid={AP_SSID}
-wpa=2
-wpa_passphrase={AP_PSK}
-channel=6""")
-    sh("hostapd -B /tmp/hostapd.conf")
-    sh("systemctl start dnsmasq")
-
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200); self.end_headers()
-        self.wfile.write(b"""<!doctype html>
-<html>
-<head><title>measurely - Wi-Fi setup</title></head>
-<body>
-<h2>Join your network</h2>
-<form method="post">
-SSID:<br><input name="s"><br>
-Password:<br><input type="password" name="p"><br>
-<button>Save & reboot</button>
-</form>
-</body>
-</html>""")
-
-    def do_POST(self):
-        body = self.rfile.read(int(self.headers["Content-Length"])).decode()
-        data = urllib.parse.parse_qs(body)
-        ssid = data.get("s",[""])[0]
-        psk  = data.get("p",[""])[0]
-        with open(CFG_FILE,"w") as f:
-            f.write(f"""country=US
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-network={{
-    ssid="{ssid}"
-    psk="{psk}"
-    key_mgmt=WPA-PSK
-}}""")
-        self.send_response(200); self.end_headers()
-        self.wfile.write(b"Credentials saved - rebooting...")
-        subprocess.run("reboot", shell=False)
-
-if __name__ == "__main__":
-    if os.path.exists(STATE): exit(0)
-    start_ap()
-    sh("iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.4.1:80")
-    print("Portal listening on 192.168.4.1:80")
-    HTTPServer(("0.0.0.0", PORTAL), Handler).serve_forever()
-EOF
-chmod +x "$PORTAL_DIR/ap.py"
-
-# 7. dnsmasq snippet (kept disabled – ap.py starts it when needed)
-msg "Configuring dnsmasq…"
-cat >/etc/dnsmasq.d/onboard.conf <<'EOF'
-interface=wlan0
-dhcp-range=192.168.4.10,192.168.4.50,24h
-address=/#/192.168.4.1
-EOF
-systemctl disable --now dnsmasq   # keep it off until AP is up
-
-# 8. enable & start
-msg "Enabling services…"
+# --------------------------------------------
+# Start new service
+# --------------------------------------------
+msg "Starting Measurely…"
 systemctl daemon-reload
-systemctl enable --now measurely-onboard.service measurely.service
+systemctl enable --now measurely.service
 
-# 9. final status
-msg "Installation complete."
-if systemctl -q is-active measurely-onboard.service measurely.service; then
-    echo -e "${GRN}✔${NC}  measurely-onboard.service  $(systemctl is-active measurely-onboard.service)"
-    echo -e "${GRN}✔${NC}  measurely.service          $(systemctl is-active measurely.service)"
+sleep 1
+if systemctl -q is-active measurely.service; then
+  msg "✔ measurely.service is active."
 else
-    warn "One or more services failed to start - check logs above."
+  warn "measurely.service failed — check logs with:"
+  warn "    journalctl -u measurely.service -e"
 fi
-msg "Reboot whenever you like; onboard AP will appear if no Wi-Fi is configured."
+
+msg "Done. Visit: http://<pi-ip>:5000/"

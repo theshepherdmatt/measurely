@@ -8,7 +8,7 @@ Type=simple
 User=matt
 Group=matt
 WorkingDirectory=/home/matt/measurely
-ExecStart=/home/matt/measurely/.venv/bin/python /home/matt/measurely/measurely/server.py
+ExecStart=/home/matt/measurely/venv/bin/python /home/matt/measurely/measurelyapp/server.py
 Environment=PYTHONUNBUFFERED=1
 Restart=always
 RestartSec=2
