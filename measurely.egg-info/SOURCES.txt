@@ -8,6 +8,7 @@ measurely/main.py
 measurely/score.py
 measurely/server.py
 measurely/signal.py
+measurely/speaker.py
 measurely/sweep.py
 measurely/util_io.py
 measurely/writer.py
@@ -16,6 +17,7 @@ measurely.egg-info/SOURCES.txt
 measurely.egg-info/dependency_links.txt
 measurely.egg-info/requires.txt
 measurely.egg-info/top_level.txt
+measurely/buddy/__init__.py
 measurely/buddy/client.py
 measurely/buddy/fallback.py
 measurely/buddy/init.py

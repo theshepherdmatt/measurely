@@ -65,7 +65,7 @@ msg "Using $GUNICORN_TARGET"
 
 # 5. systemd units
 msg "Installing systemd services…"
-cat >/etc/systemd/system/measurely.service <<EOF
+cat >/etc/systemd/system/measurely.service <<'EOF'
 [Unit]
 Description=Measurely web application
 After=network-online.target
