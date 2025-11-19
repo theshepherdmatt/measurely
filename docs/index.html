@@ -4,140 +4,67 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Measurely – Room Acoustics Made Simple</title>
-
-  <!-- Google Font you already import -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- YOUR unified stylesheet (paste above CSS here) -->
   <style>
-    /* ====== PASTE EVERYTHING FROM YOUR UNIFIED CSS HERE ====== */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    :root{
-      --font-main: 'Inter', sans-serif;
-      --c-excellent: #22c55e; --c-good: #f59e0b; --c-okay: #3b82f6; --c-poor: #ef4444;
-      --indigo-600: #7c3aed; --indigo-50: #f5f3ff;
-      --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-150: #f6f7f8; --gray-200: #e5e7eb; --gray-300: #d1d5db; --gray-600: #4b5563; --gray-800: #1f2937; --gray-900: #111827;
-    }
-    *{ box-sizing:border-box; } body{ margin:0; font-family:var(--font-main); background:var(--gray-50); color:var(--gray-900); -webkit-font-smoothing:antialiased; }
-    /* ---- sidebar ---- */
-    .sidebar{ position:fixed; top:0; left:0; width:16rem; height:100%; background:linear-gradient(180deg,var(--indigo-600), #6d28d9); padding:1.5rem; color:#fff; z-index:200; transform:translateX(0); transition:transform .3s ease; }
-    .sidebar nav{ margin-top:3.5rem; } .nav-item{ display:flex; align-items:center; padding:.75rem; border-radius:.5rem; font-size:.875rem; color:#fff; transition:background .2s; } .nav-item:hover{ background:rgba(255,255,255,.1); } .nav-item.active{ background:rgba(255,255,255,.2); font-weight:600; }
-    #sidebar-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.45); opacity:0; visibility:hidden; pointer-events:none; transition:opacity .3s ease, visibility .3s ease; z-index:150; } #sidebar-overlay.active{ opacity:1; visibility:visible; pointer-events:auto; }
-    @media (max-width:768px){ .sidebar{ left:auto; right:0; transform:translateX(100%); } .sidebar.active{ transform:translateX(0); } .main-content{ margin-left:0 !important; margin-top:90px !important; padding:1.25rem !important; } }
-    .mobile-banner{ background:linear-gradient(90deg,var(--indigo-600),#4c1d95); box-shadow:0 2px 6px rgba(0,0,0,.2); z-index:120; }
-    /* ---- content ---- */
-    .main-content{ margin-left:0; } @media (min-width:769px){ .main-content{ margin-left:16rem; } }
-    .page-title-block{ margin-bottom:2rem; } .page-title{ font-size:1.875rem; font-weight:700; background:linear-gradient(90deg,var(--indigo-600),#6366f1); -webkit-background-clip:text; -webkit-text-fill-color:transparent; } .page-subtitle{ font-size:.95rem; color:var(--gray-600); }
-    .card{ background:#fff; border-radius:1rem; padding:1.5rem; border:1px solid var(--gray-200); box-shadow:0 8px 24px -6px rgba(0,0,0,.08); transition:transform .2s, box-shadow .2s; } .card:hover{ transform:translateY(-4px); box-shadow:0 12px 32px -8px rgba(0,0,0,.12); }
-    /* ---- stripe-like gradient button ---- */
-    .btn-primary{ display:inline-flex; align-items:center; justify-content:center; padding:.75rem 1.5rem; font-size:1rem; font-weight:600; color:#fff; background:linear-gradient(90deg, var(--indigo-600), #6366f1); border-radius:.5rem; border:none; cursor:pointer; transition:opacity .2s; }
-    .btn-primary:hover{ opacity:.9; }
-    /* ---- tiny utilities ---- */
-    .text-center{ text-align:center; } .mt-4{ margin-top:1rem; } .mb-2{ margin-bottom:.5rem; }
+    /* ---- mini design system ---- */
+    :root{ --indigo: #7c3aed; --gray: #f9fafb; --dark: #111827; }
+    body{ margin:0; font-family:system-ui,-apple-system; background:var(--gray); color:var(--dark); }
+    .container{ max-width:42rem; margin:auto; padding:2rem 1rem; }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; padding:.75rem 1.5rem; background:var(--indigo); color:#fff; border-radius:.5rem; font-weight:600; text-decoration:none; }
+    .btn:hover{ opacity:.9; }
+    .card{ background:#fff; border:1px solid #e5e7eb; border-radius:1rem; padding:1.5rem; box-shadow:0 8px 24px -6px rgba(0,0,0,.08); }
+    ul{ list-style:disc; margin-left:1.25rem; }
+    .logo{ height:2.5rem; } /* your logo PNG */
   </style>
 </head>
 
 <body>
-  <!-- ===== HEADER (mobile first) ===== -->
-  <header class="mobile-banner px-4 py-3 flex items-center justify-between">
-    <h1 class="text-white font-bold text-lg">Measurely</h1>
-    <button id="menuBtn" class="text-white">☰</button>
+  <header class="text-center py-8">
+    <img src="logo.svg" alt="Measurely" class="logo">
+    <h1 class="text-2xl font-bold mt-4">Room Acoustics Made Simple</h1>
+    <p class="text-gray-600">Built by someone who just wanted better sound without becoming an acoustics expert.</p>
   </header>
 
-  <!-- ===== SIDEBAR ===== -->
-  <aside class="sidebar" id="sidebar">
-    <nav>
-      <a href="#home" class="nav-item active">Home</a>
-      <a href="#how" class="nav-item">How it Works</a>
-      <a href="#book" class="nav-item">Book Now</a>
-      <a href="#tech" class="nav-item">Tech</a>
-      <a href="https://github.com/theshepherdmatt/measurely" class="nav-item">GitHub</a>
-    </nav>
-  </aside>
-  <div id="sidebar-overlay"></div>
-
-  <!-- ===== MAIN CONTENT ===== -->
-  <main class="main-content px-4 py-6">
-    <!-- Home -->
-    <section id="home" class="page-title-block">
-      <h1 class="page-title">Room Acoustics Made Simple</h1>
-      <p class="page-subtitle">Built by someone who just wanted better sound without becoming an acoustics expert.</p>
-    </section>
-
-    <div class="card">
-      <h2 class="mb-2">What is Measurely?</h2>
-      <ul class="list-disc ml-6 space-y-1">
+  <main class="container space-y-8">
+    <!-- What -->
+    <section>
+      <h2 class="text-xl font-semibold mb-2">What is Measurely?</h2>
+      <ul>
         <li>Quick, honest room measurement (offline Pi, no jargon)</li>
         <li>Dave tells you what to fix — usually just moving furniture or adding a rug</li>
-        <li>4-day rental: £50 + £10 delivery (UK)</li>
+        <li>4-day rental: £50 + £10 UK delivery</li>
         <li>Optional £25 Deep-Dive unlock (paper code inside box)</li>
       </ul>
-    </div>
-
-    <!-- How it Works -->
-    <section id="how" class="mt-4">
-      <h2 class="page-subtitle font-semibold mb-2">How it Works</h2>
-      <div class="inner-card space-y-2">
-        <ol class="list-decimal ml-6 space-y-1">
-          <li>Rent the kit (pay £50 + refundable £175 deposit)</li>
-          <li>Plug in USB mic → browse to measurely.local → hit “Measure”</li>
-          <li>Read Dave’s 3 plain-English tips</li>
-          <li>Move stuff, re-measure, hear the difference</li>
-          <li>Re-pack, stick on pre-paid label, drop at post-office</li>
-          <li>We refund deposit within 24 h of safe return</li>
-        </ol>
-      </div>
     </section>
 
-    <!-- Book Now -->
-    <section id="book" class="mt-4">
-      <h2 class="page-subtitle font-semibold mb-2">Book Now</h2>
-      <div class="card text-center">
-        <p class="text-lg mb-2">4-day kit + Dave’s advice</p>
-        <p class="text-2xl font-bold text-indigo-600 mb-2">£50</p>
-        <p class="text-sm text-gray-600 mb-4">+ £10 UK delivery & return<br>+ £175 refundable deposit (covers hardware)</p>
-        <!-- Stripe Payment Link – just drop your link -->
-        <a href="https://buy.stripe.com/...your-link..." target="_blank" class="btn-primary">
+    <!-- How -->
+    <section>
+      <h2 class="text-xl font-semibold mb-2">How it Works</h2>
+      <ol class="list-decimal ml-5 space-y-1">
+        <li>Rent the kit (£50 + refundable £175 deposit)</li>
+        <li>Plug in USB mic → browse measurely.local → hit “Measure”</li>
+        <li>Read Dave’s 3 plain-English tips</li>
+        <li>Move stuff, re-measure, hear the difference</li>
+        <li>Re-pack, stick on pre-paid label, drop at post-office</li>
+        <li>We refund deposit within 24 h of safe return</li>
+      </ol>
+    </section>
+
+    <!-- Book -->
+    <section class="text-center">
+      <div class="card inline-block">
+        <h3 class="text-lg font-semibold mb-2">Book Your Rental</h3>
+        <p class="text-gray-600 mb-4">4-day kit + Dave’s advice</p>
+        <p class="text-2xl font-bold text-indigo-600 mb-4">£50</p>
+        <a href="https://buy.stripe.com/...your-link..." target="_blank" class="btn">
           Pay with Stripe
         </a>
         <p class="text-xs text-gray-500 mt-2">Secure checkout opens in new tab</p>
       </div>
     </section>
-
-    <!-- Tech -->
-    <section id="tech" class="mt-4">
-      <h2 class="page-subtitle font-semibold mb-2">Tech</h2>
-      <div class="inner-card">
-        <ul class="list-disc ml-6 space-y-1">
-          <li>Built on Raspberry Pi 4 + Python Flask (offline, no internet needed)</li>
-          <li>Open-source MIT licence – repo below</li>
-          <li>Works with any USB mic (UMIK-1 calibration supported)</li>
-          <li>Deep-Dive unlock = paper code inside box (no cloud)</li>
-        </ul>
-        <div class="mt-4">
-          <a href="https://github.com/theshepherdmatt/measurely" class="text-indigo-600 font-semibold">GitHub Repository</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="text-center text-gray-500 text-sm mt-8">
-      © 2025 Matt Shepherd. Built because REW was too confusing.
-    </footer>
   </main>
 
-  <!-- ===== JS: sidebar toggle ===== -->
-  <script>
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const menuBtn = document.getElementById('menuBtn');
-
-    function toggleSidebar() {
-      sidebar.classList.toggle('active');
-      overlay.classList.toggle('active');
-    }
-    menuBtn.addEventListener('click', toggleSidebar);
-    overlay.addEventListener('click', toggleSidebar);
-  </script>
+  <footer class="text-center text-gray-500 text-xs py-8">
+    © 2025 Matt Shepherd. Built because REW was too confusing.
+  </footer>
 </body>
 </html>
