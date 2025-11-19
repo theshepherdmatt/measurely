@@ -103,6 +103,31 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
+    PEAK / DIP MODE LIST PARSER (from analysis.json)
+    ============================================================ */
+    updateModes() {
+        const data = this.currentData;
+        if (!data || !data.modes) return;
+
+        const modes = data.modes;
+
+        // Count peaks and dips from flat objects
+        const numPeaks = modes.filter(m => m.type === "peak").length;
+        const numDips  = modes.filter(m => m.type === "dip").length;
+
+        // Debug
+        console.log("Modes detected:", numPeaks, "peaks,", numDips, "dips");
+
+        // OPTIONAL — update DOM if you want
+        const peakEl = document.getElementById('modePeakCount');
+        const dipEl  = document.getElementById('modeDipCount');
+
+        if (peakEl) peakEl.textContent = numPeaks;
+        if (dipEl)  dipEl.textContent  = numDips;
+    }
+
+
+    /* ============================================================
        INIT
        ============================================================ */
     async init() {
@@ -271,6 +296,7 @@ class MeasurelyDashboard {
         this.updateFrequencyChart();
         this.updateRoomAnalysis();
         this.updateDetailedAnalysis();
+        this.updateModes();
 
         if (window.updateRoomCanvas && this.currentData.room) {
             window.updateRoomCanvas(this.currentData.room);

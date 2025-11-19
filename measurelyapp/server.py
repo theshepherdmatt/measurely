@@ -149,10 +149,10 @@ def load_session_data(session_dir):
             # (keep everything you already have)
             "id": path.name,
             "timestamp": meta_data.get("timestamp", datetime.now().isoformat()),
-            "room": meta_data.get("room", "Unknown Room"),
-            "length": room_info.get("length_m", meta_data.get("length", 4.0)),
-            "width":  room_info.get("width_m",  meta_data.get("width",  4.0)),
-            "height": room_info.get("height_m", meta_data.get("height", 3.0)),
+            "room": room_info,
+            "length": room_info.get("length_m", 4.0),
+            "width":  room_info.get("width_m", 4.0),
+            "height": room_info.get("height_m", 3.0),
 
             # BOTH TRACES
             "left_freq_hz":  lf,
@@ -301,18 +301,18 @@ def api_get_session(session_id):
 
 @app.route('/api/run-sweep', methods=['POST'])
 def run_sweep():
-    import subprocess
-    import sounddevice as sd
-    import traceback
+    import subprocess, traceback, sounddevice as sd
+    import threading, os
 
     try:
         payload = request.get_json(silent=True) or {}
         speaker = payload.get('speaker')
 
-        # Pick USB mic and HiFiBerry DAC explicitly
         devices = sd.query_devices()
-        input_devices = [(i, d['name']) for i, d in enumerate(devices) if 'USB' in d['name'] and d['max_input_channels'] > 0]
-        output_devices = [(i, d['name']) for i, d in enumerate(devices) if 'hifiberry' in d['name'].lower() and d['max_output_channels'] > 0]
+        input_devices = [(i, d['name']) for i, d in enumerate(devices)
+                         if 'USB' in d['name'] and d['max_input_channels'] > 0]
+        output_devices = [(i, d['name']) for i, d in enumerate(devices)
+                          if 'hifiberry' in d['name'].lower() and d['max_output_channels'] > 0]
 
         if not input_devices:
             return jsonify({"error": "USB microphone not found"}), 400
@@ -322,32 +322,55 @@ def run_sweep():
         in_dev, in_name = input_devices[0]
         out_dev, out_name = output_devices[0]
 
+        SWEEP = "/home/matt/measurely/measurelyapp/sweep.py"
+        ANALYSE = "/home/matt/measurely/measurelyapp/analyse.py"
+        BASEDIR = "/home/matt/measurely"
+
         cmd = [
-            sys.executable, "-m", "measurely.sweep",
-            "--fs", "48000",
-            "--dur", "8.0",
-            "--alsa-device", "plughw:0,0",
-            "--in", str(in_dev),
-            "--out", str(out_dev),
-            "--mode", "both"
+            sys.executable, SWEEP,
+            "--mode", "both",
+            "--playback", "aplay",
+            "--verbose"
         ]
+
         if speaker:
             cmd += ["--speaker", speaker]
 
         def run():
-            # 1. run sweep
-            completed = subprocess.run(cmd, cwd="/home/matt/measurely", capture_output=True, text=True)
-            # 2. grab the session path from the last line of stdout
-            #    sweep.py prints:  Saved: /home/matt/measurely/measurements/20251111_xxxxxx
-            out_lines = completed.stdout.strip().splitlines()
-            if out_lines and out_lines[-1].startswith("Saved:"):
-                session_path = out_lines[-1].replace("Saved:", "").strip()
-                # 3. analyse
-                analysis_cmd = [sys.executable, "-m", "measurely.analyse", session_path]
-                subprocess.run(["ln", "-sfn", session_path, "/home/matt/measurely/measurements/latest"])
-                subprocess.run(analysis_cmd, cwd="/home/matt/measurely", check=False)
-            else:
-                print("[run_sweep] Could not find 'Saved:' line in sweep output")
+            # 1. Run sweep
+            completed = subprocess.run(
+                cmd,
+                cwd=BASEDIR,
+                capture_output=True,
+                text=True
+            )
+
+            out = completed.stdout.strip().splitlines()
+            session_path = None
+
+            for line in reversed(out):
+                if line.startswith("Saved:"):
+                    session_path = line.replace("Saved:", "").strip()
+                    break
+
+            if not session_path:
+                print("[run_sweep] ERROR: Sweep produced no 'Saved:' line")
+                print(completed.stdout)
+                print(completed.stderr)
+                return
+
+            # Update symlink
+            subprocess.run(
+                ["ln", "-sfn", session_path, f"{BASEDIR}/measurements/latest"]
+            )
+
+            # 2. Analyse
+            analysis_cmd = [sys.executable, ANALYSE, session_path]
+            subprocess.run(
+                analysis_cmd,
+                cwd=BASEDIR,
+                check=False
+            )
 
         threading.Thread(target=run, daemon=True).start()
         return jsonify({"status": "started", "in": in_name, "out": out_name})
@@ -357,30 +380,10 @@ def run_sweep():
         return jsonify({"error": str(e)}), 500
 
 
+
 @app.route('/api/sweep-progress', methods=['GET'])
 def api_sweep_progress():
     return jsonify(sweep_progress)
-
-
-@app.route('/api/latest', methods=['GET'])
-def get_latest_data():
-    try:
-        data = get_latest_measurement()
-        if not data:
-            # fallback sample
-            data = {
-                "timestamp": datetime.now().isoformat(),
-                "room": "Sample Room",
-                "length": 4.0, "width": 4.0, "height": 3.0,
-                "overall_score": 5.0, "bandwidth": 3.6, "balance": 1.6,
-                "smoothness": 7.3, "peaks_dips": 3.3,
-                "reflections": 4.0, "reverb": 10.0
-            }
-        return jsonify(data)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/api/status', methods=['GET'])
@@ -512,46 +515,71 @@ def load_session(session_id):
 
 
 # ------------------------------------------------------------------
-#  NEW room-setup endpoints
+#  FIXED: room-setup endpoints – always use /measurements/latest
 # ------------------------------------------------------------------
-@app.route('/api/room/<session_id>', methods=['POST'])
-def save_room(session_id):
-    """store user room/speaker data (metres) in meta.json"""
+
+@app.route('/api/room/latest', methods=['POST'])
+def save_room():
+    """store persistent user room/speaker data in latest/meta.json + global room.json"""
     try:
-        ses = MEAS_ROOT / session_id
+        ses = MEAS_ROOT / "latest"
         if not ses.is_dir():
-            return jsonify({"error": "Session not found"}), 404
+            return jsonify({"error": "latest session not found"}), 404
+
         data = request.get_json(force=True)
         print("📥 Received room data:", data)
+
+        # --- UPDATE latest/meta.json ---
         meta_file = ses / "meta.json"
         meta = json.loads(meta_file.read_text(encoding='utf-8')) if meta_file.exists() else {}
         meta.setdefault("settings", {})
         meta["settings"].setdefault("room", {})
         meta["settings"]["room"].update(data)
         write_json_atomic(meta, meta_file)
+
+        # --- UPDATE GLOBAL room.json ---
+        room_file = SERVICE_ROOT / "room.json"
+        write_json_atomic(data, room_file)
+
         return jsonify({"status": "saved"})
+
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/room/<session_id>', methods=['GET'])
-def load_room(session_id):
-    """return room part of meta.json"""
+@app.route('/api/room/latest', methods=['GET'])
+def load_room():
+    """return room settings from latest/meta.json"""
     try:
-        ses = MEAS_ROOT / session_id
+        ses = MEAS_ROOT / "latest"
         meta_file = ses / "meta.json"
+
         if not meta_file.exists():
             return jsonify({}), 200
-        meta = json.loads(meta_file.read_text(encoding='utf-8')) or {}
+
+        meta = json.loads(meta_file.read_text(encoding='utf-8'))
         room = meta.get("settings", {}).get("room", {})
         return jsonify(room)
+
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/latest', methods=['GET'])
+def api_latest():
+    """Return latest session (alias for /api/session/latest)."""
+    ses = MEAS_ROOT / "latest"
+    if not ses.exists():
+        return jsonify({"error": "no latest session"}), 404
 
+    data = load_session_data(ses)
+    if not data:
+        return jsonify({"error": "failed to load latest"}), 500
+
+    return jsonify(data)
 
 # ------------------------------------------------------------------
 #  static files

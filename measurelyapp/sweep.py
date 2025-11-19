@@ -165,7 +165,7 @@ def write_temp_wav(stereo, fs):
 def play_via_aplay(stereo, fs, alsa_device=None):
     td, path = write_temp_wav(stereo, fs)
     try:
-        device = alsa_device if alsa_device else "plughw:0,0"
+        device = alsa_device if alsa_device else "hw:0,0"
         cmd = ["aplay", "-q", "-D", device, path]
         print(f"[SWEEP] running: {' '.join(cmd)}")
         subprocess.run(cmd, check=True, capture_output=True)
@@ -391,7 +391,7 @@ def main():
     args.dur = max(4.0, room_len * 1.2)          # ~5 m room → 6 s sweep
 
     # tailor frequency limits to speaker profile
-    from measurely.speaker import load_target_curve
+    from measurelyapp.speaker import load_target_curve
     if speaker_key:
         curve = load_target_curve(speaker_key)
         if curve is not None:
@@ -405,6 +405,24 @@ def main():
         run_sweep(outdir, sweep, inv, fs, args, "right", route_to_right(sweep))
 
     print("Saved:", outdir)
+
+    # ------------------------------------------------------------------
+    # Update latest symlink
+    # ------------------------------------------------------------------
+    measurements_dir = Path.home() / "measurely" / "measurements"
+    latest = measurements_dir / "latest"
+
+    try:
+        if latest.exists() or latest.is_symlink():
+            latest.unlink()
+    except Exception as e:
+        print(f"[SWEEP] Couldn't remove old latest symlink: {e}")
+
+    try:
+        latest.symlink_to(outdir)
+        print(f"[SWEEP] Updated latest -> {outdir}")
+    except Exception as e:
+        print(f"[SWEEP] Couldn't create latest symlink: {e}")
 
 
 if __name__ == "__main__":

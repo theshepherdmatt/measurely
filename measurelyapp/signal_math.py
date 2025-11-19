@@ -26,19 +26,47 @@ def band_mean(f, m, flo, fhi):
     mask = (f >= flo) & (f < fhi)
     return float(np.nanmean(m[mask])) if mask.any() else np.nan
 
-def modes(f, m, thresh=6, min_sep=15):
-    if f.size < 16:
+def modes(f, m, thresh=4, min_sep=10):
+    """Peak/dip finder that works on low-resolution or binned data.
+       Adaptive window, safe even when PPO < 20.
+    """
+    f = np.asarray(f)
+    m = np.asarray(m)
+
+    if f.size < 8:
         return []
-    bpo   = 1 / np.median(np.log2(f[1:] / f[:-1]))
-    win   = max(3, int(round(bpo / 3)))
-    base  = np.convolve(m, np.ones(win)/win, mode="same")
+
+    # Estimate bins per octave (bpo)
+    ratios = f[1:] / f[:-1]
+    log_steps = np.log2(ratios)
+    median_step = np.median(log_steps)
+    if median_step <= 0:
+        return []
+
+    bpo = 1.0 / median_step
+
+    # Adaptive smoother:
+    # - if bpo is small (<24 PPO), don't blur too much
+    # - if bpo is large (raw data), smooth more
+    win = max(3, int(round(bpo / 4)))
+
+    base = np.convolve(m, np.ones(win) / win, mode="same")
     delta = m - base
-    out, last = [], -np.inf
+
+    out = []
+    last = -np.inf
+
     for i, d in enumerate(delta):
-        if abs(d) >= thresh and f[i] - last >= min_sep:
-            out.append({"type": "peak" if d > 0 else "dip", "freq_hz": float(f[i]), "delta_db": float(d)})
+        if abs(d) >= thresh and (f[i] - last) >= min_sep:
+            out.append({
+                "type": "peak" if d > 0 else "dip",
+                "freq_hz": float(f[i]),
+                "delta_db": float(d)
+            })
             last = f[i]
+
     return out
+
 
 def bandwidth_3db(f, m):
     if f.size < 8:
