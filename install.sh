@@ -95,14 +95,32 @@ WantedBy=multi-user.target
 EOF
 
 # ------------------------------------------------------------
-# 6. Disable old services
+# 6. Disable any old services
 # ------------------------------------------------------------
 msg "Cleaning up old services…"
 systemctl disable --now measurely-onboard.service 2>/dev/null || true
 systemctl disable --now measurely.service 2>/dev/null || true
 
 # ------------------------------------------------------------
-# 7. Start service
+# 7. Create 'latest' symlink → bundled starter measurement
+# ------------------------------------------------------------
+msg "Linking 'latest' to bundled starter measurement…"
+
+MEAS_DIR="$REPO_DIR/measurements"
+STARTER="20250112_213044_ab12cd"
+
+# Ensure folder exists
+if [[ ! -d "$MEAS_DIR/$STARTER" ]]; then
+  die "ERROR: starter measurement folder '$STARTER' not found in $MEAS_DIR"
+fi
+
+# Force create (or replace) symlink
+sudo -u "$APP_USER" ln -sfn "$MEAS_DIR/$STARTER" "$MEAS_DIR/latest"
+
+msg "✔ latest → $STARTER"
+
+# ------------------------------------------------------------
+# 8. Start service
 # ------------------------------------------------------------
 msg "Reloading systemd and starting Measurely…"
 systemctl daemon-reload
