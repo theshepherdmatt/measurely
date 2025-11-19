@@ -1,3 +1,12 @@
+© 2025 Matt Shepherd. All rights reserved.
+
+Measurely is an original work created and maintained by Matt Shepherd.
+This repository contains proprietary configuration, DSP presets, analysis
+logic, UI design, and supporting assets that represent significant original
+development work. While the core code is licensed under the MIT Licence, all
+rights in brand identity, naming, artwork, icons, and documentation remain
+with the author.
+
 # Measurely  
 **Speaker & room measurement toolkit** – head-less Raspberry Pi edition  
 
