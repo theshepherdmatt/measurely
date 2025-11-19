@@ -15,7 +15,7 @@ cd measurely
 sudo ./install.sh
 sudo reboot
 ```  
-Browse to `http://<pi-ip>:5001` and start measuring.
+Browse to `http://<pi-ip>:5000` and start measuring.
 
 ## First-contact Wi-Fi setup (no keyboard/monitor)  
 1. Power-on the Pi **without Ethernet/Wi-Fi**  
