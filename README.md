@@ -4,7 +4,7 @@
 ## What it does  
 - Generates **log-sweep test signals** and records room response  
 - Calculates frequency/phase response, distortion, RT60, etc.  
-- Serves a **web dashboard** (Flask) on port **5001** – no GUI needed  
+- Serves a **web dashboard** (Flask) on port **5000** – no GUI needed  
 - **One-command installer** – flash SD, boot, browse, measure  
 
 ## Flash-and-go install (Raspberry Pi OS 64-bit)  
