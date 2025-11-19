@@ -120,6 +120,62 @@ sudo -u "$APP_USER" ln -sfn "$MEAS_DIR/$STARTER" "$MEAS_DIR/latest"
 msg "✔ latest → $STARTER"
 
 # ------------------------------------------------------------
+# 7.5. Audio Hardware Setup: HiFiBerry DAC + USB Microphone
+# ------------------------------------------------------------
+
+msg "Configuring audio hardware (HiFiBerry DAC + USB microphone)…"
+
+CONFIG="/boot/firmware/config.txt"
+
+# --- Enable I2S (required for HiFiBerry DAC) ---
+if ! grep -q "^dtparam=i2s=on" "$CONFIG"; then
+    echo "dtparam=i2s=on" | tee -a "$CONFIG" >/dev/null
+    msg "  - Enabled I2S"
+else
+    msg "  - I2S already enabled"
+fi
+
+# --- Enable correct HiFiBerry DAC overlay (PCM5102A-based) ---
+if ! grep -q "^dtoverlay=hifiberry-dac" "$CONFIG"; then
+    echo "dtoverlay=hifiberry-dac" | tee -a "$CONFIG" >/dev/null
+    msg "  - Added HiFiBerry DAC overlay (hifiberry-dac)"
+else
+    msg "  - HiFiBerry DAC overlay already present"
+fi
+
+# --- Stabilise ALSA card ordering ---
+msg "Writing /etc/asound.conf to stabilise audio card order…"
+
+cat >/etc/asound.conf <<'EOF'
+# Force HiFiBerry DAC as default playback (card 0)
+defaults.pcm.card 0
+defaults.ctl.card 0
+
+# USB microphone alias (usually card 1)
+pcm.usb_mic {
+    type hw
+    card 1
+    device 0
+}
+EOF
+
+msg "  - ALSA device order locked (DAC=card0, USB mic=card1)"
+msg "  - ALSA alias 'usb_mic' created for recording"
+
+# --- Detect USB microphone presence ---
+USB_MIC_FOUND=$(arecord -l 2>/dev/null | grep -i "USB Audio" || true)
+
+if [[ -n "$USB_MIC_FOUND" ]]; then
+    msg "  ✔ USB microphone detected:"
+    echo "$USB_MIC_FOUND"
+else
+    warn "  ⚠ USB microphone NOT detected. Plug it in before running sweeps."
+fi
+
+msg "Audio hardware configuration complete. A reboot will activate overlays."
+
+
+# ------------------------------------------------------------
 # 8. Start service
 # ------------------------------------------------------------
 msg "Reloading systemd and starting Measurely…"
