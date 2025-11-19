@@ -1,0 +1,309 @@
+{
+  "peaks_dips": {
+    "excellent": [
+      "Nice and even, nothing sticking out.",
+      "Smooth as you like here.",
+      "All tidy, no rogue notes."
+    ],
+    "good": [
+      "Just a couple of bumps, nothing major.",
+      "Nearly flat, small tweaks only.",
+      "Good shape, tiny shifts if you want perfection."
+    ],
+    "okay": [
+      "Some notes pop out, small moves help.",
+      "Bit uneven, but easy fixes ahead.",
+      "You’ll tame this quick with positioning."
+    ],
+    "needs_work": [
+      "Peaks everywhere, move the speakers a touch.",
+      "Dips eating detail, pull the boxes forward.",
+      "Lumpy response, tiny adjustments will help fast."
+    ]
+  },
+
+  "peaks_dips_solutions": {
+    "excellent": [
+      "This is already really solid, but if you want to squeeze the last 1%, nudge each speaker forward by 1–2 cm. It slightly shifts how the room energises the low end and can flatten the last tiny bump without changing the core sound.",
+      "Try moving your listening spot forward or back by 10–20 cm. Sometimes an even flatter pocket sits just ahead or behind where you normally sit. When the bass suddenly feels more even, that’s the sweet spot.",
+      "Mark the current speaker positions on the floor. When peaks and dips are this well-controlled, keeping those exact spots saves you from undoing the good work accidentally."
+    ],
+    "good": [
+      "Pull each speaker forward 5–10 cm. This usually knocks down small 80–150 Hz bumps caused by the wall behind them. It’s a simple move that often makes the bass noticeably cleaner.",
+      "Widen the speakers by about 3–5 cm each. This helps fix mild midrange dips created by the left and right outputs cancelling at your seat. If vocals feel clearer, you’ve nailed it.",
+      "Adjust toe-in by 2–3°. Small peaks can come from the tweeters pinging off the walls too hard. A tiny toe change smooths that out."
+    ],
+    "okay": [
+      "Bring each speaker forward 10–20 cm. This helps break the bigger standing-wave lumps that cause obvious peaks. The next sweep should show a noticeably flatter bass region.",
+      "Move your listening position forward by 20–30 cm. If you’re sitting in a modal null, the bass disappears. Shift out of that zone and the low end comes back instantly.",
+      "Widen the speakers 5–10 cm. This usually cleans up upper-mid weirdness where both speakers interact. When done right, the sound opens up and loses that honky edge."
+    ],
+    "needs_work": [
+      "Pull both speakers 25–40 cm from the wall. Big peaks won’t budge unless the speakers have room to breathe. This often smooths the worst bumps in one go.",
+      "Shift your listening position forward 30–60 cm. If bass is thin or patchy, you're almost definitely in a null. Moving out of it brings the missing bass straight back.",
+      "Try slight asymmetry — around 5–8 cm difference between left and right. Rooms often punish perfect symmetry with repeated peak/dip patterns. A small mismatch breaks the cycle."
+    ]
+  },
+
+  "reflections": {
+    "excellent": [
+      "Nice and controlled, no harsh bounce.",
+      "Great clarity, room’s cooperating.",
+      "Reflections well in check."
+    ],
+    "good": [
+      "Mild bounce but nothing distracting.",
+      "Pretty clean, soft furnishings help even more.",
+      "A little echo left, but overall solid."
+    ],
+    "okay": [
+      "Some slap-back, curtains or rugs help.",
+      "Bit lively, soften the sidewalls.",
+      "Reflections showing, easy wins ahead."
+    ],
+    "needs_work": [
+      "Very reflective, add something soft nearby.",
+      "Room’s ringing, throw down a rug.",
+      "Bright echo, tame with fabric at first reflections."
+    ]
+  },
+
+  "reflections_solutions": {
+    "excellent": [
+      "If you want to polish it even more, find the side-wall mirror points and add something soft there — a cushion, throw or even a plant. It tightens the stereo image slightly.",
+      "Try adjusting toe-in by 1–2°. This helps tune how much high-frequency energy hits the walls and can make the top end feel cleaner.",
+      "Check that your tweeters are roughly at ear height. Even a 2–3 cm height shift can change how reflections arrive at your listening spot."
+    ],
+    "good": [
+      "Add something soft at the side-wall mirror points — a blanket, curtain or cushion. This knocks down early reflections without needing full treatment panels.",
+      "Increase toe-in slightly to focus more sound directly at you and less at the walls. This often trims the reflective bite in the upper mids.",
+      "Close or heavy up the curtains. A small change here can help tame a bit of slap echo."
+    ],
+    "okay": [
+      "Put a rug or runner in front of the speakers to kill floor reflections. Hard floors throw loads of HF bounce straight at your ears.",
+      "Soften the side walls using anything textured — cushions, throws, a big plant. Doesn’t need to be proper acoustic panels.",
+      "Raise or lower the speakers by 2–4 cm if reflections seem mid-heavy. It adjusts the angle the HF arrives at your ears."
+    ],
+    "needs_work": [
+      "Treat the first reflection points with something soft — rugs, curtains, a big sofa throw. You’re hearing too much room in the signal.",
+      "Move the speakers away from highly reflective surfaces like bare windows or corners. Square rooms and empty walls bounce everything.",
+      "If the room is really live, add one larger soft object (beanbag, blanket-covered chair, thicker curtain) near the side walls to take the edge off."
+    ]
+  },
+
+  "bandwidth": {
+    "excellent": [
+      "Full range, loads of punch and sparkle.",
+      "Great extension top to bottom.",
+      "Reach is spot on, nothing missing."
+    ],
+    "good": [
+      "Decent range, just a little shy at one end.",
+      "Good spread, nearly full coverage.",
+      "Solid extension, minor gains possible."
+    ],
+    "okay": [
+      "Bit limited, speaker placement helps.",
+      "Missing a touch of bass or top end.",
+      "Range is okayay, tweaks may open it up."
+    ],
+    "needs_work": [
+      "Narrow range, speakers need better positioning.",
+      "Lows or highs missing, try pulling them forward.",
+      "Restricted, angle and spacing should help."
+    ]
+  },
+
+  "bandwidth_solutions": {
+    "excellent": [
+      "If you want a tiny bass lift, pull the speakers forward 2–3 cm to hit a slightly more energetic spot. Re-sweep to make sure it doesn’t introduce lumps.",
+      "Fine-tune toe-in to adjust the treble reach — 1–2° either way can reveal a bit more sparkle or smoothness.",
+      "Check that your ears line up with tweeter height. Even a 2–3 cm mismatch can narrow the usable top end."
+    ],
+    "good": [
+      "Move the speakers forward 5–10 cm to gain a little extra bass extension. It shifts the speaker out of the wall’s pressure pocket.",
+      "Adjust listening height so your ears are level with the tweeter. This lifts the very top end cleanly.",
+      "Widen the speakers 5–8 cm to loosen the low end and help fill gaps between bass and midrange."
+    ],
+    "okay": [
+      "Bring each speaker 10–20 cm away from the wall to boost low-end extension while smoothing out the hump.",
+      "Raise or lower your listening position by a few cm to rebalance top-end clarity.",
+      "Increase toe-in slightly if the treble feels soft. You want the HF energy aimed more directly at you."
+    ],
+    "needs_work": [
+      "Pull the speakers 20–40 cm from the wall to restore missing low-end detail. Right now the wall is choking the deep bass.",
+      "Reduce toe-in if the top end is weak — over-toeing beams too much energy past your ears instead of at them.",
+      "Move your listening position forward 20–40 cm to escape a deep low-frequency null and regain missing warmth."
+    ]
+  },
+
+  "balance": {
+    "excellent": [
+      "Lovely balance, nothing overpowering.",
+      "Nails the tonal blend.",
+      "Spot on, voices and bass line up perfectly."
+    ],
+    "good": [
+      "Close to ideal, tiny nudge improves it.",
+      "Pretty even, adjust angle if needed.",
+      "Good blend, nearly perfect."
+    ],
+    "okay": [
+      "A bit vocal-heavy, tweak spacing.",
+      "Bass slightly forward, pull speakers in.",
+      "Balance is okayay, toe-in can help."
+    ],
+    "needs_work": [
+      "Tonally uneven, reposition both speakers.",
+      "Bass dominating, give them breathing room.",
+      "Voices too strong, widen spacing slightly."
+    ]
+  },
+
+  "balance_solutions": {
+    "excellent": [
+      "To lock the centre image even harder, fine-tune toe-in by 1–2°. This helps keep vocals perfectly centred.",
+      "Make sure both speakers are exactly the same distance from your seat. Even 0.5 cm mismatch affects stereo pull.",
+      "If vocals drift slightly, adjust the height of one speaker by 1–2 cm to equalise HF arrival time."
+    ],
+    "good": [
+      "Increase toe-in by 2–3° to tighten the centre image and make the balance more confident.",
+      "Measure from your listening position to each tweeter — match them perfectly to clean up vocal placement.",
+      "If the sound pulls to one side, shift your seat 3–5 cm in the opposite direction."
+    ],
+    "okay": [
+      "If vocals lean to one side, move your chair 5–10 cm the opposite way. This often fixes mild balance drift instantly.",
+      "Reduce toe-in slightly if the mids feel too forward. Straight-ahead speakers soften the vocal push.",
+      "Widen the speakers 5–10 cm to rebalance the bass-to-mid relationship."
+    ],
+    "needs_work": [
+      "Reposition both speakers so the distance to your listening position is EXACT — use a tape measure, not your eyes.",
+      "Pull the speakers forward to reduce room-boosted bass that’s overwhelming the mids.",
+      "Toe the speaker on the weaker side in slightly more to bring its HF energy toward the centre."
+    ]
+  },
+
+  "smoothness": {
+    "excellent": [
+      "Super smooth, lovely natural sound.",
+      "Really consistent from top to bottom.",
+      "Nothing jagged, great work."
+    ],
+    "good": [
+      "Mostly even, one or two small wiggles.",
+      "Good flow, just mild variation.",
+      "Nearly silky, tiny tweaks finish it."
+    ],
+    "okay": [
+      "Bit bumpy, try small angle changes.",
+      "Some uneven spots, placement will help.",
+      "Rough patches but easy to improve."
+    ],
+    "needs_work": [
+      "Quite jagged, pull speakers forward a little.",
+      "Lots of bumps, try fresh toe-in.",
+      "Uneven response, micro-moves will smooth it out."
+    ]
+  },
+
+  "smoothness_solutions": {
+    "excellent": [
+      "Try adjusting toe-in by 1–2° to get the midrange even silkier. Sometimes a small angle tweak removes the last ripple.",
+      "Make sure both speakers are perfectly level. A tiny tilt can introduce HF roughness.",
+      "Mark the exact positions — smoothness like this is worth keeping locked in."
+    ],
+    "good": [
+      "Shift the speakers 3–5 cm forward to reduce the remaining small wiggles in the response.",
+      "Toe-in by around 2° to smooth out the upper-mid transitions. Often removes a faint harsh spot.",
+      "Move your listening seat slightly off the exact room centre line to avoid symmetrical resonances."
+    ],
+    "okay": [
+      "Move each speaker forward 10–15 cm to break the bigger uneven areas in the response. This usually flattens upper bass and lower mids.",
+      "Tweak toe-in by 3–4° — both inward and outward — until the tonal edges soften.",
+      "Shift your chair left or right by 5–10 cm to dodge a modal ridge that’s adding roughness."
+    ],
+    "needs_work": [
+      "Pull speakers 20–30 cm from the wall — large uneven areas often settle when the speakers breathe more freely.",
+      "Reduce toe-in if the mids or highs feel shouty; try straight-ahead as the baseline.",
+      "Move your seat forward 20–40 cm to escape the heaviest modal interference."
+    ]
+  },
+
+  "reverb": {
+    "excellent": [
+      "Reverb nicely short, very clean sound.",
+      "Room decay is spot on.",
+      "Tight and controlled, lovely clarity."
+    ],
+    "good": [
+      "Slightly live but still clean.",
+      "Good decay, maybe soften one wall.",
+      "Nice control, small improvements possible."
+    ],
+    "okay": [
+      "A bit long, rug or curtains help.",
+      "Some tail lingering, soften a surface or two.",
+      "Reverb okayay but could be tighter."
+    ],
+    "needs_work": [
+      "Very live, add soft surfaces fast.",
+      "Long reverb tail, break up reflections.",
+      "Room ringing, treat first reflections first."
+    ]
+  },
+
+  "reverb_solutions": {
+    "excellent": [
+      "If you want an extra touch of control, close curtains or add a soft throw near the side walls during listening sessions. It lightly trims lingering HF energy.",
+      "A small rug in front of the speakers can polish floor reflections even more.",
+      "Try tiny toe-in changes to tighten the decay; more direct sound usually shortens the tail."
+    ],
+    "good": [
+      "Lay a rug or mat between you and the speakers to slightly shorten decay time.",
+      "Close curtains fully — this helps tame higher-frequency reverb tails.",
+      "Move the speakers slightly further apart so reflections spread more evenly and decay feels smoother."
+    ],
+    "okay": [
+      "Place a rug directly between the speakers and your seat. Floor reflections are a massive contributor to long reverb tails.",
+      "Put cushions or throws on the nearest bare walls to break up reflection hotspots.",
+      "Reduce toe-in if the treble feels over-energised. Less HF firing at your walls means cleaner decay."
+    ],
+    "needs_work": [
+      "Add soft surfaces ASAP — rugs, curtains, thick throws. The room is ringing too much and needs absorption.",
+      "Pull the speakers away from hard corners or windows where reflections stack up.",
+      "Move your seat away from the exact centre — long decay often builds strongest right in the middle."
+    ]
+  },
+
+  "overall_excellent": [
+    "This is seriously classy work, your system is clearly dialled in. Nothing’s fighting, nothing’s struggling; it just opens up and plays with confidence. This is the kind of result people chase for years. You’ve done the hard part and it shows.",
+    "This is what a sorted system looks like. Everything snaps into place effortlessly, and the room isn’t getting in the way. You've hit that level where upgrades don’t fix anything, because there's nothing to fix. Just enjoy what you've built.",
+    "You’re in the ‘sit back and smile’ category here. The system sounds composed and unforced, exactly like a proper setup should. This is the kind of result that usually takes endless tweaking, but you’ve nailed it.",
+    "This is proper hi-fi bragging rights territory. Your speakers are doing what they were made to do, with the room giving them space to shine. You’ve built something most people only talk about.",
+    "This is top-tier stuff. Everything’s working in harmony, sounding confident and mature. You've clearly got an ear for setup, this doesn’t happen by accident."
+  ],
+
+  "overall_good": [
+    "Really strong setup, you’re right on the edge of greatness. A tiny nudge here and there and you’ll be in the ‘reference’ club.",
+    "You’ve clearly done things right, a little fine-tuning will take it over the finish line.",
+    "The backbone of a very serious setup. A couple of tiny tweaks will snap everything into the top tier.",
+    "You’re close to the sweet spot. A small shift in position or angle will make everything click beautifully.",
+    "A very respectable result, you’re one adjustment away from the kind of sound people show off."
+  ],
+
+  "overall_fair": [
+    "Good starting point, nothing worrying here. Loads of potential, and a few thoughtful tweaks will open it right up.",
+    "You’re not far off. A handful of sensible changes will transform this in a good way.",
+    "Some rough edges, but absolutely normal. Plenty of easy wins ahead.",
+    "The room’s adding a bit of personality, but nothing you can’t tame quickly.",
+    "You’re in decent shape, a few smart moves will make a big difference fast."
+  ],
+
+  "overall_poor": [
+    "Don’t stress, this is the room talking. Every setup starts here.",
+    "A bit lively, but nothing unusual. One or two basic changes will tighten this up quickly.",
+    "Lots of room influence showing, but that’s normal at the beginning. We’ll bring it in line step by step.",
+    "Messy but fully fixable. This is why people use Measurely in the first place.",
+    "Early days, follow the first few tweaks and it’ll come together quickly."
+  ]
+}

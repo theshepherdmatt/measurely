@@ -1,0 +1,133 @@
+{
+  "quad_esl57": {
+    "name": "Quad ESL-57",
+    "brand": "Quad",
+    "folder": "57",
+    "target_curve": "target_quad_esl57.csv",
+    "safe_level_dbfs": -15,
+    "sweep_start_hz": 40,
+    "sweep_end_hz": 18000,
+    "optimal_distance_ratio": 1.05,
+    "toe_in_degrees": 0,
+    "notes": [
+      "Avoid sweeps below 40 Hz – risk of panel arcing.",
+      "Perform measurements at moderate levels only.",
+      "Best imaging when speakers cross slightly behind listening position.",
+      "Keep at least 1m from rear wall."
+    ]
+  },
+
+  "quad_esl63": {
+    "name": "Quad ESL-63",
+    "brand": "Quad",
+    "folder": "63",
+    "target_curve": "target_quad_esl63.csv",
+    "safe_level_dbfs": -15,
+    "sweep_start_hz": 35,
+    "sweep_end_hz": 18000,
+    "optimal_distance_ratio": 1.20,
+    "toe_in_degrees": 5,
+    "notes": [
+      "Modelled point-source radiation – imaging is precise.",
+      "Distance from rear wall affects midrange bloom.",
+      "Works well with small toe-in.",
+      "Avoid overdriving; panels saturate quickly."
+    ]
+  },
+
+  "gale_gs401": {
+    "name": "Gale GS401",
+    "brand": "Gale",
+    "folder": "gale401",
+    "target_curve": "gale_gs401a_target.json",
+    "safe_level_dbfs": -12,
+    "sweep_start_hz": 20,
+    "sweep_end_hz": 18000,
+    "optimal_distance_ratio": 1.25,
+    "toe_in_degrees": 12,
+    "notes": [
+      "Sealed bass: tight, needs breathing room.",
+      "Correct crossover at 475 Hz and 5000 Hz.",
+      "Tweeter pots often drift – ensure both rotate freely.",
+      "Aim for 'glacial water' mid clarity by balancing toe-in.",
+      "Slight rear wall distance increases coherence."
+    ]
+  },
+
+   "quad_11l_classic": {
+    "name": "Quad 11L Classic",
+    "brand": "Quad",
+    "folder": "quad11l",
+    "target_curve": "quad_11l_target.csv",
+    "safe_level_dbfs": -12,
+    "sweep_start_hz": 40,
+    "sweep_end_hz": 20000,
+    "optimal_distance_ratio": 0.90,
+    "toe_in_degrees": 5,
+    "notes": [
+      "Bookshelf with sweet mid-forward tonality.",
+      "Works best slightly closer together and off the wall.",
+      "Toe-in improves treble definition."
+    ]
+  },
+
+  "kef_ls50_meta": {
+    "name": "KEF LS50 Meta",
+    "brand": "KEF",
+    "folder": "ls50",
+    "target_curve": "kef_ls50_target.csv",
+    "safe_level_dbfs": -10,
+    "sweep_start_hz": 50,
+    "sweep_end_hz": 20000,
+    "optimal_distance_ratio": 1.10,
+    "toe_in_degrees": 10,
+    "notes": [
+      "Point-source Uni-Q: wide sweet spot.",
+      "Sensitive to boundary reflections – avoid nearby furniture.",
+      "Toe-in 10° gives best focus."
+    ]
+  },
+
+  "bw_805d3": {
+    "name": "Bowers & Wilkins 805 D3",
+    "brand": "B&W",
+    "folder": "bw805d3",
+    "target_curve": "speakers.json",
+    "safe_level_dbfs": -10,
+    "sweep_start_hz": 30,
+    "sweep_end_hz": 20000,
+    "optimal_distance_ratio": 1.30,
+    "toe_in_degrees": 12,
+    "notes": [
+      "Exceptional imaging when positioned well.",
+      "Benefits from solid stands.",
+      "Rear-ported – keep off rear wall for tight bass."
+    ]
+  },
+
+  "generic_bookshelf": {
+    "name": "Generic Bookshelf",
+    "brand": "Universal",
+    "folder": "generic_bookshelf",
+    "target_curve": "generic_bookshelf_target.csv",
+    "safe_level_dbfs": -14,
+    "sweep_start_hz": 45,
+    "sweep_end_hz": 20000,
+    "optimal_distance_ratio": 0.95,
+    "toe_in_degrees": 5,
+    "notes": ["General-purpose profile useful as a fallback."]
+  },
+
+  "generic_floorstander": {
+    "name": "Generic Floorstander",
+    "brand": "Universal",
+    "folder": "generic_floorstander",
+    "target_curve": "generic_floorstander_target.csv",
+    "safe_level_dbfs": -12,
+    "sweep_start_hz": 30,
+    "sweep_end_hz": 20000,
+    "optimal_distance_ratio": 1.20,
+    "toe_in_degrees": 10,
+    "notes": ["Broad-strokes guidance for large speakers."]
+  }
+}
