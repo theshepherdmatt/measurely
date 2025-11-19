@@ -1,0 +1,15 @@
+Simple result
+-------------
+Room a bit echoey
+
+What to do next
+---------------
+- Add rug / side-wall panels
+
+Bandwidth  : 7.2/10
+Balance    : 5.7/10
+Peaks/Dips : 4.6/10
+Smoothness : 7.0/10
+Reflections: 4.5/10
+Reverb     : 6.5/10
+Overall    : 5.9/10
