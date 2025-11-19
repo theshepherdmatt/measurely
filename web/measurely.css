@@ -68,7 +68,7 @@ body{
   align-items:center;
   padding:.75rem;
   border-radius:.5rem;
-  font-size:.875rem;
+  font-size:1.2rem;
   color:#fff;
   transition:background .2s;
 }
@@ -112,6 +112,12 @@ body{
     margin-top:90px !important;
     padding:1.25rem !important;
   }
+
+  /* Bigger mobile sidebar text */
+  .sidebar .nav-item {
+    font-size: 1.3rem;     /* default .875rem → now bigger */
+    padding: 1rem;       /* better tap target */
+  }
 }
 
 /* MOBILE HEADER */
@@ -153,7 +159,7 @@ body{
 .card{
   background:#fff;
   border-radius:1rem;
-  padding:1.5rem;
+  padding:1.2rem;
   border:1px solid var(--gray-200);
   box-shadow:0 6px 18px rgba(0,0,0,.12);
   transition:transform .2s, box-shadow .2s;
@@ -167,7 +173,7 @@ body{
 .inner-card{
   background:#fff;
   border-radius:.75rem;
-  padding:1.5rem;
+  padding:1.2rem;
   border:1px solid var(--gray-200);
   box-shadow:0 4px 12px -4px rgba(0,0,0,.05);
 }
@@ -370,5 +376,20 @@ body{
   transition:background .2s;
 }
 .btn-purple:hover { background:#6d28d9; }
+
+/* Flatten inner-card so it's not a card within a card */
+.inner-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 1rem; /* was 1.5rem */
+}
+
+/* Mobile: even tighter */
+@media (max-width:768px) {
+  .inner-card {
+    padding: 0.75rem;
+  }
+}
 
 
