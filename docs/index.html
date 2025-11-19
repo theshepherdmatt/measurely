@@ -20,7 +20,7 @@
 
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
-  font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial;
   background:var(--gray-50);
   color:var(--gray-900);
   line-height:1.55;
@@ -29,37 +29,40 @@ body{
 
 a{text-decoration:none;color:inherit;}
 
-/* ===== TOP BAR ===== */
+/* ===== FLOATING HEADER ===== */
 .topbar{
-  background:linear-gradient(90deg,var(--indigo-600),var(--indigo-700));
-  padding:0.8rem 1.25rem;
-  display:flex;align-items:center;gap:.75rem;
-  box-shadow:0 2px 8px rgba(0,0,0,.18);
+  background:transparent;
+  box-shadow:none;
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  padding:1.5rem 1.75rem;
+  display:flex;
+  align-items:center;
+  gap:0.75rem;
+  z-index:10;
 }
-.topbar img{height:2.1rem;}
-.topbar h1{font-size:1.35rem;font-weight:600;color:white;}
+.topbar img{height:2.2rem;}
+.topbar h1{color:white;font-size:1.45rem;font-weight:600;}
 
 /* ===== HERO ===== */
 .hero{
-  padding:4rem 1rem 3rem;
+  padding:7rem 1rem 4rem;
   text-align:center;
   background:radial-gradient(circle at 50% 20%,rgba(255,255,255,.35),transparent 60%),
              linear-gradient(180deg,var(--indigo-700),var(--indigo-800));
   color:white;
 }
-.hero h2{
-  font-size:2.2rem;
-  font-weight:700;
-  margin-bottom:.75rem;
-}
+.hero h2{font-size:2.4rem;font-weight:700;margin-bottom:.65rem;}
 .hero p{
-  max-width:42rem;
+  max-width:46rem;
   margin:auto;
-  font-size:1.05rem;
+  font-size:1.1rem;
   opacity:.9;
 }
 
-/* ===== PAGE CONTENT WRAPPER ===== */
+/* ===== WRAPPER ===== */
 .section{
   max-width:48rem;
   margin:auto;
@@ -68,7 +71,7 @@ a{text-decoration:none;color:inherit;}
   gap:2rem;
 }
 
-/* ===== CARD ===== */
+/* ===== CARDS ===== */
 .card{
   background:white;
   border:1px solid var(--gray-200);
@@ -77,37 +80,67 @@ a{text-decoration:none;color:inherit;}
   box-shadow:0 10px 28px -8px rgba(0,0,0,.12);
 }
 .card h3{
-  font-size:1.25rem;
+  font-size:1.3rem;
   font-weight:600;
   margin-bottom:.65rem;
 }
 .card ul, .card ol{margin-left:1.2rem;margin-top:.25rem;}
-.card li{margin-bottom:.4rem;}
+.card li{margin-bottom:.45rem;}
 
-/* ===== THREE REASON CARDS ===== */
+/* ===== REASONS ===== */
 .reason-grid{
   display:grid;
   gap:1rem;
 }
-@media(min-width:640px){
-  .reason-grid{grid-template-columns:repeat(3,1fr);}
-}
+@media(min-width:640px){.reason-grid{grid-template-columns:repeat(3,1fr);} }
+
 .reason-card{
   background:white;
   border-radius:1rem;
   border:1px solid var(--gray-200);
-  padding:1.25rem;
+  padding:1.5rem;
   text-align:center;
   box-shadow:0 6px 18px -6px rgba(0,0,0,.08);
 }
 .reason-card h4{
-  font-size:1.1rem;
+  font-size:1.15rem;
   font-weight:600;
   margin-bottom:.35rem;
 }
 .reason-card p{
-  font-size:.9rem;
+  font-size:.92rem;
   color:var(--gray-600);
+}
+
+/* ===== MEET DAVE HERO-STYLE CARD ===== */
+.meet-dave{
+  text-align:center;
+  padding:3rem 1rem 3rem;
+}
+.meet-dave .card{
+  max-width:42rem;
+  margin:auto;
+  padding:2.5rem 2rem;
+  text-align:center;
+}
+.meet-dave img{
+  width:85px;
+  height:85px;
+  opacity:0.95;
+  margin-bottom:1rem;
+}
+.meet-dave p{
+  color:var(--gray-600);
+  margin-bottom:1.25rem;
+  font-size:1rem;
+}
+.meet-dave .bubble{
+  background:var(--gray-100);
+  border:1px solid var(--gray-200);
+  border-radius:12px;
+  padding:1rem 1.2rem;
+  font-style:italic;
+  font-size:.95rem;
 }
 
 /* ===== TESTIMONIALS ===== */
@@ -143,27 +176,27 @@ a{text-decoration:none;color:inherit;}
   justify-content:center;
   background:linear-gradient(90deg,var(--indigo-600),#6366f1);
   color:white;
-  padding:.8rem 1.75rem;
+  padding:.9rem 1.85rem;
   font-weight:600;
   border-radius:.6rem;
   transition:opacity .2s;
-  margin-top:.5rem;
+  margin-top:.65rem;
 }
 .btn:hover{opacity:.88;}
 
 /* ===== FOOTER ===== */
 footer{
   text-align:center;
-  font-size:.75rem;
+  font-size:.8rem;
   color:var(--gray-600);
-  padding:3rem 1rem 2rem;
+  padding:2.5rem 1rem 2rem;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ===== TOP BAR ===== -->
+<!-- ===== FLOATING HEADER ===== -->
 <header class="topbar">
   <img src="logo.svg" alt="Measurely">
   <h1>Measurely</h1>
@@ -175,20 +208,44 @@ footer{
   <p>Built by someone who just wanted better sound without becoming an acoustics expert.</p>
 </section>
 
-<!-- ===== WHY MEASURELY ===== -->
+<!-- ===== THREE REASONS ===== -->
 <section class="section">
   <div class="reason-grid">
+
     <div class="reason-card">
       <h4>No cloud needed</h4>
       <p>Everything happens offline on the Pi. No accounts. No nonsense.</p>
     </div>
+
     <div class="reason-card">
       <h4>Plain English</h4>
-      <p>Dave translates graphs into simple, real-world improvements.</p>
+      <p>Dave translates graphs into real-world actions you can actually do.</p>
     </div>
+
     <div class="reason-card">
       <h4>Real savings</h4>
       <p>Most fixes cost £0–£20, not hundreds on new gear.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== MEET DAVE ===== -->
+<section class="meet-dave">
+  <div class="card">
+    <img src="buddy-icon-100.svg" alt="Dave">
+    <h3>Meet Dave</h3>
+
+    <p>
+      Dave is your built-in room-acoustics buddy. He reads your sweep, spots
+      the obvious issues, and turns all that technical mess into simple,
+      plain-English fixes.
+    </p>
+
+    <div class="bubble">
+      “I’m not here to judge your room — I’m here to help it sound better.
+      Sometimes it’s a rug. Sometimes it’s a sofa. Sometimes it’s both.
+      We’ll sort it together.”
     </div>
   </div>
 </section>
@@ -210,10 +267,10 @@ footer{
     <h3>How it Works</h3>
     <ol>
       <li>Rent the kit (£50 + refundable £175 deposit)</li>
-      <li>Plug in USB mic → browse <strong>measurely.local</strong> → hit “Measure”</li>
-      <li>Read Dave’s 3 plain-English tips</li>
+      <li>Plug in USB mic → go to <strong>measurely.local</strong> → press “Measure”</li>
+      <li>Read Dave’s 3 plain-English nudges</li>
       <li>Move stuff, re-measure, hear the difference</li>
-      <li>Re-pack, stick on pre-paid label, drop at post office</li>
+      <li>Re-pack, stick on the prepaid label, drop at Post Office</li>
       <li>Deposit refunded within 24 hours of safe return</li>
     </ol>
   </div>
@@ -226,28 +283,22 @@ footer{
   <div class="testimonials">
 
     <div class="testimonial">
-      <p>“I was ready to drop £800 on a new amp because my system sounded flat.  
-      Measurely showed the problem was the corner my speaker was shoved into.  
-      Moved it 20cm and boom — fixed.”</p>
+      <p>“I was ready to drop £800 on a new amp because my system sounded flat. Measurely showed the problem was the corner my speaker was in. Moved it 20cm and boom — fixed.”</p>
       <span>Tom, Leicester</span>
     </div>
 
     <div class="testimonial">
-      <p>“Thought my 20-year-old speakers were dying.  
-      Nope — the sofa was blocking the left one.  
-      £50 saved me about £1,200.”</p>
+      <p>“Thought my 20-year-old speakers were dying. Nope — the sofa was blocking the left one. £50 saved me about £1,200.”</p>
       <span>Sarah, Bristol</span>
     </div>
 
     <div class="testimonial">
-      <p>“Ended up spending £18 on a rug instead of £600 on a DAC upgrade.  
-      Honestly the best £50 I’ve spent on hi-fi.”</p>
+      <p>“Ended up spending £18 on a rug instead of £600 on a DAC upgrade. Honestly the best £50 I’ve spent on hi-fi.”</p>
       <span>Mark, Edinburgh</span>
     </div>
 
     <div class="testimonial">
-      <p>“Years of swapping cables like an idiot…  
-      Measurely finally showed the dip at 120 Hz was my room, not my gear.”</p>
+      <p>“Years of swapping cables like an idiot… Measurely finally showed the dip at 120 Hz was my room, not my gear.”</p>
       <span>James, London</span>
     </div>
 
@@ -258,10 +309,17 @@ footer{
 <section class="section">
   <div class="card" style="text-align:center;">
     <h3>Book Your Rental</h3>
-    <p class="text-gray-600 mb-2" style="color:var(--gray-600);">4-day kit + Dave’s advice</p>
+    <p style="color:var(--gray-600);">4-day kit + Dave’s advice</p>
+
     <p style="font-size:2rem;font-weight:700;color:var(--indigo-600);margin-bottom:1rem;">£50</p>
-    <a href="https://buy.stripe.com/5kQeVcdL75s11AKcWw4ZG00" target="_blank" class="btn">Pay with Stripe</a>
-    <p style="font-size:.75rem;color:var(--gray-600);margin-top:.5rem;">Secure checkout opens in a new tab</p>
+
+    <a href="https://buy.stripe.com/5kQeVcdL75s11AKcWw4ZG00" 
+       target="_blank" 
+       class="btn">Pay with Stripe</a>
+
+    <p style="font-size:.75rem;color:var(--gray-600);margin-top:.65rem;">
+      Secure checkout opens in a new tab
+    </p>
   </div>
 </section>
 
