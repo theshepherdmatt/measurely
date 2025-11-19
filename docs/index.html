@@ -1,120 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Measurely – Room Acoustics Made Simple</title>
-  <style>
-    /* ---- mini design system (your colours) ---- */
-    :root{
-      --indigo-600: #7c3aed;
-      --gray-50:  #f9fafb;
-      --gray-200: #e5e7eb;
-      --gray-600: #4b5563;
-      --gray-900: #111827;
-    }
-    *{ box-sizing:border-box; margin:0; }
-    body{ font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif; background:var(--gray-50); color:var(--gray-900); line-height:1.5; }
-    a{ text-decoration:none; color:inherit; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Measurely – Room Acoustics Made Simple</title>
 
-    /* ---- TOP BAR ---- */
-    .topbar{
-      background:linear-gradient(90deg,var(--indigo-600),#6d28d9);
-      padding:.75rem 1rem;
-      display:flex;
-      align-items:center;
-      gap:.75rem;
-      box-shadow:0 2px 6px rgba(0,0,0,.15);
-    }
-    .topbar img{ height:2rem; }              /* logo.svg */
-    .topbar h1{ font-size:1.25rem; font-weight:600; color:#fff; }
+<style>
+/* ===== DESIGN SYSTEM ===== */
+:root{
+  --indigo-600:#7c3aed;
+  --indigo-700:#6d28d9;
+  --indigo-800:#4c1d95;
+  --gray-50:#f9fafb;
+  --gray-100:#f3f4f6;
+  --gray-200:#e5e7eb;
+  --gray-600:#4b5563;
+  --gray-900:#111827;
+}
 
-    /* ---- HERO ---- */
-    .hero{ text-align:center; padding:3rem 1rem; }
-    .hero h2{ font-size:1.875rem; font-weight:700; margin-bottom:.5rem; }
-    .hero p{ color:var(--gray-600); max-width:42rem; margin-inline:auto; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+  background:var(--gray-50);
+  color:var(--gray-900);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
 
-    /* ---- CONTENT ---- */
-    .content{ max-width:42rem; margin:auto; padding:0 1rem 3rem; display:grid; gap:2rem; }
+a{text-decoration:none;color:inherit;}
 
-    /* ---- CARD (your style) ---- */
-    .card{
-      background:#fff;
-      border:1px solid var(--gray-200);
-      border-radius:1rem;
-      padding:1.5rem;
-      box-shadow:0 8px 24px -6px rgba(0,0,0,.08);
-    }
-    .card h3{ font-size:1.125rem; font-weight:600; margin-bottom:.5rem; }
-    ul{ list-style:disc; margin-left:1.25rem; }
-    ol{ list-style:decimal; margin-left:1.25rem; }
+/* ===== TOP BAR ===== */
+.topbar{
+  background:linear-gradient(90deg,var(--indigo-600),var(--indigo-700));
+  padding:0.8rem 1.25rem;
+  display:flex;align-items:center;gap:.75rem;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+.topbar img{height:2.1rem;}
+.topbar h1{font-size:1.35rem;font-weight:600;color:white;}
 
-    /* ---- BUTTON ---- */
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:.75rem 1.5rem; background:linear-gradient(90deg,var(--indigo-600),#6366f1);
-      color:#fff; font-weight:600; border-radius:.5rem; transition:opacity .2s;
-    }
-    .btn:hover{ opacity:.9; }
+/* ===== HERO ===== */
+.hero{
+  padding:4rem 1rem 3rem;
+  text-align:center;
+  background:radial-gradient(circle at 50% 20%,rgba(255,255,255,.35),transparent 60%),
+             linear-gradient(180deg,var(--indigo-700),var(--indigo-800));
+  color:white;
+}
+.hero h2{
+  font-size:2.2rem;
+  font-weight:700;
+  margin-bottom:.75rem;
+}
+.hero p{
+  max-width:42rem;
+  margin:auto;
+  font-size:1.05rem;
+  opacity:.9;
+}
 
-    /* ---- FOOTER ---- */
-    footer{ text-align:center; font-size:.75rem; color:var(--gray-600); padding:2rem 1rem; }
-  </style>
+/* ===== PAGE CONTENT WRAPPER ===== */
+.section{
+  max-width:48rem;
+  margin:auto;
+  padding:3rem 1rem;
+  display:grid;
+  gap:2rem;
+}
+
+/* ===== CARD ===== */
+.card{
+  background:white;
+  border:1px solid var(--gray-200);
+  border-radius:1.1rem;
+  padding:1.75rem;
+  box-shadow:0 10px 28px -8px rgba(0,0,0,.12);
+}
+.card h3{
+  font-size:1.25rem;
+  font-weight:600;
+  margin-bottom:.65rem;
+}
+.card ul, .card ol{margin-left:1.2rem;margin-top:.25rem;}
+.card li{margin-bottom:.4rem;}
+
+/* ===== THREE REASON CARDS ===== */
+.reason-grid{
+  display:grid;
+  gap:1rem;
+}
+@media(min-width:640px){
+  .reason-grid{grid-template-columns:repeat(3,1fr);}
+}
+.reason-card{
+  background:white;
+  border-radius:1rem;
+  border:1px solid var(--gray-200);
+  padding:1.25rem;
+  text-align:center;
+  box-shadow:0 6px 18px -6px rgba(0,0,0,.08);
+}
+.reason-card h4{
+  font-size:1.1rem;
+  font-weight:600;
+  margin-bottom:.35rem;
+}
+.reason-card p{
+  font-size:.9rem;
+  color:var(--gray-600);
+}
+
+/* ===== TESTIMONIALS ===== */
+.testimonials{
+  display:grid;
+  gap:1.25rem;
+}
+@media(min-width:640px){
+  .testimonials{grid-template-columns:1fr 1fr;}
+}
+.testimonial{
+  background:white;
+  border:1px solid var(--gray-200);
+  border-radius:1rem;
+  padding:1.25rem 1.5rem;
+  box-shadow:0 8px 20px -6px rgba(0,0,0,.10);
+}
+.testimonial p{
+  font-size:.95rem;
+  margin-bottom:.75rem;
+  color:var(--gray-900);
+}
+.testimonial span{
+  font-size:.8rem;
+  color:var(--gray-600);
+  font-weight:500;
+}
+
+/* ===== BUTTON ===== */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(90deg,var(--indigo-600),#6366f1);
+  color:white;
+  padding:.8rem 1.75rem;
+  font-weight:600;
+  border-radius:.6rem;
+  transition:opacity .2s;
+  margin-top:.5rem;
+}
+.btn:hover{opacity:.88;}
+
+/* ===== FOOTER ===== */
+footer{
+  text-align:center;
+  font-size:.75rem;
+  color:var(--gray-600);
+  padding:3rem 1rem 2rem;
+}
+</style>
 </head>
 
 <body>
-  <!-- ===== TOP BAR ===== -->
-  <header class="topbar">
-    <img src="logo.svg" alt="Measurely">
-    <h1>Measurely</h1>
-  </header>
 
-  <!-- ===== HERO ===== -->
-  <section class="hero">
-    <h2>Room Acoustics Made Simple</h2>
-    <p>Built by someone who just wanted better sound without becoming an acoustics expert.</p>
-  </section>
+<!-- ===== TOP BAR ===== -->
+<header class="topbar">
+  <img src="logo.svg" alt="Measurely">
+  <h1>Measurely</h1>
+</header>
 
-  <!-- ===== CONTENT ===== -->
-  <main class="content">
-    <!-- What -->
-    <div class="card">
-      <h3>What is Measurely?</h3>
-      <ul>
-        <li>Quick, honest room measurement (offline Pi, no jargon)</li>
-        <li>Dave tells you what to fix — usually just moving furniture or adding a rug</li>
-        <li>4-day rental: £50 + £10 UK delivery</li>
-        <li>Optional £25 Deep-Dive unlock (paper code inside box)</li>
-      </ul>
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <h2>Room Acoustics Made Simple</h2>
+  <p>Built by someone who just wanted better sound without becoming an acoustics expert.</p>
+</section>
+
+<!-- ===== WHY MEASURELY ===== -->
+<section class="section">
+  <div class="reason-grid">
+    <div class="reason-card">
+      <h4>No cloud needed</h4>
+      <p>Everything happens offline on the Pi. No accounts. No nonsense.</p>
+    </div>
+    <div class="reason-card">
+      <h4>Plain English</h4>
+      <p>Dave translates graphs into simple, real-world improvements.</p>
+    </div>
+    <div class="reason-card">
+      <h4>Real savings</h4>
+      <p>Most fixes cost £0–£20, not hundreds on new gear.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== WHAT ===== -->
+<section class="section">
+  <div class="card">
+    <h3>What is Measurely?</h3>
+    <ul>
+      <li>Quick, honest room measurement (offline Pi, no jargon)</li>
+      <li>Dave tells you what to fix — usually just moving furniture or adding a rug</li>
+      <li>4-day rental: £50 + £10 UK delivery</li>
+      <li>Optional £25 Deep-Dive unlock (paper code inside box)</li>
+    </ul>
+  </div>
+
+  <!-- ===== HOW ===== -->
+  <div class="card">
+    <h3>How it Works</h3>
+    <ol>
+      <li>Rent the kit (£50 + refundable £175 deposit)</li>
+      <li>Plug in USB mic → browse <strong>measurely.local</strong> → hit “Measure”</li>
+      <li>Read Dave’s 3 plain-English tips</li>
+      <li>Move stuff, re-measure, hear the difference</li>
+      <li>Re-pack, stick on pre-paid label, drop at post office</li>
+      <li>Deposit refunded within 24 hours of safe return</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ===== TESTIMONIALS ===== -->
+<section class="section">
+  <h3 style="font-size:1.4rem;font-weight:700;text-align:center;">What People Are Saying</h3>
+
+  <div class="testimonials">
+
+    <div class="testimonial">
+      <p>“I was ready to drop £800 on a new amp because my system sounded flat.  
+      Measurely showed the problem was the corner my speaker was shoved into.  
+      Moved it 20cm and boom — fixed.”</p>
+      <span>Tom, Leicester</span>
     </div>
 
-    <!-- How -->
-    <div class="card">
-      <h3>How it Works</h3>
-      <ol>
-        <li>Rent the kit (£50 + refundable £175 deposit)</li>
-        <li>Plug in USB mic → browse measurely.local → hit “Measure”</li>
-        <li>Read Dave’s 3 plain-English tips</li>
-        <li>Move stuff, re-measure, hear the difference</li>
-        <li>Re-pack, stick on pre-paid label, drop at post-office</li>
-        <li>We refund deposit within 24 h of safe return</li>
-      </ol>
+    <div class="testimonial">
+      <p>“Thought my 20-year-old speakers were dying.  
+      Nope — the sofa was blocking the left one.  
+      £50 saved me about £1,200.”</p>
+      <span>Sarah, Bristol</span>
     </div>
 
-    <!-- Book -->
-    <div class="card text-center">
-      <h3>Book Your Rental</h3>
-      <p class="text-gray-600 mb-2">4-day kit + Dave’s advice</p>
-      <p class="text-2xl font-bold text-indigo-600 mb-4">£50</p>
-      <a href="https://buy.stripe.com/5kQeVcdL75s11AKcWw4ZG00" target="_blank" class="btn">Pay with Stripe</a>
-      <p class="text-xs text-gray-500 mt-2">Secure checkout opens in new tab</p>
+    <div class="testimonial">
+      <p>“Ended up spending £18 on a rug instead of £600 on a DAC upgrade.  
+      Honestly the best £50 I’ve spent on hi-fi.”</p>
+      <span>Mark, Edinburgh</span>
     </div>
-  </main>
 
-  <!-- ===== FOOTER ===== -->
-<footer class="text-center text-gray-500 text-xs mt-10">
-  © 2025 Matt Shepherd. Built because REW was too confusing.  
-  <br>
-  Why the basic site?  Because it’s free, and we’d rather spend money on mics than web designers.
+    <div class="testimonial">
+      <p>“Years of swapping cables like an idiot…  
+      Measurely finally showed the dip at 120 Hz was my room, not my gear.”</p>
+      <span>James, London</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== BOOK ===== -->
+<section class="section">
+  <div class="card" style="text-align:center;">
+    <h3>Book Your Rental</h3>
+    <p class="text-gray-600 mb-2" style="color:var(--gray-600);">4-day kit + Dave’s advice</p>
+    <p style="font-size:2rem;font-weight:700;color:var(--indigo-600);margin-bottom:1rem;">£50</p>
+    <a href="https://buy.stripe.com/5kQeVcdL75s11AKcWw4ZG00" target="_blank" class="btn">Pay with Stripe</a>
+    <p style="font-size:.75rem;color:var(--gray-600);margin-top:.5rem;">Secure checkout opens in a new tab</p>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  © 2025 Matt Shepherd. Built because REW was too confusing.<br>
+  Why the basic site? Because it’s free, and we’d rather spend money on mics than web designers.
 </footer>
+
+</body>
 </html>
