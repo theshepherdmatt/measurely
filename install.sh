@@ -174,6 +174,68 @@ fi
 
 msg "Audio hardware configuration complete. A reboot will activate overlays."
 
+# ------------------------------------------------------------
+# 7.6. Samba Setup (file sharing + password)
+# ------------------------------------------------------------
+
+msg "Installing and configuring Samba…"
+
+# Install samba if not installed
+apt-get install -y samba samba-common-bin
+
+# Backup existing config once
+if [[ ! -f /etc/samba/smb.conf.backup ]]; then
+    cp /etc/samba/smb.conf /etc/samba/smb.conf.backup
+fi
+
+msg "Writing Samba configuration…"
+
+cat >/etc/samba/smb.conf <<EOF
+[global]
+   workgroup = WORKGROUP
+   server string = Measurely Pi
+   security = user
+   map to guest = Bad User
+   dns proxy = no
+
+[measurely]
+   path = $REPO_DIR
+   browseable = yes
+   writable = yes
+   create mask = 0775
+   directory mask = 0775
+   valid users = $APP_USER
+   force user = $APP_USER
+EOF
+
+msg "Setting Samba password for user '$APP_USER'…"
+
+# We set the Samba password to match the current system password.
+# Samba does not allow non-interactive password entry without piping.
+echo -e "$APP_USER\n$APP_USER" >/tmp/smbpass.$$  # placeholder, real pass is set below
+
+# Ask user for password if sudoer wants a custom one:
+read -rsp "Enter password for Samba user '$APP_USER': " SMBPASS
+echo
+read -rsp "Confirm password: " SMBPASS2
+echo
+
+if [[ "$SMBPASS" != "$SMBPASS2" ]]; then
+    die "Samba passwords do not match. Aborting."
+fi
+
+# Create the Samba user (or reset password)
+(echo "$SMBPASS"; echo "$SMBPASS") | smbpasswd -a "$APP_USER" >/dev/null
+
+rm -f /tmp/smbpass.$$
+
+msg "  ✔ Samba user password set."
+
+systemctl restart smbd
+systemctl restart nmbd
+
+msg "✔ Samba setup complete. You can now access the Pi at:"
+msg "   \\\\measurely-pi\\measurely"
 
 # ------------------------------------------------------------
 # 8. Start service
