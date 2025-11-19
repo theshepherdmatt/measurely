@@ -318,6 +318,9 @@ class MeasurelyDashboard {
         // Main number
         const overallEl = document.getElementById('overallScore');
         if (overallEl) overallEl.textContent = overall.toFixed(1);
+        // Apply dynamic colour to overall card
+        this.applySixCardColor("overall", overall);
+
 
         // Dot colour
         this.updateStatusIndicator('overallStatus', overall);

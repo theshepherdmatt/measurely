@@ -37,7 +37,7 @@
 body{
   margin:0;
   font-family:var(--font-main);
-  background:var(--gray-50);
+  background:var(--gray-200);
   color:var(--gray-900);
   -webkit-font-smoothing:antialiased;
 }
@@ -155,7 +155,7 @@ body{
   border-radius:1rem;
   padding:1.5rem;
   border:1px solid var(--gray-200);
-  box-shadow:0 8px 24px -6px rgba(0,0,0,.08);
+  box-shadow:0 6px 18px rgba(0,0,0,.12);
   transition:transform .2s, box-shadow .2s;
 }
 .card:hover{
@@ -283,3 +283,92 @@ body{
     max-height: 420px;
   }
 }
+
+/* ===== FORCE DYNAMIC COLOUR OVERRIDES ===== */
+[data-color-target],
+[data-color-summary],
+[data-color-icon],
+[data-color-dot] {
+  color: inherit !important;
+}
+
+/* green */
+.text-green-500[data-color-target],
+.text-green-500[data-color-summary],
+.text-green-500[data-color-icon] {
+  color: #22c55e !important;
+}
+.text-green-500[data-color-dot] {
+  background-color: #22c55e !important;
+}
+
+/* yellow */
+.text-yellow-500[data-color-target],
+.text-yellow-500[data-color-summary],
+.text-yellow-500[data-color-icon] {
+  color: #f59e0b !important;
+}
+.text-yellow-500[data-color-dot] {
+  background-color: #f59e0b !important;
+}
+
+/* blue (okay) */
+.text-blue-500[data-color-target],
+.text-blue-500[data-color-summary],
+.text-blue-500[data-color-icon] {
+  color: #3b82f6 !important;
+}
+.text-blue-500[data-color-dot] {
+  background-color: #3b82f6 !important;
+}
+
+/* red */
+.text-red-500[data-color-target],
+.text-red-500[data-color-summary],
+.text-red-500[data-color-icon] {
+  color: #ef4444 !important;
+}
+.text-red-500[data-color-dot] {
+  background-color: #ef4444 !important;
+}
+
+.btn-blue {
+  background:#3b82f6;
+  color:#fff;
+  padding:0.9rem 1.2rem;
+  border-radius:0.75rem;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .2s;
+}
+.btn-blue:hover { background:#2563eb; }
+
+.btn-green {
+  background:#22c55e;
+  color:#fff;
+  padding:0.9rem 1.2rem;
+  border-radius:0.75rem;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .2s;
+}
+.btn-green:hover { background:#16a34a; }
+
+.btn-purple {
+  background:#7c3aed;
+  color:#fff;
+  padding:0.9rem 1.2rem;
+  border-radius:0.75rem;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .2s;
+}
+.btn-purple:hover { background:#6d28d9; }
+
+
