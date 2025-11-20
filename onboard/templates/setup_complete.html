@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Complete - Measurely</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .success-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .next-steps {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .next-steps h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .next-steps ol {
+            color: #666;
+            padding-left: 20px;
+        }
+        
+        .next-steps li {
+            margin-bottom: 10px;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">✅</div>
+        <h1>Setup Complete!</h1>
+        <p class="message">
+            Your Measurely device is now connected to WiFi and ready to use.
+        </p>
+        
+        <div class="next-steps">
+            <h3>Next Steps:</h3>
+            <ol>
+                <li>Your device will restart in a few moments</li>
+                <li>After restart, connect to the same WiFi network</li>
+                <li>Open your web browser and navigate to:</li>
+                <li><strong>http://measurely.local:5000</strong></li>
+                <li>or check your router for the device IP address</li>
+            </ol>
+        </div>
+        
+        <button class="restart-btn" onclick="restartDevice()">
+            Restart Now
+        </button>
+    </div>
+
+    <script>
+        function restartDevice() {
+            // In a real implementation, this would trigger a device restart
+            alert('Device is restarting... Please wait 30-60 seconds before reconnecting.');
+            
+            // Auto-close the window after a delay
+            setTimeout(() => {
+                window.close();
+            }, 3000);
+        }
+        
+        // Auto-restart after 10 seconds
+        setTimeout(() => {
+            restartDevice();
+        }, 10000);
+    </script>
+</body>
+</html>
