@@ -253,4 +253,101 @@ else
   warn "   journalctl -u measurely.service -e"
 fi
 
-msg "Done. Visit: http://<pi-ip>:5000/"
+# ------------------------------------------------------------
+# 9. Access Point Setup (hostapd + dnsmasq + unmanaged wlan0)
+# ------------------------------------------------------------
+msg "Setting up Measurely Access Point (offline mode)…"
+
+# ---- Install packages ----
+msg "Installing hostapd + dnsmasq…"
+
+apt-get install -y hostapd dnsmasq
+
+# Ensure services do not auto-start until configured
+systemctl stop hostapd 2>/dev/null || true
+systemctl stop dnsmasq 2>/dev/null || true
+systemctl disable hostapd 2>/dev/null || true
+systemctl disable dnsmasq 2>/dev/null || true
+
+# ---- STATIC IP CONFIGURATION ----
+msg "Configuring static IP for wlan0…"
+
+DHCPCD_CONF="/etc/dhcpcd.conf"
+
+if ! grep -q "measurely-ap" "$DHCPCD_CONF"; then
+cat >>"$DHCPCD_CONF" <<EOF
+
+# measurely-ap
+interface wlan0
+    static ip_address=192.168.4.1/24
+    nohook wpa_supplicant
+EOF
+msg "  ✔ Added static IP for wlan0"
+else
+msg "  ✔ Static IP already configured"
+fi
+
+# ---- DNSMASQ CONFIG ----
+msg "Writing dnsmasq configuration…"
+
+mkdir -p /etc/dnsmasq.d
+
+cat >/etc/dnsmasq.d/measurely-ap.conf <<EOF
+interface=wlan0
+dhcp-range=192.168.4.100,192.168.4.150,12h
+EOF
+
+msg "  ✔ dnsmasq configured"
+
+# ---- HOSTAPD CONFIG ----
+msg "Writing hostapd configuration…"
+
+cat >/etc/hostapd/hostapd.conf <<EOF
+interface=wlan0
+driver=nl80211
+ssid=Measurely
+hw_mode=g
+channel=6
+wmm_enabled=0
+auth_algs=1
+ignore_broadcast_ssid=0
+EOF
+
+# Set DAEMON_CONF
+sed -i 's|#DAEMON_CONF=""|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd 2>/dev/null || true
+sed -i 's|DAEMON_CONF=".*"|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd 2>/dev/null || true
+
+msg "  ✔ hostapd configured"
+
+# ---- NetworkManager ignore-wlan0 ----
+msg "Configuring NetworkManager to ignore wlan0…"
+
+NM_IGNORE="/etc/NetworkManager/conf.d/ignore-wlan0.conf"
+
+cat >"$NM_IGNORE" <<EOF
+[keyfile]
+unmanaged-devices=interface-name:wlan0
+EOF
+
+msg "  ✔ wlan0 set to unmanaged"
+
+systemctl restart NetworkManager
+
+# ---- Enable services ----
+msg "Enabling hostapd + dnsmasq…"
+
+systemctl enable hostapd
+systemctl enable dnsmasq
+
+systemctl restart dhcpcd
+systemctl restart dnsmasq
+systemctl restart hostapd
+
+sleep 1
+
+if systemctl -q is-active hostapd; then
+    msg "✔ Access Point active: SSID=Measurely on 192.168.4.1"
+else
+    warn "⚠ hostapd not active — check logs:"
+    warn "   journalctl -u hostapd -e"
+fi
