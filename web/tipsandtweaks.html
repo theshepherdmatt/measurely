@@ -1,85 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Measurely – Tips and Tweaks</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="alternate icon" href="favicon.ico">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Measurely – Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" href="favicon.ico">
+  <link rel="stylesheet" href="measurely.css">
+  <script src="tailwind.js"></script>
+  <script src="js/plotly.min.js"></script>
+  <link rel="stylesheet" href="fonts/inter/interweb/inter.css">
 
-<link rel="stylesheet" href="measurely.css" />
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+  </style>
 
-<style>
-</style>
+<base target="_blank">
 </head>
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-<body class="bg-gray-50">
+
+<body class="bg-gray-300">
 <!-- Mobile banner -->
 <div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm
             flex items-center justify-between px-4 z-50">
   <div class="flex items-center space-x-2">
-    <img src="buddy-icon-100-white.svg" class="w-10 h-10" alt="Dave">
-    <span class="text-white font-semibold text-sm">Measurely</span>
+    <img src="icons/mainlogo.svg"
+        class="max-h-10 w-auto object-contain"
+        alt="Measurely Logo">
+
+
   </div>
   <button id="mobile-menu-btn" class="p-2 rounded-lg text-white hover:bg-white/10 transition">
-    <i class="fas fa-bars text-lg"></i>
+    <img src="icons/bars.svg" class="w-6 h-6" alt="">
   </button>
 </div>
 
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 <aside id="sidebar" class="sidebar">
   <div class="sidebar-logo mb-8 flex items-center space-x-3">
-    <img src="buddy-icon-100-white.svg" class="w-12 h-12" alt="Measurely Buddy">
+    <img src="icons/mainlogo.svg" class="w-15 h-15" alt="Measurely Buddy">
     <div>
-      <h1 class="text-2xl font-bold">Measurely</h1>
-      <p class="text-sm opacity-80">Simple Room Audio</p>
     </div>
   </div>
-  <nav class="space-y-2">
-    <a href="index.html" class="nav-item active"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
-    <a href="room-setup.html" class="nav-item active"><i class="fas fa-home mr-3"></i>Room Setup</a>
-    <a href="tipsandtweaks.html" class="nav-item active"><i class="fas fa-lightbulb mr-3"></i>Tips and Tweaks</a>
-  </nav>
-  <!-- ===== SIDEBAR STATUS PANEL ===== -->
-  <div class="absolute bottom-6 left-6 right-6">
+    <nav class="space-y-2">
 
-    <div class="bg-white/20 backdrop-blur-md rounded-lg p-4 space-y-3">
+      <a href="index.html" class="nav-item">
+        <img src="icons/chart-line.svg" class="w-5 h-5 mr-3 inline-block" />
+        Dashboard
+      </a>
 
-      <!-- 1. SYSTEM READY -->
-      <div class="flex items-center">
-        <div id="systemReadyDot" class="status-indicator status-good pulse-animation"></div>
-        <span id="systemReadyText" class="text-sm">System Ready</span>
-      </div>
+      <a href="room-setup.html" class="nav-item">
+        <img src="icons/home.svg" class="w-5 h-5 mr-3 inline-block" />
+        Room Setup
+      </a>
 
-      <!-- 2. IP ADDRESS -->
-      <div class="flex items-center">
-        <div id="ipStatusDot" class="status-indicator bg-blue-400"></div>
-        <span id="ipAddressText" class="text-sm">IP: 0.0.0.0</span>
-      </div>
+      <a href="tipsandtweaks.html" class="nav-item">
+        <img src="icons/lightbulb.svg" class="w-5 h-5 mr-3 inline-block" />
+        Tips and Tweaks
+      </a>
 
-      <!-- 3. THAT CONNECTED (DAC / device) -->
-      <div class="flex items-center">
-        <div id="dacStatusDot" class="status-indicator bg-yellow-400"></div>
-        <span id="dacStatusText" class="text-sm">That: Not Found</span>
-      </div>
+    </nav>
+<!-- ===== SIDEBAR STATUS PANEL ===== -->
+<div class="absolute bottom-6 left-6 right-6">
 
-      <!-- 4. USB MIC CONNECTED -->
-      <div class="flex items-center">
-        <div id="usbStatusDot" class="status-indicator bg-red-400"></div>
-        <span id="usbStatusText" class="text-sm">USB Mic: Not Connected</span>
-      </div>
+  <div class="bg-white/20 backdrop-blur-md rounded-lg p-4 space-y-3">
 
-      <!-- 5. CLOCK -->
-      <p class="text-xs opacity-80">
-        Last updated: <span id="lastUpdated">Now</span>
-      </p>
-
+    <!-- 1. SYSTEM READY -->
+    <div class="flex items-center">
+      <div id="systemReadyDot" class="status-indicator status-good pulse-animation"></div>
+      <span id="systemReadyText" class="text-sm">System Ready</span>
     </div>
 
+    <!-- 2. IP ADDRESS -->
+    <div class="flex items-center">
+      <div id="ipStatusDot" class="status-indicator bg-blue-400"></div>
+      <span id="ipAddressText" class="text-sm">IP: 0.0.0.0</span>
+    </div>
+
+    <!-- 3. THAT CONNECTED (DAC / device) -->
+    <div class="flex items-center">
+      <div id="dacStatusDot" class="status-indicator bg-yellow-400"></div>
+      <span id="dacStatusText" class="text-sm">That: Not Found</span>
+    </div>
+
+    <!-- 4. USB MIC CONNECTED -->
+    <div class="flex items-center">
+      <div id="usbStatusDot" class="status-indicator bg-red-400"></div>
+      <span id="usbStatusText" class="text-sm">USB Mic: Not Connected</span>
+    </div>
+
+    <!-- 5. CLOCK -->
+    <p class="text-xs opacity-80">
+      Last updated: <span id="lastUpdated">Now</span>
+    </p>
+
   </div>
+
+</div>
 
 </aside>
 
@@ -232,7 +247,7 @@ function renderKeyFindings() {
         </div>
 
         <div class="buddy-box mt-2">
-          <img src="buddy-icon-100.svg" class="w-5 h-5">
+          <img src="icons/dave.svg" class="w-5 h-5">
           <span class="italic">${sol}</span>
         </div>
       </div>
@@ -278,7 +293,7 @@ function renderBuddyDeepDive() {
         </div>
 
         <div class="buddy-box mt-2">
-          <img src="buddy-icon-100.svg" class="w-5 h-5">
+          <img src="icons/dave.svg" class="w-5 h-5">
           <span class="italic">${sol}</span>
         </div>
 
@@ -313,7 +328,7 @@ function renderActionPlan() {
         <h4 class="font-semibold ${col.text} mb-2">${name}</h4>
 
         <div class="buddy-box mt-2">
-          <img src="buddy-icon-100.svg" class="w-5 h-5">
+          <img src="icons/dave.svg" class="w-5 h-5">
           <span class="italic">${sol}</span>
         </div>
 

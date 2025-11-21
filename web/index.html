@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Measurely – Dashboard</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
   <link rel="alternate icon" href="favicon.ico">
   <link rel="stylesheet" href="measurely.css">
   <script src="tailwind.js"></script>
@@ -22,29 +22,43 @@
 <div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm
             flex items-center justify-between px-4 z-50">
   <div class="flex items-center space-x-2">
-    <img src="mainlogo.svg"
+    <img src="icons/mainlogo.svg"
         class="max-h-10 w-auto object-contain"
         alt="Measurely Logo">
 
 
   </div>
   <button id="mobile-menu-btn" class="p-2 rounded-lg text-white hover:bg-white/10 transition">
-    <i class="fas fa-bars text-lg"></i>
+    <img src="icons/bars.svg" class="w-6 h-6" alt="">
   </button>
 </div>
 
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 <aside id="sidebar" class="sidebar">
   <div class="sidebar-logo mb-8 flex items-center space-x-3">
-    <img src="mainlogo.svg" class="w-15 h-15" alt="Measurely Buddy">
+    <img src="icons/mainlogo.svg" class="w-15 h-15" alt="Measurely Buddy">
     <div>
     </div>
   </div>
-  <nav class="space-y-2">
-    <a href="index.html" class="nav-item"><i class="fas fa-chart-line mr-3"></i>Dashboard</a>
-    <a href="room-setup.html" class="nav-item"><i class="fas fa-home mr-3"></i>Room Setup</a>
-    <a href="tipsandtweaks.html" class="nav-item"><i class="fas fa-lightbulb mr-3"></i>Tips and Tweaks</a>
-  </nav>
+    <nav class="space-y-2">
+
+      <a href="index.html" class="nav-item">
+        <img src="icons/chart-line.svg" class="w-5 h-5 mr-3 inline-block" />
+        Dashboard
+      </a>
+
+      <a href="room-setup.html" class="nav-item">
+        <img src="icons/home.svg" class="w-5 h-5 mr-3 inline-block" />
+        Room Setup
+      </a>
+
+      <a href="tipsandtweaks.html" class="nav-item">
+        <img src="icons/lightbulb.svg" class="w-5 h-5 mr-3 inline-block" />
+        Tips and Tweaks
+      </a>
+
+    </nav>
+
 <!-- ===== SIDEBAR STATUS PANEL ===== -->
 <div class="absolute bottom-6 left-6 right-6">
 
@@ -105,7 +119,7 @@
     <div class="card flex flex-col items-start justify-center">
 
       <h3 class="text-xl font-semibold mb-4">
-        <i class="fas fa-toolbox mr-2 text-purple-600"></i>Actions
+        <img src="icons/toolbox.svg" class="w-5 h-5 mr-2 text-purple-600 inline-block" />Actions
       </h3>
 
       <div class="flex flex-col sm:flex-row flex-wrap gap-4">
@@ -135,7 +149,7 @@
     <div class="card">
 
       <h3 class="text-xl font-semibold mb-1">
-        <i class="fas fa-chart-line mr-2 text-indigo-600"></i>Your Score
+        <img src="icons/chart-line.svg" class="w-5 h-5 mr-2 text-purple-600 inline-block" />Your Score
       </h3>
 
       <p class="text-xs text-gray-500 mb-3">
@@ -168,13 +182,13 @@
     <div class="card">
 
       <h3 class="text-xl font-semibold mb-1">
-        <i class="fas fa-comment-dots mr-2 text-green-600"></i>Dave Says
+        <img src="icons/comment-dots.svg" class="w-5 h-5 mr-2 text-purple-600 inline-block" />Dave Says
       </h3>
 
       <p class="text-xs text-gray-500 mb-3">Dave’s read on what stood out in your sweep.</p>
 
       <div class="buddy-box mt-3">
-        <img src="buddy-icon-100.svg"
+        <img src="icons/dave.svg"
             class="w-10 h-10 opacity-90"
             alt="Dave">
         <p id="overallBuddyPhrase"
@@ -256,14 +270,14 @@
   <div class="score-legend">
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Peaks & Dips</h4>
-      <i class="fas fa-mountain text-xl" data-color-icon="peaksDips"></i>
+      <img src="icons/mountain.svg" class="w-5 h-5 text-xl" data-color-icon="peaksDips" />
     </div>
 
     <div id="peaksDipsScore" class="text-3xl font-bold mb-1" data-color-target="peaksDips">--</div>
     <div id="peaksDipsSummary" class="text-sm mb-2" data-color-summary="peaksDips">--</div>
 
     <div class="buddy-box">
-      <img src="buddy-icon-100.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="peaksDipsBuddy" class="italic">--</span>
     </div>
 
@@ -280,14 +294,14 @@
   <div class="score-legend">
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Reflections</h4>
-      <i class="fas fa-square-caret-left text-xl" data-color-icon="reflections"></i>
+      <img src="icons/square-caret-left.svg" class="w-5 h-5 text-xl" data-color-icon="reflections" />
     </div>
 
     <div id="reflectionsScore" class="text-3xl font-bold mb-1" data-color-target="reflections">--</div>
     <div id="reflectionsSummary" class="text-sm mb-2" data-color-summary="reflections">--</div>
 
     <div class="buddy-box">
-      <img src="buddy-icon-100.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="reflectionsBuddy" class="italic">--</span>
     </div>
 
@@ -304,14 +318,14 @@
   <div class="score-legend">
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Bandwidth</h4>
-      <i class="fas fa-signal text-xl" data-color-icon="bandwidth"></i>
+      <img src="icons/signal.svg" class="w-5 h-5 text-xl" data-color-icon="bandwidth" />
     </div>
 
     <div id="bandwidthScore" class="text-3xl font-bold mb-1" data-color-target="bandwidth">--</div>
     <div id="bandwidthSummary" class="text-sm mb-2" data-color-summary="bandwidth">--</div>
 
     <div class="buddy-box">
-      <img src="buddy-icon-100.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="bandwidthBuddy" class="italic">--</span>
     </div>
 
@@ -328,14 +342,14 @@
   <div class="score-legend">
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Balance</h4>
-      <i class="fas fa-balance-scale text-xl" data-color-icon="balance"></i>
+      <img src="icons/balance-scale.svg" class="w-5 h-5 text-xl" data-color-icon="balance" />
     </div>
 
     <div id="balanceScore" class="text-3xl font-bold mb-1" data-color-target="balance">--</div>
     <div id="balanceSummary" class="text-sm mb-2" data-color-summary="balance">--</div>
 
     <div class="buddy-box">
-      <img src="buddy-icon-100.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="balanceBuddy" class="italic">--</span>
     </div>
 
@@ -352,14 +366,15 @@
   <div class="score-legend">
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Smoothness</h4>
-      <i class="fas fa-wave-square text-xl" data-color-icon="smoothness"></i>
+      <img src="icons/wave-square.svg" class="w-5 h-5 text-xl" data-color-icon="Smoothness" />
+     
     </div>
 
     <div id="smoothnessScore" class="text-3xl font-bold mb-1" data-color-target="smoothness">--</div>
     <div id="smoothnessSummary" class="text-sm mb-2" data-color-summary="smoothness">--</div>
 
     <div class="buddy-box">
-      <img src="buddy-icon-100.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="smoothnessBuddy" class="italic">--</span>
     </div>
 
@@ -376,14 +391,14 @@
   <div class="score-legend">
     <div class="flex items-center justify-between mb-4">
       <h4 class="text-lg font-semibold text-gray-800">Reverb</h4>
-      <i class="fas fa-clock text-xl" data-color-icon="reverb"></i>
+      <img src="icons/clock.svg" class="w-5 h-5 text-xl" data-color-icon="reverb" />
     </div>
 
     <div id="reverbScore" class="text-3xl font-bold mb-1" data-color-target="reverb">--</div>
     <div id="reverbSummary" class="text-sm mb-2" data-color-summary="reverb">--</div>
 
     <div class="buddy-box">
-      <img src="buddy-icon-100.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
       <span id="reverbBuddy" class="italic">--</span>
     </div>
 
@@ -514,7 +529,7 @@
 
   <!-- Header: icon + title -->
   <div class="flex items-center mb-4">
-    <img src="davenerd.png" class="w-12 h-12 mr-3" alt="Dave Nerd Icon">
+    <img src="icons/davenerd.png" class="w-12 h-12 mr-3" alt="Dave Nerd Icon">
     <div>
       <h2 class="text-xl font-semibold text-gray-800">Nerds Corner</h2>
       <p class="text-sm text-gray-600">
