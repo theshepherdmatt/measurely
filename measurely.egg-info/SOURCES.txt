@@ -1,3 +1,4 @@
+LICENSE
 README.md
 pyproject.toml
 measurely.egg-info/PKG-INFO
@@ -12,7 +13,7 @@ measurelyapp/io.py
 measurelyapp/main.py
 measurelyapp/score.py
 measurelyapp/server.py
-measurelyapp/signal.py
+measurelyapp/signal_math.py
 measurelyapp/speaker.py
 measurelyapp/sweep.py
 measurelyapp/util_io.py
