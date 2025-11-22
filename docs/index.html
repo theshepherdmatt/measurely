@@ -5,21 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Measurely – Room Acoustics Made Simple</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 /* ============================================================
-   MEASURELY – HYBRID LANDING PAGE REBUILD (2025)
+   MEASURELY – PREMIUM LANDING PAGE (2025)
    ============================================================ */
 
 :root {
   --font-main: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Primary Brand Colours */
+  /* Brand Colours */
   --m-purple: #7c3aed;
   --m-purple-dark: #4c1d95;
   --m-purple-soft: #efe7ff;
@@ -41,8 +40,8 @@
 
   /* Section BGs */
   --bg-light: #fafbff;
-  --bg-indigo-tint: #f4f0ff;
   --bg-soft-grey: #f6f7fa;
+  --bg-indigo-tint: #f4f0ff;
   --bg-pale-indigo: #efebff;
   --bg-footer: #0d0d12;
 }
@@ -53,69 +52,77 @@ body {
   font-family: var(--font-main);
   background: white;
   color: var(--g-900);
-  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
 }
 
-/* HEADER */
+/* ============================================================
+   HEADER
+   ============================================================ */
 .topbar {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  padding: 1.4rem 1.75rem;
+  padding: 1.3rem 1.75rem;
   display: flex;
   align-items: center;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
   z-index: 20;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
 }
 .topbar img { height: 2.2rem; }
 
-/* HERO (unchanged visually) */
+/* ============================================================
+   HERO
+   ============================================================ */
 .hero {
   position: relative;
-  min-height: 82vh;
+  min-height: 83vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  text-align: center;
   color: white;
+  text-align: center;
   background-image:
     linear-gradient(to bottom, rgba(17,24,39,0.45), rgba(17,24,39,0.85)),
     url('heromain.png');
   background-size: cover;
   background-position: center;
 }
-.hero-content {
-  max-width: 52rem;
-  padding: 2rem 1rem;
-}
+.hero-content { max-width: 52rem; padding: 2rem 1rem; }
+
 .hero h2 {
   font-size: clamp(2.4rem, 5vw, 3.6rem);
   font-weight: 800;
-  margin-bottom: .75rem;
-}
-.hero p {
-  font-size: 1.2rem;
-  opacity: .95;
-  margin-bottom: 1.5rem;
-}
-.hero-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
+  margin-bottom: .85rem;
 }
 
-/* BUTTONS */
+.hero p {
+  font-size: 1.15rem;
+  opacity: .95;
+}
+
+/* Purple section divider line */
+.section-line {
+  width: 60px;
+  height: 4px;
+  background: var(--m-purple);
+  border-radius: 6px;
+  margin: 1.4rem auto 2rem;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
 .btn {
   display: inline-flex;
   padding: .9rem 1.8rem;
-  border-radius: .6rem;
+  border-radius: .55rem;
   font-weight: 600;
   text-decoration: none;
   transition: .2s;
 }
+
 .btn-primary {
   background: var(--m-purple);
   color: white;
@@ -124,6 +131,7 @@ body {
   background: var(--m-purple-dark);
   transform: translateY(-1px);
 }
+
 .btn-outline {
   border: 2px solid white;
   color: white;
@@ -133,121 +141,152 @@ body {
   color: var(--m-purple-dark);
 }
 
-/* UNIVERSAL SECTION WRAPPER */
+/* ============================================================
+   UNIVERSAL WRAPPER
+   ============================================================ */
 .section {
   max-width: 52rem;
   margin: auto;
-  padding: 2.8rem 1.5rem;
+  padding: 3rem 1.5rem;
 }
 
-/* REASONS */
+/* ============================================================
+   WHAT IS MEASURELY?
+   ============================================================ */
+.what-section {
+  background: var(--bg-light);
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+}
+.what-section h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+.what-section p {
+  max-width: 45rem;
+  margin: auto;
+  font-size: 1.1rem;
+  color: var(--g-700);
+  margin-top: .5rem;
+}
+
+/* ============================================================
+   THREE BENEFITS
+   ============================================================ */
 .reason-grid {
   display: grid;
-  gap: 1.5rem;
+  gap: 1.3rem;
+  margin-top: 2.5rem;
 }
 @media (min-width: 768px) {
   .reason-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
 .reason-card {
   background: white;
-  padding: 1.6rem 1.4rem;
+  padding: 1.7rem 1.4rem;
   border-radius: 1rem;
   border: 1px solid var(--g-200);
   text-align: center;
   box-shadow: 0 8px 20px rgba(0,0,0,0.05);
 }
-.reason-card h4 { font-size: 1.15rem; margin-bottom: .5rem; color: var(--m-purple-dark); }
-.reason-card p { font-size: .95rem; color: var(--g-600); }
 
-/* MEET DAVE */
-.meet-dave {
+/* ============================================================
+   DAVE EXPLAINER SECTION
+   ============================================================ */
+.dave-explainer {
   background: var(--bg-indigo-tint);
-  padding-top: 3.5rem;
-  padding-bottom: 3.5rem;
-  text-align: center;
-}
-.dave-window {
-  background: white;
-  max-width: 40rem;
-  margin: auto;
-  padding: 1.5rem 1.8rem;
+  padding: 4rem 1.5rem;
   border-radius: 1rem;
-  border: 2px solid var(--m-purple);
-  box-shadow: 0 12px 25px rgba(124,58,237,0.12);
-  position: relative;
-}
-.dave-window:before {
-  content:"";
-  position:absolute;
-  top:-14px;
-  left:50%;
-  transform:translateX(-50%);
-  width:40px;
-  height:10px;
-  background: var(--m-purple);
-  border-radius: 6px 6px 0 0;
-}
-.dave-avatar {
-  width: 80px;
-  margin: auto;
-}
-.dave-avatar img { width: 100%; }
-.dave-speech-bubble {
-  background: var(--g-100);
-  padding: 1.2rem 1.4rem;
-  border-radius: .9rem;
-  margin-top: 1rem;
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  text-align: left;
-}
-.dave-speech-bubble img {
-  width: 55px;
-  flex-shrink: 0;
-}
-.dave-speech-bubble p {
-  color: var(--g-700);
-  font-style: italic;
+  margin: 4rem auto;
 }
 
-/* TRANSLATOR BLOCK */
-.translation {
-  margin-top: 2rem;
+.dave-explainer-inner {
+  max-width: 63rem;
+  margin: auto;
+  display: flex;
+  gap: 3rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dave-explainer-text { flex: 1 1 330px; }
+
+.dave-explainer-text h2 {
+  font-size: 1.9rem;
+  font-weight: 800;
+  margin-bottom: .6rem;
+}
+
+.dave-explainer-text p {
+  margin-bottom: 1rem;
+  color: var(--g-700);
+}
+
+/* RAW → DAVE translator */
+.dave-explainer-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 40px 1fr;
   gap: 1rem;
+  margin-top: 1.7rem;
 }
-@media (min-width: 700px) {
-  .translation { grid-template-columns: 1fr 50px 1fr; }
-}
-.raw-box {
-  background: var(--c-red-bg);
-  border: 1px solid #fecaca;
+
+.raw-box, .dave-box {
+  background: white;
   padding: 1rem;
-  border-radius: .7rem;
+  border-radius: .8rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   font-family: var(--font-mono);
   font-size: .9rem;
-  color: var(--c-red-text);
-}
-.arrow {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size: 2rem;
-  color: var(--g-300);
-}
-.dave-box {
-  background: var(--c-green-bg);
-  border: 1px solid #bbf7d0;
-  padding: 1rem;
-  border-radius: .7rem;
-  color: var(--m-purple-dark);
-  font-weight: 600;
 }
 
-/* WHAT'S IN THE BOX */
+.raw-box { border: 1px solid #fecaca; color: var(--m-red); }
+.dave-box { border: 1px solid #bbf7d0; color: var(--m-purple-dark); font-weight: 600; }
+
+.jargon-arrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  color: var(--g-700);
+}
+
+.dave-explainer-img img {
+  width: 260px;
+  max-width: 100%;
+}
+
+/* ============================================================
+   SIMPLE SETUP (QR)
+   ============================================================ */
+.setup-section {
+  background: var(--m-purple-soft);
+  padding: 4rem 1.5rem;
+  text-align: center;
+  border-radius: 1rem;
+  max-width: 52rem;
+  margin: 3.5rem auto;
+}
+
+.setup-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.setup-grid img {
+  width: 130px;
+  border-radius: .5rem;
+}
+
+/* ============================================================
+   WHAT’S IN THE BOX
+   ============================================================ */
 .box-section { background: var(--bg-soft-grey); }
+
 .kit-card img {
   width: 100%;
   border-radius: .7rem;
@@ -255,8 +294,11 @@ body {
   margin-bottom: 1rem;
 }
 
-/* REVIEWS */
+/* ============================================================
+   REVIEWS
+   ============================================================ */
 .reviews-section { background: var(--bg-pale-indigo); }
+
 .testimonials {
   display: grid;
   gap: 1.3rem;
@@ -264,143 +306,30 @@ body {
 @media (min-width: 640px) {
   .testimonials { grid-template-columns: 1fr 1fr; }
 }
+
 .testimonial {
   background: white;
+  border: 1px solid var(--g-200);
   border-radius: .8rem;
   padding: 1.3rem;
-  border: 1px solid var(--g-200);
-}
-.testimonial span {
-  font-size: .85rem;
-  color: var(--m-purple);
-  font-weight: 700;
 }
 
-/* FOOTER */
+/* ============================================================
+   FOOTER
+   ============================================================ */
 footer {
   background: var(--bg-footer);
   color: var(--g-100);
   padding: 3rem 1rem;
   text-align: center;
-  border-top: 1px solid #1a1a24;
 }
-footer p { opacity: .8; font-size: .9rem; }
-
-.big-dave-section {
-  background: var(--bg-footer); /* same dark tone as footer */
-  padding: 4rem 1.5rem;
-  color: var(--g-100);
-}
-
-.big-dave-inner {
-  max-width: 65rem;
-  margin: auto;
-  display: flex;
-  align-items: center;
-  gap: 3rem;
-  flex-direction: column-reverse;
-}
-
-.big-dave-text {
-  flex: 1;
-}
-
-.big-dave-text h2 {
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
-  color: white;
-}
-
-.big-dave-text p {
-  color: var(--g-150);
-  margin-bottom: 1rem;
-  line-height: 1.7;
-  font-size: 1.05rem;
-}
-
-.big-dave-img img {
-  width: 260px;
-  height: auto;
-  filter: drop-shadow(0 4px 20px rgba(0,0,0,0.5));
-}
-
-.dave-explainer {
-  background: var(--m-purple-soft);
-  padding: 4rem 1.5rem;
-  border-radius: 1rem;
-  margin-top: 3rem;
-}
-
-.dave-explainer-inner {
-  max-width: 60rem;
-  margin: auto;
-  display: flex;
-  gap: 2.5rem;
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-
-.dave-explainer-text {
-  flex: 1 1 330px;
-}
-
-.dave-explainer-img {
-  flex: 0 0 260px;
-  text-align: center;
-}
-
-.dave-explainer-img img {
-  width: 100%;
-  max-width: 260px;
-}
-
-.dave-explainer-grid {
-  display: grid;
-  grid-template-columns: 1fr 50px 1fr;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.raw-box {
-  background: white;                /* clean white */
-  border: 1px solid #fecaca;        /* subtle red border */
-  padding: 1rem;
-  border-radius: .8rem;
-  font-family: var(--font-mono);
-  font-size: .9rem;
-  color: var(--c-red-text);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.dave-box {
-  background: white;                /* clean white */
-  border: 1px solid #bbf7d0;        /* subtle green border */
-  padding: 1rem;
-  border-radius: .8rem;
-  color: var(--m-purple-dark);      /* keeps brand tone */
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-
-.jargon-arrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  color: var(--g-700);   /* darker grey */
-  font-weight: 700;
-}
-
-
+footer p { opacity: .8; }
 
 </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
 <header class="topbar">
   <img src="mainlogo.svg" alt="Measurely Logo">
 </header>
@@ -412,9 +341,9 @@ footer p { opacity: .8; font-size: .9rem; }
 
     <p>Built for normal humans who want better sound without becoming acoustics nerds.</p>
 
-    <p style="font-size:1.15rem; margin:1rem auto 2rem; max-width:42rem; opacity:0.95;">
+    <p style="margin:1rem auto 2rem; max-width:42rem;">
       Measurely is a compact room-analysis box for your hi-fi.
-      Plug in the mic, run a sweep, and Dave will turn the technical graphs into
+      Plug in the mic, run a sweep, and Dave turns the technical graphs into
       simple fixes that make your system sound better — without the nonsense.
     </p>
 
@@ -426,16 +355,30 @@ footer p { opacity: .8; font-size: .9rem; }
 </section>
 
 
-<!-- WHY MEASURELY -->
-<section class="section" style="background:var(--bg-light);">
+<!-- WHAT IS MEASURELY -->
+<section class="what-section">
+  <h2>What Is Measurely?</h2>
+  <div class="section-line"></div>
+
+  <p>
+    Measurely is a tiny room-analysis box that listens to your room, runs a sweep,
+    and reveals the acoustic issues holding your system back.  
+    Dave lives inside that box — a tiny purple Tamagotchi who translates the
+    technical nonsense into actions you can actually do.
+  </p>
+</section>
+
+
+<!-- 3 BENEFITS -->
+<section class="section">
   <div class="reason-grid">
     <div class="reason-card">
       <h4>No cloud needed</h4>
-      <p>Everything runs offline in the little black box. No accounts. No data-harvesting nonsense.</p>
+      <p>Runs entirely offline in the box. No logins. No accounts. No data harvesting.</p>
     </div>
     <div class="reason-card">
       <h4>Plain English</h4>
-      <p>Dave translates graphs into “move your sofa 10cm left, mate.”</p>
+      <p>Dave explains graphs using words you’d actually use in real life.</p>
     </div>
     <div class="reason-card">
       <h4>Real savings</h4>
@@ -444,56 +387,48 @@ footer p { opacity: .8; font-size: .9rem; }
   </div>
 </section>
 
+
+<!-- DAVE EXPLAINER -->
 <section class="dave-explainer">
   <div class="dave-explainer-inner">
 
-    <!-- LEFT TEXT BLOCK -->
     <div class="dave-explainer-text">
       <h2>Dave Lives Inside the Box</h2>
-
       <p>
-        Measurely isn’t an app, and it isn’t guesswork.
-        It’s a compact little room-analysis box that listens to your space,
-        runs a sweep, and reveals where your sound is going wrong.
+        Measurely isn’t an app. It isn’t guesswork.
+        It’s a compact analysis box that listens to your space,
+        runs a calibrated sweep, and shows you where your sound is going wrong.
       </p>
 
       <p>
-        Dave then translates all the technical acoustics nonsense into
-        simple, real-world fixes you can actually do.
-        Think of him like a tiny purple Tamagotchi who knows acoustics.
-        Only instead of dying if you forget to feed him,
-        he quietly improves your sound.
+        Dave then turns the technical acoustics nonsense into simple, clear actions.
+        He’s basically a purple Tamagotchi that knows acoustics — only instead of dying
+        when you forget to feed him, he just quietly improves your sound.
       </p>
 
-      <h3 style="margin-top:2rem;">What Measurely Actually Does</h3>
+      <h3 style="margin-top:2rem;">What Measurely Actually Sees</h3>
       <p>
-        Plug in the mic, run a sweep, and the box listens to your room.
-        The result is a pile of intimidating numbers and graphs — until Dave
-        turns it into plain English.
+        The box captures real acoustic measurements. Dave translates them.
       </p>
 
-      <!-- JARGON TRANSLATOR -->
       <div class="dave-explainer-grid">
         <div class="raw-box">
           <strong>RAW DATA:</strong><br>
-          • L: 125Hz peak +8dB<br>
-          • RT60 > 0.6s (Left wall)<br>
+          • 125Hz peak +8dB<br>
+          • RT60: 0.6s (left wall)<br>
           • Early reflection at 4.3ms<br>
-          • SBIR at 95Hz<br>
+          • SBIR dip at 95Hz<br>
         </div>
 
         <div class="jargon-arrow">→</div>
 
         <div class="dave-box">
           <strong>DAVE SAYS:</strong><br>
-          “Your left speaker is too close to the wall.
-          Pull it in 15cm — boominess sorted.”
+          “Your left speaker is too close. Pull it in 15cm — boominess sorted.”
         </div>
       </div>
-
     </div>
 
-    <!-- BIG DAVE IMAGE -->
     <div class="dave-explainer-img">
       <img src="bigdave.svg" alt="Big Dave Waving">
     </div>
@@ -502,17 +437,41 @@ footer p { opacity: .8; font-size: .9rem; }
 </section>
 
 
-<!-- WHAT'S IN THE BOX -->
+<!-- SIMPLE SETUP -->
+<section class="setup-section">
+  <h2 style="font-size:1.6rem;font-weight:800;">Simple, No-Internet Setup</h2>
+  <div class="section-line"></div>
+
+  <p style="max-width:38rem;margin:auto;color:var(--g-700);font-size:1.05rem;">
+    The Measurely box creates its own local WiFi.  
+    No router passwords. No cloud. No app. No accounts. No internet required.
+  </p>
+
+  <div class="setup-grid">
+    <img src="qr.svg" alt="QR Code">
+
+    <ol style="text-align:left;color:var(--g-800);font-size:1rem;max-width:22rem;line-height:1.7;">
+      <li>Power on the Measurely box</li>
+      <li>Connect to WiFi: <strong>MeasurelyConnect</strong></li>
+      <li>Go to <code style="background:var(--g-100);padding:2px 6px;border-radius:4px;font-family:var(--font-mono);">measurely.local</code></li>
+      <li>Run the sweep and Dave takes over</li>
+    </ol>
+  </div>
+</section>
+
+
+<!-- WHAT’S IN THE BOX -->
 <section class="section box-section">
   <h2 style="font-size:1.6rem;font-weight:800;text-align:center;margin-bottom:1rem;">What’s in the Box?</h2>
 
   <div class="kit-card">
     <img src="whatsinthebox.png" alt="Measurely Kit">
-    <p style="font-size:.9rem;color:var(--g-600);margin-bottom:1rem;text-align:center;">
-      • Calibrated USB mic • Measurely Pi • Power supply • Return postage
+    <p style="font-size:.9rem;color:var(--g-700);margin-bottom:1rem;text-align:center;">
+      • Calibrated USB mic • Measurely Pi • RCA cable • Power supply • Return postage
     </p>
   </div>
 </section>
+
 
 <!-- HOW IT WORKS -->
 <section class="section" id="how-it-works">
@@ -521,11 +480,12 @@ footer p { opacity: .8; font-size: .9rem; }
   <ol style="line-height:1.7;color:var(--g-700);max-width:40rem;margin:auto;">
     <li><strong>Rent</strong> the kit (£50 + refundable £175 deposit)</li>
     <li><strong>Plug in</strong> the mic → go to <code style="background:var(--g-100);padding:2px 5px;border-radius:4px;font-family:var(--font-mono);">measurely.local</code></li>
-    <li><strong>Measure</strong> your room. Dave does the thinking.</li>
+    <li><strong>Measure</strong> your room. Dave reads the sweep.</li>
     <li><strong>Fix</strong> your room with 3 super-simple nudges.</li>
     <li><strong>Return</strong> using the prepaid label.</li>
   </ol>
 </section>
+
 
 <!-- REVIEWS -->
 <section class="section reviews-section">
@@ -550,6 +510,7 @@ footer p { opacity: .8; font-size: .9rem; }
     </div>
   </div>
 </section>
+
 
 <!-- FOOTER -->
 <footer>
