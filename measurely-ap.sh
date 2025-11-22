@@ -38,8 +38,6 @@ cat <<EOF >/etc/NetworkManager/conf.d/unmanaged-wlan0.conf
 unmanaged-devices=interface-name:wlan0
 EOF
 
-systemctl restart NetworkManager >> $LOG 2>&1 || true
-
 echo "[OK] NetworkManager now ignores wlan0." | tee -a $LOG
 
 # ---------------------------------------------------------------
