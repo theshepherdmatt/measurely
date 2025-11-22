@@ -210,19 +210,13 @@ EOF
 
 msg "Setting Samba password for user '$APP_USER'…"
 
-# We set the Samba password to match the current system password.
-# Samba does not allow non-interactive password entry without piping.
-echo -e "$APP_USER\n$APP_USER" >/tmp/smbpass.$$  # placeholder, real pass is set below
+# --- Auto-set Samba password silently ---
+SMBPASS="measurely"    
 
-# Ask user for password if sudoer wants a custom one:
-read -rsp "Enter password for Samba user '$APP_USER': " SMBPASS
-echo
-read -rsp "Confirm password: " SMBPASS2
-echo
+# -s = silent, non-interactive
+(echo "$SMBPASS"; echo "$SMBPASS") | smbpasswd -a "$APP_USER" -s >/dev/null
 
-if [[ "$SMBPASS" != "$SMBPASS2" ]]; then
-    die "Samba passwords do not match. Aborting."
-fi
+msg "✔ Samba password set automatically."
 
 # Create the Samba user (or reset password)
 (echo "$SMBPASS"; echo "$SMBPASS") | smbpasswd -a "$APP_USER" >/dev/null
