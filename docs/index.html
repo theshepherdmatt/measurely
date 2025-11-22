@@ -331,6 +331,91 @@ footer p { opacity: .8; font-size: .9rem; }
   }
 }
 
+.jargon-section {
+  background: var(--m-purple-soft); /* soft light purple */
+  padding: 4rem 1.5rem;
+}
+
+.jargon-inner {
+  max-width: 70rem;
+  margin: auto;
+  display: flex;
+  gap: 3rem;
+  align-items: center;
+  flex-direction: column;
+}
+
+@media (min-width: 900px) {
+  .jargon-inner {
+    flex-direction: row;
+  }
+}
+
+.jargon-left {
+  flex: 1;
+}
+
+.jargon-left h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: var(--m-purple-dark);
+}
+
+.jargon-left p {
+  font-size: 1.05rem;
+  margin-bottom: 1.8rem;
+  color: var(--g-700);
+  line-height: 1.65;
+}
+
+/* The comparison grid */
+.jargon-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .jargon-grid {
+    grid-template-columns: 1fr 50px 1fr;
+    align-items: center;
+  }
+}
+
+.jargon-raw {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  padding: 1.2rem;
+  border-radius: .8rem;
+  color: #b91c1c;
+  font-family: var(--font-mono);
+  font-size: .9rem;
+}
+
+.jargon-dave {
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  padding: 1.2rem;
+  border-radius: .8rem;
+  color: var(--m-purple-dark);
+  font-weight: 600;
+}
+
+.jargon-arrow {
+  text-align: center;
+  font-size: 2rem;
+  color: var(--g-300);
+}
+
+/* Big Dave image */
+.jargon-dave-img img {
+  width: 220px;
+  height: auto;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+}
+
+
 </style>
 </head>
 
@@ -360,6 +445,7 @@ footer p { opacity: .8; font-size: .9rem; }
     </div>
   </div>
 </section>
+
 
 <!-- WHY MEASURELY -->
 <section class="section" style="background:var(--bg-light);">
@@ -404,6 +490,43 @@ footer p { opacity: .8; font-size: .9rem; }
   </div>
 </section>
 
+<section class="jargon-section">
+  <div class="jargon-inner">
+
+    <div class="jargon-left">
+      <h2>What Measurely Actually Does</h2>
+      <p>
+        Measurely is a compact room-analysis box for your hi-fi.  
+        Plug in the mic, run a sweep, and it listens to the room.
+        The result? A pile of technical acoustics nonsense — until Dave translates it.
+      </p>
+
+      <div class="jargon-grid">
+        <div class="jargon-raw">
+          <strong>RAW DATA:</strong><br>
+          • L: 125Hz peak +8dB<br>
+          • RT60 > 0.6s (Left wall)<br>
+          • Early reflection at 4.3ms<br>
+          • SBIR at 95Hz<br>
+        </div>
+
+        <div class="jargon-arrow">→</div>
+
+        <div class="jargon-dave">
+          <strong>DAVE SAYS:</strong><br>
+          “Your left speaker is way too close to the wall.
+          Pull it in by about 15cm — boominess sorted.”
+        </div>
+      </div>
+
+    </div>
+
+    <div class="jargon-dave-img">
+      <img src="bigdave.svg" alt="Big Dave" />
+    </div>
+
+  </div>
+</section>
 
 <!-- WHAT'S IN THE BOX -->
 <section class="section box-section">
