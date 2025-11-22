@@ -241,22 +241,38 @@ chmod -R u+rwX "$REPO_DIR"
 msg "✔ Permissions applied."
 
 # ------------------------------------------------------------
-# Install & Run Measurely Access Point Script
+# Defer Access Point installation until next boot
 # ------------------------------------------------------------
 AP_SCRIPT="$REPO_DIR/measurely-ap.sh"
 
-msg "Preparing Measurely AP setup script…"
+msg "Preparing Measurely AP setup for first boot…"
 
 if [[ -f "$AP_SCRIPT" ]]; then
     chmod +x "$AP_SCRIPT"
-    msg "✔ measurely-ap.sh made executable."
-    
-    msg "Running Measurely AP setup…"
-    sudo "$AP_SCRIPT"
-else
-    die "measurely-ap.sh NOT FOUND — cannot configure AP mode."
-fi
+    install -m 755 "$AP_SCRIPT" /usr/local/sbin/measurely-ap.sh
 
+    # Create a one-shot service that runs ONCE after reboot
+    cat >/etc/systemd/system/measurely-ap.service <<EOF
+[Unit]
+Description=Run Measurely AP setup on first boot
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/measurely-ap.sh
+ExecStartPost=/bin/systemctl disable measurely-ap.service
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl enable measurely-ap.service
+
+    msg "✔ AP setup scheduled. It will run automatically on next boot."
+
+else
+    die "measurely-ap.sh NOT FOUND — cannot schedule AP setup."
+fi
 
 # ------------------------------------------------------------
 # 8. Start service
