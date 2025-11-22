@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
 
 <style>
 /* ============================================================
@@ -15,6 +17,7 @@
 
 :root{
   --font-main: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace; /* Added for code blocks and translator */
 
   /* BRAND PURPLES */
   --indigo-600: #7c3aed;
@@ -26,11 +29,17 @@
   --gray-50:  #f9fafb;
   --gray-100: #f3f4f6;
   --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
   --gray-600: #4b5563;
+  --gray-700: #374151;
   --gray-900: #111827;
   
   /* STATUS */
   --c-good:   #f59e0b;
+  --c-green-text: #15803d;
+  --c-green-bg:   #dcfce7;
+  --c-red-text:   #b91c1c;
+  --c-red-bg:     #fee2e2;
 }
 
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -56,7 +65,6 @@ body{
   gap:.75rem;
   padding:1.5rem 1.75rem;
   z-index:20;
-  /* Subtle gradient fade for legibility */
   background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
 }
 .topbar img{
@@ -76,7 +84,6 @@ body{
    ============================================================ */
 .hero{
   position: relative;
-  /* Minimum height to show off the photo */
   min-height: 85vh; 
   display: flex;
   flex-direction: column;
@@ -88,14 +95,12 @@ body{
   
   /* THE NEW IMAGE SETUP */
   background-image: 
-    /* Dark Gradient Overlay so text pops */
     linear-gradient(to bottom, rgba(17, 24, 39, 0.5), rgba(17, 24, 39, 0.85)),
-    /* Your Image */
     url('heromain.png');
     
   background-size: cover;
   background-position: center center;
-  background-attachment: scroll; /* Parallax feel on desktop if desired, scroll is safer for mobile */
+  background-attachment: scroll;
 }
 
 .hero-content {
@@ -105,7 +110,7 @@ body{
 }
 
 .hero h2{
-  font-size: clamp(2.5rem, 5vw, 3.8rem); /* Responsive font size */
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
   font-weight:800;
   margin-bottom:1rem;
   line-height: 1.1;
@@ -120,7 +125,6 @@ body{
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-/* Hero Buttons */
 .hero-actions {
   display: flex;
   gap: 1rem;
@@ -150,7 +154,6 @@ body{
   box-shadow:0 10px 30px -10px rgba(0,0,0,.08);
   transition: transform 0.2s ease;
 }
-/* Subtle hover effect */
 .card:hover {
   transform: translateY(-2px);
 }
@@ -175,7 +178,7 @@ body{
 .reason-grid{
   display:grid;
   gap:1.5rem;
-  margin-top: -4rem; /* Pull up to overlap hero slightly */
+  margin-top: -4rem; 
   position: relative;
   z-index: 10;
 }
@@ -204,7 +207,7 @@ body{
 }
 
 /* ============================================================
-   MEET DAVE
+   MEET DAVE (UPDATED FOR SVG ICON AND TRANSLATOR GRID)
    ============================================================ */
 .meet-dave{
   text-align:center;
@@ -212,20 +215,24 @@ body{
   background: linear-gradient(to bottom, var(--gray-50), white);
 }
 .meet-dave .card{
-  max-width:42rem;
+  max-width:50rem; /* Increased size to fit translator grid */
   margin:auto;
   border:none;
   background: transparent;
   box-shadow: none;
 }
-.meet-dave img{
-  width:100px;
-  height:100px;
+/* DAVE BOT AVATAR STYLES */
+.dave-avatar{
+  display: inline-block;
+  width: 90px;
+  height: 90px;
   margin-bottom:1.5rem;
-  border-radius: 50%; /* Make Dave round */
-  border: 4px solid white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+.dave-avatar img {
+    height: 100%;
+    width: 100%;
+}
+
 .meet-dave .bubble{
   background: white;
   border:1px solid var(--gray-200);
@@ -236,6 +243,7 @@ body{
   color: var(--gray-600);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   position: relative;
+  margin-top: 2rem; /* Give space for the translator grid */
 }
 /* Little speech bubble triangle */
 .meet-dave .bubble::after {
@@ -258,6 +266,48 @@ body{
   border-style: solid;
   border-color: transparent transparent white transparent;
   z-index: 1;
+}
+
+/* Translation Grid */
+.translation-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  text-align: left;
+}
+@media(min-width: 640px) {
+  .translation-grid { grid-template-columns: 1fr 40px 1fr; align-items: center; }
+}
+
+.science-box {
+  background: var(--c-red-bg); 
+  border: 1px solid #fecaca;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  color: var(--c-red-text);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.dave-box {
+  background: var(--c-green-bg); 
+  border: 1px solid #bbf7d0;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  color: var(--c-green-text);
+  font-weight: 600;
+  position: relative;
+}
+
+.arrow-divider {
+  text-align: center;
+  font-size: 1.5rem;
+  color: var(--gray-300);
+  transform: rotate(90deg);
+}
+@media(min-width: 640px) {
+  .arrow-divider { transform: rotate(0deg); }
 }
 
 /* ============================================================
@@ -390,8 +440,31 @@ footer{
 
 <section class="meet-dave">
   <div class="card">
-    <img src="dave.png" alt="Dave" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=Dave'"> <h3>Meet Dave</h3>
-    <p>Dave is your built-in room-acoustics buddy. He reads your sweep, spots the obvious issues, and turns all that tech jargon into simple, plain-English fixes.</p>
+    <div class="dave-avatar">
+        <img src="davebot.svg" alt="Davebot Mascot">
+    </div>
+
+    <h3 style="font-size:2rem; margin-bottom: 0.5rem;">Dave speaks fluent Audioshite.</h3>
+    <p style="color:var(--gray-600); max-width:40rem; margin:auto;">
+      Dave is Actual Mathematics, not hype. He’s the anti-snake-oil bot. He reads the measurement data from the black box and gives you brutally honest, money-saving advice.
+    </p>
+
+    <div class="translation-grid">
+      <div class="science-box">
+        <strong>RAW DATA:</strong><br>
+        > Analysis: Left Ch<br>
+        > 125Hz Peak +8dB<br>
+        > Decay: >600ms (T30)
+      </div>
+
+      <div class="arrow-divider">➜</div>
+
+      <div class="dave-box">
+        <strong>DAVE SAYS:</strong><br>
+        "Big boominess in the lower mids. Your speakers are probably too close to the side walls. Try pulling them in 15cm."
+      </div>
+    </div>
+    
     <div class="bubble">
       “I’m not here to judge your room, I’m here to help it sound better. Sometimes it’s a rug. Sometimes it’s a sofa. Sometimes it’s both. We’ll sort it together.”
     </div>
