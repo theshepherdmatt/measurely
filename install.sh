@@ -256,4 +256,3 @@ else
   warn "❌ measurely.service failed — view logs with:"
   warn "   journalctl -u measurely.service -e"
 fi
-
