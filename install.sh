@@ -193,33 +193,38 @@ cat >/etc/samba/smb.conf <<EOF
 [global]
    workgroup = WORKGROUP
    server string = Measurely Pi
+   netbios name = MEASURELY
    security = user
    map to guest = Bad User
    dns proxy = no
+   client min protocol = NT1
 
 [measurely]
    path = $REPO_DIR
    browseable = yes
    writable = yes
+   read only = no
    create mask = 0775
    directory mask = 0775
    valid users = $APP_USER
    force user = $APP_USER
 EOF
 
-msg "Setting Samba password for user '$APP_USER'…"
+msg "Adding Samba user '$APP_USER'…"
 
-# Auto-set Samba password silently
-SMBPASS="measurely"
-(echo "$SMBPASS"; echo "$SMBPASS") | smbpasswd -a "$APP_USER" -s >/dev/null
+# Ensure Linux user exists in Samba database
+pdbedit -L | grep -q "^$APP_USER:" || smbpasswd -a "$APP_USER"
 
-msg "✔ Samba password set automatically."
+# Set password silently
+(echo "measurely"; echo "measurely") | smbpasswd -s "$APP_USER"
 
 systemctl restart smbd
 systemctl restart nmbd
 
-msg "✔ Samba setup complete. You can now access the Pi at:"
-msg "   \\\\measurely-pi\\measurely"
+msg "✔ Samba is ready. Connect using:"
+msg "   \\\\MEASURELY\\measurely   (Windows)"
+msg "   smb://MEASURELY/measurely (Mac)"
+msg "   or smb://10.10.10.2/measurely"
 
 
 # ------------------------------------------------------------
