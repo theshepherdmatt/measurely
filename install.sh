@@ -237,6 +237,13 @@ systemctl restart nmbd
 msg "✔ Samba setup complete. You can now access the Pi at:"
 msg "   \\\\measurely-pi\\measurely"
 
+msg "Fixing permissions inside repo so Measurely can write..."
+
+chown -R "$APP_USER:$APP_USER" "$REPO_DIR"
+chmod -R u+rwX,go+rX "$REPO_DIR"
+
+msg "Permissions fixed."
+
 # ------------------------------------------------------------
 # 8. Start service
 # ------------------------------------------------------------
