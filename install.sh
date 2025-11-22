@@ -291,32 +291,42 @@ else
 fi
 
 # ------------------------------------------------------------
-# 9. Configure eth0 as static 10.10.10.2 and unmanaged by NM
+# 9. Configure eth0 as static 10.10.10.2 and PERMANENTLY stop NM
 # ------------------------------------------------------------
-msg "Configuring eth0 (static 10.10.10.2 + unmanaged by NetworkManager)…"
+msg "Locking eth0 to 10.10.10.2 and disabling NetworkManager control…"
 
-# --- 1. Tell NetworkManager to ignore eth0 ---
+# --- 1. Full NM ignore rules (TWO LAYERS) ---
 mkdir -p /etc/NetworkManager/conf.d
+
 cat >/etc/NetworkManager/conf.d/99-eth0-unmanaged.conf <<EOF
 [keyfile]
 unmanaged-devices=interface-name:eth0
 EOF
 
-# --- 2. Configure systemd-networkd to bring eth0 up with static IP ---
+cat >/etc/NetworkManager/conf.d/99-eth0-device.conf <<EOF
+[device]
+match-device=interface-name:eth0
+managed=false
+EOF
+
+# --- 2. Static IP via systemd-networkd (with carrier protection) ---
 mkdir -p /etc/systemd/network
+
 cat >/etc/systemd/network/10-eth0-static.network <<EOF
 [Match]
 Name=eth0
 
 [Network]
 Address=10.10.10.2/24
+ConfigureWithoutCarrier=yes
 EOF
 
-# --- 3. Enable + restart systemd-networkd ---
+# --- 3. Enable + restart networkd ---
 systemctl enable systemd-networkd >/dev/null 2>&1
 systemctl restart systemd-networkd >/dev/null 2>&1
 
-# --- 4. Restart NetworkManager (safe because eth0 is unmanaged) ---
+# --- 4. Restart NetworkManager (safe now) ---
 systemctl restart NetworkManager >/dev/null 2>&1
 
-msg "✔ eth0 configured: static 10.10.10.2 (systemd-networkd) + NM-unmanaged"
+msg "✔ eth0 is now PERMANENTLY static (10.10.10.2) and NetworkManager-proof."
+
