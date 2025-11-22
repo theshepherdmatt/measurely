@@ -400,6 +400,27 @@ body{
   border-color: white;
 }
 
+/* Bubble with Dave inside */
+.dave-speech {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+/* Dave avatar inside bubble */
+.bubble-avatar {
+  width: 55px;
+  height: 55px;
+  flex-shrink: 0;
+}
+/* Stop bubble from being centred */
+.dave-speech {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: fit-content;        /* shrink-wrap bubble */
+  max-width: 90%;            /* prevent over-expanding on long text */
+}
+
 /* ============================================================
    ANIMATION
    ============================================================ */
