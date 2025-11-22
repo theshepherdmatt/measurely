@@ -256,3 +256,34 @@ else
   warn "❌ measurely.service failed — view logs with:"
   warn "   journalctl -u measurely.service -e"
 fi
+
+# ------------------------------------------------------------
+# 9. Configure eth0 as static 10.10.10.2 and unmanaged by NM
+# ------------------------------------------------------------
+msg "Configuring eth0 (static 10.10.10.2 + unmanaged by NetworkManager)…"
+
+# --- 1. Tell NetworkManager to ignore eth0 ---
+mkdir -p /etc/NetworkManager/conf.d
+cat >/etc/NetworkManager/conf.d/99-eth0-unmanaged.conf <<EOF
+[keyfile]
+unmanaged-devices=interface-name:eth0
+EOF
+
+# --- 2. Configure systemd-networkd to bring eth0 up with static IP ---
+mkdir -p /etc/systemd/network
+cat >/etc/systemd/network/10-eth0-static.network <<EOF
+[Match]
+Name=eth0
+
+[Network]
+Address=10.10.10.2/24
+EOF
+
+# --- 3. Enable + restart systemd-networkd ---
+systemctl enable systemd-networkd >/dev/null 2>&1
+systemctl restart systemd-networkd >/dev/null 2>&1
+
+# --- 4. Restart NetworkManager (safe because eth0 is unmanaged) ---
+systemctl restart NetworkManager >/dev/null 2>&1
+
+msg "✔ eth0 configured: static 10.10.10.2 (systemd-networkd) + NM-unmanaged"
