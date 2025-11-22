@@ -240,6 +240,23 @@ chmod -R u+rwX "$REPO_DIR"
 
 msg "✔ Permissions applied."
 
+# ------------------------------------------------------------
+# Install & Run Measurely Access Point Script
+# ------------------------------------------------------------
+AP_SCRIPT="$REPO_DIR/measurely-ap.sh"
+
+msg "Preparing Measurely AP setup script…"
+
+if [[ -f "$AP_SCRIPT" ]]; then
+    chmod +x "$AP_SCRIPT"
+    msg "✔ measurely-ap.sh made executable."
+    
+    msg "Running Measurely AP setup…"
+    sudo "$AP_SCRIPT"
+else
+    die "measurely-ap.sh NOT FOUND — cannot configure AP mode."
+fi
+
 
 # ------------------------------------------------------------
 # 8. Start service
