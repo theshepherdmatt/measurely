@@ -180,7 +180,6 @@ msg "Audio hardware configuration complete. A reboot will activate overlays."
 
 msg "Installing and configuring Samba…"
 
-# Install samba if not installed
 apt-get install -y samba samba-common-bin
 
 # Backup existing config once
@@ -210,20 +209,11 @@ EOF
 
 msg "Setting Samba password for user '$APP_USER'…"
 
-# --- Auto-set Samba password silently ---
-SMBPASS="measurely"    
-
-# -s = silent, non-interactive
+# Auto-set Samba password silently
+SMBPASS="measurely"
 (echo "$SMBPASS"; echo "$SMBPASS") | smbpasswd -a "$APP_USER" -s >/dev/null
 
 msg "✔ Samba password set automatically."
-
-# Create the Samba user (or reset password)
-(echo "$SMBPASS"; echo "$SMBPASS") | smbpasswd -a "$APP_USER" >/dev/null
-
-rm -f /tmp/smbpass.$$
-
-msg "  ✔ Samba user password set."
 
 systemctl restart smbd
 systemctl restart nmbd
@@ -231,9 +221,6 @@ systemctl restart nmbd
 msg "✔ Samba setup complete. You can now access the Pi at:"
 msg "   \\\\measurely-pi\\measurely"
 
-msg "Fixing permissions inside repo so Measurely can write..."
-
-msg "Applying final full permission fix…"
 
 # ------------------------------------------------------------
 # Final minimal permissions
