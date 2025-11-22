@@ -601,4 +601,4 @@ if __name__ == '__main__':
     print("Starting Real-Data Measurely Flask Server...")
     print(f"Measurements root: {MEAS_ROOT}")
     print("NEW: /api/room/<session>  (POST + GET) – saves/loads user room setup")
-    app.run(host='0.0.0.0', port=80, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)
