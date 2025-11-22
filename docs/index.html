@@ -325,94 +325,68 @@ footer p { opacity: .8; font-size: .9rem; }
   filter: drop-shadow(0 4px 20px rgba(0,0,0,0.5));
 }
 
-@media (min-width: 800px) {
-  .big-dave-inner {
-    flex-direction: row;
-  }
-}
-
-.jargon-section {
-  background: var(--m-purple-soft); /* soft light purple */
+.dave-explainer {
+  background: var(--m-purple-soft);
   padding: 4rem 1.5rem;
+  border-radius: 1rem;
+  margin-top: 3rem;
 }
 
-.jargon-inner {
-  max-width: 70rem;
+.dave-explainer-inner {
+  max-width: 60rem;
   margin: auto;
   display: flex;
-  gap: 3rem;
-  align-items: center;
-  flex-direction: column;
+  gap: 2.5rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
 }
 
-@media (min-width: 900px) {
-  .jargon-inner {
-    flex-direction: row;
-  }
+.dave-explainer-text {
+  flex: 1 1 330px;
 }
 
-.jargon-left {
-  flex: 1;
+.dave-explainer-img {
+  flex: 0 0 260px;
+  text-align: center;
 }
 
-.jargon-left h2 {
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
-  color: var(--m-purple-dark);
+.dave-explainer-img img {
+  width: 100%;
+  max-width: 260px;
 }
 
-.jargon-left p {
-  font-size: 1.05rem;
-  margin-bottom: 1.8rem;
-  color: var(--g-700);
-  line-height: 1.65;
-}
-
-/* The comparison grid */
-.jargon-grid {
+.dave-explainer-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 50px 1fr;
   gap: 1rem;
+  margin-top: 1.5rem;
 }
 
-@media (min-width: 600px) {
-  .jargon-grid {
-    grid-template-columns: 1fr 50px 1fr;
-    align-items: center;
-  }
-}
-
-.jargon-raw {
-  background: #fee2e2;
+.raw-box {
+  background: var(--c-red-bg);
   border: 1px solid #fecaca;
-  padding: 1.2rem;
-  border-radius: .8rem;
-  color: #b91c1c;
+  padding: 1rem;
+  border-radius: .7rem;
   font-family: var(--font-mono);
   font-size: .9rem;
+  color: var(--c-red-text);
 }
 
-.jargon-dave {
-  background: #dcfce7;
+.dave-box {
+  background: var(--c-green-bg);
   border: 1px solid #bbf7d0;
-  padding: 1.2rem;
-  border-radius: .8rem;
+  padding: 1rem;
+  border-radius: .7rem;
   color: var(--m-purple-dark);
   font-weight: 600;
 }
 
 .jargon-arrow {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 2rem;
   color: var(--g-300);
-}
-
-/* Big Dave image */
-.jargon-dave-img img {
-  width: 220px;
-  height: auto;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
 }
 
 
@@ -465,44 +439,37 @@ footer p { opacity: .8; font-size: .9rem; }
   </div>
 </section>
 
-<section class="big-dave-section">
-  <div class="big-dave-inner">
-    <div class="big-dave-text">
+<section class="dave-explainer">
+  <div class="dave-explainer-inner">
+
+    <!-- LEFT TEXT BLOCK -->
+    <div class="dave-explainer-text">
       <h2>Dave Lives Inside the Box</h2>
+
       <p>
         Measurely isn’t an app, and it isn’t guesswork.
-        It’s a compact room-analysis box that listens to your space,
-        runs a sweep, and shows you where the problems are.
-        Dave then translates the technical nonsense into simple fixes
-        you can actually do.
+        It’s a compact little room-analysis box that listens to your space,
+        runs a sweep, and reveals where your sound is going wrong.
       </p>
 
       <p>
+        Dave then translates all the technical acoustics nonsense into
+        simple, real-world fixes you can actually do.
         Think of him like a tiny purple Tamagotchi who knows acoustics.
         Only instead of dying if you forget to feed him,
-        he just quietly improves your sound.
+        he quietly improves your sound.
       </p>
-    </div>
 
-    <div class="big-dave-img">
-      <img src="bigdave.svg" alt="Big Dave Waving">
-    </div>
-  </div>
-</section>
-
-<section class="jargon-section">
-  <div class="jargon-inner">
-
-    <div class="jargon-left">
-      <h2>What Measurely Actually Does</h2>
+      <h3 style="margin-top:2rem;">What Measurely Actually Does</h3>
       <p>
-        Measurely is a compact room-analysis box for your hi-fi.  
-        Plug in the mic, run a sweep, and it listens to the room.
-        The result? A pile of technical acoustics nonsense — until Dave translates it.
+        Plug in the mic, run a sweep, and the box listens to your room.
+        The result is a pile of intimidating numbers and graphs — until Dave
+        turns it into plain English.
       </p>
 
-      <div class="jargon-grid">
-        <div class="jargon-raw">
+      <!-- JARGON TRANSLATOR -->
+      <div class="dave-explainer-grid">
+        <div class="raw-box">
           <strong>RAW DATA:</strong><br>
           • L: 125Hz peak +8dB<br>
           • RT60 > 0.6s (Left wall)<br>
@@ -512,21 +479,23 @@ footer p { opacity: .8; font-size: .9rem; }
 
         <div class="jargon-arrow">→</div>
 
-        <div class="jargon-dave">
+        <div class="dave-box">
           <strong>DAVE SAYS:</strong><br>
-          “Your left speaker is way too close to the wall.
-          Pull it in by about 15cm — boominess sorted.”
+          “Your left speaker is too close to the wall.
+          Pull it in 15cm — boominess sorted.”
         </div>
       </div>
 
     </div>
 
-    <div class="jargon-dave-img">
-      <img src="bigdave.svg" alt="Big Dave" />
+    <!-- BIG DAVE IMAGE -->
+    <div class="dave-explainer-img">
+      <img src="bigdave.svg" alt="Big Dave Waving">
     </div>
 
   </div>
 </section>
+
 
 <!-- WHAT'S IN THE BOX -->
 <section class="section box-section">
