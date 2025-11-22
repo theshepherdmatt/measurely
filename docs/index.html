@@ -286,6 +286,51 @@ footer {
 }
 footer p { opacity: .8; font-size: .9rem; }
 
+.big-dave-section {
+  background: var(--bg-footer); /* same dark tone as footer */
+  padding: 4rem 1.5rem;
+  color: var(--g-100);
+}
+
+.big-dave-inner {
+  max-width: 65rem;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  flex-direction: column-reverse;
+}
+
+.big-dave-text {
+  flex: 1;
+}
+
+.big-dave-text h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.big-dave-text p {
+  color: var(--g-150);
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+.big-dave-img img {
+  width: 260px;
+  height: auto;
+  filter: drop-shadow(0 4px 20px rgba(0,0,0,0.5));
+}
+
+@media (min-width: 800px) {
+  .big-dave-inner {
+    flex-direction: row;
+  }
+}
+
 </style>
 </head>
 
@@ -334,37 +379,31 @@ footer p { opacity: .8; font-size: .9rem; }
   </div>
 </section>
 
-<!-- DAVE TAMAGOTCHI -->
-<section class="meet-dave">
-  <h2 style="font-size:2rem;font-weight:800;margin-bottom:1rem;">Meet Dave</h2>
-  <p style="max-width:40rem;margin:auto;color:var(--g-700);">
-    Dave lives inside the little black box. Like a Tamagotchi, but for sound.
-  </p>
+<section class="big-dave-section">
+  <div class="big-dave-inner">
+    <div class="big-dave-text">
+      <h2>Dave Lives Inside the Box</h2>
+      <p>
+        Measurely isn’t an app, and it isn’t guesswork.
+        It’s a compact room-analysis box that listens to your space,
+        runs a sweep, and shows you where the problems are.
+        Dave then translates the technical nonsense into simple fixes
+        you can actually do.
+      </p>
 
-  <div class="dave-window">
-    <div class="dave-avatar">
-      <img src="davebot.svg" alt="Davebot">
+      <p>
+        Think of him like a tiny purple Tamagotchi who knows acoustics.
+        Only instead of dying if you forget to feed him,
+        he just quietly improves your sound.
+      </p>
     </div>
 
-    <div class="dave-speech-bubble">
-      <img src="davebot.svg">
-      <p>“I’ve analysed your room. Your sofa is absolutely mugging your bass. Slide it forward a bit and we’re golden.”</p>
-    </div>
-
-    <div class="translation">
-      <div class="raw-box">
-        RAW DATA:<br>
-        125Hz Peak +8dB<br>
-        Decay: >600ms<br>
-        Left Channel Reflection
-      </div>
-      <div class="arrow">→</div>
-      <div class="dave-box">
-        “Pull speakers in 15cm. That’ll sort your low-mid boominess.”
-      </div>
+    <div class="big-dave-img">
+      <img src="bigdave.svg" alt="Big Dave Waving">
     </div>
   </div>
 </section>
+
 
 <!-- WHAT'S IN THE BOX -->
 <section class="section box-section">
