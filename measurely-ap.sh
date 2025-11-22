@@ -1,11 +1,11 @@
 #!/bin/bash
 # Measurely Access Point Setup (Bookworm / systemd-networkd)
-# Creates AP on wlan0, static 192.168.4.1, and ensures NM is not involved.
+# Creates AP on wlan0, static 192.168.4.1 and isolates it from NetworkManager.
 
 LOG="/var/log/measurely-ap.log"
 
 echo "-------------------------------------" | tee -a $LOG
-echo " MEASURELY – AP SETUP START " | tee -a $LOG
+echo " MEASURELY – AP SETUP START "          | tee -a $LOG
 echo "-------------------------------------" | tee -a $LOG
 
 # ---------------------------------------------------------------
@@ -13,7 +13,7 @@ echo "-------------------------------------" | tee -a $LOG
 # ---------------------------------------------------------------
 echo "[CHECK] Checking for wlan0…" | tee -a $LOG
 if ! ip link show wlan0 >/dev/null 2>&1; then
-    echo "[ERROR] wlan0 not found. Cannot continue." | tee -a $LOG
+    echo "[ERROR] wlan0 not found — aborting." | tee -a $LOG
     exit 1
 fi
 echo "[OK] wlan0 is present." | tee -a $LOG
@@ -32,21 +32,19 @@ echo "[OK] Packages installed." | tee -a $LOG
 echo "[STEP] Marking wlan0 as unmanaged by NetworkManager…" | tee -a $LOG
 
 mkdir -p /etc/NetworkManager/conf.d
-
 cat <<EOF >/etc/NetworkManager/conf.d/unmanaged-wlan0.conf
 [keyfile]
 unmanaged-devices=interface-name:wlan0
 EOF
 
-echo "[OK] NetworkManager now ignores wlan0." | tee -a $LOG
+echo "[OK] NetworkManager will ignore wlan0." | tee -a $LOG
 
 # ---------------------------------------------------------------
-# 4. CONFIGURE STATIC IP USING systemd-networkd
+# 4. STATIC IP (systemd-networkd)
 # ---------------------------------------------------------------
-echo "[STEP] Setting static IP 192.168.4.1 (systemd-networkd)…" | tee -a $LOG
+echo "[STEP] Configuring static IP 192.168.4.1…" | tee -a $LOG
 
 mkdir -p /etc/systemd/network
-
 cat <<EOF >/etc/systemd/network/12-wlan0-ap.network
 [Match]
 Name=wlan0
@@ -57,7 +55,7 @@ ConfigureWithoutCarrier=yes
 EOF
 
 systemctl restart systemd-networkd >> $LOG 2>&1
-echo "[OK] wlan0 assigned 192.168.4.1." | tee -a $LOG
+echo "[OK] systemd-networkd now manages wlan0." | tee -a $LOG
 
 # ---------------------------------------------------------------
 # 5. CONFIGURE dnsmasq
@@ -77,7 +75,6 @@ echo "[OK] dnsmasq configured." | tee -a $LOG
 echo "[STEP] Writing hostapd config…" | tee -a $LOG
 
 mkdir -p /etc/hostapd
-
 cat <<EOF >/etc/hostapd/hostapd.conf
 interface=wlan0
 driver=nl80211
@@ -89,14 +86,14 @@ auth_algs=1
 ignore_broadcast_ssid=0
 EOF
 
-echo "[OK] hostapd.conf written." | tee -a $LOG
+echo "[OK] hostapd.conf created." | tee -a $LOG
 
-# Ensure hostapd uses this config file
+# Force hostapd to use our config
 sed -i '/DAEMON_CONF/d' /etc/default/hostapd
 echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' >> /etc/default/hostapd
 
 # ---------------------------------------------------------------
-# 7. ENABLE hostapd + dnsmasq
+# 7. ENABLE AP SERVICES
 # ---------------------------------------------------------------
 echo "[STEP] Enabling hostapd & dnsmasq…" | tee -a $LOG
 systemctl unmask hostapd >> $LOG 2>&1
@@ -104,28 +101,28 @@ systemctl enable hostapd dnsmasq >> $LOG 2>&1
 echo "[OK] Services enabled." | tee -a $LOG
 
 # ---------------------------------------------------------------
-# 8. RESTART SERVICES CLEANLY
+# 8. RESTART SERVICES
 # ---------------------------------------------------------------
-echo "[STEP] Restarting services…" | tee -a $LOG
+echo "[STEP] Restarting AP services…" | tee -a $LOG
 systemctl restart dnsmasq >> $LOG 2>&1
 systemctl restart hostapd >> $LOG 2>&1
-
 echo "[OK] AP services restarted." | tee -a $LOG
 
 # ---------------------------------------------------------------
-# 9. CONFIRM wlan0 HAS THE IP
+# 9. VALIDATE wlan0 ADDRESS
 # ---------------------------------------------------------------
 IP=$(ip -4 addr show wlan0 | grep inet | awk '{print $2}' | cut -d/ -f1)
+
 if [[ "$IP" == "192.168.4.1" ]]; then
     echo "[OK] wlan0 confirmed at 192.168.4.1." | tee -a $LOG
 else
-    echo "[ERROR] wlan0 did NOT receive 192.168.4.1 — something is wrong." | tee -a $LOG
+    echo "[ERROR] wlan0 missing 192.168.4.1 — AP may not start correctly." | tee -a $LOG
 fi
 
 echo "" | tee -a $LOG
 echo "-------------------------------------" | tee -a $LOG
-echo "   MEASURELY AP READY " | tee -a $LOG
-echo "   SSID: MeasurelyConnect" | tee -a $LOG
-echo "   IP:   http://192.168.4.1:5000" | tee -a $LOG
-echo "   Logs: $LOG" | tee -a $LOG
+echo "   MEASURELY AP READY "              | tee -a $LOG
+echo "   SSID: MeasurelyConnect"           | tee -a $LOG
+echo "   IP:   http://192.168.4.1:5000"    | tee -a $LOG
+echo "   Logs: $LOG"                       | tee -a $LOG
 echo "-------------------------------------" | tee -a $LOG
