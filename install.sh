@@ -239,10 +239,26 @@ msg "   \\\\measurely-pi\\measurely"
 
 msg "Fixing permissions inside repo so Measurely can write..."
 
-chown -R "$APP_USER:$APP_USER" "$REPO_DIR"
-chmod -R u+rwX,go+rX "$REPO_DIR"
+msg "Applying final full permission fix…"
 
-msg "Permissions fixed."
+# ------------------------------------------------------------
+# Final minimal permissions
+# ------------------------------------------------------------
+msg "Applying minimal permission fix…"
+
+# Ensure runtime dirs exist
+mkdir -p "$REPO_DIR/measurelyapp/room"
+mkdir -p "$REPO_DIR/measurelyapp/tmp"
+mkdir -p "$REPO_DIR/measurements"
+
+# Make everything in the repo owned by the app user
+chown -R "$APP_USER:$APP_USER" "$REPO_DIR"
+
+# Ensure repo files/dirs are readable + writable for the app user
+chmod -R u+rwX "$REPO_DIR"
+
+msg "✔ Permissions applied."
+
 
 # ------------------------------------------------------------
 # 8. Start service
@@ -259,3 +275,4 @@ else
   warn "❌ measurely.service failed — view logs with:"
   warn "   journalctl -u measurely.service -e"
 fi
+
