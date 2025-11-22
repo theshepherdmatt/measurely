@@ -4,49 +4,47 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Measurely – Room Acoustics Made Simple</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
 /* ============================================================
    MEASURELY – PREMIUM LANDING PAGE DESIGN SYSTEM
-   Based on your real UI colours, polished for web
    ============================================================ */
 
 :root{
   --font-main: 'Inter', sans-serif;
 
-  /* STATUS COLOURS */
-  --c-excellent: #22c55e;
-  --c-good:      #f59e0b;
-  --c-okay:      #3b82f6;
-  --c-poor:      #ef4444;
-
   /* BRAND PURPLES */
   --indigo-600: #7c3aed;
   --indigo-700: #6d28d9;
   --indigo-800: #4c1d95;
-  --indigo-50:  #f5f3ff;
-
+  --indigo-900: #312e81;
+  
   /* GRAYS */
   --gray-50:  #f9fafb;
   --gray-100: #f3f4f6;
-  --gray-150: #f6f7f8;
   --gray-200: #e5e7eb;
-  --gray-300: #d1d5db;
   --gray-600: #4b5563;
-  --gray-800: #1f2937;
   --gray-900: #111827;
+  
+  /* STATUS */
+  --c-good:   #f59e0b;
 }
 
 *{box-sizing:border-box;margin:0;padding:0;}
+
 body{
   font-family:var(--font-main);
   background:var(--gray-50);
   color:var(--gray-900);
   -webkit-font-smoothing:antialiased;
+  line-height: 1.6;
 }
 
 /* ============================================================
-   FLOATING HEADER
+   GLASS HEADER
    ============================================================ */
 .topbar{
   position:absolute;
@@ -58,79 +56,130 @@ body{
   gap:.75rem;
   padding:1.5rem 1.75rem;
   z-index:20;
+  /* Subtle gradient fade for legibility */
+  background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
 }
 .topbar img{
   height:2.2rem;
-  filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));
 }
 .topbar h1{
   color:white;
   font-size:1.45rem;
-  font-weight:600;
-  text-shadow:0 1px 2px rgba(0,0,0,.2);
+  font-weight:700;
+  letter-spacing: -0.02em;
+  text-shadow:0 2px 4px rgba(0,0,0,0.4);
 }
 
 /* ============================================================
-   HERO
+   PHOTO HERO SECTION
    ============================================================ */
 .hero{
-  padding:7rem 1rem 4rem;
+  position: relative;
+  /* Minimum height to show off the photo */
+  min-height: 85vh; 
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   text-align:center;
-  background:
-    radial-gradient(circle at 50% 20%,rgba(255,255,255,.35),transparent 60%),
-    linear-gradient(180deg,var(--indigo-700),var(--indigo-800));
+  padding: 2rem 1rem;
   color:white;
+  
+  /* THE NEW IMAGE SETUP */
+  background-image: 
+    /* Dark Gradient Overlay so text pops */
+    linear-gradient(to bottom, rgba(17, 24, 39, 0.5), rgba(17, 24, 39, 0.85)),
+    /* Your Image */
+    url('Hero_Image.png');
+    
+  background-size: cover;
+  background-position: center center;
+  background-attachment: scroll; /* Parallax feel on desktop if desired, scroll is safer for mobile */
 }
-.hero h2{font-size:2.4rem;font-weight:700;margin-bottom:.7rem;}
+
+.hero-content {
+  max-width: 50rem;
+  z-index: 2;
+  animation: fadeIn 1s ease-out;
+}
+
+.hero h2{
+  font-size: clamp(2.5rem, 5vw, 3.8rem); /* Responsive font size */
+  font-weight:800;
+  margin-bottom:1rem;
+  line-height: 1.1;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
 .hero p{
-  max-width:46rem;
-  margin:auto;
-  font-size:1.1rem;
-  opacity:.95;
+  font-size:1.25rem;
+  opacity:0.95;
+  margin-bottom: 2rem;
+  font-weight: 400;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Hero Buttons */
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 /* ============================================================
-   LAYOUT WRAPPER
+   LAYOUT & UTILS
    ============================================================ */
 .section{
-  max-width:48rem;
+  max-width:52rem;
   margin:auto;
-  padding:3rem 1rem;
+  padding:4rem 1.5rem;
   display:grid;
   gap:2rem;
 }
 
 /* ============================================================
-   CARD STYLING
+   CARDS
    ============================================================ */
 .card{
   background:white;
   border-radius:1.1rem;
-  padding:1.75rem;
+  padding:2rem;
   border:1px solid var(--gray-200);
-  box-shadow:0 10px 28px -8px rgba(0,0,0,.12);
+  box-shadow:0 10px 30px -10px rgba(0,0,0,.08);
+  transition: transform 0.2s ease;
 }
+/* Subtle hover effect */
+.card:hover {
+  transform: translateY(-2px);
+}
+
 .card h3{
-  font-size:1.3rem;
-  font-weight:600;
-  margin-bottom:.65rem;
+  font-size:1.4rem;
+  font-weight:700;
+  margin-bottom:1rem;
+  color: var(--gray-900);
 }
 .card ul, .card ol{
   margin-left:1.2rem;
-  margin-top:.25rem;
+  color: var(--gray-600);
 }
 .card li{
-  margin-bottom:.45rem;
+  margin-bottom:.5rem;
 }
 
 /* ============================================================
-   THREE REASONS GRID
+   REASON GRID
    ============================================================ */
 .reason-grid{
   display:grid;
-  gap:1rem;
+  gap:1.5rem;
+  margin-top: -4rem; /* Pull up to overlap hero slightly */
+  position: relative;
+  z-index: 10;
 }
-@media(min-width:640px){
+@media(min-width:768px){
   .reason-grid{grid-template-columns:repeat(3,1fr);}
 }
 
@@ -138,314 +187,276 @@ body{
   background:white;
   border-radius:1rem;
   border:1px solid var(--gray-200);
-  padding:1.5rem;
+  padding:2rem 1.5rem;
   text-align:center;
-  box-shadow:0 6px 18px -6px rgba(0,0,0,.08);
+  box-shadow:0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 .reason-card h4{
   font-size:1.15rem;
-  font-weight:600;
-  margin-bottom:.35rem;
+  font-weight:700;
+  margin-bottom:.5rem;
+  color: var(--indigo-800);
 }
 .reason-card p{
-  font-size:.92rem;
+  font-size:.95rem;
   color:var(--gray-600);
+  line-height: 1.5;
 }
 
 /* ============================================================
-   MEET DAVE — PREMIUM HERO CARD
+   MEET DAVE
    ============================================================ */
 .meet-dave{
   text-align:center;
   padding:3rem 1rem;
+  background: linear-gradient(to bottom, var(--gray-50), white);
 }
 .meet-dave .card{
   max-width:42rem;
   margin:auto;
-  padding:2.5rem 2rem;
+  border:none;
+  background: transparent;
+  box-shadow: none;
 }
 .meet-dave img{
-  width:85px;
-  height:85px;
-  margin-bottom:1rem;
-  opacity:0.95;
-}
-.meet-dave p{
-  color:var(--gray-600);
-  margin-bottom:1.25rem;
-  font-size:1rem;
+  width:100px;
+  height:100px;
+  margin-bottom:1.5rem;
+  border-radius: 50%; /* Make Dave round */
+  border: 4px solid white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .meet-dave .bubble{
-  background:var(--gray-100);
+  background: white;
   border:1px solid var(--gray-200);
-  border-radius:12px;
-  padding:1rem 1.2rem;
+  border-radius:16px;
+  padding:1.5rem 2rem;
   font-style:italic;
-  font-size:.95rem;
+  font-size:1.05rem;
+  color: var(--gray-600);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+/* Little speech bubble triangle */
+.meet-dave .bubble::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 10px 10px;
+  border-style: solid;
+  border-color: transparent transparent var(--gray-200) transparent;
+}
+.meet-dave .bubble::before {
+  content: '';
+  position: absolute;
+  top: -9px; /* Slight offset for border */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 10px 10px;
+  border-style: solid;
+  border-color: transparent transparent white transparent;
+  z-index: 1;
 }
 
 /* ============================================================
-   WHAT'S IN THE BOX — IMAGE CARD
+   IMAGES
    ============================================================ */
-.kit-card{
-  text-align:center;
-}
 .kit-card img{
   width:100%;
-  border-radius:1rem;
+  border-radius:0.8rem;
   border:1px solid var(--gray-200);
-  box-shadow:0 10px 28px -10px rgba(0,0,0,.18);
-  margin-bottom:1rem;
-}
-.kit-card p{
-  color:var(--gray-600);
-  font-size:.95rem;
+  margin-bottom:1.5rem;
 }
 
 /* ============================================================
-   FUNNY TESTIMONIALS
+   TESTIMONIALS
    ============================================================ */
 .testimonials{
   display:grid;
-  gap:1.25rem;
+  gap:1.5rem;
 }
 @media(min-width:640px){
   .testimonials{grid-template-columns:1fr 1fr;}
 }
-
 .testimonial{
   background:white;
   border:1px solid var(--gray-200);
   border-radius:1rem;
-  padding:1.25rem 1.5rem;
-  box-shadow:0 8px 20px -6px rgba(0,0,0,.10);
-}
-.testimonial p{
-  font-size:.95rem;
-  margin-bottom:.75rem;
+  padding:1.5rem;
+  box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 .testimonial span{
-  font-size:.8rem;
-  color:var(--c-good);
-  font-weight:600;
+  font-size:.85rem;
+  color:var(--indigo-600);
+  font-weight:700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* ============================================================
-   BUTTON
+   BUTTONS
    ============================================================ */
 .btn{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  background:linear-gradient(90deg,var(--indigo-600),#6366f1);
+  background: var(--indigo-600);
   color:white;
-  padding:.9rem 1.85rem;
+  padding:1rem 2rem;
   font-weight:600;
-  border-radius:.6rem;
-  transition:opacity .2s;
-  margin-top:.65rem;
+  border-radius:.5rem;
+  text-decoration: none;
+  transition:all .2s;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 6px rgba(124, 58, 237, 0.3);
 }
-.btn:hover{opacity:.88;}
+.btn:hover{
+  background: var(--indigo-700);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px rgba(124, 58, 237, 0.4);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid rgba(255,255,255,0.8);
+  color: white;
+  box-shadow: none;
+}
+.btn-outline:hover {
+  background: white;
+  color: var(--indigo-900);
+  border-color: white;
+}
 
 /* ============================================================
-   FOOTER
+   ANIMATION
    ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 footer{
   text-align:center;
-  font-size:.8rem;
+  font-size:.85rem;
   color:var(--gray-600);
-  padding:2.5rem 1rem 2rem;
+  padding:3rem 1rem;
+  background: white;
+  border-top: 1px solid var(--gray-200);
 }
 </style>
 </head>
 
 <body>
 
-<!-- ============================================================
-     FLOATING HEADER
-============================================================ -->
 <header class="topbar">
-  <img src="logo.svg" alt="Measurely logo">
-  <h1>Measurely</h1>
+  <img src="logo.svg" alt="Measurely logo" onerror="this.style.display='none'"> <h1>Measurely</h1>
 </header>
 
-<!-- ============================================================
-     HERO
-============================================================ -->
 <section class="hero">
-  <h2>Room Acoustics Made Simple</h2>
-  <p>Built by someone who wanted better sound without becoming an acoustics expert.</p>
+  <div class="hero-content">
+    <h2>Room Acoustics<br>Made Simple</h2>
+    <p>Built by someone who wanted better sound without becoming an acoustics expert.</p>
+    
+    <div class="hero-actions">
+      <a href="https://buy.stripe.com/5kQeVcdL75s11AKcWw4ZG00" class="btn">
+        Rent the Kit – £50
+      </a>
+      <a href="#how-it-works" class="btn btn-outline">
+        How it works
+      </a>
+    </div>
+  </div>
 </section>
 
-<!-- ============================================================
-     THREE REASONS
-============================================================ -->
-<section class="section">
+<section class="section" style="padding-top:0;">
   <div class="reason-grid">
-
     <div class="reason-card">
       <h4>No cloud needed</h4>
       <p>Everything happens offline, in the black box. No accounts. No nonsense.</p>
     </div>
-
     <div class="reason-card">
       <h4>Plain English</h4>
       <p>Dave translates graphs into real-world actions you can actually do.</p>
     </div>
-
     <div class="reason-card">
       <h4>Real savings</h4>
       <p>Most fixes cost £0–£20, not hundreds on new gear.</p>
     </div>
-
   </div>
 </section>
 
-<!-- ============================================================
-     MEET DAVE
-============================================================ -->
 <section class="meet-dave">
   <div class="card">
-    <img src="dave.png" alt="Dave">
-    <h3>Meet Dave</h3>
-
+    <img src="dave.png" alt="Dave" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=Dave'"> <h3>Meet Dave</h3>
     <p>Dave is your built-in room-acoustics buddy. He reads your sweep, spots the obvious issues, and turns all that tech jargon into simple, plain-English fixes.</p>
-
     <div class="bubble">
-      “I’m not here to judge your room, I’m here to help it sound better.
-      Sometimes it’s a rug. Sometimes it’s a sofa. Sometimes it’s both.
-      We’ll sort it together.”
+      “I’m not here to judge your room, I’m here to help it sound better. Sometimes it’s a rug. Sometimes it’s a sofa. Sometimes it’s both. We’ll sort it together.”
     </div>
   </div>
 </section>
 
-<!-- ============================================================
-     WHAT'S IN THE BOX?
-============================================================ -->
 <section class="section">
   <div class="card kit-card">
     <h3>What’s in the Box?</h3>
-
-    <img src="whatsinthebox.png" alt="Measurely kit">
-
-    <p class="text-xs text-gray-500 mt-2 italic">
-      AI-generated image. Weird cable. Budget spent on solid hardware.
+    <img src="whatsinthebox.png" alt="Measurely kit" style="background:#f3f4f6; min-height:200px;"> 
+    <p class="text-xs text-gray-500 mt-2 italic" style="font-size:0.8rem;">
+      (Kit includes: Calibrated USB mic, Measurely Pi, Power supply, Cables)
     </p>
-
-    <p>
-      Your rental kit includes everything you need:<br>
-      • Calibrated USB microphone<br>
-      • Preloaded Measurely Pi<br>
-      • Power supply<br>
-      • Network-free setup<br>
-      • Return postage included
+    <p style="margin-top:1rem;">
+      Your rental kit includes everything you need for a network-free setup. Just plug it in and it works. Return postage is included in the box.
     </p>
   </div>
 </section>
 
-
-<!-- ============================================================
-     WHAT / HOW
-============================================================ -->
-<section class="section">
-
-  <div class="card">
-    <h3>What is Measurely?</h3>
-    <ul>
-      <li>Quick, honest room measurement (offline Pi, no cloud, no jargon)</li>
-      <li>Dave tells you what to fix, often just shifting furniture or adding a rug</li>
-      <li>4-day rental: £50 + £10 UK delivery</li>
-      <li>Optional £25 Deep-Dive unlock code inside the box</li>
-    </ul>
-  </div>
-
+<section class="section" id="how-it-works">
   <div class="card">
     <h3>How It Works</h3>
-    <ol>
-      <li>Rent the kit (£50 + refundable £175 deposit)</li>
-      <li>Plug in mic → go to <strong>measurely.local</strong> → press “Measure”</li>
-      <li>Read Dave’s 3 plain-English nudges</li>
-      <li>Move stuff, re-measure, hear the improvement</li>
-      <li>Re-pack, stick on the prepaid label, drop at the Post Office</li>
-      <li>Deposit refunded within 24 hours of safe return</li>
+    <ol style="line-height:1.8;">
+      <li><strong>Rent the kit</strong> (£50 + refundable £175 deposit)</li>
+      <li><strong>Plug & Play:</strong> Plug in mic → go to <code style="background:#f3f4f6;padding:2px 5px;border-radius:4px;">measurely.local</code></li>
+      <li><strong>Measure:</strong> Press the button and let Dave analyze the sweep.</li>
+      <li><strong>Fix:</strong> Read Dave’s 3 plain-English nudges (e.g. "Move sofa 10cm left").</li>
+      <li><strong>Return:</strong> Re-pack and drop at the Post Office using the prepaid label.</li>
     </ol>
   </div>
-
 </section>
 
-<!-- ============================================================
-     FUNNY TESTIMONIALS
-============================================================ -->
-<section class="section">
-  <h3 style="font-size:1.4rem;font-weight:700;text-align:center;">
-    Absolutely Not Verified Reviews
-  </h3>
-
-  <p style="text-align:center;color:var(--gray-600);margin-top:.25rem;margin-bottom:1.5rem;font-size:.9rem;">
-    (We didn’t ask for these. People just keep saying things.)
-  </p>
-
-  <div class="testimonials">
-
-    <div class="testimonial">
-      <p>“Thought my speakers were knackered. Turns out it was the carpet. Dave sorted me out between pints.”</p>
-      <span>Bloke Down the Pub</span>
-    </div>
-
-    <div class="testimonial">
-      <p>“I didn’t understand a single graph, but Dave told me to move the sofa. Best £50 I’ve spent not buying new furniture.”</p>
-      <span>Woman on the Bus</span>
-    </div>
-
-    <div class="testimonial">
-      <p>“Was going to buy a £900 sub. Dave told me to pull my couch off the back wall instead. Dog approved.”</p>
-      <span>Guy Walking His Dog</span>
-    </div>
-
-    <div class="testimonial">
-      <p>“Heard bass booming through the wall. After Measurely? Not a peep. 10/10 for neighbourly peace.”</p>
-      <span>Random Neighbour</span>
-    </div>
-
-    <div class="testimonial">
-      <p>“Spent three weeks researching diffusers. Dave told me to buy a rug. £18 later? Sorted.”</p>
-      <span>Man Who Googles Too Much</span>
-    </div>
-
-    <div class="testimonial">
-      <p>“Why is everything so loud? Oh. He moved the speakers. Dave told him to. Good lad, that Dave.”</p>
-      <span>Mum</span>
-    </div>
-
-  </div>
-</section>
-
-<!-- ============================================================
-     BOOK NOW
-============================================================ -->
-<section class="section">
-  <div class="card" style="text-align:center;">
-    <h3>Book Your Rental</h3>
-    <p style="color:var(--gray-600);">4-day kit + Dave’s advice</p>
-
-    <p style="font-size:2rem;font-weight:700;color:var(--indigo-600);margin-bottom:1rem;">£50</p>
-
-    <a href="https://buy.stripe.com/5kQeVcdL75s11AKcWw4ZG00" class="btn" target="_blank">
-      Pay with Stripe
-    </a>
-
-    <p style="font-size:.75rem;color:var(--gray-600);margin-top:.65rem;">
-      Secure checkout opens in a new tab
+<section class="section" style="background:white; max-width:100%; width:100%;">
+  <div style="max-width:52rem; margin:auto;">
+    <h3 style="font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:0.5rem;">
+      Absolutely Not Verified Reviews
+    </h3>
+    <p style="text-align:center;color:var(--gray-600);margin-bottom:2rem;">
+      (We didn’t ask for these. People just keep saying things.)
     </p>
+
+    <div class="testimonials">
+      <div class="testimonial">
+        <p>“Thought my speakers were knackered. Turns out it was the carpet. Dave sorted me out between pints.”</p>
+        <span>Bloke Down the Pub</span>
+      </div>
+      <div class="testimonial">
+        <p>“I didn’t understand a single graph, but Dave told me to move the sofa. Best £50 I’ve spent not buying new furniture.”</p>
+        <span>Woman on the Bus</span>
+      </div>
+      <div class="testimonial">
+        <p>“Was going to buy a £900 sub. Dave told me to pull my couch off the back wall instead. Dog approved.”</p>
+        <span>Guy Walking His Dog</span>
+      </div>
+      <div class="testimonial">
+        <p>“Spent three weeks researching diffusers. Dave told me to buy a rug. £18 later? Sorted.”</p>
+        <span>Man Who Googles Too Much</span>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- ============================================================
-     FOOTER
-============================================================ -->
 <footer>
-  © 2025 Matt Shepherd. Built because REW was too confusing.<br>
-  Why the basic site? Because it’s free, and we’d rather spend money on mics than web designers.
+  <p style="margin-bottom:0.5rem;">© 2025 Matt Shepherd.</p>
+  <p>Built because REW was too confusing. We’d rather spend money on mics than web designers.</p>
 </footer>
 
 </body>
