@@ -18,7 +18,6 @@
 </head>
 
 <body class="bg-gray-300">
-<!-- Mobile banner -->
 <div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm
             flex items-center justify-between px-4 z-50">
   <div class="flex items-center space-x-2">
@@ -43,7 +42,7 @@
     <nav class="space-y-2">
 
       <a href="index.html" class="nav-item">
-        <img src="icons/chart-line.svg" class="w-5 h-5 mr-3 inline-block" />
+        <img src="icons/dashboard.svg" class="w-5 h-5 mr-3 inline-block" />
         Dashboard
       </a>
 
@@ -54,35 +53,29 @@
 
       <a href="tipsandtweaks.html" class="nav-item">
         <img src="icons/lightbulb.svg" class="w-5 h-5 mr-3 inline-block" />
-        Tips and Tweaks
+        Tips & Tweaks
       </a>
 
     </nav>
-
-<!-- ===== SIDEBAR STATUS PANEL ===== -->
 <div class="absolute bottom-6 left-6 right-6">
 
   <div class="bg-white/20 backdrop-blur-md rounded-lg p-4 space-y-3">
 
-    <!-- 1. SYSTEM READY -->
     <div class="flex items-center">
       <div id="systemReadyDot" class="status-indicator status-good pulse-animation"></div>
       <span id="systemReadyText" class="text-sm">System Ready</span>
     </div>
 
-    <!-- 3. THAT CONNECTED (DAC / device) -->
     <div class="flex items-center">
       <div id="dacStatusDot" class="status-indicator bg-yellow-400"></div>
       <span id="dacStatusText" class="text-sm">DAC: Not Found</span>
     </div>
 
-    <!-- 4. USB MIC CONNECTED -->
     <div class="flex items-center">
       <div id="usbStatusDot" class="status-indicator bg-red-400"></div>
       <span id="usbStatusText" class="text-sm">USB Mic: Not Connected</span>
     </div>
 
-    <!-- 5. CLOCK -->
     <p class="text-xs opacity-80">
       Last updated: <span id="lastUpdated">Now</span>
     </p>
@@ -112,26 +105,31 @@
     <!-- ACTIONS CARD -->
     <div class="card flex flex-col items-start justify-center">
 
-      <h3 class="text-xl font-semibold mb-4">
-        <img src="icons/toolbox.svg" class="w-5 h-5 mr-2 text-purple-600 inline-block" />Actions
+      <h3 class="text-xl font-semibold mb-4 text-gray-600">
+        <img src="icons/toolbox.svg" class="w-5 h-5 mr-2 inline-block" />Actions
       </h3>
+
 
       <div class="flex flex-col sm:flex-row flex-wrap gap-4">
 
         <button id="runSweepBtn"
           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center shadow-sm">
-          <i class="fas fa-play mr-2"></i>Quick Sweep
+          <img src="icons/sweep.svg" class="w-5 h-5 mr-2" alt="">
+          Sweep
+        </button>
+
+        <button id="refreshDashboardBtn"
+          class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center shadow-sm">
+          <img src="icons/refresh.svg" class="w-5 h-5 mr-2" alt="">
+          Refresh
         </button>
 
         <button id="saveResultsBtn"
-          class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center shadow-sm">
-          <i class="fas fa-save mr-2"></i>Save Results
+          class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center shadow-sm">
+          <img src="icons/export.svg" class="w-5 h-5 mr-2" alt="">
+          Export
         </button>
 
-        <button id="exportReportBtn"
-          class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center shadow-sm">
-          <i class="fas fa-share mr-2"></i>Export Report
-        </button>
 
       </div>
 
@@ -259,22 +257,44 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
 
-
   <!-- 1. Peaks & Dips -->
   <div class="score-legend">
-    <div class="flex items-center justify-between mb-4">
-      <h4 class="text-lg font-semibold text-gray-800">Peaks & Dips</h4>
-      <img src="icons/mountain.svg" class="w-5 h-5 text-xl" data-color-icon="peaksDips" />
+
+    <!-- TITLE + ICON -->
+    <div class="flex items-center justify-between mb-1">
+      <h4 class="text-lg font-semibold text-gray-600">Peaks & Dips</h4>
+      <img src="icons/mountain.svg" class="w-5 h-5" data-color-icon="peaksDips" alt="">
     </div>
 
+    <!-- SUB DESCRIPTION -->
+    <p class="text-xs text-gray-500 mb-3">
+      Measures how uneven the bass + mids response is (lower = smoother).
+    </p>
+
+    <div class="border-b border-gray-200 mb-4"></div>
+
+    <!-- SCORE -->
     <div id="peaksDipsScore" class="text-3xl font-bold mb-1" data-color-target="peaksDips">--</div>
     <div id="peaksDipsSummary" class="text-sm mb-2" data-color-summary="peaksDips">--</div>
 
+    <!-- RAW METRIC -->
+    <div class="p-3 mb-3 rounded-lg bg-gray-100 border border-gray-300 text-xs">
+      <p class="font-semibold text-gray-600 mb-1">Raw Metric</p>
+      <p id="peaksDipsRaw" class="text-gray-700 text-xs leading-4">--</p>
+    </div>
+
+    <!-- ARROW -->
+    <div class="flex justify-center -mt-2 mb-2">
+      <img src="icons/arrow-down.svg" class="w-4 h-4 opacity-60" />
+    </div>
+
+    <!-- DAVE -->
     <div class="buddy-box">
-      <img src="icons/dave.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
       <span id="peaksDipsBuddy" class="italic">--</span>
     </div>
 
+    <!-- STATUS + FOOT -->
     <div class="mt-4">
       <div class="flex items-center text-xs mb-1">
         <span id="peaksDipsStatus" class="w-3 h-3 rounded-full mr-2"></span>
@@ -282,20 +302,39 @@
       </div>
       <div id="peaksDipsFoot" class="text-xs text-gray-400 mb-2"></div>
     </div>
+
   </div>
+
 
   <!-- 2. Reflections -->
   <div class="score-legend">
-    <div class="flex items-center justify-between mb-4">
-      <h4 class="text-lg font-semibold text-gray-800">Reflections</h4>
-      <img src="icons/square-caret-left.svg" class="w-5 h-5 text-xl" data-color-icon="reflections" />
+
+    <div class="flex items-center justify-between mb-1">
+      <h4 class="text-lg font-semibold text-gray-600">Reflections</h4>
+      <img src="icons/square-caret-left.svg" class="w-5 h-5" data-color-icon="reflections" alt="">
     </div>
+
+    <p class="text-xs text-gray-500 mb-3">
+      Measures how much early wall/floor bounce is colouring your sound.
+    </p>
+
+    <div class="border-b border-gray-200 mb-4"></div>
 
     <div id="reflectionsScore" class="text-3xl font-bold mb-1" data-color-target="reflections">--</div>
     <div id="reflectionsSummary" class="text-sm mb-2" data-color-summary="reflections">--</div>
 
+    <!-- RAW METRIC -->
+    <div class="p-3 mb-3 rounded-lg bg-gray-100 border border-gray-300 text-xs">
+      <p class="font-semibold text-gray-600 mb-1">Raw Metric</p>
+      <p id="reflectionsRaw" class="text-gray-700 text-xs leading-4">--</p>
+    </div>
+
+    <div class="flex justify-center -mt-2 mb-2">
+      <img src="icons/arrow-down.svg" class="w-4 h-4 opacity-60" />
+    </div>
+
     <div class="buddy-box">
-      <img src="icons/dave.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
       <span id="reflectionsBuddy" class="italic">--</span>
     </div>
 
@@ -306,20 +345,40 @@
       </div>
       <div id="reflectionsFoot" class="text-xs text-gray-400 mb-2"></div>
     </div>
+
   </div>
+
+
 
   <!-- 3. Bandwidth -->
   <div class="score-legend">
-    <div class="flex items-center justify-between mb-4">
-      <h4 class="text-lg font-semibold text-gray-800">Bandwidth</h4>
-      <img src="icons/signal.svg" class="w-5 h-5 text-xl" data-color-icon="bandwidth" />
+
+    <div class="flex items-center justify-between mb-1">
+      <h4 class="text-lg font-semibold text-gray-600">Bandwidth</h4>
+      <img src="icons/signal.svg" class="w-5 h-5" data-color-icon="bandwidth" alt="">
     </div>
+
+    <p class="text-xs text-gray-500 mb-3">
+      Measures how wide your system plays (bass depth → top-end air).
+    </p>
+
+    <div class="border-b border-gray-200 mb-4"></div>
 
     <div id="bandwidthScore" class="text-3xl font-bold mb-1" data-color-target="bandwidth">--</div>
     <div id="bandwidthSummary" class="text-sm mb-2" data-color-summary="bandwidth">--</div>
 
+    <!-- RAW METRIC -->
+    <div class="p-3 mb-3 rounded-lg bg-gray-100 border border-gray-300 text-xs">
+      <p class="font-semibold text-gray-600 mb-1">Raw Metric</p>
+      <p id="bandwidthRaw" class="text-gray-700 text-xs leading-4">--</p>
+    </div>
+
+    <div class="flex justify-center -mt-2 mb-2">
+      <img src="icons/arrow-down.svg" class="w-4 h-4 opacity-60" />
+    </div>
+
     <div class="buddy-box">
-      <img src="icons/dave.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
       <span id="bandwidthBuddy" class="italic">--</span>
     </div>
 
@@ -330,20 +389,40 @@
       </div>
       <div id="bandwidthFoot" class="text-xs text-gray-400 mb-2"></div>
     </div>
+
   </div>
+
+
 
   <!-- 4. Balance -->
   <div class="score-legend">
-    <div class="flex items-center justify-between mb-4">
-      <h4 class="text-lg font-semibold text-gray-800">Balance</h4>
-      <img src="icons/balance-scale.svg" class="w-5 h-5 text-xl" data-color-icon="balance" />
+
+    <div class="flex items-center justify-between mb-1">
+      <h4 class="text-lg font-semibold text-gray-600">Balance</h4>
+      <img src="icons/balance-scale.svg" class="w-5 h-5" data-color-icon="balance" alt="">
     </div>
+
+    <p class="text-xs text-gray-500 mb-3">
+      Measures tonal tilt (bass vs mids). Centre image + tonal blend.
+    </p>
+
+    <div class="border-b border-gray-200 mb-4"></div>
 
     <div id="balanceScore" class="text-3xl font-bold mb-1" data-color-target="balance">--</div>
     <div id="balanceSummary" class="text-sm mb-2" data-color-summary="balance">--</div>
 
+    <!-- RAW METRIC -->
+    <div class="p-3 mb-3 rounded-lg bg-gray-100 border border-gray-300 text-xs">
+      <p class="font-semibold text-gray-600 mb-1">Raw Metric</p>
+      <p id="balanceRaw" class="text-gray-700 text-xs leading-4">--</p>
+    </div>
+
+    <div class="flex justify-center -mt-2 mb-2">
+      <img src="icons/arrow-down.svg" class="w-4 h-4 opacity-60" />
+    </div>
+
     <div class="buddy-box">
-      <img src="icons/dave.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
       <span id="balanceBuddy" class="italic">--</span>
     </div>
 
@@ -354,21 +433,40 @@
       </div>
       <div id="balanceFoot" class="text-xs text-gray-400 mb-2"></div>
     </div>
+
   </div>
+
+
 
   <!-- 5. Smoothness -->
   <div class="score-legend">
-    <div class="flex items-center justify-between mb-4">
-      <h4 class="text-lg font-semibold text-gray-800">Smoothness</h4>
-      <img src="icons/wave-square.svg" class="w-5 h-5 text-xl" data-color-icon="Smoothness" />
-     
+
+    <div class="flex items-center justify-between mb-1">
+      <h4 class="text-lg font-semibold text-gray-600">Smoothness</h4>
+      <img src="icons/wave-square.svg" class="w-5 h-5" data-color-icon="smoothness" alt="">
     </div>
+
+    <p class="text-xs text-gray-500 mb-3">
+      Measures fine-grain consistency across the full spectrum.
+    </p>
+
+    <div class="border-b border-gray-200 mb-4"></div>
 
     <div id="smoothnessScore" class="text-3xl font-bold mb-1" data-color-target="smoothness">--</div>
     <div id="smoothnessSummary" class="text-sm mb-2" data-color-summary="smoothness">--</div>
 
+    <!-- RAW METRIC -->
+    <div class="p-3 mb-3 rounded-lg bg-gray-100 border border-gray-300 text-xs">
+      <p class="font-semibold text-gray-600 mb-1">Raw Metric</p>
+      <p id="smoothnessRaw" class="text-gray-700 text-xs leading-4">--</p>
+    </div>
+
+    <div class="flex justify-center -mt-2 mb-2">
+      <img src="icons/arrow-down.svg" class="w-4 h-4 opacity-60" />
+    </div>
+
     <div class="buddy-box">
-      <img src="icons/dave.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
       <span id="smoothnessBuddy" class="italic">--</span>
     </div>
 
@@ -379,20 +477,40 @@
       </div>
       <div id="smoothnessFoot" class="text-xs text-gray-400 mb-2"></div>
     </div>
+
   </div>
+
+
 
   <!-- 6. Reverb -->
   <div class="score-legend">
-    <div class="flex items-center justify-between mb-4">
-      <h4 class="text-lg font-semibold text-gray-800">Reverb</h4>
-      <img src="icons/clock.svg" class="w-5 h-5 text-xl" data-color-icon="reverb" />
+
+    <div class="flex items-center justify-between mb-1">
+      <h4 class="text-lg font-semibold text-gray-600">Reverb</h4>
+      <img src="icons/clock.svg" class="w-5 h-5" data-color-icon="reverb" alt="">
     </div>
+
+    <p class="text-xs text-gray-500 mb-3">
+      Measures how long the room holds onto sound (decay time).
+    </p>
+
+    <div class="border-b border-gray-200 mb-4"></div>
 
     <div id="reverbScore" class="text-3xl font-bold mb-1" data-color-target="reverb">--</div>
     <div id="reverbSummary" class="text-sm mb-2" data-color-summary="reverb">--</div>
 
+    <!-- RAW METRIC -->
+    <div class="p-3 mb-3 rounded-lg bg-gray-100 border border-gray-300 text-xs">
+      <p class="font-semibold text-gray-600 mb-1">Raw Metric</p>
+      <p id="reverbRaw" class="text-gray-700 text-xs leading-4">EDT: -- sec</p>
+    </div>
+
+    <div class="flex justify-center -mt-2 mb-2">
+      <img src="icons/arrow-down.svg" class="w-4 h-4 opacity-60" />
+    </div>
+
     <div class="buddy-box">
-      <img src="icons/dave.svg" class="w-6 h-6 mr-2 opacity-90 mt-0.5" alt="Buddy tip">
+      <img src="icons/dave.svg" class="w-4 h-4 mr-2 opacity-90 mt-0.5">
       <span id="reverbBuddy" class="italic">--</span>
     </div>
 
@@ -403,10 +521,12 @@
       </div>
       <div id="reverbFoot" class="text-xs text-gray-400 mb-2"></div>
     </div>
+
   </div>
 
 </div>
 </div>
+
 
 
 <!-- =========================================== -->
@@ -472,9 +592,6 @@
     </div>
 
   </div>
-
-
-
 
   <!-- ======================== -->
   <!-- QUICK LISTEN GUIDE BOX  -->
@@ -687,49 +804,301 @@
 
 </div>
 
+<script src="/js/dashboard.js"></script>
+<script>
+window.rawMetrics = {
+  peaks_dips: {
+    excellent: [
+      "Spectral Deviation Index: 0.84 dB",
+      "Modal Uniformity Factor: +1.2 dB",
+      "Standing-Wave Suppression: -0.4 dB"
+    ],
+    good: [
+      "Spectral Deviation Index: 1.8 dB",
+      "Boundary Coupling Error: +2.1 dB",
+      "Modal Uniformity Factor: -1.3 dB"
+    ],
+    okay: [
+      "Modal Pressure Variance: +4.6 dB",
+      "Low-Band Error Vector: 3.9 dB",
+      "Cancellation Density Score: 2.7"
+    ],
+    needs_work: [
+      "Modal Instability Index: +8.4 dB",
+      "Boundary Reflection Error: 7.1 dB",
+      "Cancellation Severity: Critical (11.2 dB)"
+    ]
+  },
+
+  reflections: {
+    excellent: ["Reflection Suppression Ratio: 0.6"],
+    good: ["Early Bounce Coherence: 1.2"],
+    okay: ["Multi-Surface Echo Factor: 2.8"],
+    needs_work: ["Hard-Reflective Zone Index: 6.1"]
+  },
+
+  bandwidth: {
+    excellent: ["Bandwidth Index: 92% usable"],
+    good: ["Range Efficiency: 78%"],
+    okay: ["Range Compression: 51%"],
+    needs_work: ["Severe Band-Loss Detected"]
+  },
+
+  balance: {
+    excellent: ["Tilt Variance: ±0.4 dB"],
+    good: ["Tilt Offset: 1.1 dB"],
+    okay: ["Tilt Asymmetry: 3.2 dB"],
+    needs_work: ["Extreme Bass/Mid Imbalance"]
+  },
+
+  smoothness: {
+    excellent: ["Micro-Deviation Index: 0.7 dB"],
+    good: ["Micro-Deviation Index: 1.5 dB"],
+    okay: ["Micro-Deviation Index: 3.4 dB"],
+    needs_work: ["Severe Fine-Grain Variance: 6.2 dB"]
+  },
+
+  reverb: {
+    excellent: ["Decay Uniformity Score: 0.14s"],
+    good: ["Decay Uniformity Score: 0.23s"],
+    okay: ["Decay Spread: 0.41s"],
+    needs_work: ["Decay Instability: 0.78s"]
+  }
+};
+</script>
+
+<script>
 
 
- <!-- =====  JAVASCRIPT  ===== -->
-  <script src="/js/dashboard.js"></script>
-  <script>
-    const btn  = document.getElementById('mobile-menu-btn');
-    const side = document.getElementById('sidebar');
-    const over = document.getElementById('sidebar-overlay');
+/* ============================================================
+   UTILITIES
+============================================================ */
+function formatTimestamp(isoString) {
+    if (!isoString) return "No Data";
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleDateString() + ' ' +
+               date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+        return isoString;
+    }
+}
 
-    function toggleMenu() {
-      const side = document.getElementById("sidebar");
-      const over = document.getElementById("sidebar-overlay");
+function getScoreStatus(score) {
+    if (score >= 8) return 'Excellent';
+    if (score >= 6) return 'Good';
+    if (score >= 4) return 'Okay';
+    return 'Needs work';
+}
 
-      side.classList.toggle("active");
-      over.classList.toggle("active");
-
-      // Lock scroll when menu open
-      document.body.style.overflow =
-        side.classList.contains("active") ? "hidden" : "";
+/* ============================================================
+   LOAD A SESSION (forces Pi to switch folders)
+============================================================ */
+async function loadNewSession(sessionId) {
+    if (!sessionId) {
+        console.error("No session ID provided to load.");
+        return;
     }
 
-    btn.addEventListener('click', toggleMenu);
-    over.addEventListener('click', toggleMenu);
-
-    function togglePopup(id) {
-      document.getElementById(id).classList.toggle('hidden');
+    const res = await fetch(`/api/session/${sessionId}/load`, { method: 'POST' });
+    if (res.ok) {
+        location.reload();   // reload UI to reflect new session
+    } else {
+        console.error(`Failed to load session ${sessionId}`);
     }
+}
 
-    document.querySelectorAll('.nav-item').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          side.classList.remove('active');
-          over.classList.remove('active');
-          document.body.style.overflow = '';
+/* ============================================================
+   LOAD METRICS FOR THE RIGHT-HAND EXPLORER PANEL
+============================================================ */
+async function loadSessionMetrics(sessionId) {
+    try {
+        const res = await fetch(`/api/session/${sessionId}`);
+        if (!res.ok) throw new Error(`Failed to load session data for ${sessionId}`);
+
+        const data = await res.json();
+        const metricsContainer = document.getElementById('sessionMetrics');
+
+        if (!data.has_analysis) {
+            metricsContainer.innerHTML =
+                '<p class="text-sm text-gray-500">Analysis not run for this sweep.</p>';
+            return;
         }
-      });
-    });
 
-    // Update last updated time every second
-    setInterval(() => {
-      const el = document.getElementById('lastUpdated');
-      if (el) el.textContent = new Date().toLocaleTimeString();
-    }, 1000);
-  </script>
-</body>
-</html>
+        /* -------- OVERALL METRICS -------- */
+        document.getElementById('sessOverallScore').textContent =
+            data.overall_score ? data.overall_score.toFixed(1) : '--';
+
+        document.getElementById('sessOverallStatus').textContent =
+            getScoreStatus(data.overall_score);
+
+        /* -------- SIX METRICS -------- */
+        document.getElementById('sessPeaksDips').textContent =
+            data.peaks_dips ? data.peaks_dips.toFixed(1) : '--';
+
+        document.getElementById('sessReflections').textContent =
+            data.reflections ? data.reflections.toFixed(1) : '--';
+
+        document.getElementById('sessBandwidth').textContent =
+            data.bandwidth ? data.bandwidth.toFixed(1) : '--';
+
+        document.getElementById('sessBalance').textContent =
+            data.balance ? data.balance.toFixed(1) : '--';
+
+        document.getElementById('sessSmoothness').textContent =
+            data.smoothness ? data.smoothness.toFixed(1) : '--';
+
+        document.getElementById('sessReverb').textContent =
+            data.reverb ? data.reverb.toFixed(1) : '--';
+
+        /* ============================================================
+           FIXED FOUR-BAND SECTION (NEW + OLD BACKEND COMPATIBLE)
+        ============================================================ */
+        const bands = data.band_levels_db || {};
+
+        const sessBass =   bands.bass        ?? bands.bass_20_200      ?? null;
+        const sessMid =    bands.mid         ?? bands.mid_200_2k       ?? null;
+        const sessTreble = bands.treble      ?? bands.treble_2k_10k    ?? null;
+        const sessAir =    bands.air         ?? bands.air_10k_20k      ?? null;
+
+        document.getElementById('sessBass').textContent =
+            sessBass !== null ? `${sessBass.toFixed(1)} dB` : '-- dB';
+
+        document.getElementById('sessMid').textContent =
+            sessMid !== null ? `${sessMid.toFixed(1)} dB` : '-- dB';
+
+        document.getElementById('sessTreble').textContent =
+            sessTreble !== null ? `${sessTreble.toFixed(1)} dB` : '-- dB';
+
+        document.getElementById('sessAir').textContent =
+            sessAir !== null ? `${sessAir.toFixed(1)} dB` : '-- dB';
+
+    } catch (error) {
+        console.error("Error loading session metrics:", error);
+        document.getElementById('sessionMetrics').innerHTML =
+            '<p class="text-sm text-red-500">Failed to load detailed metrics. Check if analysis has been run.</p>';
+    }
+}
+
+/* ============================================================
+   LOAD LIST OF SESSIONS
+============================================================ */
+async function loadSessionExplorer() {
+    try {
+        const res = await fetch('/api/sessions');
+        if (!res.ok) throw new Error('Failed to fetch sessions');
+
+        const sessions = await res.json();
+
+        if (sessions.length === 0) {
+            document.getElementById('sessionMetrics').innerHTML =
+                '<p class="text-sm text-gray-500">No previous sweeps found. Run a Quick Sweep above!</p>';
+            document.querySelectorAll('.session-btn').forEach(btn => btn.disabled = true);
+            return;
+        }
+
+        const latest = sessions[0];
+        const previous = sessions[1] || null;
+        const oldest = sessions[sessions.length - 1];
+
+        /* -------- LATEST BUTTON -------- */
+        const latestBtn = document.getElementById('sessionLatestBtn');
+        latestBtn.textContent = formatTimestamp(latest.timestamp);
+        latestBtn.dataset.sessionId = latest.id;
+
+        /* -------- PREVIOUS BUTTON -------- */
+        const previousBtn = document.getElementById('sessionPreviousBtn');
+        if (previous) {
+            previousBtn.textContent = formatTimestamp(previous.timestamp);
+            previousBtn.dataset.sessionId = previous.id;
+            previousBtn.disabled = false;
+            previousBtn.addEventListener('click', () => loadNewSession(previous.id));
+        } else {
+            previousBtn.textContent = 'Previous (N/A)';
+            previousBtn.disabled = true;
+        }
+
+        /* -------- OLDEST BUTTON -------- */
+        const oldestBtn = document.getElementById('sessionLastBtn');
+        if (sessions.length > 1 && latest.id !== oldest.id) {
+            oldestBtn.textContent = formatTimestamp(oldest.timestamp);
+            oldestBtn.dataset.sessionId = oldest.id;
+            oldestBtn.disabled = false;
+            oldestBtn.addEventListener('click', () => loadNewSession(oldest.id));
+        } else {
+            oldestBtn.textContent = sessions.length === 1 ? 'Only One Sweep' : 'Oldest (N/A)';
+            oldestBtn.disabled = true;
+        }
+
+        /* -------- LOAD METRICS FOR CURRENT SESSION -------- */
+        await loadSessionMetrics('latest');
+
+    } catch (error) {
+        console.error("Error loading Session Explorer:", error);
+        document.getElementById('sessionMetrics').innerHTML =
+            '<p class="text-sm text-red-500">Error loading sessions. Check server status.</p>';
+    }
+}
+
+/* ============================================================
+   BOOTSTRAP + CHART DRAWING
+============================================================ */
+let firstDrawDone = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof MeasurelyDashboard !== 'undefined') {
+        window.dashboard = new MeasurelyDashboard();
+    }
+
+    loadSessionExplorer();
+
+    const draw = () => {
+        if (firstDrawDone) return;
+        const box = document.getElementById('frequencyChart');
+
+        if (!box || box.clientHeight === 0) {
+            requestAnimationFrame(draw);
+            return;
+        }
+
+        firstDrawDone = true;
+        if (window.dashboard) {
+            window.dashboard.showChannel('both');
+        }
+    };
+
+    requestAnimationFrame(draw);
+});
+
+/* ============================================================
+   SIDEBAR + CLOCK
+============================================================ */
+const btn  = document.getElementById('mobile-menu-btn');
+const side = document.getElementById('sidebar');
+const over = document.getElementById('sidebar-overlay');
+
+function toggleMenu() {
+    side.classList.toggle("active");
+    over.classList.toggle("active");
+    document.body.style.overflow =
+        side.classList.contains("active") ? "hidden" : "";
+}
+
+btn.addEventListener('click', toggleMenu);
+over.addEventListener('click', toggleMenu);
+
+document.querySelectorAll('.nav-item').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+            side.classList.remove('active');
+            over.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+});
+
+setInterval(() => {
+    const el = document.getElementById('lastUpdated');
+    if (el) el.textContent = new Date().toLocaleTimeString();
+}, 1000);
+</script>

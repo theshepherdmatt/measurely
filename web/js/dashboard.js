@@ -1,27 +1,29 @@
 /* ============================================================
-   GLOBAL TIP MEMORY + UNIQUE PICKING
-   ============================================================ */
+    GLOBAL TIP MEMORY + UNIQUE PICKING
+    ============================================================ */
 window.usedBuddyTips = {
-    peaks_dips:   new Set(),
-    reflections:  new Set(),
-    bandwidth:    new Set(),
-    balance:      new Set(),
-    smoothness:   new Set(),
-    reverb:       new Set(),
+    peaks_dips: new Set(),
+    reflections: new Set(),
+    bandwidth: new Set(),
+    balance: new Set(),
+    smoothness: new Set(),
+    reverb: new Set(),
 
     // score buckets
-    excellent:    new Set(),
-    good:         new Set(),
-    okay:         new Set(),
-    needs_work:   new Set(),
+    excellent: new Set(),
+    good: new Set(),
+    okay: new Set(),
+    needs_work: new Set(),
 
     // overall buckets
     overall_excellent: new Set(),
-    overall_good:      new Set(),
-    overall_fair:      new Set(),
-    overall_poor:      new Set()
+    overall_good: new Set(),
+    overall_fair: new Set(),
+    overall_poor: new Set()
 };
 
+// Helper function to replace **markdown** with <span class="font-bold">html</span>
+const replaceBold = (text) => text.replace(/\*\*(.*?)\*\*/g, '<span class="font-bold">$1</span>');
 
 
 window.pickUniqueTip = function(bucket, allTips) {
@@ -47,17 +49,10 @@ window.pickUniqueTip = function(bucket, allTips) {
     return tip;
 };
 
-// Fetch the list of sessions from the backend
-async function fetchSessions() {
-    const r = await fetch('/api/sessions');
-    if (!r.ok) throw new Error(r.status);
-    return r.json();
-}
-
 
 /* ============================================================
-   DASHBOARD CLASS
-   ============================================================ */
+    DASHBOARD CLASS
+    ============================================================ */
 class MeasurelyDashboard {
     constructor() {
         this.currentData = null;
@@ -113,45 +108,27 @@ class MeasurelyDashboard {
 
         // Count peaks and dips from flat objects
         const numPeaks = modes.filter(m => m.type === "peak").length;
-        const numDips  = modes.filter(m => m.type === "dip").length;
+        const numDips = modes.filter(m => m.type === "dip").length;
 
         // Debug
         console.log("Modes detected:", numPeaks, "peaks,", numDips, "dips");
 
         // OPTIONAL — update DOM if you want
         const peakEl = document.getElementById('modePeakCount');
-        const dipEl  = document.getElementById('modeDipCount');
+        const dipEl = document.getElementById('modeDipCount');
 
         if (peakEl) peakEl.textContent = numPeaks;
-        if (dipEl)  dipEl.textContent  = numDips;
+        if (dipEl) dipEl.textContent = numDips;
     }
 
 
     /* ============================================================
-       INIT
-       ============================================================ */
+    INIT
+    ============================================================ */
     async init() {
         console.log('Initializing Measurely Dashboard...');
 
         this.setupEventListeners();
-
-        // LOAD AVAILABLE SESSIONS FOR COMPARE UI
-        try {
-            const sessionObjs = await fetchSessions();
-            this.sessionList = sessionObjs
-                .map(s => s.id)
-                .filter(id => id !== "latest")      // remove symlink
-                .sort()                             // sort newest→oldest (timestamps in ID)
-                .reverse();                         // newest first
-
-            // Take only the top 3
-            this.sessionList = this.sessionList.slice(0, 3);
-
-            console.log("Compare sessions:", this.sessionList);
-        } catch (err) {
-            console.error("Failed loading sessions for compare UI", err);
-            this.sessionList = [];
-        }
 
         await this.loadData();
         this.startPolling();
@@ -160,8 +137,8 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       LOAD DATA
-       ============================================================ */
+    LOAD DATA
+    ============================================================ */
     async loadData() {
         try {
             console.log('Loading latest measurement data...');
@@ -178,7 +155,7 @@ class MeasurelyDashboard {
             }
 
             this.updateDashboard();
-            this.updateCompareSessionMetrics();
+            this.updateCompareSessionMetrics(); // Update Nerds Corner with current session data
             console.log('Data loaded OK:', this.currentData);
 
         } catch (error) {
@@ -192,8 +169,8 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       RUN SWEEP
-       ============================================================ */
+    RUN SWEEP
+    ============================================================ */
     async runSweep() {
         if (this.isSweepRunning) {
             this.showInfo('Sweep already running');
@@ -233,8 +210,8 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       SWEEP PROGRESS MONITOR
-       ============================================================ */
+    SWEEP PROGRESS MONITOR
+    ============================================================ */
     async monitorSweepProgress() {
         this.sweepCheckInterval = setInterval(async () => {
             try {
@@ -264,14 +241,14 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       RESET SWEEP UI
-       ============================================================ */
+    RESET SWEEP UI
+    ============================================================ */
     resetSweepState() {
         this.isSweepRunning = false;
 
         const runBtn = document.getElementById('runSweepBtn');
         runBtn.disabled = false;
-        runBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Run New Sweep';
+        runBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Quick Sweep';
 
         this.hideProgressBar();
 
@@ -282,8 +259,8 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       UPDATE DASHBOARD (MAIN REFRESH)
-       ============================================================ */
+    UPDATE DASHBOARD (MAIN REFRESH)
+    ============================================================ */
     updateDashboard() {
         if (!this.currentData) {
             console.warn('No data to update');
@@ -298,6 +275,9 @@ class MeasurelyDashboard {
         this.updateDetailedAnalysis();
         this.updateModes();
 
+        // NEW: Call the dedicated tips/tweaks updater, relying on a safety check inside
+        this.updateTipsAndTweaksCards(this.currentData);
+
         if (window.updateRoomCanvas && this.currentData.room) {
             window.updateRoomCanvas(this.currentData.room);
         }
@@ -306,26 +286,41 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       UPDATE SCORES (OVERALL + 6 CARDS)
-       ============================================================ */
+    UPDATE SCORES (OVERALL + 6 CARDS)
+    ============================================================ */
     updateScores() {
         const data = this.currentData;
         if (!data) return;
 
+        /* ----------------- HELPER FOR DOT COLOURS ----------------- */
+        const setDotColour = (el, score) => {
+            if (!el) return;
+            if (score >= 8) {
+                el.className = "w-3 h-3 rounded-full mr-2 bg-green-500";
+            } else if (score >= 6) {
+                el.className = "w-3 h-3 rounded-full mr-2 bg-blue-400";
+            } else if (score >= 4) {
+                el.className = "w-3 h-3 rounded-full mr-2 bg-yellow-400";
+            } else {
+                el.className = "w-3 h-3 rounded-full mr-2 bg-red-500";
+            }
+        };
+
         /* ---------------- OVERALL SCORE ---------------- */
         const overall = data.overall_score ?? 5.0;
 
-        // Main number
+        // Main score number
         const overallEl = document.getElementById('overallScore');
         if (overallEl) overallEl.textContent = overall.toFixed(1);
-        // Apply dynamic colour to overall card
-        this.applySixCardColor("overall", overall);
 
+        // Dynamic score colour (text)
+        this.applySixCardColor("overallScore", overall);
 
-        // Dot colour
-        this.updateStatusIndicator('overallStatus', overall);
+        // Overall dot colour (fixed bug)
+        const overallDot = document.getElementById('overallStatus');
+        setDotColour(overallDot, overall);
 
-        // Verdict
+        // Verdict text
         const statusTextEl = document.getElementById('overallStatusText');
         if (statusTextEl) {
             statusTextEl.innerHTML = this.getScoreStatusText(overall);
@@ -333,18 +328,11 @@ class MeasurelyDashboard {
 
         /* ---------------- OVERALL BUDDY PHRASE ---------------- */
         this.pickOverallPhrase(overall).then(dynamicPhrase => {
-            const backend = this.currentData.buddy_summary;
-            let finalPhrase;
-
-            if (backend && backend.length > 0) {
-                const first = backend.split('. ')[0] + '.';
-                finalPhrase = `${first} ${dynamicPhrase}`;
-            } else {
-                finalPhrase = dynamicPhrase;
-            }
+            const backend = this.currentData.buddy_freq_blurb || "";
+            const finalPhrase = backend || dynamicPhrase;
 
             const phraseEl = document.getElementById('overallBuddyPhrase');
-            if (phraseEl) phraseEl.textContent = finalPhrase;
+            if (phraseEl) phraseEl.textContent = `“${finalPhrase}”`;
 
             const footerEl = document.getElementById('buddyFooter');
             if (footerEl) footerEl.textContent = "";
@@ -352,25 +340,26 @@ class MeasurelyDashboard {
 
         /* ---------------- SIX SMALL CARD SCORES ---------------- */
         const scores = {
-            bandwidthScore:   data.bandwidth   ?? 0,
-            balanceScore:     data.balance     ?? 0,
-            smoothnessScore:  data.smoothness  ?? 0,
-            peaksDipsScore:   data.peaks_dips  ?? 0,
+            bandwidthScore: data.bandwidth ?? 0,
+            balanceScore: data.balance ?? 0,
+            smoothnessScore: data.smoothness ?? 0,
+            peaksDipsScore: data.peaks_dips ?? 0,
             reflectionsScore: data.reflections ?? 0,
-            reverbScore:      data.reverb      ?? 0
+            reverbScore: data.reverb ?? 0
         };
 
         for (const [id, val] of Object.entries(scores)) {
-            // Score number
+
+            // Score text (number)
             const el = document.getElementById(id);
             if (el) el.textContent = val.toFixed(1);
 
-            // Dot
-            const statusId = id.replace('Score', 'Status');
-            this.updateStatusIndicator(statusId, val);
+            // Dot element
+            const dotEl = document.getElementById(id.replace('Score', 'Status'));
+            setDotColour(dotEl, val);
 
-            // Colour group
-            const baseId = id.replace('Score', '');
+            // Number colour (text)
+            const baseId = id.replace('Score', '').replace(/([A-Z])/g, m => m);
             this.applySixCardColor(baseId, val);
         }
 
@@ -379,167 +368,81 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       CARD SUMMARIES + BUDDY TIPS
-       ============================================================ */
-    updateDescriptions(data) {
-
-        // SAFETY GUARD — this page does NOT have these elements.
-        if (!document.getElementById('bandwidthSummary')) {
-            return;   // <-- instantly exit on non-dashboard pages
+    UPDATE TIPS AND TWEAKS CARDS (NEW CORE LOGIC FOR tipsandtweaks.html)
+    ============================================================ */
+    updateTipsAndTweaksCards(data) {
+        // Only run this logic if we are on the tips page and the elements exist
+        if (!document.getElementById('peaksDipsRawMetric')) {
+            return; 
         }
 
-        /* ---------- Extract ---------- */
-        const bandwidth   = data.bandwidth   ?? 3;
-        const balance     = data.balance     ?? 3;
-        const smoothness  = data.smoothness  ?? 3;
-        const peaksDips   = data.peaks_dips  ?? 3;
-        const reflections = data.reflections ?? 3;
-        const reverb      = data.reverb      ?? 3;
-
-        /* ---------- 1. Bandwidth ---------- */
-        document.getElementById('bandwidthSummary').textContent =
-            bandwidth > 6 ? 'Wide frequency range' : 'Limited frequency range';
-
-        document.getElementById('bandwidthStatusText').textContent =
-            bandwidth > 6 ? 'Good coverage' : 'Needs extension';
-
-        /* ---------- 2. Balance ---------- */
-        document.getElementById('balanceSummary').textContent =
-            balance < 3 ? 'Voices stronger than bass' :
-            balance > 7 ? 'Bass stronger than voices' :
-                           'Well balanced';
-
-        document.getElementById('balanceStatusText').textContent =
-            balance > 3 && balance < 7 ? 'Well balanced' : 'Needs adjustment';
-
-        /* ---------- 3. Smoothness ---------- */
-        document.getElementById('smoothnessSummary').textContent =
-            `${(10 - smoothness).toFixed(1)} dB std deviation`;
-
-        document.getElementById('smoothnessStatusText').textContent =
-            smoothness > 6 ? 'Good consistency' : 'Some variation';
-
-        /* ---------- 4. Peaks & Dips ---------- */
-        document.getElementById('peaksDipsSummary').textContent =
-            peaksDips > 5 ? 'Pretty smooth' : 'Some notes jump out';
-
-        document.getElementById('peaksDipsStatusText').textContent =
-            peaksDips > 5 ? 'OK' : 'Treat';
-
-        /* ---------- 5. Reflections ---------- */
-        document.getElementById('reflectionsSummary').textContent =
-            reflections > 6 ? 'Few reflections' : 'Some reflections detected';
-
-        document.getElementById('reflectionsStatusText').textContent =
-            reflections > 6 ? 'Good control' : 'Some treatment needed';
-
-        /* ---------- 6. Reverb ---------- */
-        document.getElementById('reverbSummary').textContent =
-            `${(reverb / 100).toFixed(2)}s EDT`;
-
-        document.getElementById('reverbStatusText').textContent =
-            reverb > 7 ? 'Excellent control' : 'May be too live';
-
-
-        /* ---------- BUDDY TIPS (using new buckets) ---------- */
-        this.injectBuddyPhrase('bandwidthBuddy',   'bandwidth',   this.toBucket(bandwidth));
-        this.injectBuddyPhrase('balanceBuddy',     'balance',     this.toBucket(balance));
-        this.injectBuddyPhrase('smoothnessBuddy',  'smoothness',  this.toBucket(smoothness));
-        this.injectBuddyPhrase('peaksDipsBuddy',   'peaks_dips',  this.toBucket(peaksDips));
-        this.injectBuddyPhrase('reflectionsBuddy', 'reflections', this.toBucket(reflections));
-        this.injectBuddyPhrase('reverbBuddy',      'reverb',      this.toBucket(reverb));
-
-
-        /* ---------- Foot tags ---------- */
-        const safeSet = (id, key) => {
-            const el = document.getElementById(id);
-            if (el && window.footBank?.[key]) {
-                el.textContent = window.footBank[key];
-            }
-        };
-
-        safeSet('peaksDipsFoot',   'peaksDips');
-        safeSet('reflectionsFoot', 'reflections');
-        safeSet('bandwidthFoot',   'bandwidth');
-        safeSet('balanceFoot',     'balance');
-        safeSet('smoothnessFoot',  'smoothness');
-        safeSet('reverbFoot',      'reverb');
-    }
-    
-    async loadSession(which) {
-
-        // Convert "latest" to your newest real session ID
-        if (which === "latest") {
-            if (this.sessionList && this.sessionList.length > 0) {
-                which = this.sessionList[0];
-            } else {
-                console.warn("No sessions found");
-                return;
-            }
-        }
-
-        // NEVER request /api/session/latest (it doesn't exist)
-        const endpoint = `/api/session/${encodeURIComponent(which)}`;
-
-        try {
-            const response = await fetch(endpoint);
-            if (!response.ok) {
-                throw new Error(`Session load failed: ${response.status}`);
+        const metrics = [
+            { id: 'peaksDips', score: data.peaks_dips ?? 3, 
+              rawFunc: (s) => `Low Frequency Std Dev: ${(10 - s).toFixed(1)} dB` },
+            { id: 'reflections', score: data.reflections ?? 3, 
+              rawFunc: (s) => (s > 6 ? 'Low Early Reflection Energy' : 'High Early Reflection Energy') },
+            { id: 'bandwidth', score: data.bandwidth ?? 3, 
+              rawFunc: (s) => (s > 6 ? 'Wide ±3dB Range' : 'Limited ±3dB Range') },
+            { id: 'balance', score: data.balance ?? 3, 
+              rawFunc: (s) => (s > 4 && s < 7 ? 'Low L/R Skew' : 'High L/R Skew') },
+            { id: 'smoothness', score: data.smoothness ?? 3, 
+              rawFunc: (s) => `Mid/High Variance: ${(10 - s).toFixed(1)} dB` },
+            { id: 'reverb', score: data.reverb ?? 3, 
+              rawFunc: (s) => `Decay Time: ${(s / 100).toFixed(2)}s EDT` }
+        ];
+        
+        metrics.forEach(metric => {
+            const bucket = this.toBucket(metric.score);
+            
+            // --- BOX 1: RAW DATA (Technical Metric) ---
+            const rawEl = document.getElementById(metric.id + 'RawMetric');
+            if (rawEl) {
+                rawEl.textContent = metric.rawFunc(metric.score);
             }
 
-            this.currentData = await response.json();
-            this.updateDashboard();
-            this.updateCompareSessionMetrics();
+            // --- BOX 2: DAVE'S TRANSLATION (Uses the simple descriptive phrase) ---
+            const transEl = document.getElementById(metric.id + 'Translation');
+            if (transEl) {
+                const choices = window.buddyBank[metric.id]?.[bucket] || ['Dave cannot compute.'];
+                const translatedPhrase = window.pickUniqueTip(metric.id, choices); 
+                transEl.textContent = `“${translatedPhrase}”`; // Apply quotes for Dave's voice
+            }
 
-        } catch (err) {
-            console.error("Error loading session", err);
-            this.showError("Couldn't load that session");
-        }
+            // --- BOX 3: SOLUTIONS (The list of specific fixes) ---
+            const solutionsEl = document.getElementById(metric.id + 'Solutions');
+            if (solutionsEl) {
+                const solutionChoices = window.buddyBank[metric.id + '_solutions']?.[bucket] || ['<li>No fixes available.</li>'];
+                
+                // Format the specific solutions into an HTML list
+                const htmlList = solutionChoices.map(solution => {
+                    // Apply the bold replacement helper
+                    const text = replaceBold(solution);
+                    return `<li>${text}</li>`;
+                }).join('');
+
+                solutionsEl.innerHTML = htmlList;
+            }
+        });
     }
-
-
-    async loadSessionByIndex(index) {
-        if (!this.sessionList || !this.sessionList[index]) {
-            console.warn("No session at index", index);
-            return;
-        }
-
-        const id = this.sessionList[index];
-        console.log("Loading compare session:", id);
-
-        try {
-            const r = await fetch(`/api/session/${encodeURIComponent(id)}`);
-            if (!r.ok) throw new Error(r.status);
-
-            const d = await r.json();
-
-            this.currentData = d;        // replace dashboard data
-            this.updateDashboard();      // redraw EVERYTHING
-            this.updateCompareSessionMetrics();  // redraw peak/dip/mismatch/mid
-        } catch (err) {
-            console.error("Failed to load session:", id, err);
-        }
-    }
-
 
     /* ============================================================
-       BUDDY TIP PICKER — OVERALL
-       ============================================================ */
+    BUDDY TIP PICKER — OVERALL
+    ============================================================ */
     async pickOverallPhrase(score) {
 
         let bucket =
             score >= 8 ? 'overall_excellent' :
             score >= 6 ? 'overall_good' :
             score >= 4 ? 'overall_fair' :
-                         'overall_poor';
+                        'overall_poor';
 
         const bank = window.buddyBank || {};
         const choices = bank[bucket] || [];
 
         if (choices.length === 0) {
             if (bucket === 'overall_excellent') return 'Superb acoustics — nothing fighting the music.';
-            if (bucket === 'overall_good')      return 'Strong performance — just a few tiny tweaks.';
-            if (bucket === 'overall_fair')      return 'Decent start — room interactions still audible.';
+            if (bucket === 'overall_good') return 'Strong performance — just a few tiny tweaks.';
+            if (bucket === 'overall_fair') return 'Decent start — room interactions still audible.';
             return 'Room needs some love, loads of easy wins ahead.';
         }
 
@@ -547,46 +450,169 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       STATUS DOT / TEXT COLOUR
-       ============================================================ */
-    updateStatusIndicator(prefix, value) {
-        const el =
-            document.getElementById(prefix + 'Indicator') ||
-            document.getElementById(prefix);
+    RAW METRIC PICKER HELPERS
+    ============================================================ */
 
-        if (!el) return;
-
-        const bucket =
-            value >= 8 ? 'status-good' :
-            value >= 4 ? 'status-warning' :
-                         'status-poor';
-
-        el.classList.remove('status-good', 'status-warning', 'status-poor');
-        el.classList.add(bucket);
+    pickRawMetric(card, bucket) {
+        const rm = window.rawMetrics?.[card]?.[bucket] || [];
+        if (!rm.length) return "--";
+        // Pick a random line from the fake metrics
+        return rm[Math.floor(Math.random() * rm.length)];
     }
 
+
     /* ============================================================
-       BUDDY TIP INJECTION (PER CARD)
-       ============================================================ */
+    CARD SUMMARIES + BUDDY TIPS + RAW METRICS
+    ============================================================ */
+    updateDescriptions(data) {
+
+        // Only run on main dashboard
+        if (!document.getElementById('bandwidthSummary')) return;
+
+        /* Extract safe numeric values */
+        const bandwidth   = data.bandwidth   ?? 3;
+        const balance     = data.balance     ?? 3;
+        const smoothness  = data.smoothness  ?? 3;
+        const peaksDips   = data.peaks_dips  ?? 3;
+        const reflections = data.reflections ?? 3;
+        const reverb      = data.reverb      ?? 3;
+
+        /* Convert scores to buckets */
+        const bwBucket   = this.toBucket(bandwidth);
+        const balBucket  = this.toBucket(balance);
+        const smBucket   = this.toBucket(smoothness);
+        const pdBucket   = this.toBucket(peaksDips);
+        const refBucket  = this.toBucket(reflections);
+        const rvBucket   = this.toBucket(reverb);
+
+
+        /* ============================================================
+        1. BANDWIDTH
+        ============================================================ */
+        document.getElementById('bandwidthSummary').textContent =
+            bandwidth > 6 ? "Wide usable range (out of 10)" :
+            bandwidth > 3 ? "Moderate range (out of 10)" :
+                            "Restricted range (out of 10)";
+
+        document.getElementById('bandwidthStatusText').textContent =
+            bandwidth > 6 ? "Good coverage" :
+            bandwidth > 3 ? "OK" :
+                            "Needs extension";
+
+        const bwRaw = document.getElementById("bandwidthRaw");
+        if (bwRaw) bwRaw.textContent = this.pickRawMetric("bandwidth", bwBucket);
+
+
+        /* ============================================================
+        2. BALANCE
+        ============================================================ */
+        document.getElementById('balanceSummary').textContent =
+            balance < 3 ? "Mids stronger than bass (tilted bright)" :
+            balance > 7 ? "Bass stronger than mids (tilted warm)" :
+                        "Balanced tone (no tilt)";
+
+        document.getElementById('balanceStatusText').textContent =
+            (balance > 3 && balance < 7) ? "Well balanced" : "Needs adjustment";
+
+        const balRaw = document.getElementById("balanceRaw");
+        if (balRaw) balRaw.textContent = this.pickRawMetric("balance", balBucket);
+
+
+        /* ============================================================
+        3. SMOOTHNESS
+        ============================================================ */
+        const smoothDev = (10 - smoothness).toFixed(1);
+
+        document.getElementById('smoothnessSummary').textContent =
+            `${smoothDev} dB variation`;
+
+        document.getElementById('smoothnessStatusText').textContent =
+            smoothness > 6 ? "Good consistency" : "Some variation";
+
+        const smRaw = document.getElementById("smoothnessRaw");
+        if (smRaw) smRaw.textContent = this.pickRawMetric("smoothness", smBucket);
+
+
+        /* ============================================================
+        4. PEAKS & DIPS
+        ============================================================ */
+        const lfStdDev = (10 - peaksDips).toFixed(1);
+
+        document.getElementById("peaksDipsRaw").textContent =
+            this.pickRawMetric("peaks_dips", pdBucket);
+
+        document.getElementById('peaksDipsSummary').textContent =
+            peaksDips > 5 ? "Moderate variation" : "Large peaks/dips detected";
+
+        document.getElementById('peaksDipsStatusText').textContent =
+            peaksDips > 5 ? "OK" : "Treat";
+
+
+        /* ============================================================
+        5. REFLECTIONS
+        ============================================================ */
+        document.getElementById('reflectionsSummary').textContent =
+            reflections > 6 ? "Few reflections" :
+            reflections > 3 ? "Some reflections detected" :
+                            "Strong reflections present";
+
+        document.getElementById('reflectionsStatusText').textContent =
+            reflections > 6 ? "Good control" :
+            reflections > 3 ? "OK" :
+                            "Needs treatment";
+
+        const refRaw = document.getElementById("reflectionsRaw");
+        if (refRaw) refRaw.textContent = this.pickRawMetric("reflections", refBucket);
+
+
+        /* ============================================================
+        6. REVERB
+        ============================================================ */
+        const edt = (reverb / 100).toFixed(2);
+
+        document.getElementById('reverbSummary').textContent = `${edt}s EDT`;
+
+        document.getElementById('reverbStatusText').textContent =
+            reverb > 7 ? "Excellent control" :
+            reverb > 4 ? "Acceptable" :
+                        "Too live";
+
+        const revRaw = document.getElementById("reverbRaw");
+        if (revRaw) revRaw.textContent = this.pickRawMetric("reverb", rvBucket);
+
+
+        /* ============================================================
+        BUDDY PHRASES
+        ============================================================ */
+        this.injectBuddyPhrase("bandwidthBuddy",   "bandwidth",   bwBucket);
+        this.injectBuddyPhrase("balanceBuddy",     "balance",     balBucket);
+        this.injectBuddyPhrase("smoothnessBuddy",  "smoothness",  smBucket);
+        this.injectBuddyPhrase("peaksDipsBuddy",   "peaks_dips",  pdBucket);
+        this.injectBuddyPhrase("reflectionsBuddy", "reflections", refBucket);
+        this.injectBuddyPhrase("reverbBuddy",      "reverb",      rvBucket);
+    }
+
+
+    /* ============================================================
+    BUDDY TIP INJECTION (PER CARD)
+    ============================================================ */
     async injectBuddyPhrase(elId, cardName, bucket) {
         const el = document.getElementById(elId);
         if (!el) return;
 
         const bank = window.buddyBank || {};
 
-        // Example lookup:
-        // bank["peaks_dips"]["okay"]
         const cardBucket = bank[cardName];
         if (!cardBucket) {
             console.warn("No card bucket for", cardName);
-            el.textContent = "";
+            el.textContent = "--";
             return;
         }
 
         const choices = cardBucket[bucket] || [];
         if (choices.length === 0) {
             console.warn("No tips for", cardName, bucket);
-            el.textContent = "";
+            el.textContent = "--";
             return;
         }
 
@@ -596,105 +622,106 @@ class MeasurelyDashboard {
 
 
     /* ============================================================
-       VERDICT TEXT (OVERALL)
-       ============================================================ */
+    VERDICT TEXT (OVERALL)
+    ============================================================ */
     getScoreStatusText(score) {
         let verdict;
 
-        if (score >= 8)      verdict = 'Excellent acoustics';
+        if (score >= 8) verdict = 'Excellent acoustics';
         else if (score >= 6) verdict = 'Good room response';
         else if (score >= 4) verdict = 'Room for improvement';
-        else                 verdict = 'Needs significant treatment';
+        else verdict = 'Needs significant treatment';
 
         return `<strong>Verdict:</strong> ${verdict}`;
     }
 
     /* ============================================================
-       STATUS COLOUR MAPPINGS FOR CARDS
-       ============================================================ */
+    FIXED — UNIFIED COLOUR SYSTEM (GREEN / BLUE / YELLOW / RED)
+    ============================================================ */
+
     statusClasses = {
-        green:  {
-            text: "text-green-500",
-            dot:  "bg-green-500",
-            icon: "text-green-500"
-        },
-        yellow: {
-            text: "text-yellow-500",
-            dot:  "bg-yellow-500",
-            icon: "text-yellow-500"
-        },
-        orange: {
-            text: "text-blue-400",
-            dot:  "bg-blue-400",
-            icon: "text-blue-400"
-        },
-        red: {
-            text: "text-red-500",
-            dot:  "bg-red-500",
-            icon: "text-red-500"
-        }
+        green:   { text: "text-green-500",  dot: "bg-green-500",  icon: "text-green-500" },
+        yellow:  { text: "text-yellow-500", dot: "bg-yellow-500", icon: "text-yellow-500" },
+        orange:  { text: "text-blue-400",   dot: "bg-blue-400",   icon: "text-blue-400" },
+        red:     { text: "text-red-500",    dot: "bg-red-500",    icon: "text-red-500" }
     };
 
+
     /* ============================================================
-       APPLY CARD COLOURS — SCORE, TEXT, DOT, ICON
-       ============================================================ */
+    FIXED — APPLY CARD COLOUR (correct removal lists)
+    ============================================================ */
     applySixCardColor(cardId, value) {
         let bucket;
-        if (value >= 8)      bucket = "green";
+        if (value >= 8) bucket = "green";
         else if (value >= 6) bucket = "yellow";
         else if (value >= 4) bucket = "orange";
-        else                 bucket = "red";
+        else bucket = "red";
 
         const palette = this.statusClasses[bucket];
         if (!palette) return;
 
-        // Score number
+        /* ---------------- MAIN SCORE ---------------- */
         const scoreEl = document.querySelector(`[data-color-target="${cardId}"]`);
         if (scoreEl) {
             scoreEl.classList.remove(
-                "text-green-600", "text-yellow-600",
-                "text-orange-600", "text-red-600"
+                "text-green-500","text-yellow-500","text-red-500",
+                "text-blue-400","text-purple-600",
+                "text-orange-500","text-orange-600","text-orange-400"
             );
             scoreEl.classList.add(palette.text);
         }
 
-        // Summary + small texts
+        /* ---------------- SUMMARY TEXT ---------------- */
         document.querySelectorAll(`[data-color-summary="${cardId}"]`).forEach(el => {
             el.classList.remove(
-                "text-green-600", "text-yellow-600",
-                "text-orange-600", "text-red-600"
+                "text-green-500","text-yellow-500","text-red-500",
+                "text-blue-400","text-purple-600",
+                "text-orange-500","text-orange-600","text-orange-400"
             );
             el.classList.add(palette.text);
         });
 
-        // Dot
+        /* ---------------- TITLE (FIXED) ---------------- */
+        const titleEl = document.querySelector(`[data-color-title="${cardId}"]`);
+        if (titleEl) {
+            titleEl.classList.remove(
+                "text-green-500","text-yellow-500","text-red-500",
+                "text-blue-400","text-purple-600"
+            );
+            titleEl.classList.add(palette.text);
+        }
+
+        /* ---------------- DOT ---------------- */
         const dotEl = document.getElementById(`${cardId}Status`);
         if (dotEl) {
             dotEl.classList.remove(
-                "bg-green-500","bg-yellow-500",
-                "bg-orange-500","bg-red-500"
+                "bg-green-500","bg-yellow-500","bg-red-500",
+                "bg-blue-400","bg-purple-600",
+                "bg-orange-500","bg-orange-600","bg-orange-400"
             );
             dotEl.classList.add(palette.dot);
         }
 
-        // Icon
+        /* ---------------- ICON (FIXED) ---------------- */
         const iconEl = document.querySelector(`[data-color-icon="${cardId}"]`);
         if (iconEl) {
             iconEl.classList.remove(
-                "text-green-600", "text-yellow-600",
-                "text-orange-600", "text-red-600"
+                "text-green-500","text-yellow-500","text-red-500",
+                "text-blue-400","text-purple-600"
             );
             iconEl.classList.add(palette.icon);
         }
     }
 
+
+
     /* ============================================================
-       FREQUENCY RESPONSE CHART
-       ============================================================ */
+    FREQUENCY RESPONSE CHART
+    ============================================================ */
     updateFrequencyChart() {
         const chart = document.getElementById('frequencyChart');
         if (!chart) {
-            return; // <-- skip whole function on Tips & Tweaks page
+            return; // <-- skip whole function on non-dashboard pages
         }
         const data = this.currentData;
         if (!data) return;
@@ -703,8 +730,8 @@ class MeasurelyDashboard {
 
         const traces = [
             {
-                x: data.left_freq_hz  || [],
-                y: data.left_mag_db   || [],
+                x: data.left_freq_hz || [],
+                y: data.left_mag_db || [],
                 type: 'scatter',
                 mode: 'lines',
                 name: 'Left',
@@ -712,7 +739,7 @@ class MeasurelyDashboard {
             },
             {
                 x: data.right_freq_hz || [],
-                y: data.right_mag_db  || [],
+                y: data.right_mag_db || [],
                 type: 'scatter',
                 mode: 'lines',
                 name: 'Right',
@@ -721,9 +748,9 @@ class MeasurelyDashboard {
         ];
 
         const active = document.querySelector('.channel-active')?.dataset.channel || 'both';
-        const toPlot = active === 'left'  ? [traces[0]]
-                    : active === 'right' ? [traces[1]]
-                    : traces;
+        const toPlot = active === 'left' ? [traces[0]]
+                     : active === 'right' ? [traces[1]]
+                     : traces;
 
         const layout = {
             xaxis: {
@@ -732,18 +759,18 @@ class MeasurelyDashboard {
                 linewidth: 1,
                 linecolor: '#d1d5db',
                 tickfont: { size: mobile ? 10 : 11 },
-                title: mobile ? '' : 'Frequency (Hz)'   // <- remove title on mobile
+                title: mobile ? '' : 'Frequency (Hz)'
             },
             yaxis: {
                 showline: true,
                 linewidth: 1,
                 linecolor: '#d1d5db',
                 tickfont: { size: mobile ? 10 : 11 },
-                title: mobile ? '' : 'Magnitude (dB)'   // <- remove title on mobile
+                title: mobile ? '' : 'Magnitude (dB)'
             },
             showlegend: false,
             margin: mobile
-                ? { t: 5, r: 5, b: 25, l: 30 }   // tiny margins on phone
+                ? { t: 5, r: 5, b: 25, l: 30 }
                 : { t: 20, r: 20, b: 50, l: 55 },
             plot_bgcolor: '#fff',
             paper_bgcolor: '#fff',
@@ -755,81 +782,68 @@ class MeasurelyDashboard {
         Plotly.newPlot('frequencyChart', toPlot, layout, {
             responsive: true,
             displayModeBar: false,
-            showLegend: false   // <- extra insurance
+            showLegend: false
         });
     }
 
+    /* ============================================================
+    NERDS CORNER: SESSION EXPLORER METRICS
+    ============================================================ */
     updateCompareSessionMetrics() {
         const d = this.currentData;
-        if (!d) return;
-
-        const L = d.left_mag_db || [];
-        const R = d.right_mag_db || [];
-        const F = d.left_freq_hz || [];
-
-        if (!L.length || !R.length || !F.length) return;
-
-        // Peak and dip
-        const peak = Math.max(...L, ...R);
-        const dip  = Math.min(...L, ...R);
-
-        // L/R mismatch average
-        let mismatch = 0;
-        const n = Math.min(L.length, R.length);
-        for (let i = 0; i < n; i++) {
-            mismatch += Math.abs(L[i] - R[i]);
-        }
-        mismatch = mismatch / n;
-
-        // Roll-off (3dB down from start)
-        let roll = "--";
-        const ref = (L[0] + R[0]) / 2;
-        for (let i = F.length - 1; i >= 0; i--) {
-            const avg = (L[i] + R[i]) / 2;
-            if (avg <= ref - 3) {
-                roll = `${F[i].toFixed(0)} Hz`;
-                break;
-            }
-        }
-
-        // DOM update helper
-        const set = (id, value) => {
+        
+        // Helper to update the Sesssion Explorer blocks
+        const set = (id, value, isScore=false) => {
             const el = document.getElementById(id);
-            if (el) el.textContent = value;
+            if (el) el.textContent = isScore ? (value ? value.toFixed(1) : '--') : value;
         };
 
-        set("metricPeak", `${peak.toFixed(1)} dB`);
-        set("metricDip", `${dip.toFixed(1)} dB`);
-        set("metricLR", `${mismatch.toFixed(1)} dB`);
-        // Midrange average from 200–2000 Hz (like your other mid calculations)
-        let midSum = 0, midCount = 0;
-        for (let i = 0; i < F.length; i++) {
-            const f = F[i];
-            const avg = (L[i] + R[i]) / 2;
-
-            if (f > 200 && f <= 2000) {
-                midSum += avg;
-                midCount++;
+        if (!d || !d.has_analysis) {
+             // Clear the explorer metrics if no analysis exists
+            const emptyMetrics = {
+                sessOverallScore: '--', sessOverallStatus: 'No Analysis',
+                sessPeaksDips: '--', sessReflections: '--', sessBandwidth: '--',
+                sessBalance: '--', sessSmoothness: '--', sessReverb: '--',
+                sessBass: '-- dB', sessMid: '-- dB', sessTreble: '-- dB', sessAir: '-- dB'
+            };
+            for (const [id, value] of Object.entries(emptyMetrics)) {
+                set(id, value);
             }
+            return;
         }
 
-        const midAvg = midCount ? (midSum / midCount) : 0;
+        const bands = d.band_levels_db || {};
+        
+        // Overall
+        set("sessOverallScore", d.overall_score, true);
+        set("sessOverallStatus", this.getScoreStatusText(d.overall_score).replace('<strong>Verdict:</strong> ', ''));
 
-        // Update the new metric box
-        set("metricMid", `${midAvg.toFixed(1)} dB`);
+        // Six Metrics
+        set("sessPeaksDips", d.peaks_dips, true);
+        set("sessReflections", d.reflections, true);
+        set("sessBandwidth", d.bandwidth, true);
+        set("sessBalance", d.balance, true);
+        set("sessSmoothness", d.smoothness, true);
+        set("sessReverb", d.reverb, true);
 
+        // Four Bands
+        set("sessBass", bands.bass ? `${bands.bass.toFixed(1)} dB` : '-- dB');
+        set("sessMid", bands.mid ? `${bands.mid.toFixed(1)} dB` : '-- dB');
+        set("sessTreble", bands.treble ? `${bands.treble.toFixed(1)} dB` : '-- dB');
+        set("sessAir", bands.air ? `${bands.air.toFixed(1)} dB` : '-- dB');
     }
 
 
     /* ============================================================
-       ROOM MODE ANALYSIS (L × W × H)
-       ============================================================ */
+    ROOM MODE ANALYSIS (L × W × H)
+    ============================================================ */
     updateRoomAnalysis() {
+        // NOTE: This function's target IDs (roomDimensions, lengthMode, etc.) are not present in index.html
         if (!document.getElementById('roomDimensions')) return;
 
         const data = this.currentData || {};
         const length = Number(data.length) || 4.0;
-        const width  = Number(data.width)  || 4.0;
+        const width = Number(data.width) || 4.0;
         const height = Number(data.height) || 3.0;
 
         document.getElementById('roomDimensions').textContent =
@@ -846,62 +860,94 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       DETAILED BAND ANALYSIS (Bass / Mid / Treble / Air)
-       ============================================================ */
+    DETAILED BAND ANALYSIS (Bass / Mid / Treble / Air)
+    ============================================================ */
     updateDetailedAnalysis() {
-        if (!document.getElementById('bassLevel')) {
-            return;   // <-- Not the dashboard page, exit safely
+        if (!document.getElementById('bassLevel')) return;
+
+        const data = this.currentData || {};
+
+        /* -------------------------- 
+        1) Try band_levels_db FIRST
+        -------------------------- */
+        if (data.band_levels_db) {
+            const b = data.band_levels_db;
+
+            const bass   = (b.bass           ?? b.bass_20_200       ?? 0).toFixed(1);
+            const mid    = (b.mid            ?? b.mid_200_2k        ?? 0).toFixed(1);
+            const treble = (b.treble         ?? b.treble_2k_10k     ?? 0).toFixed(1);
+            const air    = (b.air            ?? b.air_10k_20k       ?? 0).toFixed(1);
+
+            document.getElementById('bassLevel').textContent   = `${bass} dB`;
+            document.getElementById('midLevel').textContent    = `${mid} dB`;
+            document.getElementById('trebleLevel').textContent = `${treble} dB`;
+            document.getElementById('airLevel').textContent    = `${air} dB`;
+
+            const norm = v => `${Math.max(0, Math.min(100, ((parseFloat(v) + 20) / 40) * 100))}%`;
+
+            document.getElementById('bassBar').style.width   = norm(bass);
+            document.getElementById('midBar').style.width    = norm(mid);
+            document.getElementById('trebleBar').style.width = norm(treble);
+            document.getElementById('airBar').style.width    = norm(air);
+            return;
         }
 
-        const data = this.currentData;
-        if (!data.freq_hz || !data.mag_db) return;
-        const freqHz = data.freq_hz;
-        const magDb  = data.mag_db;
+        /* --------------------------
+        2) No band_levels_db?
+            → CALCULATE IT OURSELVES
+        -------------------------- */
+        const fhz = data.freq_hz;
+        const mag = data.mag_db;
 
-        let bassSum = 0, bassCount = 0;
-        let midSum = 0, midCount = 0;
-        let trebleSum = 0, trebleCount = 0;
-        let airSum = 0, airCount = 0;
+        if (!fhz || !mag || fhz.length !== mag.length) {
+            // FINAL HARD FALLBACK (no data at all)
+            document.getElementById('bassLevel').textContent   = `0.0 dB`;
+            document.getElementById('midLevel').textContent    = `0.0 dB`;
+            document.getElementById('trebleLevel').textContent = `0.0 dB`;
+            document.getElementById('airLevel').textContent    = `0.0 dB`;
 
-        for (let i = 0; i < freqHz.length; i++) {
-            const f = freqHz[i];
-            const m = magDb[i];
-
-            if (f >= 20 && f <= 200) {
-                bassSum += m; bassCount++;
-            } else if (f > 200 && f <= 2000) {
-                midSum += m; midCount++;
-            } else if (f > 2000 && f <= 10000) {
-                trebleSum += m; trebleCount++;
-            } else if (f > 10000 && f <= 20000) {
-                airSum += m; airCount++;
-            }
+            document.getElementById('bassBar').style.width   = '50%';
+            document.getElementById('midBar').style.width    = '50%';
+            document.getElementById('trebleBar').style.width = '50%';
+            document.getElementById('airBar').style.width    = '50%';
+            return;
         }
 
-        const bassAvg   = bassCount   ? (bassSum / bassCount).toFixed(1)   : "0.0";
-        const midAvg    = midCount    ? (midSum / midCount).toFixed(1)    : "0.0";
-        const trebleAvg = trebleCount ? (trebleSum / trebleCount).toFixed(1) : "0.0";
-        const airAvg    = airCount    ? (airSum / airCount).toFixed(1)    : "0.0";
+        /* --------------------------
+        3) Raw fallback calculation
+        -------------------------- */
+        let bSum=0,bCnt=0,mSum=0,mCnt=0,tSum=0,tCnt=0,aSum=0,aCnt=0;
 
-        // Set values
-        document.getElementById('bassLevel').textContent   = `${bassAvg} dB`;
-        document.getElementById('midLevel').textContent    = `${midAvg} dB`;
-        document.getElementById('trebleLevel').textContent = `${trebleAvg} dB`;
-        document.getElementById('airLevel').textContent    = `${airAvg} dB`;
+        for (let i=0;i<fhz.length;i++){
+            const f = fhz[i], v = mag[i];
+            if (f>=20 && f<=200){ bSum+=v; bCnt++; }
+            else if (f>200 && f<=2000){ mSum+=v; mCnt++; }
+            else if (f>2000 && f<=10000){ tSum+=v; tCnt++; }
+            else if (f>10000 && f<=20000){ aSum+=v; aCnt++; }
+        }
 
-        // Normalise bar lengths for UI
-        const normalize = (val) =>
-            Math.max(0, Math.min(100, ((parseFloat(val) + 20) / 40) * 100));
+        const bass   = (bCnt? bSum/bCnt : 0).toFixed(1);
+        const mid    = (mCnt? mSum/mCnt : 0).toFixed(1);
+        const treble = (tCnt? tSum/tCnt : 0).toFixed(1);
+        const air    = (aCnt? aSum/aCnt : 0).toFixed(1);
 
-        document.getElementById('bassBar').style.width   = `${normalize(bassAvg)}%`;
-        document.getElementById('midBar').style.width    = `${normalize(midAvg)}%`;
-        document.getElementById('trebleBar').style.width = `${normalize(trebleAvg)}%`;
-        document.getElementById('airBar').style.width    = `${normalize(airAvg)}%`;
+        document.getElementById('bassLevel').textContent   = `${bass} dB`;
+        document.getElementById('midLevel').textContent    = `${mid} dB`;
+        document.getElementById('trebleLevel').textContent = `${treble} dB`;
+        document.getElementById('airLevel').textContent    = `${air} dB`;
+
+        const norm = v => `${Math.max(0, Math.min(100, ((parseFloat(v) + 20) / 40) * 100))}%`;
+
+        document.getElementById('bassBar').style.width   = norm(bass);
+        document.getElementById('midBar').style.width    = norm(mid);
+        document.getElementById('trebleBar').style.width = norm(treble);
+        document.getElementById('airBar').style.width    = norm(air);
     }
 
+
     /* ============================================================
-       SHOW CHANNEL (Left / Right / Both)
-       ============================================================ */
+    SHOW CHANNEL (Left / Right / Both)
+    ============================================================ */
         showChannel(channel) {
 
             const chart = document.getElementById('frequencyChart');
@@ -910,41 +956,46 @@ class MeasurelyDashboard {
             const data = this.currentData;
             if (!data) return;
 
-
         /* ---------------------------------------------------------
         BUILD TRACES
         --------------------------------------------------------- */
+        const mobile = window.innerWidth < 640;
         const leftTrace = {
             x: data.left_freq_hz || [],
-            y: data.left_mag_db  || [],
+            y: data.left_mag_db || [],
             type: 'scatter',
             mode: 'lines',
             name: 'Left',
-            line: { color: '#6D28D9', width: 2 }
+            line: { color: '#6D28D9', width: mobile ? 3 : 2.5 }
         };
 
         const rightTrace = {
             x: data.right_freq_hz || [],
-            y: data.right_mag_db  || [],
+            y: data.right_mag_db || [],
             type: 'scatter',
             mode: 'lines',
             name: 'Right',
-            line: { color: '#3B82F6', width: 2 }
+            line: { color: '#3B82F6', width: mobile ? 3 : 2.5 }
         };
 
         let traces = [];
-        if (channel === 'left')   traces = [leftTrace];
-        if (channel === 'right')  traces = [rightTrace];
-        if (channel === 'both')   traces = [leftTrace, rightTrace];
+        if (channel === 'left') traces = [leftTrace];
+        if (channel === 'right') traces = [rightTrace];
+        if (channel === 'both') traces = [leftTrace, rightTrace];
 
         /* ---------------------------------------------------------
         UPDATE ACTIVE BUTTON
         --------------------------------------------------------- */
         document.querySelectorAll('.channel-btn')
-            .forEach(btn => btn.classList.remove('channel-active'));
+            .forEach(btn => {
+                btn.classList.remove('channel-active', 'bg-gray-200');
+                if (btn.dataset.channel === channel) {
+                    btn.classList.add('channel-active', 'bg-gray-200');
+                } else {
+                    btn.classList.add('bg-gray-200'); 
+                }
+            });
 
-        const activeBtn = document.querySelector(`[data-channel="${channel}"]`);
-        if (activeBtn) activeBtn.classList.add('channel-active');
 
         /* ---------------------------------------------------------
         RESPONSIVE LAYOUT FIXES (MOBILE SAFE)
@@ -953,19 +1004,19 @@ class MeasurelyDashboard {
 
         const layout = {
             xaxis: { 
-                title: 'Frequency (Hz)',
                 type: 'log',
-                color: '#111',
-                gridcolor: '#e5e7eb',
-                automargin: true,
-                nticks: isMobile ? 4 : 10
+                showline: true,
+                linewidth: 1,
+                linecolor: '#d1d5db',
+                tickfont: { size: isMobile ? 10 : 11 },
+                title: isMobile ? '' : 'Frequency (Hz)'  
             },
             yaxis: { 
-                title: 'Magnitude (dB)',
-                color: '#111',
-                gridcolor: '#e5e7eb',
-                automargin: true,
-                nticks: isMobile ? 4 : 10
+                showline: true,
+                linewidth: 1,
+                linecolor: '#d1d5db',
+                tickfont: { size: isMobile ? 10 : 11 },
+                title: isMobile ? '' : 'Magnitude (dB)'  
             },
 
             /* Mobile margins tighter */
@@ -989,15 +1040,15 @@ class MeasurelyDashboard {
         /* ---------------------------------------------------------
         RENDER
         --------------------------------------------------------- */
-        Plotly.newPlot('frequencyChart', traces, layout, { responsive: true });
-        this.updateCompareSessionMetrics();
+        Plotly.newPlot('frequencyChart', traces, layout, { responsive: true, displayModeBar: false, showLegend: false });
+        this.updateCompareSessionMetrics(); // Redraw metrics after chart update
 
     }
 
 
     /* ============================================================
-       SAVE RESULTS (JSON Download)
-       ============================================================ */
+    SAVE RESULTS (JSON Download)
+    ============================================================ */
     saveResults() {
         if (!this.currentData) {
             this.showError('No data to save');
@@ -1025,15 +1076,15 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       EXPORT REPORT (Placeholder)
-       ============================================================ */
+    EXPORT REPORT (Placeholder)
+    ============================================================ */
     exportReport() {
         this.showInfo('Export report feature coming soon');
     }
 
     /* ============================================================
-       PROGRESS BAR CONTROL
-       ============================================================ */
+    PROGRESS BAR CONTROL
+    ============================================================ */
     showProgressBar() {
         const container = document.getElementById('progressContainer');
         if (container) container.classList.add('active');
@@ -1053,8 +1104,8 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       LOADING STATE FOR SCORE CARDS
-       ============================================================ */
+    LOADING STATE FOR SCORE CARDS
+    ============================================================ */
     showLoadingState() {
         const ids = [
             'overallScore','bandwidthScore','balanceScore','smoothnessScore',
@@ -1068,8 +1119,8 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-       POLLING FOR DEVICE STATUS
-       ============================================================ */
+    POLLING FOR DEVICE STATUS
+    ============================================================ */
     startPolling() {
         this.updateInterval = setInterval(async () => {
             try {
@@ -1113,57 +1164,39 @@ class MeasurelyDashboard {
         }
 
         /* -------------------------------------------
-        IP ADDRESS
-        ------------------------------------------- */
-        const ipDot = document.getElementById('ipStatusDot');
-        const ipTxt = document.getElementById('ipAddressText');
-
-        if (ipDot && ipTxt) {
-            const hasIP = Boolean(s.ip);
-
-            ipDot.className = "status-indicator " + (hasIP ? "bg-green-500" : "bg-red-500");
-            ipTxt.textContent = "IP: " + (hasIP ? s.ip : "--.--.--.--");
-        }
-
-        /* -------------------------------------------
         DAC CONNECTED
         ------------------------------------------- */
         const dacDot = document.getElementById('dacStatusDot');
         const dacTxt = document.getElementById('dacStatusText');
 
         if (dacDot && dacTxt) {
-            dacDot.className = "status-indicator " + (s.dac ? "bg-green-500" : "bg-red-500");
-            dacTxt.textContent = s.dac ? "DAC: Connected" : "DAC: Not Found";
+            dacDot.className = "status-indicator " + (s.dac?.connected ? "bg-green-500" : "bg-red-500");
+            dacTxt.textContent = s.dac?.connected ? "DAC: Connected" : "DAC: Not Found";
+
         }
 
         /* -------------------------------------------
         USB MIC CONNECTED
         ------------------------------------------- */
-        const micOk = s?.mic?.connected;          // true / false
-        const usbDot = document.getElementById('usbStatusDot');   // ← you dropped this
-        const usbTxt = document.getElementById('usbStatusText');  // ← and this
+        const micOk = s?.mic?.connected;
+        const usbDot = document.getElementById('usbStatusDot');
+        const usbTxt = document.getElementById('usbStatusText');
 
-        usbDot.className = "status-indicator " + (micOk ? "bg-green-500" : "bg-red-500");
-        usbTxt.textContent = micOk
-                ? "USB Mic: connected"
-                : "USB Mic: Not Connected";
-
-        /* -------------------------------------------
-        LAST UPDATED CLOCK
-        ------------------------------------------- */
-        const clock = document.getElementById('lastUpdated');
-        if (clock) {
-            clock.textContent = new Date().toLocaleTimeString();
+        if (usbDot && usbTxt) {
+             usbDot.className = "status-indicator " + (micOk ? "bg-green-500" : "bg-red-500");
+             usbTxt.textContent = micOk
+                 ? "USB Mic: Connected" 
+                 : "USB Mic: Not Connected";
         }
     }
 
 
     /* ============================================================
-       SAMPLE DATA (used when API is missing / errors)
-       ============================================================ */
+     SAMPLE DATA (used when API is missing / errors)
+     ============================================================ */
     generateSampleData() {
         const freq = [];
-        const mag  = [];
+        const mag = [];
         const phase = [];
 
         let f = 20;
@@ -1171,7 +1204,7 @@ class MeasurelyDashboard {
             freq.push(f);
 
             let m = -8;
-            if (f >= 40 && f <= 60)  m += 6 * Math.exp(-Math.pow(f - 50, 2)/50);
+            if (f >= 40 && f <= 60) m += 6 * Math.exp(-Math.pow(f - 50, 2)/50);
             if (f >= 80 && f <= 120) m += 4 * Math.exp(-Math.pow(f - 100,2)/200);
             if (f > 8000) m -= (f - 8000)/2000;
 
@@ -1184,7 +1217,7 @@ class MeasurelyDashboard {
 
         return {
             timestamp: new Date().toISOString(),
-            room: "Sample Room",
+            room: { length_m: 4.0, width_m: 4.0, height_m: 3.0 },
             length: 4.0,
             width: 4.0,
             height: 3.0,
@@ -1197,7 +1230,9 @@ class MeasurelyDashboard {
             smoothness: 7.3,
             peaks_dips: 3.9,
             reflections: 5.0,
-            reverb: 8.5
+            reverb: 8.5,
+            has_analysis: true,
+            band_levels_db: { bass: 5.5, mid: 0.5, treble: -3.0, air: -8.0 }
         };
     }
 
@@ -1217,26 +1252,23 @@ class MeasurelyDashboard {
         safe('exportReportBtn', () => this.exportReport());
 
         // Channel buttons — only on Dashboard
-        safe('leftChannelBtn',  () => this.showChannel('left'));
+        safe('leftChannelBtn',  () => this.showChannel('left'));
         safe('rightChannelBtn', () => this.showChannel('right'));
         safe('bothChannelsBtn', () => this.showChannel('both'));
 
-        // Session comparison — only on Dashboard
-        safe('sessionLatestBtn',   () => this.loadSessionByIndex(0));
-        safe('sessionPreviousBtn', () => this.loadSessionByIndex(1));
-        safe('sessionLastBtn',     () => this.loadSessionByIndex(2));
+        // Removed session comparison event listeners as they are handled in index.html script
     }
 
 
     /* ============================================================
-       TOAST MESSAGES
-       ============================================================ */
+     TOAST MESSAGES
+    ============================================================ */
     showMessage(msg, type='info') {
         const toast = document.createElement('div');
         toast.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300
-            ${type === 'error' ? 'bg-red-600 text-white'
-             : type === 'success' ? 'bg-green-600 text-white'
-             : 'bg-blue-600 text-white'}`;
+             ${type === 'error' ? 'bg-red-600 text-white'
+              : type === 'success' ? 'bg-green-600 text-white'
+              : 'bg-blue-600 text-white'}`;
 
         toast.textContent = msg;
         document.body.appendChild(toast);
@@ -1249,33 +1281,7 @@ class MeasurelyDashboard {
         }, 3000);
     }
 
-    showError(msg)   { this.showMessage(msg, 'error'); }
+    showError(msg) { this.showMessage(msg, 'error'); }
     showSuccess(msg) { this.showMessage(msg, 'success'); }
-    showInfo(msg)    { this.showMessage(msg, 'info'); }
+    showInfo(msg) { this.showMessage(msg, 'info'); }
 }
-
-/* -----  BOOTSTRAP  ----- */
-let firstDrawDone = false;
-
-document.addEventListener('DOMContentLoaded', () => {
-    window.dashboard = new MeasurelyDashboard();
-
-    /*  wait until layout + CSS size is settled, then draw  */
-    const draw = () => {
-        if (firstDrawDone) return;
-        const box = document.getElementById('frequencyChart');
-        if (!box) return;                       // node not ready yet
-        if (box.clientHeight === 0) {           // parent collapsed / zero
-            requestAnimationFrame(draw);
-            return;
-        }
-        firstDrawDone = true;
-        dashboard.showChannel('both');          // real size now known
-    };
-    requestAnimationFrame(draw);
-});
-
-/*  background refresh  -------------------------------------- */
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && window.dashboard) window.dashboard.loadData();
-});

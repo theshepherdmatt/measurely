@@ -437,16 +437,23 @@ def get_status():
 
 
 
+# measurelyapp/server.py (UPDATED)
+
 @app.route('/api/sessions', methods=['GET'])
 def get_sessions():
     try:
         sessions = []
         if MEAS_ROOT.exists():
-            for session_dir in sorted(MEAS_ROOT.iterdir(),
-                                      key=lambda d: d.stat().st_mtime,
-                                      reverse=True):
-                if not session_dir.is_dir():
-                    continue
+            
+            # 1. Filter: Get only valid directories (this prevents crashing on broken symlinks or files)
+            session_dirs = [d for d in MEAS_ROOT.iterdir() if d.is_dir()]
+
+            # 2. Sort: Now safely sort the valid directories by modification time
+            sorted_dirs = sorted(session_dirs,
+                                 key=lambda d: d.stat().st_mtime,
+                                 reverse=True)
+
+            for session_dir in sorted_dirs:
                 sessions.append({
                     "id": session_dir.name,
                     "timestamp": datetime.fromtimestamp(session_dir.stat().st_mtime).isoformat(),
@@ -456,6 +463,8 @@ def get_sessions():
                 })
         return jsonify(sessions)
     except Exception as e:
+        # This fallback remains, but should now only trigger for extreme file system errors
+        print(f"Error in get_sessions: {e}")
         return jsonify({"error": str(e)}), 500
     
 # ----------------------------------------------------------

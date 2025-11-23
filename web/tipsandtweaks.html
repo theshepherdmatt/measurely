@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Measurely – Dashboard</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Measurely – Tips & Tweaks</title>
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
   <link rel="alternate icon" href="favicon.ico">
   <link rel="stylesheet" href="measurely.css">
   <script src="tailwind.js"></script>
@@ -18,7 +18,6 @@
 </head>
 
 <body class="bg-gray-300">
-<!-- Mobile banner -->
 <div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm
             flex items-center justify-between px-4 z-50">
   <div class="flex items-center space-x-2">
@@ -43,7 +42,7 @@
     <nav class="space-y-2">
 
       <a href="index.html" class="nav-item">
-        <img src="icons/chart-line.svg" class="w-5 h-5 mr-3 inline-block" />
+        <img src="icons/dashboard.svg" class="w-5 h-5 mr-3 inline-block" />
         Dashboard
       </a>
 
@@ -58,30 +57,25 @@
       </a>
 
     </nav>
-<!-- ===== SIDEBAR STATUS PANEL ===== -->
 <div class="absolute bottom-6 left-6 right-6">
 
   <div class="bg-white/20 backdrop-blur-md rounded-lg p-4 space-y-3">
 
-    <!-- 1. SYSTEM READY -->
     <div class="flex items-center">
       <div id="systemReadyDot" class="status-indicator status-good pulse-animation"></div>
       <span id="systemReadyText" class="text-sm">System Ready</span>
     </div>
 
-    <!-- 3. THAT CONNECTED (DAC / device) -->
     <div class="flex items-center">
       <div id="dacStatusDot" class="status-indicator bg-yellow-400"></div>
       <span id="dacStatusText" class="text-sm">DAC: Not Found</span>
     </div>
 
-    <!-- 4. USB MIC CONNECTED -->
     <div class="flex items-center">
       <div id="usbStatusDot" class="status-indicator bg-red-400"></div>
       <span id="usbStatusText" class="text-sm">USB Mic: Not Connected</span>
     </div>
 
-    <!-- 5. CLOCK -->
     <p class="text-xs opacity-80">
       Last updated: <span id="lastUpdated">Now</span>
     </p>
@@ -92,57 +86,29 @@
 
 </aside>
 
-<!-- =====  MAIN CONTENT  ===== -->
 <div class="main-content md:ml-64 p-8">
 
-  <!-- universal title -->
   <div class="page-title-block">
     <h1 class="page-title">Tips & Tweaks</h1>
     <p class="page-subtitle">Dave uses your sweep to highlight issues, explain what’s going on, and give practical advice.</p>
   </div>
 
-  <!-- 1. What’s Wrong -->
-  <div class="card mb-8">
-    <div class="mb-4 flex items-center gap-2">
-      <i class="fas fa-search text-indigo-600 text-xl"></i>
-      <h2 class="text-xl font-semibold text-gray-800">What’s Wrong?</h2>
+  <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Priority Action Areas</h2>
+  <p class="text-sm text-gray-600 mb-6">These are your top three weakest metrics, broken down by data, diagnosis, and solution.</p>
+  <div id="tipsCardsWrapper" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
     </div>
-    <p class="text-sm text-gray-600">Your three weakest areas based on real measurements.</p>
-    <div id="priorityCards" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"></div>
-  </div>
-
-  <!-- 2. Dave’s Take -->
-  <div class="card mb-8">
-    <div class="mb-4 flex items-center gap-2">
-      <i class="fas fa-lightbulb text-indigo-600 text-xl"></i>
-      <h2 class="text-xl font-semibold text-gray-800">Dave’s Take</h2>
-    </div>
-    <p class="text-sm text-gray-600">Dave breaks down what’s going on and why it matters.</p>
-    <div id="deepDiveCards" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3"></div>
-  </div>
-
-  <!-- 3. Dave’s Fixes -->
-  <div class="card mb-8">
-    <div class="mb-4 flex items-center gap-2">
-      <i class="fas fa-tools text-indigo-600 text-xl"></i>
-      <h2 class="text-xl font-semibold text-gray-800">Dave’s Fixes</h2>
-    </div>
-    <p class="text-sm text-gray-600">Simple, room-friendly tweaks based on your results.</p>
-    <div id="actionPlan" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm"></div>
-  </div>
-
 
 </div>
-
 
 <div id="toast-container"></div>
 
 
-<script>
+<script src="/js/dashboard.js"></script> <script type="module" src="/js/devices.js"></script> <script>
+/* -------------------- TIPS AND TWEAKS CORE LOGIC --------------------- */
 
-/* -------------------- GLOBALS --------------------- */
-let Solutions = {};
-let data = null;
+// Using var for the data containers to safely declare them in the global scope
+var Solutions = {};
+var data = null; 
 
 async function loadSolutions() {
   const r = await fetch('/buddy_phrases.json');
@@ -153,38 +119,11 @@ async function loadLatest() {
   data = await r.json();
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadSolutions();
-  await loadLatest();
-  renderAll();
-});
-
-/* -------------------- UTILITIES --------------------- */
 function severityFromScore(n) {
   if (n >= 8) return "excellent";
   if (n >= 6) return "good";
   if (n >= 4) return "okay";
   return "needs_work";
-}
-
-function pickFinding(cat, sev) {
-  const arr = Solutions[cat]?.[sev];
-  if (!arr) return "";
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function pickSolution(cat, sev) {
-  const key = `${cat}_solutions`;
-  const arr = Solutions[key]?.[sev];
-  if (!arr) return "";
-  return arr[Math.floor(Math.random()*arr.length)];
-}
-
-function getWorstThree() {
-  const cats = ["peaks_dips","reflections","bandwidth","balance","smoothness","reverb"];
-  return cats.map(c => ({category:c, score:data[c]}))
-             .sort((a,b)=>a.score-b.score)
-             .slice(0,3);
 }
 
 function getColorClassForScore(score) {
@@ -194,165 +133,128 @@ function getColorClassForScore(score) {
   return {ring:"border-red-500",text:"text-red-600",light:"bg-red-50 text-red-800"};
 }
 
-/* -------------------- RENDER ALL --------------------- */
-function renderAll() {
-  renderKeyFindings();
-  renderBuddyDeepDive();
-  renderActionPlan();
+function getWorstThree() {
+  const cats = ["peaks_dips","reflections","bandwidth","balance","smoothness","reverb"];
+  return cats.map(c => ({category:c, score:data[c] ?? 0}))
+             .sort((a,b)=>a.score-b.score)
+             .slice(0,3);
 }
 
-/* -------------------- SECTION 1 — WHAT’S WRONG --------------------- */
-function renderKeyFindings() {
-  const C = document.getElementById('priorityCards');
-  const worst = getWorstThree();
-
-  C.innerHTML = worst.map(w => {
-    const col = getColorClassForScore(w.score);
-    const sev = severityFromScore(w.score);
-    const sol = pickFinding(w.category, sev);
-
-    const name = {
-      peaks_dips:"Peaks & Dips",
-      reflections:"Reflections",
-      bandwidth:"Bandwidth",
-      balance:"Balance",
-      smoothness:"Smoothness",
-      reverb:"Reverb"
-    }[w.category];
-
-    const icon = {
-      peaks_dips:"fa-mountain",
-      reflections:"fa-wave-square",
-      bandwidth:"fa-sliders-h",
-      balance:"fa-arrows-left-right",
-      smoothness:"fa-water",
-      reverb:"fa-bell"
-    }[w.category];
-
-    return `
-      <div class="card">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold ${col.text}">${name}</h3>
-          <i class="fas ${icon} text-3xl ${col.text}"></i>
-        </div>
-
-        <div class="mt-3 mb-3 text-3xl font-bold ${col.text}">
-          ${w.score.toFixed(1)}
-        </div>
-
-        <div class="buddy-box mt-2">
-          <img src="icons/dave.svg" class="w-5 h-5">
-          <span class="italic">${sol}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-
-/* -------------------- SECTION 2 — DAVE’S DEEP DIVE --------------------- */
-function renderBuddyDeepDive() {
-  const C = document.getElementById('deepDiveCards');
-  const worst = getWorstThree();
-
-  C.innerHTML = worst.map(w => {
-    const col = getColorClassForScore(w.score);
-    const sev = severityFromScore(w.score);
-    const sol = pickSolution(w.category, sev);
-
-    const name = {
-      peaks_dips:"Peaks & Dips",
-      reflections:"Reflections",
-      bandwidth:"Bandwidth",
-      balance:"Balance",
-      smoothness:"Smoothness",
-      reverb:"Reverb"
-    }[w.category];
-
-    const icon = {
-      peaks_dips:"fa-mountain",
-      reflections:"fa-wave-square",
-      bandwidth:"fa-sliders-h",
-      balance:"fa-arrows-left-right",
-      smoothness:"fa-water",
-      reverb:"fa-bell"
-    }[w.category];
-
-    return `
-      <div class="card leading-relaxed">
-
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-lg font-semibold ${col.text}">${name}</h3>
-          <i class="fas ${icon} text-3xl ${col.text}"></i>
-        </div>
-
-        <div class="buddy-box mt-2">
-          <img src="icons/dave.svg" class="w-5 h-5">
-          <span class="italic">${sol}</span>
-        </div>
-
-      </div>
-    `;
-  }).join('');
-}
-
-
-/* -------------------- SECTION 3 — ACTION PLAN --------------------- */
-function renderActionPlan() {
-  const C = document.getElementById('actionPlan');
-  const worst = getWorstThree();
-
-  C.innerHTML = worst.map(w => {
-    const col = getColorClassForScore(w.score);
-    const sev = severityFromScore(w.score);
-    const sol = pickSolution(w.category, sev);
-
-    const name = {
-      peaks_dips:"Peaks & Dips",
-      reflections:"Reflections",
-      bandwidth:"Bandwidth",
-      balance:"Balance",
-      smoothness:"Smoothness",
-      reverb:"Reverb"
-    }[w.category];
-
-    return `
-      <div class="card p-4">
-
-        <h4 class="font-semibold ${col.text} mb-2">${name}</h4>
-
-        <div class="buddy-box mt-2">
-          <img src="icons/dave.svg" class="w-5 h-5">
-          <span class="italic">${sol}</span>
-        </div>
-
-      </div>
-    `;
-  }).join('');
-}
-
-</script>
-
-<!-- =====  JAVASCRIPT  ===== -->
-
-<!-- Load the Dashboard class FIRST -->
-<script src="/js/dashboard.js"></script>
-
-<!-- Load device polling SECOND -->
-<script type="module" src="/js/devices.js"></script>
-
-<!-- Now bootstrap the dashboard instance -->
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    if (!window.dashboard) {
-        window.dashboard = new MeasurelyDashboard();
+function getRawMetricDisplay(category, score) {
+    const s = score;
+    switch (category) {
+        case 'peaks_dips':
+            return `Low Frequency Std Dev: ${(10 - s).toFixed(1)} dB`;
+        case 'reflections':
+            return s > 6 ? 'Low Early Reflection Energy' : 'High Early Reflection Energy';
+        case 'bandwidth':
+            return s > 6 ? 'Wide ±3dB Range' : 'Limited ±3dB Range';
+        case 'balance':
+            return s > 4 && s < 7 ? 'Low L/R Skew' : 'High L/R Skew';
+        case 'smoothness':
+            return `Mid/High Variance: ${(10 - s).toFixed(1)} dB`;
+        case 'reverb':
+            return `Decay Time: ${(s / 100).toFixed(2)}s EDT`;
+        default:
+            return '-- N/A --';
     }
+}
+
+/* -------------------- MAIN RENDER FUNCTION --------------------- */
+function renderTipsCards() {
+    const C = document.getElementById('tipsCardsWrapper');
+    
+    if (!C || !data || !data.has_analysis) {
+        C.innerHTML = '<div class="text-lg text-gray-700 col-span-3 card p-6">No analysis data found. Please run a sweep from the Dashboard.</div>';
+        return;
+    }
+    
+    const worst = getWorstThree();
+
+    C.innerHTML = worst.map(w => {
+        const col = getColorClassForScore(w.score);
+        const sev = severityFromScore(w.score);
+        
+        // BOX 1: RAW DATA
+        const rawMetric = getRawMetricDisplay(w.category, w.score);
+
+        // BOX 2: DAVE'S TRANSLATION (Simple phrase from base bucket)
+        const translation = window.pickUniqueTip(w.category, Solutions[w.category]?.[sev]); 
+
+        // BOX 3: SOLUTIONS (Detailed list from _solutions bucket)
+        const solutionList = Solutions[w.category + '_solutions']?.[sev] || ["No specific solutions found for this category."];
+        
+        const solutionsHtml = solutionList.map(sol => {
+            // CRUCIAL: Uses the global replaceBold function
+            const formattedText = typeof replaceBold === 'function' ? replaceBold(sol) : sol;
+            return `<li>${formattedText}</li>`;
+        }).join('');
+
+        const name = {
+            peaks_dips:"Peaks & Dips (Bass)",
+            reflections:"Reflections (Imaging)",
+            bandwidth:"Bandwidth (Extension)",
+            balance:"Balance (L/R Skew)",
+            smoothness:"Smoothness (Tonal Evenness)",
+            reverb:"Reverb (Decay Time)"
+        }[w.category];
+
+
+        return `
+            <div class="tip-card card p-6 border-t-8 ${col.ring} bg-white shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold ${col.text}">${name}</h3>
+                    <span class="text-3xl font-bold ${col.text}">${w.score.toFixed(1)}</span>
+                </div>
+
+                <div class="p-3 mb-4 bg-gray-50 rounded-lg border-l-4 ${col.ring.replace('border-', 'border-')}">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-semibold text-gray-900">Raw Metric:</span> 
+                        <span class="font-mono">${rawMetric}</span>
+                    </p>
+                </div>
+
+                <div class="buddy-box flex gap-3 p-4 bg-indigo-50 mb-6 items-start rounded-lg">
+                    <img src="icons/dave.svg" class="w-8 h-8 flex-shrink-0 opacity-90 mt-1" alt="Dave">
+                    <p class="text-base text-gray-800 italic">
+                        "${translation}"
+                    </p>
+                </div>
+
+                <h4 class="font-semibold text-gray-800 mb-3">The Action Plan:</h4>
+                <ul class="space-y-3 text-sm text-gray-600 list-disc list-inside ml-4">
+                    ${solutionsHtml}
+                </ul>
+            </div>
+        `;
+    }).join('');
+}
+
+
+/* -------------------- BOOTSTRAP --------------------- */
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Initialize dashboard instance (for sidebar/status bar data)
+    if (typeof MeasurelyDashboard !== 'undefined' && !window.dashboard) {
+        window.dashboard = new MeasurelyDashboard(); 
+    }
+    
+    // 2. Load data and solutions in parallel
+    const [solutionsStatus, dataStatus] = await Promise.allSettled([loadSolutions(), loadLatest()]);
+    
+    if (solutionsStatus.status === 'rejected' || dataStatus.status === 'rejected') {
+        console.error("Failed to load necessary data for Tips & Tweaks page.");
+    }
+    
+    // 3. Render the cards after data is loaded
+    renderTipsCards();
 });
 </script>
 
-<!-- Your sidebar + menu JS -->
 <script>
-  const btn  = document.getElementById('mobile-menu-btn');
+/* -------------------- SIDEBAR AND CLOCK LOGIC --------------------- */
+
+  const btn  = document.getElementById('mobile-menu-btn');
   const side = document.getElementById('sidebar');
   const over = document.getElementById('sidebar-overlay');
 
@@ -366,10 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btn.addEventListener('click', toggleMenu);
   over.addEventListener('click', toggleMenu);
-
-  function togglePopup(id) {
-    document.getElementById(id).classList.toggle('hidden');
-  }
 
   document.querySelectorAll('.nav-item').forEach(link => {
     link.addEventListener('click', () => {
@@ -389,6 +287,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
-
-
