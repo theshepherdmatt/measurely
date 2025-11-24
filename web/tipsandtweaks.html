@@ -12,20 +12,28 @@
   <link rel="stylesheet" href="fonts/inter/interweb/inter.css">
 
   <style>
+    /* Custom Bullet for Action Plan */
+    .action-item {
+        position: relative;
+        padding-left: 1.5rem;
+    }
+    .action-item::before {
+        content: "→";
+        position: absolute;
+        left: 0;
+        color: #94a3b8;
+        font-weight: bold;
+    }
   </style>
 
 <base target="_blank">
 </head>
 
-<body class="bg-gray-300">
-<div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-14 backdrop-blur-sm
-            flex items-center justify-between px-4 z-50">
+<body class="bg-gray-300 text-slate-800 font-sans">
+
+<div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-16 backdrop-blur-sm flex items-center justify-between px-4 z-50">
   <div class="flex items-center space-x-2">
-    <img src="icons/mainlogo.svg"
-        class="max-h-10 w-auto object-contain"
-        alt="Measurely Logo">
-
-
+    <img src="icons/mainlogo.svg" class="max-h-10 w-auto object-contain" alt="Measurely Logo">
   </div>
   <button id="mobile-menu-btn" class="p-2 rounded-lg text-white hover:bg-white/10 transition">
     <img src="icons/bars.svg" class="w-6 h-6" alt="">
@@ -33,69 +41,61 @@
 </div>
 
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
 <aside id="sidebar" class="sidebar">
-  <div class="sidebar-logo mb-8 flex items-center space-x-3">
-    <img src="icons/mainlogo.svg" class="w-15 h-15" alt="Measurely Buddy">
-    <div>
+  <div class="sidebar-logo mb-8 flex items-center px-2">
+    <img src="icons/mainlogo.svg" class="w-40 h-auto" alt="Measurely">
+  </div>
+  
+  <nav class="space-y-2">
+    <a href="index.html" class="nav-item">
+      <img src="icons/dashboard.svg" class="w-5 h-5 mr-3 inline-block" />
+      Dashboard
+    </a>
+    <a href="room-setup.html" class="nav-item">
+      <img src="icons/home.svg" class="w-5 h-5 mr-3 inline-block" />
+      Room Setup
+    </a>
+    <a href="tipsandtweaks.html" class="nav-item active">
+      <img src="icons/lightbulb.svg" class="w-5 h-5 mr-3 inline-block" />
+      Tips & Tweaks
+    </a>
+  </nav>
+
+  <div class="absolute bottom-6 left-6 right-6">
+    <div class="bg-white/10 backdrop-blur-md rounded-lg p-4 space-y-3 border border-white/10">
+      <div class="flex items-center text-white/90">
+        <div id="systemReadyDot" class="status-indicator status-good pulse-animation"></div>
+        <span id="systemReadyText" class="text-xs font-medium">System Ready</span>
+      </div>
+      <div class="flex items-center text-white/90">
+        <div id="dacStatusDot" class="status-indicator bg-yellow-400"></div>
+        <span id="dacStatusText" class="text-xs font-medium">DAC: Not Found</span>
+      </div>
+      <div class="flex items-center text-white/90">
+        <div id="usbStatusDot" class="status-indicator bg-red-400"></div>
+        <span id="usbStatusText" class="text-xs font-medium">Mic: Not Connected</span>
+      </div>
+      <p class="text-[10px] text-white/50 mt-2">
+        Last updated: <span id="lastUpdated">Now</span>
+      </p>
     </div>
   </div>
-    <nav class="space-y-2">
-
-      <a href="index.html" class="nav-item">
-        <img src="icons/dashboard.svg" class="w-5 h-5 mr-3 inline-block" />
-        Dashboard
-      </a>
-
-      <a href="room-setup.html" class="nav-item">
-        <img src="icons/home.svg" class="w-5 h-5 mr-3 inline-block" />
-        Room Setup
-      </a>
-
-      <a href="tipsandtweaks.html" class="nav-item">
-        <img src="icons/lightbulb.svg" class="w-5 h-5 mr-3 inline-block" />
-        Tips and Tweaks
-      </a>
-
-    </nav>
-<div class="absolute bottom-6 left-6 right-6">
-
-  <div class="bg-white/20 backdrop-blur-md rounded-lg p-4 space-y-3">
-
-    <div class="flex items-center">
-      <div id="systemReadyDot" class="status-indicator status-good pulse-animation"></div>
-      <span id="systemReadyText" class="text-sm">System Ready</span>
-    </div>
-
-    <div class="flex items-center">
-      <div id="dacStatusDot" class="status-indicator bg-yellow-400"></div>
-      <span id="dacStatusText" class="text-sm">DAC: Not Found</span>
-    </div>
-
-    <div class="flex items-center">
-      <div id="usbStatusDot" class="status-indicator bg-red-400"></div>
-      <span id="usbStatusText" class="text-sm">USB Mic: Not Connected</span>
-    </div>
-
-    <p class="text-xs opacity-80">
-      Last updated: <span id="lastUpdated">Now</span>
-    </p>
-
-  </div>
-
-</div>
-
 </aside>
 
-<div class="main-content md:ml-64 p-8">
+<div class="main-content md:ml-64 p-6 md:p-10 max-w-7xl mx-auto">
 
-  <div class="page-title-block">
-    <h1 class="page-title">Tips & Tweaks</h1>
-    <p class="page-subtitle">Dave uses your sweep to highlight issues, explain what’s going on, and give practical advice.</p>
+  <header class="mb-10 pt-1 md:pt-0">
+    <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-2">Tips & Tweaks</h1>
+    <p class="text-lg text-slate-500 leading-relaxed max-w-2xl">Dave uses your sweep to highlight issues, explain what’s going on, and give practical advice.</p>
+  </header>
+
+  <div class="mb-8">
+    <h2 class="text-xl font-bold text-slate-900 mb-2">Your Priority Action Areas</h2>
+    <p class="text-sm text-slate-500">These are your top three weakest metrics, broken down by data, diagnosis, and solution.</p>
   </div>
 
-  <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Priority Action Areas</h2>
-  <p class="text-sm text-gray-600 mb-6">These are your top three weakest metrics, broken down by data, diagnosis, and solution.</p>
-  <div id="tipsCardsWrapper" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+  <div id="tipsCardsWrapper" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pb-12">
     </div>
 
 </div>
@@ -103,10 +103,12 @@
 <div id="toast-container"></div>
 
 
-<script src="/js/dashboard.js"></script> <script type="module" src="/js/devices.js"></script> <script>
+<script src="/js/dashboard.js"></script> 
+<script type="module" src="/js/devices.js"></script> 
+
+<script>
 /* -------------------- TIPS AND TWEAKS CORE LOGIC --------------------- */
 
-// Using var for the data containers to safely declare them in the global scope
 var Solutions = {};
 var data = null; 
 
@@ -126,11 +128,24 @@ function severityFromScore(n) {
   return "needs_work";
 }
 
-function getColorClassForScore(score) {
-  if (score >= 8) return {ring:"border-green-500",text:"text-green-600",light:"bg-green-50 text-green-800"};
-  if (score >= 6) return {ring:"border-yellow-500",text:"text-yellow-600",light:"bg-yellow-50 text-yellow-800"};
-  if (score >= 4) return {ring:"border-blue-500",text:"text-blue-600",light:"bg-blue-50 text-blue-800"};
-  return {ring:"border-red-500",text:"text-red-600",light:"bg-red-50 text-red-800"};
+/* UPDATED COLOR LOGIC for new card design */
+function getColorPalette(score) {
+  if (score >= 8) return { bgIcon:"bg-green-50", textIcon:"text-green-600", textScore:"text-green-600", badge:"bg-green-100 text-green-700" };
+  if (score >= 6) return { bgIcon:"bg-blue-50", textIcon:"text-blue-600", textScore:"text-blue-600", badge:"bg-blue-100 text-blue-700" };
+  if (score >= 4) return { bgIcon:"bg-yellow-50", textIcon:"text-yellow-600", textScore:"text-yellow-600", badge:"bg-yellow-100 text-yellow-700" };
+  return { bgIcon:"bg-red-50", textIcon:"text-red-500", textScore:"text-red-500", badge:"bg-red-100 text-red-700" };
+}
+
+function getIconName(category) {
+    switch(category) {
+        case 'peaks_dips': return 'mountain.svg';
+        case 'reflections': return 'square-caret-left.svg';
+        case 'bandwidth': return 'signal.svg';
+        case 'balance': return 'balance-scale.svg';
+        case 'smoothness': return 'wave-square.svg';
+        case 'reverb': return 'clock.svg';
+        default: return 'lightbulb.svg';
+    }
 }
 
 function getWorstThree() {
@@ -143,88 +158,101 @@ function getWorstThree() {
 function getRawMetricDisplay(category, score) {
     const s = score;
     switch (category) {
-        case 'peaks_dips':
-            return `Low Frequency Std Dev: ${(10 - s).toFixed(1)} dB`;
-        case 'reflections':
-            return s > 6 ? 'Low Early Reflection Energy' : 'High Early Reflection Energy';
-        case 'bandwidth':
-            return s > 6 ? 'Wide ±3dB Range' : 'Limited ±3dB Range';
-        case 'balance':
-            return s > 4 && s < 7 ? 'Low L/R Skew' : 'High L/R Skew';
-        case 'smoothness':
-            return `Mid/High Variance: ${(10 - s).toFixed(1)} dB`;
-        case 'reverb':
-            return `Decay Time: ${(s / 100).toFixed(2)}s EDT`;
-        default:
-            return '-- N/A --';
+        case 'peaks_dips': return `Low Frequency Std Dev: ${(10 - s).toFixed(1)} dB`;
+        case 'reflections': return s > 6 ? 'Low Early Reflection Energy' : 'High Early Reflection Energy';
+        case 'bandwidth': return s > 6 ? 'Wide ±3dB Range' : 'Limited ±3dB Range';
+        case 'balance': return s > 4 && s < 7 ? 'Low L/R Skew' : 'High L/R Skew';
+        case 'smoothness': return `Mid/High Variance: ${(10 - s).toFixed(1)} dB`;
+        case 'reverb': return `Decay Time: ${(s / 100).toFixed(2)}s EDT`;
+        default: return '-- N/A --';
     }
 }
 
-/* -------------------- MAIN RENDER FUNCTION --------------------- */
+/* -------------------- MAIN RENDER FUNCTION (NEW DESIGN) --------------------- */
 function renderTipsCards() {
     const C = document.getElementById('tipsCardsWrapper');
     
     if (!C || !data || !data.has_analysis) {
-        C.innerHTML = '<div class="text-lg text-gray-700 col-span-3 card p-6">No analysis data found. Please run a sweep from the Dashboard.</div>';
+        C.innerHTML = `
+        <div class="col-span-full bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm">
+            <div class="inline-block p-4 bg-slate-50 rounded-full mb-4">
+                <img src="icons/chart-line.svg" class="w-8 h-8 opacity-40">
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">No Analysis Data Yet</h3>
+            <p class="text-slate-500 mt-2 mb-6">Run a sweep from the Dashboard to see your personalized tips.</p>
+            <a href="index.html" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition">Go to Dashboard</a>
+        </div>`;
         return;
     }
     
     const worst = getWorstThree();
 
     C.innerHTML = worst.map(w => {
-        const col = getColorClassForScore(w.score);
+        const colors = getColorPalette(w.score);
         const sev = severityFromScore(w.score);
+        const iconFile = getIconName(w.category);
         
-        // BOX 1: RAW DATA
+        // DATA PREP
         const rawMetric = getRawMetricDisplay(w.category, w.score);
-
-        // BOX 2: DAVE'S TRANSLATION (Simple phrase from base bucket)
         const translation = window.pickUniqueTip(w.category, Solutions[w.category]?.[sev]); 
-
-        // BOX 3: SOLUTIONS (Detailed list from _solutions bucket)
         const solutionList = Solutions[w.category + '_solutions']?.[sev] || ["No specific solutions found for this category."];
         
         const solutionsHtml = solutionList.map(sol => {
-            // CRUCIAL: Uses the global replaceBold function
             const formattedText = typeof replaceBold === 'function' ? replaceBold(sol) : sol;
-            return `<li>${formattedText}</li>`;
+            return `<li class="action-item">${formattedText}</li>`;
         }).join('');
 
         const name = {
-            peaks_dips:"Peaks & Dips (Bass)",
-            reflections:"Reflections (Imaging)",
-            bandwidth:"Bandwidth (Extension)",
-            balance:"Balance (L/R Skew)",
-            smoothness:"Smoothness (Tonal Evenness)",
-            reverb:"Reverb (Decay Time)"
+            peaks_dips:"Peaks & Dips",
+            reflections:"Reflections",
+            bandwidth:"Bandwidth",
+            balance:"Balance",
+            smoothness:"Smoothness",
+            reverb:"Reverb"
         }[w.category];
 
-
+        // NEW CARD HTML
         return `
-            <div class="tip-card card p-6 border-t-8 ${col.ring} bg-white shadow-xl">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xl font-semibold ${col.text}">${name}</h3>
-                    <span class="text-3xl font-bold ${col.text}">${w.score.toFixed(1)}</span>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col h-full hover:shadow-md transition-all duration-300">
+                
+                <div class="flex justify-between items-start mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl ${colors.bgIcon} flex items-center justify-center">
+                            <img src="icons/${iconFile}" class="w-6 h-6 ${colors.textIcon}">
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-lg leading-tight">${name}</h3>
+                            <div class="text-xs font-bold uppercase tracking-wider mt-1 text-slate-400">Priority Fix</div>
+                        </div>
+                    </div>
+                    <div class="text-4xl font-black ${colors.textScore}">${w.score.toFixed(1)}</div>
                 </div>
 
-                <div class="p-3 mb-4 bg-gray-50 rounded-lg border-l-4 ${col.ring.replace('border-', 'border-')}">
-                    <p class="text-sm text-gray-700">
-                        <span class="font-semibold text-gray-900">Raw Metric:</span> 
-                        <span class="font-mono">${rawMetric}</span>
-                    </p>
-                </div>
-
-                <div class="buddy-box flex gap-3 p-4 bg-indigo-50 mb-6 items-start rounded-lg">
-                    <img src="icons/dave.svg" class="w-8 h-8 flex-shrink-0 opacity-90 mt-1" alt="Dave">
-                    <p class="text-base text-gray-800 italic">
+                <div class="bg-indigo-50 rounded-xl p-4 mb-6 flex gap-3 items-start relative">
+                    <div class="absolute -top-2 left-8 w-4 h-4 bg-indigo-50 transform rotate-45"></div>
+                    
+                    <img src="icons/dave.svg" class="w-6 h-6 flex-shrink-0 opacity-80 mt-0.5">
+                    <p class="text-sm text-slate-700 italic leading-relaxed">
                         "${translation}"
                     </p>
                 </div>
 
-                <h4 class="font-semibold text-gray-800 mb-3">The Action Plan:</h4>
-                <ul class="space-y-3 text-sm text-gray-600 list-disc list-inside ml-4">
-                    ${solutionsHtml}
-                </ul>
+                <div class="mb-6 pb-4 border-b border-slate-100">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Technical Data</span>
+                    <p class="font-mono text-xs text-slate-600 mt-1 bg-slate-50 inline-block px-2 py-1 rounded border border-slate-100">
+                        ${rawMetric}
+                    </p>
+                </div>
+
+                <div class="mt-auto">
+                    <h4 class="font-bold text-slate-900 mb-3 text-sm flex items-center">
+                        <img src="icons/toolbox.svg" class="w-4 h-4 mr-2 opacity-50">
+                        Action Plan
+                    </h4>
+                    <ul class="space-y-3 text-sm text-slate-600 leading-relaxed">
+                        ${solutionsHtml}
+                    </ul>
+                </div>
             </div>
         `;
     }).join('');
@@ -234,19 +262,16 @@ function renderTipsCards() {
 /* -------------------- BOOTSTRAP --------------------- */
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Initialize dashboard instance (for sidebar/status bar data)
     if (typeof MeasurelyDashboard !== 'undefined' && !window.dashboard) {
         window.dashboard = new MeasurelyDashboard(); 
     }
     
-    // 2. Load data and solutions in parallel
     const [solutionsStatus, dataStatus] = await Promise.allSettled([loadSolutions(), loadLatest()]);
     
     if (solutionsStatus.status === 'rejected' || dataStatus.status === 'rejected') {
         console.error("Failed to load necessary data for Tips & Tweaks page.");
     }
     
-    // 3. Render the cards after data is loaded
     renderTipsCards();
 });
 </script>
@@ -254,7 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 <script>
 /* -------------------- SIDEBAR AND CLOCK LOGIC --------------------- */
 
-  const btn  = document.getElementById('mobile-menu-btn');
+  const btn  = document.getElementById('mobile-menu-btn');
   const side = document.getElementById('sidebar');
   const over = document.getElementById('sidebar-overlay');
 

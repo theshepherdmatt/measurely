@@ -4,7 +4,7 @@
       "length_m": 4.9,
       "width_m": 3.7,
       "height_m": 2.4,
-      "echo_pct": 70,
+      "echo_pct": 80,
       "opt_hardfloor": true,
       "opt_rug": true,
       "opt_barewalls": true,
@@ -16,7 +16,10 @@
       "toe_in_deg": 30,
       "listener_front_m": 2.5,
       "speaker_key": "gale_gs401",
-      "layout": "stereo"
+      "layout": "stereo",
+      "floor_material": "hard",
+      "opt_area_rug": false,
+      "speaker_type": "sealed"
     }
   }
 }

@@ -49,6 +49,38 @@ window.pickUniqueTip = function(bucket, allTips) {
     return tip;
 };
 
+function applyDynamicColor(el, score) {
+    if (!el || score === null || score === undefined) return;
+
+    el.classList.remove(
+        "score-excellent", "score-good", "score-okay", "score-poor"
+    );
+
+    if (score >= 8) el.classList.add("score-excellent");
+    else if (score >= 6) el.classList.add("score-good");
+    else if (score >= 4) el.classList.add("score-okay");
+    else el.classList.add("score-poor");
+}
+
+function applyMainBand(elLevel, elBar, value) {
+    if (!elLevel || !elBar) return;
+
+    // Remove old classes
+    elLevel.classList.remove("mainband-excellent", "mainband-good", "mainband-okay", "mainband-poor");
+    elBar.classList.remove("mainbar-excellent", "mainbar-good", "mainbar-okay", "mainbar-poor");
+
+    // Apply thresholds
+    let c = "";
+    if (value > -0.5)       c = "excellent";
+    else if (value > -3)    c = "good";
+    else if (value > -6)    c = "okay";
+    else                    c = "poor";
+
+    elLevel.classList.add(`mainband-${c}`);
+    elBar.classList.add(`mainbar-${c}`);
+}
+
+
 
 /* ============================================================
     DASHBOARD CLASS
@@ -239,6 +271,7 @@ class MeasurelyDashboard {
             }
         }, 2000);
     }
+
 
     /* ============================================================
     RESET SWEEP UI
@@ -489,11 +522,6 @@ class MeasurelyDashboard {
         /* ============================================================
         1. BANDWIDTH
         ============================================================ */
-        document.getElementById('bandwidthSummary').textContent =
-            bandwidth > 6 ? "Wide usable range (out of 10)" :
-            bandwidth > 3 ? "Moderate range (out of 10)" :
-                            "Restricted range (out of 10)";
-
         document.getElementById('bandwidthStatusText').textContent =
             bandwidth > 6 ? "Good coverage" :
             bandwidth > 3 ? "OK" :
@@ -506,11 +534,6 @@ class MeasurelyDashboard {
         /* ============================================================
         2. BALANCE
         ============================================================ */
-        document.getElementById('balanceSummary').textContent =
-            balance < 3 ? "Mids stronger than bass (tilted bright)" :
-            balance > 7 ? "Bass stronger than mids (tilted warm)" :
-                        "Balanced tone (no tilt)";
-
         document.getElementById('balanceStatusText').textContent =
             (balance > 3 && balance < 7) ? "Well balanced" : "Needs adjustment";
 
@@ -522,9 +545,6 @@ class MeasurelyDashboard {
         3. SMOOTHNESS
         ============================================================ */
         const smoothDev = (10 - smoothness).toFixed(1);
-
-        document.getElementById('smoothnessSummary').textContent =
-            `${smoothDev} dB variation`;
 
         document.getElementById('smoothnessStatusText').textContent =
             smoothness > 6 ? "Good consistency" : "Some variation";
@@ -541,9 +561,6 @@ class MeasurelyDashboard {
         document.getElementById("peaksDipsRaw").textContent =
             this.pickRawMetric("peaks_dips", pdBucket);
 
-        document.getElementById('peaksDipsSummary').textContent =
-            peaksDips > 5 ? "Moderate variation" : "Large peaks/dips detected";
-
         document.getElementById('peaksDipsStatusText').textContent =
             peaksDips > 5 ? "OK" : "Treat";
 
@@ -551,10 +568,6 @@ class MeasurelyDashboard {
         /* ============================================================
         5. REFLECTIONS
         ============================================================ */
-        document.getElementById('reflectionsSummary').textContent =
-            reflections > 6 ? "Few reflections" :
-            reflections > 3 ? "Some reflections detected" :
-                            "Strong reflections present";
 
         document.getElementById('reflectionsStatusText').textContent =
             reflections > 6 ? "Good control" :
@@ -569,8 +582,6 @@ class MeasurelyDashboard {
         6. REVERB
         ============================================================ */
         const edt = (reverb / 100).toFixed(2);
-
-        document.getElementById('reverbSummary').textContent = `${edt}s EDT`;
 
         document.getElementById('reverbStatusText').textContent =
             reverb > 7 ? "Excellent control" :

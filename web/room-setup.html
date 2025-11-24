@@ -35,7 +35,7 @@
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 <aside id="sidebar" class="sidebar">
   <div class="sidebar-logo mb-8 flex items-center space-x-3">
-    <img src="icons/mainlogo2.svg" class="w-15 h-15" alt="Measurely Buddy">
+    <img src="icons/mainlogo.svg" class="w-15 h-15" alt="Measurely">
     <div>
     </div>
   </div>
@@ -53,7 +53,7 @@
 
       <a href="tipsandtweaks.html" class="nav-item">
         <img src="icons/lightbulb.svg" class="w-5 h-5 mr-3 inline-block" />
-        Tips and Tweaks
+        Tips & Tweaks
       </a>
 
     </nav>
@@ -86,183 +86,268 @@
 
 </aside>
 
-<div class="main-content md:ml-64 p-8">
+<div class="main-content md:ml-64 p-6 md:p-10 max-w-6xl mx-auto font-sans text-slate-800">
 
-    <div class="page-title-block">
-        <h1 class="page-title">Set Your Room Up With Dave</h1>
-        <p class="page-subtitle">We need precise details on your room and gear, accurate numbers mean cleaner sweeps and smarter fixes.</p>
+  <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-3">
+        Set Your Room Up With Dave
+      </h1>
+      <p class="text-lg text-slate-600 leading-relaxed max-w-2xl">
+        Accurate inputs mean tighter bass predictions and smarter reflection modelling. 
+        Help Dave see your room clearly.
+      </p>
+    </div>
+    <div class="hidden md:block">
+        </div>
+  </header>
+
+  <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8 hover:shadow-md transition-shadow duration-300">
+    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">1</div>
+      <h2 class="text-lg font-semibold text-slate-800">Room Dimensions</h2>
     </div>
 
-    <div class="card mb-8">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">
-            <i class="fas fa-ruler-combined mr-2"></i>Dave Needs a Few Room Details
-        </h2>
+    <div class="p-6 md:p-8">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        
+        <div class="group">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Length</label>
+          <div class="relative">
+            <input type="number" id="room-length" step="0.01" placeholder="4.9"
+                   class="block w-full pl-4 pr-10 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder-slate-300">
+            <span class="absolute right-4 top-3.5 text-slate-400 text-sm font-medium pointer-events-none">m</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-500">Front wall to rear wall.</p>
+        </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="group">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Width</label>
+          <div class="relative">
+            <input type="number" id="room-width" step="0.01" placeholder="3.7"
+                   class="block w-full pl-4 pr-10 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder-slate-300">
+            <span class="absolute right-4 top-3.5 text-slate-400 text-sm font-medium pointer-events-none">m</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-500">Side to side.</p>
+        </div>
 
-            <div class="inner-card">
-                <label class="text-sm font-semibold text-gray-700">Length (m)</label>
-                <input type="number" id="room-length" class="input-field w-full mt-2"
-                       placeholder="4.9" value="4.9" step="0.01">
+        <div class="group">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Height</label>
+          <div class="relative">
+            <input type="number" id="room-height" step="0.01" placeholder="2.4"
+                   class="block w-full pl-4 pr-10 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder-slate-300">
+            <span class="absolute right-4 top-3.5 text-slate-400 text-sm font-medium pointer-events-none">m</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-500">Floor to ceiling.</p>
+        </div>
+
+      </div>
+
+      <div class="bg-blue-50/50 rounded-xl p-5 border border-blue-100">
+        <div class="flex justify-between items-center mb-4">
+          <label class="text-sm font-semibold text-slate-700">How "Live" is the room?</label>
+          <span id="roomEchoValue" class="text-blue-600 font-bold bg-white px-2 py-1 rounded shadow-sm text-sm border border-blue-100">20%</span>
+        </div>
+        
+        <input type="range" id="room-echo" min="0" max="100" step="5"
+               class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 hover:accent-blue-500 transition-colors">
+        
+        <div class="flex justify-between text-xs text-slate-500 mt-2 font-medium">
+          <span>Dry (Studio)</span>
+          <span>Normal Living Room</span>
+          <span>Echoey (Empty Hall)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8 hover:shadow-md transition-shadow duration-300">
+    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold">2</div>
+      <h2 class="text-lg font-semibold text-slate-800">Materials & Furnishings</h2>
+    </div>
+
+    <div class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <div class="lg:col-span-4">
+        <label class="block text-sm font-medium text-slate-700 mb-2">Base Floor Surface</label>
+        <div class="relative">
+            <select id="floor-material" class="block w-full pl-4 pr-10 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 appearance-none text-slate-900 transition-shadow">
+            <option value="hard">Hardwood / Tile / Laminate</option>
+            <option value="carpet">Wall-to-Wall Carpet</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </div>
+        </div>
+        <p class="mt-2 text-xs text-slate-500">Hard floors create stronger early reflections.</p>
+      </div>
 
-            <div class="inner-card">
-                <label class="text-sm font-semibold text-gray-700">Width (m)</label>
-                <input type="number" id="room-width" class="input-field w-full mt-2"
-                       placeholder="3.7" value="3.7" step="0.01">
+      <div class="lg:col-span-8">
+        <label class="block text-sm font-medium text-slate-700 mb-2">Room Contents</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          
+          <label class="relative flex items-start p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+            <div class="flex items-center h-5">
+              <input type="checkbox" id="opt-area-rug" class="h-5 w-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500">
             </div>
-
-            <div class="inner-card">
-                <label class="text-sm font-semibold text-gray-700">Height (m)</label>
-                <input type="number" id="room-height" class="input-field w-full mt-2"
-                       placeholder="2.4" value="2.4" step="0.01">
+            <div class="ml-3 text-sm">
+              <span class="font-medium text-slate-800">Area Rug</span>
+              <p class="text-slate-500 text-xs">Between speakers & seat</p>
             </div>
+          </label>
 
-            <div class="inner-card">
-                <label class="text-sm font-semibold text-gray-700">
-                    Room Echo-y-ness (%)
-                </label>
-
-                <input
-                  type="range"
-                  id="room-echo"
-                  min="0"
-                  max="100"
-                  step="5"
-                  value="20"
-                  class="w-full mt-3 accent-indigo-600"
-                  oninput="roomEchoValue.textContent = this.value + '%'"
-                >
-
-                <div class="flex justify-between text-xs text-gray-600 mt-2">
-                    <span>Dry</span>
-                    <span id="roomEchoValue">20%</span>
-                    <span>Echoey</span>
-                </div>
-
-                <p class="text-xs text-gray-500 mt-2">
-                    Your subjective rating of how lively or reflective the room feels.
-                </p>
+          <label class="relative flex items-start p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+            <div class="flex items-center h-5">
+              <input type="checkbox" id="opt-curtains" class="h-5 w-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500">
             </div>
+            <div class="ml-3 text-sm">
+              <span class="font-medium text-slate-800">Curtains / Blinds</span>
+              <p class="text-slate-500 text-xs">Covering windows</p>
+            </div>
+          </label>
+
+          <label class="relative flex items-start p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+            <div class="flex items-center h-5">
+              <input type="checkbox" id="opt-sofa" class="h-5 w-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500">
+            </div>
+            <div class="ml-3 text-sm">
+              <span class="font-medium text-slate-800">Large Sofa</span>
+              <p class="text-slate-500 text-xs">Fabric/Soft furnishings</p>
+            </div>
+          </label>
+
+          <label class="relative flex items-start p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+            <div class="flex items-center h-5">
+              <input type="checkbox" id="opt-wallart" class="h-5 w-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500">
+            </div>
+            <div class="ml-3 text-sm">
+              <span class="font-medium text-slate-800">Wall Art / Shelves</span>
+              <p class="text-slate-500 text-xs">Diffusers or books</p>
+            </div>
+          </label>
+
+          <label class="relative flex items-start p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors sm:col-span-2">
+             <div class="flex items-center h-5">
+               <input type="checkbox" id="opt-barewalls" class="h-5 w-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500">
+             </div>
+             <div class="ml-3 text-sm">
+               <span class="font-medium text-slate-800">Mostly Bare Walls</span>
+               <p class="text-slate-500 text-xs">Minimal furniture, hard surfaces dominating</p>
+             </div>
+           </label>
 
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8 hover:shadow-md transition-shadow duration-300">
+    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold">3</div>
+      <h2 class="text-lg font-semibold text-slate-800">Speaker Profile</h2>
     </div>
 
-    <div class="card mb-8">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-couch mr-2 text-indigo-600"></i>What’s Your Room Made Of?
-        </h3>
-
-        <p class="text-sm text-gray-600 mb-4">
-            These help Dave understand the baseline absorption and reflection points.
-        </p>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-            <div class="inner-card p-3 rounded-lg border border-gray-200">
-                <label class="text-sm font-semibold text-gray-700 block mb-2">Base Floor Surface</label>
-                <select id="floor-material" class="input-field w-full">
-                    <option value="hard">Hardwood / Laminate / Tile</option>
-                    <option value="carpet">Wall-to-Wall Carpet</option>
-                </select>
-                <p class="text-xs text-gray-500 mt-1">The primary floor covering.</p>
-            </div>
-            
-            <label class="flex items-center space-x-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <input type="checkbox" id="opt-area-rug" class="h-4 w-4">
-                <span class="text-sm text-gray-800">Thick Area Rug (between speakers & seat)</span>
-            </label>
-
-            <label class="flex items-center space-x-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <input type="checkbox" id="opt-barewalls" class="h-4 w-4">
-                <span class="text-sm text-gray-800">Mostly bare walls</span>
-            </label>
-
-            <label class="flex items-center space-x-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <input type="checkbox" id="opt-wallart" class="h-4 w-4">
-                <span class="text-sm text-gray-800">Wall art / shelves / diffusers</span>
-            </label>
-
-            <label class="flex items-center space-x-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <input type="checkbox" id="opt-curtains" class="h-4 w-4">
-                <span class="text-sm text-gray-800">Curtains / blinds</span>
-            </label>
-
-            <label class="flex items-center space-x-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <input type="checkbox" id="opt-sofa" class="h-4 w-4">
-                <span class="text-sm text-gray-800">Large sofa / soft furnishings</span>
-            </label>
-
+    <div class="p-6 md:p-8">
+      <div class="relative">
+        <select id="speakerSel" class="block w-full pl-4 pr-10 py-4 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-slate-900 text-lg transition-shadow">
+            </select>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
         </div>
+      </div>
+      <p id="speakerHint" class="mt-3 text-sm text-slate-500 flex items-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full bg-slate-400"></span>
+        Select your model to load frequency limits and target curves.
+      </p>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-12 hover:shadow-md transition-shadow duration-300">
+    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-600 flex items-center justify-center text-sm font-bold">4</div>
+      <h2 class="text-lg font-semibold text-slate-800">Positioning</h2>
     </div>
 
-    <div class="card mb-8">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-microchip mr-2 text-indigo-600"></i>Tell Dave What Speakers You’re Using
-        </h3>
+    <div class="p-6 md:p-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-            Choose profile for sweep limits & target curve
-        </label>
-
-        <select id="speakerSel" class="input-field w-full"></select>
-        <p id="speakerHint" class="text-xs text-gray-500 mt-2">Loading profiles…</p>
-    </div>
-
-    <div class="card mb-8">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-volume-up mr-2"></i>Where Are Your Speakers Right Now?
-        </h3>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <div class="inner-card">
-                <label class="text-sm font-semibold text-gray-700">Speaker Porting/Design</label>
-                <select id="speaker-type" class="input-field w-full mt-2">
-                    <option value="sealed">Sealed Box / Infinite Baffle</option>
-                    <option value="port_front">Ported (Front-Firing)</option>
-                    <option value="port_rear">Ported (Rear-Firing)</option>
-                    <option value="dipole">Dipole / Open Baffle</option>
-                </select>
-                <p class="text-xs text-gray-500 mt-1">Crucial for bass behavior near walls.</p>
+        <div class="group">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Design Type</label>
+          <div class="relative">
+            <select id="speaker-type" class="block w-full pl-4 pr-10 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 appearance-none text-slate-900">
+              <option value="sealed">Sealed / Infinite Baffle</option>
+              <option value="port_front">Ported (Front-Firing)</option>
+              <option value="port_rear">Ported (Rear-Firing)</option>
+              <option value="dipole">Dipole / Open Baffle</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </div>
-
-            <div class="inner-card">
-                <label class="text-sm font-semibold text-gray-700">Distance from Front Wall (m)</label>
-                <input type="number" id="speaker-distance" class="input-field w-full mt-2"
-                       placeholder="0.6" value="0.6" step="0.01">
-            </div>
-
-            <div class="inner-card">
-                <label class="text-sm font-semibold text-gray-700">Speaker Spacing (m)</label>
-                <input type="number" id="speaker-width" class="input-field w-full mt-2"
-                       placeholder="1.5" value="1.5" step="0.01">
-            </div>
-
-            <div class="inner-card">
-                <label class="text-sm font-semibold text-gray-700">Toe-in Angle (degrees)</label>
-                <input type="number" id="toe-angle" class="input-field w-full mt-2"
-                       placeholder="30" value="30" step="1">
-            </div>
-
-            <div class="inner-card">
-                <label class="text-sm font-semibold text-gray-700">Listening Distance (m)</label>
-                <input type="number" id="listening-distance" class="input-field w-full mt-2"
-                       placeholder="2.5" value="2.5" step="0.01">
-            </div>
-
+          </div>
         </div>
-    </div>
 
-    <div class="card mb-8">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">
-        <i class="fas fa-lightbulb mr-2"></i>Dave’s Room Setup Checklist
-      </h2>
-      <div class="space-y-4" id="recommendations-list">
+        <div class="group">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Dist. From Front Wall</label>
+          <div class="relative">
+            <input type="number" id="speaker-distance" step="0.01" class="block w-full pl-4 pr-10 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-900">
+            <span class="absolute right-4 top-3.5 text-slate-400 text-sm font-medium pointer-events-none">m</span>
+          </div>
         </div>
+
+        <div class="group">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Speaker Spacing</label>
+          <div class="relative">
+            <input type="number" id="speaker-width" step="0.01" class="block w-full pl-4 pr-10 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-900">
+            <span class="absolute right-4 top-3.5 text-slate-400 text-sm font-medium pointer-events-none">m</span>
+          </div>
+        </div>
+
+        <div class="group">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Toe-in Angle</label>
+          <div class="relative">
+            <input type="number" id="toe-angle" step="1" class="block w-full pl-4 pr-10 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-900">
+            <span class="absolute right-4 top-3.5 text-slate-400 text-sm font-medium pointer-events-none">deg</span>
+          </div>
+        </div>
+
+        <div class="group">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Listening Distance</label>
+          <div class="relative">
+            <input type="number" id="listening-distance" step="0.01" class="block w-full pl-4 pr-10 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-900">
+            <span class="absolute right-4 top-3.5 text-slate-400 text-sm font-medium pointer-events-none">m</span>
+          </div>
+        </div>
+
+      </div>
     </div>
+  </section>
+
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-slate-900 relative overflow-hidden">
+  
+  <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-indigo-600 opacity-5 rounded-full blur-3xl"></div>
+  
+  <div class="relative z-10">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-2xl border border-indigo-100 shadow-sm">
+        🤖
+      </div>
+      <span class="text-slate-900">Dave’s Pre-Flight Checklist</span>
+    </h2>
+    
+    <div id="recommendations-list" class="space-y-4 mb-8 min-h-[100px]">
+      <div class="flex items-center gap-2 text-slate-400 text-sm italic">
+        <span class="w-2 h-2 rounded-full bg-slate-300 animate-pulse"></span>
+        Waiting for room data to generate advice...
+      </div>
+    </div>
+  </div>
+
 
 </div>
+
+
 
 <script src="/js/dashboard.js"></script>
 <script type="module" src="/js/devices.js"></script>
