@@ -1,9 +1,0 @@
-#!/usr/bin/env python3
-import sys, os
-# add repo root to sys.path
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from measurely import sweep
-
-if __name__ == "__main__":
-    sweep.main()
