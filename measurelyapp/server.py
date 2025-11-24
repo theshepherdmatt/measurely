@@ -8,6 +8,7 @@ Real-Data Measurely Flask Server
 import os
 import sys
 import json
+import re
 import time
 import glob
 import subprocess
@@ -273,16 +274,8 @@ def get_ip_address():
 # ------------------------------------------------------------------
 @app.route('/api/session/<session_id>', methods=['GET'])
 def api_get_session(session_id):
-    """
-    Return the full session data (analysis + left/right traces)
-    so the frontend can compare sessions.
-    """
     try:
-        if session_id == "latest":
-            # follow latest symlink
-            ses = MEAS_ROOT / "latest"
-        else:
-            ses = MEAS_ROOT / session_id
+        ses = MEAS_ROOT / ("latest" if session_id == "latest" else session_id)
 
         if not ses.exists():
             return jsonify({"error": f"Session not found: {session_id}"}), 404
@@ -299,6 +292,9 @@ def api_get_session(session_id):
         return jsonify({"error": str(e)}), 500
 
 
+# ------------------------------------------------------------------
+#  RUN SWEEP + UPDATE LATEST + RESTORE ROOM DATA + ANALYSE
+# ------------------------------------------------------------------
 @app.route('/api/run-sweep', methods=['POST'])
 def run_sweep():
     import subprocess, traceback, sounddevice as sd
@@ -308,11 +304,12 @@ def run_sweep():
         payload = request.get_json(silent=True) or {}
         speaker = payload.get('speaker')
 
+        # Detect audio devices
         devices = sd.query_devices()
         input_devices = [(i, d['name']) for i, d in enumerate(devices)
-                         if 'USB' in d['name'] and d['max_input_channels'] > 0]
+                         if "usb" in d['name'].lower() and d['max_input_channels'] > 0]
         output_devices = [(i, d['name']) for i, d in enumerate(devices)
-                          if 'hifiberry' in d['name'].lower() and d['max_output_channels'] > 0]
+                          if "hifiberry" in d['name'].lower() and d['max_output_channels'] > 0]
 
         if not input_devices:
             return jsonify({"error": "USB microphone not found"}), 400
@@ -322,57 +319,85 @@ def run_sweep():
         in_dev, in_name = input_devices[0]
         out_dev, out_name = output_devices[0]
 
-        SWEEP = "/home/matt/measurely/measurelyapp/sweep.py"
-        ANALYSE = "/home/matt/measurely/measurelyapp/analyse.py"
-        BASEDIR = "/home/matt/measurely"
+        SWEEP = f"{SERVICE_ROOT}/measurelyapp/sweep.py"
+        ANALYSE = f"{SERVICE_ROOT}/measurelyapp/analyse.py"
+        BASEDIR = str(SERVICE_ROOT)
 
-        cmd = [
-            sys.executable, SWEEP,
-            "--mode", "both",
-            "--playback", "aplay",
-            "--verbose"
-        ]
-
+        cmd = [sys.executable, SWEEP, "--mode", "both", "--playback", "aplay", "--verbose"]
         if speaker:
             cmd += ["--speaker", speaker]
 
+        # -----------------------------------------------------
+        # Background thread
+        # -----------------------------------------------------
         def run():
+            # -----------------------------------------------------
             # 1. Run sweep
+            # -----------------------------------------------------
             completed = subprocess.run(
-                cmd,
-                cwd=BASEDIR,
-                capture_output=True,
-                text=True
+                cmd, cwd=BASEDIR, capture_output=True, text=True
             )
 
-            out = completed.stdout.strip().splitlines()
+            out_lines = completed.stdout.strip().splitlines()
             session_path = None
 
-            for line in reversed(out):
+            for line in reversed(out_lines):
                 if line.startswith("Saved:"):
                     session_path = line.replace("Saved:", "").strip()
                     break
 
             if not session_path:
-                print("[run_sweep] ERROR: Sweep produced no 'Saved:' line")
+                print("[run_sweep] ERROR: No Saved: path found")
                 print(completed.stdout)
                 print(completed.stderr)
                 return
 
-            # Update symlink
-            subprocess.run(
-                ["ln", "-sfn", session_path, f"{BASEDIR}/measurements/latest"]
-            )
+            # -----------------------------------------------------
+            # 2. Update latest symlink
+            # -----------------------------------------------------
+            subprocess.run([
+                "ln", "-sfn",
+                session_path,
+                f"{BASEDIR}/measurements/latest"
+            ])
 
-            # 2. Analyse
-            analysis_cmd = [sys.executable, ANALYSE, session_path]
+            # -----------------------------------------------------
+            # 3. RESTORE ROOM SETTINGS BEFORE ANALYSIS
+            # -----------------------------------------------------
+            try:
+                latest = MEAS_ROOT / "latest"
+                room_file = SERVICE_ROOT / "room.json"
+
+                if room_file.exists():
+                    room_data = json.loads(room_file.read_text())
+
+                    meta_file = latest / "meta.json"
+                    meta = json.loads(meta_file.read_text()) if meta_file.exists() else {}
+
+                    meta.setdefault("settings", {})
+                    meta["settings"]["room"] = room_data
+
+                    write_json_atomic(meta, meta_file)
+
+                    print("✓ Restored room settings into new latest/meta.json")
+
+                else:
+                    print("⚠ No room.json exists — nothing to restore")
+
+            except Exception as e:
+                print("Room metadata restore failed:", e)
+
+            # -----------------------------------------------------
+            # 4. Analyse AFTER restoring room data
+            # -----------------------------------------------------
             subprocess.run(
-                analysis_cmd,
+                [sys.executable, ANALYSE, session_path],
                 cwd=BASEDIR,
                 check=False
             )
 
         threading.Thread(target=run, daemon=True).start()
+
         return jsonify({"status": "started", "in": in_name, "out": out_name})
 
     except Exception as e:
@@ -441,31 +466,59 @@ def get_status():
 
 @app.route('/api/sessions', methods=['GET'])
 def get_sessions():
+    """
+    Return ONLY the last 3 REAL session folders:
+    - ignore DEMO folder
+    - ignore 'latest' symlink
+    - ignore anything not matching actual session format
+    """
     try:
         sessions = []
+        pattern = re.compile(r"^\d{8}_\d{6}_[0-9a-fA-F]{6}$")
+
         if MEAS_ROOT.exists():
-            
-            # 1. Filter: Get only valid directories (this prevents crashing on broken symlinks or files)
-            session_dirs = [d for d in MEAS_ROOT.iterdir() if d.is_dir()]
 
-            # 2. Sort: Now safely sort the valid directories by modification time
-            sorted_dirs = sorted(session_dirs,
-                                 key=lambda d: d.stat().st_mtime,
-                                 reverse=True)
+            for entry in MEAS_ROOT.iterdir():
 
-            for session_dir in sorted_dirs:
-                sessions.append({
-                    "id": session_dir.name,
-                    "timestamp": datetime.fromtimestamp(session_dir.stat().st_mtime).isoformat(),
-                    "has_analysis": (session_dir / "analysis.json").exists(),
-                    "has_summary":  (session_dir / "summary.txt").exists(),
-                    "session_dir": str(session_dir)
+                name = entry.name
+
+                # ignore demo
+                if name.upper().startswith("DEMO"):
+                    continue
+
+                # ignore symlink 'latest'
+                if name == "latest":
+                    continue
+
+                # ignore anything not matching session folder pattern
+                if not pattern.match(name):
+                    continue
+
+                # valid folder → include
+                sessions.append(entry)
+
+            # newest first
+            sessions.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+
+            # return ONLY the last 3 real sessions
+            out = []
+            for d in sessions[:3]:
+                out.append({
+                    "id": d.name,
+                    "timestamp": datetime.fromtimestamp(d.stat().st_mtime).isoformat(),
+                    "has_analysis": (d / "analysis.json").exists(),
+                    "has_summary":  (d / "summary.txt").exists(),
+                    "session_dir": str(d)
                 })
-        return jsonify(sessions)
+
+            return jsonify(out)
+
+        return jsonify([])
+
     except Exception as e:
-        # This fallback remains, but should now only trigger for extreme file system errors
         print(f"Error in get_sessions: {e}")
         return jsonify({"error": str(e)}), 500
+
     
 # ----------------------------------------------------------
 #  serve buddy_phrases.json from project root

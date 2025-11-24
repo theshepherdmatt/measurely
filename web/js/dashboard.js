@@ -106,6 +106,7 @@ class MeasurelyDashboard {
         return 'needs_work';
     }
 
+
     /* ---------- load foot tag-lines once ---------- */
     async loadFootTags() {
         try {
@@ -161,6 +162,7 @@ class MeasurelyDashboard {
         console.log('Initializing Measurely Dashboard...');
 
         this.setupEventListeners();
+        this.resetSessionButtonLabels();   // <--- add this line
 
         await this.loadData();
         this.startPolling();
@@ -228,10 +230,10 @@ class MeasurelyDashboard {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const result = await response.json();
 
-            if (result.status === 'started') {
+            if (result.status !== 'error') {
                 this.monitorSweepProgress();
             } else {
-                throw new Error('Failed to start sweep');
+                this.showError(result.message || 'Sweep failed');
             }
 
         } catch (err) {
@@ -242,7 +244,7 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-    SWEEP PROGRESS MONITOR
+    SWEEP PROGRESS MONITOR (CLEAN / FIXED)
     ============================================================ */
     async monitorSweepProgress() {
         this.sweepCheckInterval = setInterval(async () => {
@@ -252,15 +254,17 @@ class MeasurelyDashboard {
 
                 this.updateProgress(progress.progress);
 
-                if (!progress.running && progress.progress >= 100) {
+                if (!progress.running) {
                     clearInterval(this.sweepCheckInterval);
-                    await this.loadData();
-                    this.showSuccess('Sweep complete!');
-                    this.resetSweepState();
 
-                } else if (!progress.running) {
-                    clearInterval(this.sweepCheckInterval);
-                    this.showError('Sweep failed');
+                    try {
+                        await this.loadData();
+                        this.showSuccess('Sweep complete!');
+                    } catch (e) {
+                        console.error("Load data failed:", e);
+                        this.showError('Sweep failed');
+                    }
+
                     this.resetSweepState();
                 }
 
@@ -1248,6 +1252,101 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
+    SESSION LOADING (Latest / Previous / Last)
+    ============================================================ */
+    async loadNthSession(n) {
+        try {
+            // Fetch list of real sessions
+            const all = await fetch('/api/sessions').then(r => r.json());
+
+            // --- Safety checks ----------------------------------------------------
+            if (!Array.isArray(all) || all.length === 0) {
+                this.showError("No real sessions found");
+                return;
+            }
+
+            if (n >= all.length) {
+                this.showError("Not enough sessions yet");
+                return;
+            }
+
+            const sessionId = all[n].id;
+            if (!sessionId) {
+                this.showError("Invalid session ID");
+                return;
+            }
+
+            // --- Fetch actual session data ---------------------------------------
+            const data = await fetch(`/api/session/${encodeURIComponent(sessionId)}`)
+                .then(r => r.json());
+
+            if (!data || data.error) {
+                this.showError("Failed to load session");
+                return;
+            }
+
+            // The API returns the whole session, not wrapped in data.session
+            this.currentData = data;
+
+            // Redraw the dashboard
+            this.updateDashboard();
+
+            // Highlight the correct button
+            this.highlightSessionButton(n);
+
+            // Success toast
+            const label = (n === 0 ? "Latest" : n === 1 ? "Previous" : "Last");
+            this.showSuccess(`Loaded ${label} session`);
+
+        } catch (err) {
+            console.error(err);
+            this.showError("Error loading session");
+        }
+    }
+
+
+
+    /* ============================================================
+    SESSION BUTTON HIGHLIGHTING
+    ============================================================ */
+
+    highlightSessionButton(n) {
+        const map = {
+            0: 'sessionLatestBtn',
+            1: 'sessionPreviousBtn',
+            2: 'sessionLastBtn'
+        };
+
+        ['sessionLatestBtn','sessionPreviousBtn','sessionLastBtn'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('bg-indigo-50','text-indigo-700');
+            }
+        });
+
+        const active = document.getElementById(map[n]);
+        if (active) {
+            active.classList.add('bg-indigo-50','text-indigo-700');
+        }
+    }
+
+    /* ============================================================
+    FORCE STATIC SESSION BUTTON LABELS
+    ============================================================ */
+    resetSessionButtonLabels() {
+        const map = {
+            sessionLatestBtn:   'Latest',
+            sessionPreviousBtn: 'Previous',
+            sessionLastBtn:     'Last'
+        };
+
+        Object.entries(map).forEach(([id, label]) => {
+            const btn = document.getElementById(id);
+            if (btn) btn.textContent = label;
+        });
+    }
+
+    /* ============================================================
     EVENT LISTENERS — SAFE ON ALL PAGES
     ============================================================ */
     setupEventListeners() {
@@ -1266,6 +1365,11 @@ class MeasurelyDashboard {
         safe('leftChannelBtn',  () => this.showChannel('left'));
         safe('rightChannelBtn', () => this.showChannel('right'));
         safe('bothChannelsBtn', () => this.showChannel('both'));
+
+        safe('sessionLatestBtn',   () => this.loadNthSession(0));
+        safe('sessionPreviousBtn', () => this.loadNthSession(1));
+        safe('sessionLastBtn',     () => this.loadNthSession(2));
+
 
         // Removed session comparison event listeners as they are handled in index.html script
     }
