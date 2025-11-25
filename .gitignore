@@ -38,3 +38,4 @@ install.log
 # Allow PNGs inside docs folder
 !docs/*.png
 install.log
+install.log

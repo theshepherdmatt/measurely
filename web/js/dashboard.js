@@ -162,10 +162,13 @@ class MeasurelyDashboard {
         console.log('Initializing Measurely Dashboard...');
 
         this.setupEventListeners();
-        this.resetSessionButtonLabels();   // <--- add this line
-
+        this.resetSessionButtonLabels();  
+        
         await this.loadData();
         this.startPolling();
+        this.updateDashboard(); 
+        this.showSuccess('Sweep complete!');
+
 
         console.log('Dashboard initialized successfully');
     }

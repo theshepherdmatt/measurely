@@ -1,143 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Measurely – Tips & Tweaks</title>
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
-  <link rel="alternate icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="icons/dave.svg">
   <link rel="stylesheet" href="measurely.css">
-  <script src="tailwind.js"></script>
   <script src="js/plotly.min.js"></script>
-  <link rel="stylesheet" href="fonts/inter/interweb/inter.css">
-
-  <style>
-    /* Custom Bullet for Action Plan */
-    .action-item {
-        position: relative;
-        padding-left: 1.5rem;
-    }
-    .action-item::before {
-        content: "→";
-        position: absolute;
-        left: 0;
-        color: #94a3b8;
-        font-weight: bold;
-    }
-  </style>
-
-<base target="_blank">
 </head>
 
-<body class="bg-gray-300 text-slate-800 font-sans">
+<body>
 
-<div class="mobile-banner md:hidden fixed top-0 left-0 right-0 h-16 backdrop-blur-sm flex items-center justify-between px-4 z-50">
-  <div class="flex items-center space-x-2">
-    <img src="icons/mainlogo.svg" class="max-h-10 w-auto object-contain" alt="Measurely Logo">
-  </div>
-  <button id="mobile-menu-btn" class="p-2 rounded-lg text-white hover:bg-white/10 transition">
-    <img src="icons/bars.svg" class="w-6 h-6" alt="">
-  </button>
-</div>
+  <div class="app-layout">
 
-<div id="sidebar-overlay" class="sidebar-overlay"></div>
-
-<aside id="sidebar" class="sidebar">
-  <div class="sidebar-logo mb-8 flex items-center px-2">
-    <img src="icons/mainlogo.svg" class="w-40 h-auto" alt="Measurely">
-  </div>
-  
-  <nav class="space-y-2">
-    <a href="index.html" class="nav-item">
-      <img src="icons/dashboard.svg" class="w-5 h-5 mr-3 inline-block" />
-      Dashboard
-    </a>
-    <a href="room-setup.html" class="nav-item">
-      <img src="icons/home.svg" class="w-5 h-5 mr-3 inline-block" />
-      Room Setup
-    </a>
-    <a href="tipsandtweaks.html" class="nav-item active">
-      <img src="icons/lightbulb.svg" class="w-5 h-5 mr-3 inline-block" />
-      Tips & Tweaks
-    </a>
-  </nav>
-
-  <div class="absolute bottom-6 left-6 right-6">
-    <div class="bg-white/10 backdrop-blur-md rounded-lg p-4 space-y-3 border border-white/10">
-      <div class="flex items-center text-white/90">
-        <div id="systemReadyDot" class="status-indicator status-good pulse-animation"></div>
-        <span id="systemReadyText" class="text-xs font-medium">System Ready</span>
-      </div>
-      <div class="flex items-center text-white/90">
-        <div id="dacStatusDot" class="status-indicator bg-yellow-400"></div>
-        <span id="dacStatusText" class="text-xs font-medium">DAC: Not Found</span>
-      </div>
-      <div class="flex items-center text-white/90">
-        <div id="usbStatusDot" class="status-indicator bg-red-400"></div>
-        <span id="usbStatusText" class="text-xs font-medium">Mic: Not Connected</span>
-      </div>
-      <p class="text-[10px] text-white/50 mt-2">
-        Last updated: <span id="lastUpdated">Now</span>
-      </p>
-    </div>
-  </div>
-</aside>
-
-<div class="main-content md:ml-64 p-6 md:p-10 max-w-7xl mx-auto">
-
-  <header class="mb-10 pt-1 md:pt-0">
-    <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-2">Tips & Tweaks</h1>
-    <p class="text-lg text-slate-500 leading-relaxed max-w-2xl">Dave uses your sweep to highlight issues, explain what’s going on, and give practical advice.</p>
-  </header>
-
-  <div class="mb-8">
-    <h2 class="text-xl font-bold text-slate-900 mb-2">Your Priority Action Areas</h2>
-    <p class="text-sm text-slate-500">These are your top three weakest metrics, broken down by data, diagnosis, and solution.</p>
-  </div>
-
-  <div id="tipsCardsWrapper" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pb-12">
+    <!-- MOBILE OVERLAY -->
+    <div id="sidebar-overlay" aria-hidden="true"
+      style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; backdrop-filter: blur(4px);">
     </div>
 
-</div>
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar" role="complementary">
+      <div class="sidebar-logo">
+        <img src="icons/mainlogo.svg" alt="Measurely" style="height: 46px;">
+        <span></span>
+      </div>
 
-<div id="toast-container"></div>
+      <nav aria-label="Main">
+        <a href="index.html" class="nav-item">
+          <img src="icons/dashboard.svg" alt="">
+          Dashboard
+        </a>
+        <a href="room-setup.html" class="nav-item">
+          <img src="icons/home.svg" alt="">
+          Room Setup
+        </a>
+        <a href="tipsandtweaks.html" class="nav-item active">
+          <img src="icons/lightbulb.svg" alt="">
+          Tips & Tweaks
+        </a>
+      </nav>
 
+      <div style="margin-top: auto;">
+        <div class="glass-panel" style="padding: 1rem; border-radius: 12px;">
+          <div
+            style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--c-text-muted);">
+            <div id="systemReadyDot" class="status-indicator"
+              style="width: 8px; height: 8px; border-radius: 50%; background: var(--c-excellent);"></div>
+            <span id="systemReadyText" aria-live="polite">System Ready</span>
+          </div>
+          <div style="font-size: 0.75rem; color: rgba(255,255,255,0.3);">
+            Last updated: <span id="lastUpdated">Now</span>
+          </div>
+        </div>
+      </div>
+    </aside>
 
-<script src="/js/dashboard.js"></script> 
-<script type="module" src="/js/devices.js"></script> 
+    <!-- MAIN CONTENT -->
+    <main class="main-content" role="main">
 
-<script>
-/* -------------------- TIPS AND TWEAKS CORE LOGIC --------------------- */
+      <!-- HEADER -->
+      <header class="header animate-enter" role="banner">
+        <div class="header-title" style="display: flex; align-items: center; gap: 1rem;">
+          <button id="mobile-menu-btn" class="btn btn-secondary" style="padding: 0.5rem; display: none;"
+            aria-label="Toggle navigation" aria-expanded="false">
+            <img src="icons/bars.svg" style="width: 24px;" alt="">
+          </button>
+          <div>
+            <h1>Tips & Tweaks</h1>
+            <p>Dave uses your sweep to highlight issues, explain what’s going on, and give practical advice.</p>
+          </div>
+        </div>
+      </header>
 
-var Solutions = {};
-var data = null; 
+      <div class="animate-enter delay-1" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Your Priority Action Areas</h2>
+        <p style="color: var(--c-text-muted); font-size: 0.9rem;">These are your top three weakest metrics, broken down
+          by data, diagnosis, and solution.</p>
+      </div>
 
-async function loadSolutions() {
-  const r = await fetch('/buddy_phrases.json');
-  Solutions = await r.json();
-}
-async function loadLatest() {
-  const r = await fetch('/api/latest');
-  data = await r.json();
-}
+      <div id="tipsCardsWrapper" class="grid-3 animate-enter delay-2">
+        <!-- Cards will be injected here -->
+      </div>
 
-function severityFromScore(n) {
-  if (n >= 8) return "excellent";
-  if (n >= 6) return "good";
-  if (n >= 4) return "okay";
-  return "needs_work";
-}
+    </main>
+  </div>
 
-/* UPDATED COLOR LOGIC for new card design */
-function getColorPalette(score) {
-  if (score >= 8) return { bgIcon:"bg-green-50", textIcon:"text-green-600", textScore:"text-green-600", badge:"bg-green-100 text-green-700" };
-  if (score >= 6) return { bgIcon:"bg-blue-50", textIcon:"text-blue-600", textScore:"text-blue-600", badge:"bg-blue-100 text-blue-700" };
-  if (score >= 4) return { bgIcon:"bg-yellow-50", textIcon:"text-yellow-600", textScore:"text-yellow-600", badge:"bg-yellow-100 text-yellow-700" };
-  return { bgIcon:"bg-red-50", textIcon:"text-red-500", textScore:"text-red-500", badge:"bg-red-100 text-red-700" };
-}
+  <script src="/js/dashboard.js"></script>
+  <script type="module" src="/js/devices.js"></script>
 
-function getIconName(category) {
-    switch(category) {
+  <script>
+    /* -------------------- TIPS AND TWEAKS CORE LOGIC --------------------- */
+
+    var Solutions = {};
+    var data = null;
+
+    async function loadSolutions() {
+      const r = await fetch('/buddy_phrases.json');
+      Solutions = await r.json();
+    }
+    async function loadLatest() {
+      const r = await fetch('/api/latest');
+      data = await r.json();
+    }
+
+    function severityFromScore(n) {
+      if (n >= 8) return "excellent";
+      if (n >= 6) return "good";
+      if (n >= 4) return "okay";
+      return "needs_work";
+    }
+
+    /* UPDATED COLOR LOGIC for new dark theme */
+    function getColorPalette(score) {
+      if (score >= 8) return { text: "text-excellent", bg: "rgba(16, 185, 129, 0.1)" };
+      if (score >= 6) return { text: "text-good", bg: "rgba(245, 158, 11, 0.1)" };
+      if (score >= 4) return { text: "text-okay", bg: "rgba(59, 130, 246, 0.1)" };
+      return { text: "text-poor", bg: "rgba(239, 68, 68, 0.1)" };
+    }
+
+    function getIconName(category) {
+      switch (category) {
         case 'peaks_dips': return 'mountain.svg';
         case 'reflections': return 'square-caret-left.svg';
         case 'bandwidth': return 'signal.svg';
@@ -145,19 +128,19 @@ function getIconName(category) {
         case 'smoothness': return 'wave-square.svg';
         case 'reverb': return 'clock.svg';
         default: return 'lightbulb.svg';
+      }
     }
-}
 
-function getWorstThree() {
-  const cats = ["peaks_dips","reflections","bandwidth","balance","smoothness","reverb"];
-  return cats.map(c => ({category:c, score:data[c] ?? 0}))
-             .sort((a,b)=>a.score-b.score)
-             .slice(0,3);
-}
+    function getWorstThree() {
+      const cats = ["peaks_dips", "reflections", "bandwidth", "balance", "smoothness", "reverb"];
+      return cats.map(c => ({ category: c, score: data[c] ?? 0 }))
+        .sort((a, b) => a.score - b.score)
+        .slice(0, 3);
+    }
 
-function getRawMetricDisplay(category, score) {
-    const s = score;
-    switch (category) {
+    function getRawMetricDisplay(category, score) {
+      const s = score;
+      switch (category) {
         case 'peaks_dips': return `Low Frequency Std Dev: ${(10 - s).toFixed(1)} dB`;
         case 'reflections': return s > 6 ? 'Low Early Reflection Energy' : 'High Early Reflection Energy';
         case 'bandwidth': return s > 6 ? 'Wide ±3dB Range' : 'Limited ±3dB Range';
@@ -165,150 +148,151 @@ function getRawMetricDisplay(category, score) {
         case 'smoothness': return `Mid/High Variance: ${(10 - s).toFixed(1)} dB`;
         case 'reverb': return `Decay Time: ${(s / 100).toFixed(2)}s EDT`;
         default: return '-- N/A --';
+      }
     }
-}
 
-/* -------------------- MAIN RENDER FUNCTION (NEW DESIGN) --------------------- */
-function renderTipsCards() {
-    const C = document.getElementById('tipsCardsWrapper');
-    
-    if (!C || !data || !data.has_analysis) {
+    /* -------------------- MAIN RENDER FUNCTION --------------------- */
+    function renderTipsCards() {
+      const C = document.getElementById('tipsCardsWrapper');
+
+      if (!C || !data || !data.has_analysis) {
         C.innerHTML = `
-        <div class="col-span-full bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm">
-            <div class="inline-block p-4 bg-slate-50 rounded-full mb-4">
-                <img src="icons/chart-line.svg" class="w-8 h-8 opacity-40">
-            </div>
-            <h3 class="text-lg font-bold text-slate-900">No Analysis Data Yet</h3>
-            <p class="text-slate-500 mt-2 mb-6">Run a sweep from the Dashboard to see your personalized tips.</p>
-            <a href="index.html" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition">Go to Dashboard</a>
-        </div>`;
+          <div class="card glass-panel" style="grid-column: span 3; text-align: center; padding: 3rem;">
+              <div style="display: inline-flex; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 50%; margin-bottom: 1rem;">
+                  <img src="icons/chart-line.svg" style="width: 32px; opacity: 0.5;" alt="">
+              </div>
+              <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">No Analysis Data Yet</h3>
+              <p style="color: var(--c-text-muted); margin-bottom: 1.5rem;">Run a sweep from the Dashboard to see your personalized tips.</p>
+              <a href="index.html" class="btn btn-primary" style="display: inline-flex;">Go to Dashboard</a>
+          </div>`;
         return;
-    }
-    
-    const worst = getWorstThree();
+      }
 
-    C.innerHTML = worst.map(w => {
+      const worst = getWorstThree();
+
+      C.innerHTML = worst.map(w => {
         const colors = getColorPalette(w.score);
         const sev = severityFromScore(w.score);
         const iconFile = getIconName(w.category);
-        
+
         // DATA PREP
         const rawMetric = getRawMetricDisplay(w.category, w.score);
-        const translation = window.pickUniqueTip(w.category, Solutions[w.category]?.[sev]); 
+        const translation = window.pickUniqueTip(w.category, Solutions[w.category]?.[sev]);
         const solutionList = Solutions[w.category + '_solutions']?.[sev] || ["No specific solutions found for this category."];
-        
+
+        // Helper to replace bold markdown
+        const replaceBold = (text) => text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:white;">$1</strong>');
+
         const solutionsHtml = solutionList.map(sol => {
-            const formattedText = typeof replaceBold === 'function' ? replaceBold(sol) : sol;
-            return `<li class="action-item">${formattedText}</li>`;
+          const formattedText = replaceBold(sol);
+          return `<li style="position: relative; padding-left: 1.5rem; margin-bottom: 0.5rem; color: var(--c-text-muted); font-size: 0.9rem;">
+                        <span style="position: absolute; left: 0; color: var(--c-accent); font-weight: bold;">→</span>
+                        ${formattedText}
+                      </li>`;
         }).join('');
 
         const name = {
-            peaks_dips:"Peaks & Dips",
-            reflections:"Reflections",
-            bandwidth:"Bandwidth",
-            balance:"Balance",
-            smoothness:"Smoothness",
-            reverb:"Reverb"
+          peaks_dips: "Peaks & Dips",
+          reflections: "Reflections",
+          bandwidth: "Bandwidth",
+          balance: "Balance",
+          smoothness: "Smoothness",
+          reverb: "Reverb"
         }[w.category];
 
-        // NEW CARD HTML
+        // CARD HTML
         return `
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col h-full hover:shadow-md transition-all duration-300">
-                
-                <div class="flex justify-between items-start mb-6">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-xl ${colors.bgIcon} flex items-center justify-center">
-                            <img src="icons/${iconFile}" class="w-6 h-6 ${colors.textIcon}">
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-lg leading-tight">${name}</h3>
-                            <div class="text-xs font-bold uppercase tracking-wider mt-1 text-slate-400">Priority Fix</div>
-                        </div>
-                    </div>
-                    <div class="text-4xl font-black ${colors.textScore}">${w.score.toFixed(1)}</div>
-                </div>
+              <div class="card glass-panel" style="display: flex; flex-direction: column; height: 100%;">
+                  
+                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
+                      <div style="display: flex; align-items: center; gap: 1rem;">
+                          <div style="width: 48px; height: 48px; border-radius: 12px; background: ${colors.bg}; display: flex; align-items: center; justify-content: center;">
+                              <img src="icons/${iconFile}" style="width: 24px;" class="${colors.text}" alt="">
+                          </div>
+                          <div>
+                              <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">${name}</h3>
+                              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; color: rgba(255,255,255,0.4);">Priority Fix</div>
+                          </div>
+                      </div>
+                      <div style="font-size: 2.5rem; font-weight: 900;" class="${colors.text}">${w.score.toFixed(1)}</div>
+                  </div>
 
-                <div class="bg-indigo-50 rounded-xl p-4 mb-6 flex gap-3 items-start relative">
-                    <div class="absolute -top-2 left-8 w-4 h-4 bg-indigo-50 transform rotate-45"></div>
-                    
-                    <img src="icons/dave.svg" class="w-6 h-6 flex-shrink-0 opacity-80 mt-0.5">
-                    <p class="text-sm text-slate-700 italic leading-relaxed">
-                        "${translation}"
-                    </p>
-                </div>
+                  <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 0.75rem; align-items: start; border: 1px solid rgba(255,255,255,0.05);">
+                      <img src="icons/dave.svg" style="width: 24px; opacity: 0.8; margin-top: 2px;" alt="">
+                      <p style="margin: 0; font-size: 0.9rem; font-style: italic; color: var(--c-text-main); line-height: 1.5;">
+                          "${translation}"
+                      </p>
+                  </div>
 
-                <div class="mb-6 pb-4 border-b border-slate-100">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Technical Data</span>
-                    <p class="font-mono text-xs text-slate-600 mt-1 bg-slate-50 inline-block px-2 py-1 rounded border border-slate-100">
-                        ${rawMetric}
-                    </p>
-                </div>
+                  <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                      <span style="font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.05em;">Technical Data</span>
+                      <div style="font-family: monospace; font-size: 0.85rem; color: var(--c-text-muted); margin-top: 0.25rem; background: rgba(0,0,0,0.2); display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px;">
+                          ${rawMetric}
+                      </div>
+                  </div>
 
-                <div class="mt-auto">
-                    <h4 class="font-bold text-slate-900 mb-3 text-sm flex items-center">
-                        <img src="icons/toolbox.svg" class="w-4 h-4 mr-2 opacity-50">
-                        Action Plan
-                    </h4>
-                    <ul class="space-y-3 text-sm text-slate-600 leading-relaxed">
-                        ${solutionsHtml}
-                    </ul>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-
-/* -------------------- BOOTSTRAP --------------------- */
-
-document.addEventListener('DOMContentLoaded', async () => {
-    if (typeof MeasurelyDashboard !== 'undefined' && !window.dashboard) {
-        window.dashboard = new MeasurelyDashboard(); 
+                  <div style="margin-top: auto;">
+                      <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                          <img src="icons/toolbox.svg" style="width: 16px; opacity: 0.5;" alt="">
+                          Action Plan
+                      </h4>
+                      <ul style="list-style: none; padding: 0; margin: 0;">
+                          ${solutionsHtml}
+                      </ul>
+                  </div>
+              </div>
+          `;
+      }).join('');
     }
-    
-    const [solutionsStatus, dataStatus] = await Promise.allSettled([loadSolutions(), loadLatest()]);
-    
-    if (solutionsStatus.status === 'rejected' || dataStatus.status === 'rejected') {
-        console.error("Failed to load necessary data for Tips & Tweaks page.");
-    }
-    
-    renderTipsCards();
-});
-</script>
 
-<script>
-/* -------------------- SIDEBAR AND CLOCK LOGIC --------------------- */
 
-  const btn  = document.getElementById('mobile-menu-btn');
-  const side = document.getElementById('sidebar');
-  const over = document.getElementById('sidebar-overlay');
+    /* -------------------- BOOTSTRAP --------------------- */
 
-  function toggleMenu() {
-    side.classList.toggle("active");
-    over.classList.toggle("active");
-
-    document.body.style.overflow =
-      side.classList.contains("active") ? "hidden" : "";
-  }
-
-  btn.addEventListener('click', toggleMenu);
-  over.addEventListener('click', toggleMenu);
-
-  document.querySelectorAll('.nav-item').forEach(link => {
-    link.addEventListener('click', () => {
-      if (window.innerWidth <= 768) {
-        side.classList.remove('active');
-        over.classList.remove('active');
-        document.body.style.overflow = '';
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (typeof MeasurelyDashboard !== 'undefined' && !window.dashboard) {
+        window.dashboard = new MeasurelyDashboard();
       }
-    });
-  });
 
-  setInterval(() => {
-    const el = document.getElementById('lastUpdated');
-    if (el) el.textContent = new Date().toLocaleTimeString();
-  }, 1000);
-</script>
+      const [solutionsStatus, dataStatus] = await Promise.allSettled([loadSolutions(), loadLatest()]);
+
+      if (solutionsStatus.status === 'rejected' || dataStatus.status === 'rejected') {
+        console.error("Failed to load necessary data for Tips & Tweaks page.");
+      }
+
+      renderTipsCards();
+    });
+
+    /* ---------- Sidebar toggle ---------- */
+    const btn = document.getElementById('mobile-menu-btn');
+    const side = document.getElementById('sidebar');
+    const over = document.getElementById('sidebar-overlay');
+    function toggleMenu() {
+      side.classList.toggle('active');
+      over.classList.toggle('active');
+      const isActive = side.classList.contains('active');
+      btn.setAttribute('aria-expanded', isActive);
+      document.body.style.overflow = isActive ? 'hidden' : '';
+    }
+    if (btn) btn.addEventListener('click', toggleMenu);
+    if (over) over.addEventListener('click', toggleMenu);
+
+    document.querySelectorAll('.nav-item').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+          side.classList.remove('active');
+          over.classList.remove('active');
+          btn.setAttribute('aria-expanded', 'false');
+          document.body.style.overflow = '';
+        }
+      });
+    });
+
+    setInterval(() => {
+      const el = document.getElementById('lastUpdated');
+      if (el) el.textContent = new Date().toLocaleTimeString();
+    }, 1000);
+  </script>
 
 </body>
+
 </html>
