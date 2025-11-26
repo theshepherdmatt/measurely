@@ -40,6 +40,14 @@ function updateStatusDisplay(status) {
   ------------------------------- */
   const systemDot = $('systemReadyDot');
   const systemText = $('systemReadyText');
+    // DAC
+  const dacDot = $('dacDot');
+  const dacText = $('dacText');
+
+  // MIC
+  const usbDot = $('usbDot');
+  const usbText = $('usbText');
+
 
   if (systemDot && systemText) {
     if (systemReady) {
@@ -51,53 +59,25 @@ function updateStatusDisplay(status) {
     }
   }
 
-  /* ------------------------------
-      IP ADDRESS
-  ------------------------------- */
-  const ipDot = $('ipStatusDot');
-  const ipText = $('ipAddressText');
-
-  const ip = status?.ip;
-
-  if (ipDot && ipText) {
-    if (ip) {
-      ipDot.className = "status-indicator bg-blue-400";
-      ipText.textContent = `IP: ${ip}`;
-    } else {
-      ipDot.className = "status-indicator bg-red-500";
-      ipText.textContent = "IP: Not Found";
-    }
-  }
-
-  /* ------------------------------
-      DAC CONNECTED
-  ------------------------------- */
-  const dacDot = $('dacStatusDot');
-  const dacText = $('dacStatusText');
-
+  /* DAC */
   if (dacDot && dacText) {
     if (dacOk) {
-      dacDot.className = "status-indicator bg-yellow-500";
-      dacText.textContent = `DAC: ${status.dac.name}`;
+      dacDot.className = "status-indicator bg-green-500";
+      dacText.textContent = "Connected";
     } else {
       dacDot.className = "status-indicator bg-red-500";
-      dacText.textContent = "DAC: Not Connected";
+      dacText.textContent = "Not Connected";
     }
   }
 
-  /* ------------------------------
-      USB MIC CONNECTED
-  ------------------------------- */
-  const usbDot = $('usbStatusDot');
-  const usbText = $('usbStatusText');
-
+  /* MIC */
   if (usbDot && usbText) {
     if (micOk) {
       usbDot.className = "status-indicator bg-green-500";
-      usbText.textContent = `USB Mic: ${status.mic.name}`;
+      usbText.textContent = "Connected";
     } else {
       usbDot.className = "status-indicator bg-red-500";
-      usbText.textContent = "USB Mic: Not Connected";
+      usbText.textContent = "Not Connected";
     }
   }
 

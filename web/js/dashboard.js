@@ -262,6 +262,7 @@ class MeasurelyDashboard {
 
                     try {
                         await this.loadData();
+                        this.updateDashboard();
                         this.showSuccess('Sweep complete!');
                     } catch (e) {
                         console.error("Load data failed:", e);

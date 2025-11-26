@@ -161,42 +161,45 @@
 
 
         <!-- QUICK ACTIONS / INFO -->
+        <!-- SESSION INFO -->
         <div class="card glass-panel">
           <h2 class="card-title">Session Info</h2>
 
           <div style="display: flex; flex-direction: column; gap: 1rem;">
 
-            <!-- DATE -->
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
-              <span style="color: var(--c-text-muted);">Date</span>
-              <span id="sessionDate" style="font-weight: 500;">--</span>
+            <!-- DEVICE NAME -->
+            <div style="display:flex; justify-content: space-between; align-items:center; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <img src="icons/dave.svg" style="width:16px; opacity:0.7;">
+                <span style="color: var(--c-text-muted);">Device Name</span>
+              </div>
+              <span style="font-weight:600; color:var(--c-text-main);">Dave the Hoff</span>
             </div>
 
-            <!-- DAC STATUS -->
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: var(--c-text-muted);">DAC Status</span>
+            <!-- DAC -->
+            <div style="display:flex; justify-content:flex-start; align-items:center; gap:0.5rem;">
+              <span style="color: var(--c-text-muted);"></span>
 
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <div id="dacStatusDot" class="status-indicator bg-yellow-400"
-                  style="width: 10px; height: 10px; border-radius: 50%;">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <div id="dacStatusDot" class="status-indicator"
+                    style="width:10px; height:10px; border-radius:50%; background:#6B7280;">
                 </div>
-                <span id="dacStatusText" style="font-weight: 500; color: var(--c-text-main);" aria-live="polite">
-                  Not Found
+                <span id="dacStatusText" style="font-weight:600; color:var(--c-text-main);" aria-live="polite">
+                  --
                 </span>
               </div>
             </div>
 
-            <!-- MIC STATUS -->
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: var(--c-text-muted);">Mic Status</span>
+            <!-- MIC -->
+            <div style="display:flex; justify-content:flex-start; align-items:center; gap:0.5rem;">
+              <span style="color: var(--c-text-muted);"></span>
 
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <div id="usbStatusDot" class="status-indicator bg-red-400"
-                  style="width: 10px; height: 10px; border-radius: 50%;">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <div id="usbStatusDot" class="status-indicator"
+                    style="width:10px; height:10px; border-radius:50%; background:#ef4444;">
                 </div>
-                <span id="usbStatusText" style="font-weight: 500; color: var(--c-text-main);" aria-live="polite">
-                  Not Connected
+                <span id="usbStatusText" style="font-weight:600; color:var(--c-text-main);" aria-live="polite">
+                  --
                 </span>
               </div>
             </div>
@@ -447,9 +450,34 @@
 
     document.getElementById("refreshDashboardBtn").addEventListener("click", async () => {
       console.log("Refreshing dashboard…");
-      await loadSessionExplorer();
-      if (window.dashboard) window.dashboard.showChannel('both');
+
+      if (!window.dashboard) {
+        console.error("Dashboard not initialised");
+        return;
+      }
+
+      try {
+        // 1. Load new sweep/session data
+        await window.dashboard.loadData();
+
+        // 2. Fully redraw dashboard UI
+        window.dashboard.updateDashboard();
+
+        // 3. Update nerd metrics
+        window.dashboard.updateCompareSessionMetrics();
+
+        // 4. Reset chart to both channels
+        window.dashboard.showChannel('both');
+
+        // 5. Optional toast
+        window.dashboard.showSuccess("Dashboard refreshed");
+
+      } catch (err) {
+        console.error("Refresh failed:", err);
+        window.dashboard.showError("Refresh failed");
+      }
     });
+
 
     function formatTimestamp(isoString) {
       if (!isoString) return "No Data";
