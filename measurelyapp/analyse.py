@@ -79,6 +79,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
 
     lo3, hi3 = bandwidth_3db(freq_raw, mag_raw)
     mods     = modes(freq_raw, mag_raw)
+    mods     = [m for m in mods if m["freq_hz"] <= 1000]
     sm       = smoothness(freq_raw, mag_raw)
     refs     = early_reflections(ir, fs)
     rt       = rt60_edt(ir, fs)

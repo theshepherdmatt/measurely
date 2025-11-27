@@ -441,7 +441,7 @@ class MeasurelyDashboard {
         };
 
         /* ---------------- OVERALL SCORE ---------------- */
-        const overall = data.overall_score ?? 5.0;
+        const overall = data.scores?.overall ?? data.overall ?? 5.0;
 
         // Main score number
         const overallEl = document.getElementById('overallScore');
@@ -477,7 +477,7 @@ class MeasurelyDashboard {
             bandwidthScore: data.bandwidth ?? 0,
             balanceScore: data.balance ?? 0,
             smoothnessScore: data.smoothness ?? 0,
-            peaksDipsScore: data.peaks_dips ?? 0,
+            peaksDipsScore: data.scores?.peaks_dips ?? data.peaks_dips ?? 0,
             reflectionsScore: data.reflections ?? 0,
             reverbScore: data.reverb ?? 0
         };
@@ -1476,10 +1476,14 @@ class MeasurelyDashboard {
         safe('sessionPreviousBtn', () => this.loadNthSession(1));
         safe('sessionLastBtn',     () => this.loadNthSession(2));
 
+        // 🔥 FIX: Manual refresh button
+        safe('refreshDashboardBtn', async () => {
+            console.log("Manual dashboard refresh… forcing full reload");
+            await this.loadData();
+            this.updateDashboard();
+        });
 
-        // Removed session comparison event listeners as they are handled in index.html script
     }
-
 
     /* ============================================================
      TOAST MESSAGES

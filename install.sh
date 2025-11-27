@@ -104,20 +104,26 @@ systemctl disable --now measurely.service 2>/dev/null || true
 # ------------------------------------------------------------
 # 7. Create 'latest' symlink → bundled starter measurement
 # ------------------------------------------------------------
-msg "Linking 'latest' to bundled starter measurement…"
+msg "Ensuring 'latest' measurement link exists…"
 
 MEAS_DIR="$REPO_DIR/measurements"
 STARTER="DEMO_DO_NOT_DELETE"
 
-# Ensure folder exists
+# Ensure starter folder exists
 if [[ ! -d "$MEAS_DIR/$STARTER" ]]; then
   die "ERROR: starter measurement folder '$STARTER' not found in $MEAS_DIR"
 fi
 
-# Force create (or replace) symlink
-sudo -u "$APP_USER" ln -sfn "$MEAS_DIR/$STARTER" "$MEAS_DIR/latest"
+# Delete ANYTHING called 'latest' (broken symlinks, dirs, files)
+if [[ -L "$MEAS_DIR/latest" || -e "$MEAS_DIR/latest" ]]; then
+    rm -rf "$MEAS_DIR/latest"
+fi
 
-msg "✔ latest → $STARTER"
+# Recreate fresh symlink
+sudo -u "$APP_USER" ln -s "$MEAS_DIR/$STARTER" "$MEAS_DIR/latest"
+
+msg "✔ 'latest' → $STARTER (fresh initialisation)"
+
 
 # ------------------------------------------------------------
 # 7.5. Audio Hardware Setup: HiFiBerry DAC + USB Microphone

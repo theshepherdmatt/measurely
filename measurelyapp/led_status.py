@@ -1,15 +1,24 @@
+#!/usr/bin/env python3
+
 import RPi.GPIO as GPIO
 import time
 import json
 import os
+import colorsys   # <-- REQUIRED for rainbow spectrum
 
-# GPIO pins
+# -----------------------------------------------------------------------------
+# GPIO PINS (BCM)
+# -----------------------------------------------------------------------------
 RED = 17
 GREEN = 27
 BLUE = 22
 
 STATUS_FILE = "/tmp/measurely_status.json"
 
+
+# -----------------------------------------------------------------------------
+# STATUS WRITER
+# -----------------------------------------------------------------------------
 def update_led_state(state: str):
     """Write the LED state to the shared JSON file."""
     try:
@@ -18,10 +27,10 @@ def update_led_state(state: str):
     except Exception as e:
         print("LED status write error:", e)
 
+
 # -----------------------------------------------------------------------------
 # GPIO INIT (LAZY)
 # -----------------------------------------------------------------------------
-
 _gpio_initialised = False
 
 def _init_gpio():
@@ -38,11 +47,11 @@ def _init_gpio():
 
 
 # -----------------------------------------------------------------------------
-# BASIC SETTERS
+# BASIC COLOUR SETTER
 # -----------------------------------------------------------------------------
-
 def set_colour(r, g, b):
-    _init_gpio()         # <-- FIX: initialise only when needed
+    """Set LED channels. r/g/b are 0 or 1."""
+    _init_gpio()
     GPIO.output(RED, r)
     GPIO.output(GREEN, g)
     GPIO.output(BLUE, b)
@@ -51,7 +60,6 @@ def set_colour(r, g, b):
 # -----------------------------------------------------------------------------
 # NON-BLOCKING BLINK
 # -----------------------------------------------------------------------------
-
 last_blink = 0
 blink_state = False
 
@@ -73,13 +81,12 @@ def blink_nonblocking(colour, interval=0.2):
 # -----------------------------------------------------------------------------
 # NON-BLOCKING PULSE
 # -----------------------------------------------------------------------------
-
 pulse_level = 0
 pulse_direction = 1
 last_pulse = 0
 
 def pulse_nonblocking(colour, speed=0.01):
-    """Slow pulsing effect without blocking."""
+    """Slow pulsing effect."""
     global pulse_level, pulse_direction, last_pulse
     now = time.time()
 
@@ -103,9 +110,8 @@ def pulse_nonblocking(colour, speed=0.01):
 
 
 # -----------------------------------------------------------------------------
-# STATUS READER
+# STATUS FILE READER
 # -----------------------------------------------------------------------------
-
 def read_status():
     if not os.path.exists(STATUS_FILE):
         return "boot"
@@ -118,36 +124,69 @@ def read_status():
 
 
 # -----------------------------------------------------------------------------
-# MAIN LOOP (LED DAEMON)
+# MAIN LOOP
 # -----------------------------------------------------------------------------
-
 def run():
-    _init_gpio()      # <-- FIX: safe initialisation here
+    _init_gpio()
 
     try:
         while True:
             state = read_status()
 
+            # -----------------------------------------------------------------
+            # Rainbow boot animation
+            # -----------------------------------------------------------------
             if state == "boot":
-                blink_nonblocking((1,0,0), interval=0.2)
+                for hue in range(0, 360, 4):
+                    # hsv_to_rgb returns floats 0–1
+                    r, g, b = colorsys.hsv_to_rgb(hue / 360, 1.0, 1.0)
 
+                    # Convert to ON/OFF for simple GPIO LED
+                    set_colour(
+                        1 if r > 0.2 else 0,
+                        1 if g > 0.2 else 0,
+                        1 if b > 0.2 else 0
+                    )
+
+                    time.sleep(0.03)
+
+                continue
+
+            # -----------------------------------------------------------------
+            # AP STARTING → QUICK YELLOW BLINK
+            # -----------------------------------------------------------------
             elif state == "ap_starting":
-                blink_nonblocking((1,1,0), interval=0.2)
+                blink_nonblocking((1, 1, 0), interval=0.2)
 
+            # -----------------------------------------------------------------
+            # AP READY → PURPLE PULSE
+            # -----------------------------------------------------------------
             elif state == "ap_ready":
-                pulse_nonblocking((0,0,1), speed=0.01)
+                pulse_nonblocking((1, 0, 1), speed=0.01)
 
+            # -----------------------------------------------------------------
+            # CLIENT CONNECTED → SOLID GREEN
+            # -----------------------------------------------------------------
             elif state == "client_connected":
-                set_colour(0,1,0)
+                set_colour(0, 1, 0)
 
+            # -----------------------------------------------------------------
+            # SWEEP RUNNING → FAST BLUE BLINK
+            # -----------------------------------------------------------------
             elif state == "sweep_running":
-                blink_nonblocking((0,0,1), interval=0.1)
+                blink_nonblocking((0, 0, 1), interval=0.1)
 
+            # -----------------------------------------------------------------
+            # SWEEP COMPLETE → SOLID WHITE
+            # -----------------------------------------------------------------
             elif state == "sweep_complete":
-                set_colour(1,1,1)
+                set_colour(1, 1, 1)
 
+            # -----------------------------------------------------------------
+            # UNKNOWN → LED OFF
+            # -----------------------------------------------------------------
             else:
-                set_colour(0,0,0)
+                set_colour(0, 0, 0)
 
             time.sleep(0.02)
 
@@ -156,6 +195,7 @@ def run():
 
 
 # -----------------------------------------------------------------------------
-
+# ENTRY POINT
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     run()

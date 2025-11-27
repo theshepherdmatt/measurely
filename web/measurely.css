@@ -55,6 +55,7 @@ body {
     color: var(--c-text-main);
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 /* ------------------------------------------------------------
@@ -780,4 +781,64 @@ input[type='checkbox'] {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border-width: 0;
+}
+
+.header-title {
+    min-width: 0;
+}
+
+* {
+    min-width: 0;
+}
+
+#mobile-menu-btn img {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+#mobile-menu-btn {
+    padding: 0.75rem !important; 
+    min-width: 48px !important;
+    min-height: 48px !important; /* Google Material minimum touch target */
+}
+
+/* Fix Sweep + Refresh button shape */
+.header > div:last-child {
+    display: flex;
+    flex-shrink: 0;
+    gap: 1rem;
+    align-items: center;
+    white-space: nowrap;
+}
+
+#runSweepBtn,
+#refreshDashboardBtn {
+    min-height: 48px !important;
+    padding: 0.75rem 1.25rem !important;
+    flex-shrink: 0 !important;
+}
+
+@media (max-width: 768px) {
+
+    .header {
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
+        gap: 1rem !important;
+    }
+
+    .header-title {
+        flex: 1 1 100% !important;   /* LET THE TITLE TAKE A FULL ROW */
+        min-width: 0 !important;     /* ALLOWS PROPER WRAPPING */
+    }
+
+    .header-title h1,
+    .header-title p {
+        white-space: normal !important;  /* FORCE WRAPPING */
+    }
+
+    /* Keep the button group clean */
+    .header > div:last-child {
+        flex: 0 0 auto !important;
+        width: auto !important;
+    }
 }

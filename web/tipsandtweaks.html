@@ -31,30 +31,18 @@
           <img src="icons/dashboard.svg" alt="" aria-hidden="true">
           Dashboard
         </a>
+
         <a href="room-setup.html" class="nav-item">
           <img src="icons/home.svg" alt="" aria-hidden="true">
           Room Setup
         </a>
+
         <a href="tipsandtweaks.html" class="nav-item active" aria-current="page">
           <img src="icons/lightbulb.svg" alt="" aria-hidden="true">
           Tips & Tweaks
         </a>
       </nav>
 
-      <div style="margin-top: auto;">
-        <div class="glass-panel" style="padding: 1rem; border-radius: 12px;">
-          <div
-            style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--c-text-muted);">
-            <div id="systemReadyDot" class="status-indicator"
-              style="width: 8px; height: 8px; border-radius: 50%; background: var(--c-excellent);" aria-hidden="true">
-            </div>
-            <span id="systemReadyText" aria-live="polite">System Ready</span>
-          </div>
-          <div style="font-size: 0.75rem; color: rgba(255,255,255,0.3);">
-            Last updated: <span id="lastUpdated" aria-live="polite">Now</span>
-          </div>
-        </div>
-      </div>
     </aside>
 
     <!-- MAIN CONTENT -->
@@ -62,17 +50,26 @@
 
       <!-- HEADER -->
       <header class="header animate-enter" role="banner">
-        <div class="header-title" style="display: flex; align-items: center; gap: 1rem;">
-          <button id="mobile-menu-btn" class="btn btn-secondary" style="padding: 0.5rem; display: none;"
-            aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
-            <img src="icons/bars.svg" style="width: 24px;" alt="" aria-hidden="true">
-          </button>
-          <div>
-            <h1>Tips & Tweaks</h1>
-            <p>Dave uses your sweep to highlight issues, explain what's going on, and give practical advice.</p>
+          <div class="header-title" 
+              style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+
+              <!-- LEFT: Title -->
+              <div>
+                  <h1>Tips & Tweaks</h1>
+                  <p>Dave uses your sweep to highlight issues, explain what's going on, and give practical advice.</p>
+              </div>
+
+              <!-- RIGHT: Hamburger -->
+              <button id="mobile-menu-btn" 
+                      class="btn btn-secondary" 
+                      style="padding: 0.5rem; display: none; margin-left: auto;"
+                      aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
+                  <img src="icons/bars.svg" style="width: 24px;" alt="" aria-hidden="true">
+              </button>
+
           </div>
-        </div>
       </header>
+
 
       <div class="animate-enter delay-1" style="margin-bottom: 2rem;">
         <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Your Priority Action Areas</h2>

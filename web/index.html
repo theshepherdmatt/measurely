@@ -84,16 +84,27 @@
 
             <!-- HEADER -->
             <header class="header animate-enter">
-                <div class="header-title" style="display: flex; align-items: center; gap: 1rem;">
-                    <button id="mobile-menu-btn" class="btn btn-secondary" style="padding: 0.5rem; display: none;"
-                        aria-label="Toggle navigation" aria-expanded="false">
-                        <img src="icons/bars.svg" style="width: 24px;" alt="">
-                    </button>
+
+                <div class="header-title" 
+                    style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+
+                    <!-- LEFT: Title -->
                     <div>
                         <h1>Your Room Results</h1>
                         <p>Acoustic analysis and optimization insights.</p>
                     </div>
+
+                    <!-- RIGHT: Hamburger (forced to far right) -->
+                    <button id="mobile-menu-btn" 
+                            class="btn btn-secondary" 
+                            style="padding: 0.5rem; display: none; margin-left: auto;"
+                            aria-label="Toggle navigation" aria-expanded="false">
+                        <img src="icons/bars.svg" style="width: 24px;" alt="">
+                    </button>
+
                 </div>
+
+                <!-- Buttons Row -->
                 <div style="display: flex; gap: 1rem;">
                     <button id="runSweepBtn" class="btn btn-primary">
                         <img src="icons/sweep.svg" style="width: 18px; filter: brightness(100);" alt="">
@@ -103,7 +114,10 @@
                         <img src="icons/refresh.svg" style="width: 16px;" alt="">
                     </button>
                 </div>
+
             </header>
+
+
 
             <!-- TOP ROW: SCORE & ACTIONS -->
             <div class="grid-3 animate-enter delay-1">
@@ -520,7 +534,6 @@
                 // 2. Fully redraw dashboard UI
                 window.dashboard.updateDashboard();
 
-                updateOverallScoreAria();
                 updateAllMetricAria();
 
                 // 3. Update nerd metrics

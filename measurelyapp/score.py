@@ -38,8 +38,9 @@ def score_balance(bands, target=None):
 def score_modes(modes):
     if not modes:
         return 10.0
-    dev = max(abs(m["delta_db"]) for m in modes)
-    return round(linmap(min(dev, 15), 0, 15, 10, 0), 1)
+    dev = max(min(abs(m["delta_db"]), 15) for m in modes)
+    return round(linmap(dev, 0, 15, 10, 0), 1)
+
 
 def score_smooth(std):
     if std is None or np.isnan(std):

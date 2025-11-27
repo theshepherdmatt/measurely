@@ -96,6 +96,28 @@ for d in (MEAS_ROOT, PHRASES_DIR, SPEAKERS_DIR, WEB_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 # ------------------------------------------------------------------
+#  AUTO-FIX: ensure a valid /latest exists at all times
+# ------------------------------------------------------------------
+def ensure_latest_symlink():
+    latest = MEAS_ROOT / "latest"
+    demo = MEAS_ROOT / "DEMO_DO_NOT_DELETE"
+
+    # If latest is missing or broken → restore DEMO
+    if not latest.exists() or not latest.is_dir():
+        print("⚠ latest missing or invalid → restoring DEMO_DO_NOT_DELETE")
+        if latest.exists():
+            latest.unlink()
+        if demo.exists():
+            latest.symlink_to(demo.resolve())
+            print("✓ latest → DEMO_DO_NOT_DELETE restored")
+        else:
+            print("❌ DEMO_DO_NOT_DELETE folder not found!")
+
+# Call it once at server startup
+ensure_latest_symlink()
+
+
+# ------------------------------------------------------------------
 #  rest of your original config
 # ------------------------------------------------------------------
 SMOOTH_SIGMA = 6
@@ -371,8 +393,20 @@ def run_sweep():
         SWEEP = f"{SERVICE_ROOT}/measurelyapp/sweep.py"
         ANALYSE = f"{SERVICE_ROOT}/measurelyapp/analyse.py"
         BASEDIR = str(SERVICE_ROOT)
+        # Force sweep to run with venv python (critical fix)
 
-        cmd = [sys.executable, SWEEP, "--mode", "both", "--playback", "aplay", "--verbose"]
+        VENV_PY = f"{SERVICE_ROOT}/venv/bin/python"
+
+        # Force explicit audio devices (USB mic = 1, HiFiBerry DAC = 0)
+        cmd = [
+            VENV_PY, SWEEP,
+            "--mode", "both",
+            "--playback", "aplay",
+            "--verbose",
+            "--in", "1",
+            "--out", "0"
+        ]
+
         if speaker:
             cmd += ["--speaker", speaker]
 
