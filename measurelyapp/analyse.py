@@ -120,6 +120,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     if room.get("opt_barewalls"):  damping -= 0.2
 
     scores["reflections"] *= (1 - damping)
+    
     scores["overall"] = round(np.mean(list(scores.values())), 1)
 
     # ---------------------------------------------------------

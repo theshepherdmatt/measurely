@@ -8,6 +8,8 @@ echo "-------------------------------------" | tee -a $LOG
 echo " MEASURELY – AP SETUP START "          | tee -a $LOG
 echo "-------------------------------------" | tee -a $LOG
 
+python3 /home/matt/measurely/measurelyapp/update_led_state.py ap_starting
+
 # ---------------------------------------------------------------
 # 1. CHECK WLAN0 EXISTS
 # ---------------------------------------------------------------
@@ -126,3 +128,5 @@ echo "   SSID: MeasurelyConnect"           | tee -a $LOG
 echo "   IP:   http://192.168.4.1:5000"    | tee -a $LOG
 echo "   Logs: $LOG"                       | tee -a $LOG
 echo "-------------------------------------" | tee -a $LOG
+
+python3 /home/matt/measurely/measurelyapp/update_led_state.py ap_ready

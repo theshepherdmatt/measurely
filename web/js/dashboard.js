@@ -49,6 +49,23 @@ window.pickUniqueTip = function(bucket, allTips) {
     return tip;
 };
 
+window.addLog = function (msg) {
+    const logBox = document.getElementById("sessionLog");
+    if (!logBox) return;
+
+    const line = document.createElement("div");
+    line.textContent = msg;
+
+    // subtle fade (optional)
+    line.style.opacity = 0;
+    line.style.transition = "opacity 0.3s";
+    logBox.appendChild(line);
+    requestAnimationFrame(() => line.style.opacity = 1);
+
+    // auto-scroll
+    logBox.scrollTop = logBox.scrollHeight;
+};
+
 function applyDynamicColor(el, score) {
     if (!el || score === null || score === undefined) return;
 
@@ -80,6 +97,42 @@ function applyMainBand(elLevel, elBar, value) {
     elBar.classList.add(`mainbar-${c}`);
 }
 
+function updateMetricAria(labelId, scoreId, statusId, buddyId) {
+    const score = document.getElementById(scoreId)?.textContent.trim() || "--";
+    const status = document.getElementById(statusId)?.textContent.trim() || "";
+    const buddy = document.getElementById(buddyId)?.textContent.trim() || "";
+
+    const card = document.querySelector(`[aria-labelledby="${labelId}"]`);
+    if (card) {
+        card.setAttribute(
+            "aria-label",
+            `${document.getElementById(labelId).textContent}. Score ${score} out of 10. ${status}. Dave says: ${buddy}`
+        );
+    }
+}
+
+function updateAllMetricAria() {
+    updateMetricAria("peaksDipsLabel", "peaksDipsScore", "peaksDipsStatusText", "peaksDipsBuddy");
+    updateMetricAria("reflectionsLabel", "reflectionsScore", "reflectionsStatusText", "reflectionsBuddy");
+    updateMetricAria("bandwidthLabel", "bandwidthScore", "bandwidthStatusText", "bandwidthBuddy");
+    updateMetricAria("balanceLabel", "balanceScore", "balanceStatusText", "balanceBuddy");
+    updateMetricAria("smoothnessLabel", "smoothnessScore", "smoothnessStatusText", "smoothnessBuddy");
+    updateMetricAria("reverbLabel", "reverbScore", "reverbStatusText", "reverbBuddy");
+}
+
+function updateChartAria(channel, summaryText) {
+    const chart = document.getElementById("frequencyChart");
+    const desc = document.getElementById("frequencyChartDescription");
+
+    if (!chart || !desc) return;
+
+    chart.setAttribute(
+        "aria-label",
+        `Frequency response chart showing the ${channel} channel. ${summaryText}`
+    );
+
+    desc.textContent = summaryText;
+}
 
 
 /* ============================================================
@@ -214,8 +267,14 @@ class MeasurelyDashboard {
             return;
         }
 
+        // 🔥 CLEAR OLD LOGS + START NEW ENTRY
+        const logBox = document.getElementById("sessionLog");
+        if (logBox) logBox.innerHTML = "";
+        addLog("Starting new sweep…");
+
         this.isSweepRunning = true;
         console.log('Starting sweep...');
+        addLog("Initialising…");
 
         this.showProgressBar();
 
@@ -224,27 +283,41 @@ class MeasurelyDashboard {
         runBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Running Sweep...';
 
         try {
+            // 🔥 DEVICE CHECK LOGS
+            addLog("Detecting audio devices…");
+
             const response = await fetch('/api/run-sweep', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
             });
 
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            // 🔥 AFTER API REQUEST
+            addLog("Sweep command sent to Measurely engine…");
+
+            if (!response.ok) {
+                addLog(`ERROR: Sweep failed to start (HTTP ${response.status})`);
+                throw new Error(`HTTP ${response.status}`);
+            }
+
             const result = await response.json();
 
             if (result.status !== 'error') {
+                addLog("Sweep running… monitoring progress.");
                 this.monitorSweepProgress();
             } else {
+                addLog("ERROR: " + (result.message || 'Sweep failed'));
                 this.showError(result.message || 'Sweep failed');
             }
 
         } catch (err) {
             console.error(err);
+            addLog("ERROR: " + err.message);
             this.showError('Sweep failed: ' + err.message);
             this.resetSweepState();
         }
     }
+
 
     /* ============================================================
     SWEEP PROGRESS MONITOR (CLEAN / FIXED)
@@ -255,17 +328,34 @@ class MeasurelyDashboard {
                 const response = await fetch('/api/sweep-progress');
                 const progress = await response.json();
 
+                // 🔥 PHASE LOGGING
+                if (progress.phase && progress.phase !== this.lastLoggedPhase) {
+                    addLog(progress.phase);   // e.g. "Left channel sweep…"
+                    this.lastLoggedPhase = progress.phase;
+                }
+
+                // 🔥 PROGRESS LOGGING
+                if (typeof progress.progress === "number") {
+                    addLog(`Sweep progress: ${progress.progress}%`);
+                }
+
                 this.updateProgress(progress.progress);
 
                 if (!progress.running) {
                     clearInterval(this.sweepCheckInterval);
 
                     try {
+                        addLog("Sweep finished. Loading results…");
+
                         await this.loadData();
                         this.updateDashboard();
+
+                        addLog("Sweep complete ✔");
                         this.showSuccess('Sweep complete!');
+
                     } catch (e) {
                         console.error("Load data failed:", e);
+                        addLog("ERROR: Could not load sweep results.");
                         this.showError('Sweep failed');
                     }
 
@@ -274,11 +364,13 @@ class MeasurelyDashboard {
 
             } catch (err) {
                 console.error(err);
+                addLog("ERROR: Sweep monitor failed.");
                 clearInterval(this.sweepCheckInterval);
                 this.resetSweepState();
             }
         }, 2000);
     }
+
 
 
     /* ============================================================
@@ -325,6 +417,7 @@ class MeasurelyDashboard {
 
         console.log('Dashboard update complete.');
     }
+    
 
     /* ============================================================
     UPDATE SCORES (OVERALL + 6 CARDS)
@@ -798,11 +891,20 @@ class MeasurelyDashboard {
             staticPlot: true
         };
 
-        Plotly.newPlot('frequencyChart', toPlot, layout, {
+        Plotly.newPlot('frequencyChart', traces, layout, {
             responsive: true,
             displayModeBar: false,
             showLegend: false
         });
+
+        // NEW — update the chart’s aria label (fixed)
+        const activeChannel = document.querySelector('.channel-active')?.dataset.channel || 'both';
+
+        updateChartAria(
+            activeChannel,
+            `Showing ${activeChannel} channel frequency response.`
+        );
+
     }
 
     /* ============================================================
@@ -1189,7 +1291,7 @@ class MeasurelyDashboard {
         const dacTxt = document.getElementById('dacStatusText');
 
         if (dacDot && dacTxt) {
-            dacDot.className = "status-indicator " + (s.dac?.connected ? "bg-green-500" : "bg-red-500");
+            dacDot.className = "status-indicator " + (s.dac?.connected ? "bg-excellent" : "bg-poor");
             dacTxt.textContent = s.dac?.connected ? "DAC: Connected" : "DAC: Not Found";
 
         }
@@ -1202,7 +1304,7 @@ class MeasurelyDashboard {
         const usbTxt = document.getElementById('usbStatusText');
 
         if (usbDot && usbTxt) {
-             usbDot.className = "status-indicator " + (micOk ? "bg-green-500" : "bg-red-500");
+             usbDot.className = "status-indicator " + (s.mic?.connected ? "bg-excellent" : "bg-poor");
              usbTxt.textContent = micOk
                  ? "USB Mic: Connected" 
                  : "USB Mic: Not Connected";

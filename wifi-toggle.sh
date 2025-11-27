@@ -2,7 +2,8 @@
 # WiFi ↔ AP toggle for Measurely (NetworkManager + hostapd + dnsmasq)
 # Bookworm-compatible (no dhcpcd)
 
-NM_IGNORE="/etc/NetworkManager/conf.d/unmanaged-wlan0.conf"
+IFACE="wlan1"
+NM_IGNORE="/etc/NetworkManager/conf.d/unmanaged-${IFACE}.conf"
 
 case "$1" in
 
@@ -12,7 +13,7 @@ case "$1" in
     # Remove unmanaged config
     if [ -f "$NM_IGNORE" ]; then
         rm "$NM_IGNORE"
-        echo "[WiFi] NetworkManager will now manage wlan0."
+        echo "[WiFi] NetworkManager will now manage ${IFACE}."
     fi
 
     # Stop AP services
@@ -20,9 +21,9 @@ case "$1" in
     systemctl stop dnsmasq 2>/dev/null
 
     # Clear static AP IP
-    ip addr flush dev wlan0
+    ip addr flush dev ${IFACE}
 
-    # Restart NetworkManager so wlan0 comes back
+    # Restart NetworkManager so ${IFACE} comes back
     systemctl restart NetworkManager
     sleep 2
 
@@ -35,20 +36,21 @@ case "$1" in
   off)
     echo "[AP] Switching TO Access Point mode…"
 
-    # Disconnect NM from the interface
-    nmcli device disconnect wlan0 2>/dev/null
+    # Disconnect NM from interface
+    nmcli device disconnect ${IFACE} 2>/dev/null
 
     # Mark unmanaged
-    echo -e "[keyfile]\nunmanaged-devices=interface-name:wlan0" > "$NM_IGNORE"
+    echo -e "[keyfile]\nunmanaged-devices=interface-name:${IFACE}" > "$NM_IGNORE"
+    echo "[AP] NetworkManager will now IGNORE ${IFACE}"
 
-    # Restart NM to release control
+    # Restart NetworkManager to release control
     systemctl restart NetworkManager
     sleep 1
 
     # Assign static AP IP directly
-    ip addr flush dev wlan0
-    ip addr add 192.168.4.1/24 dev wlan0
-    ip link set wlan0 up
+    ip addr flush dev ${IFACE}
+    ip addr add 192.168.4.1/24 dev ${IFACE}
+    ip link set ${IFACE} up
 
     # Start AP stack
     systemctl start dnsmasq

@@ -5,8 +5,16 @@ Real-Data Measurely Flask Server
 - NEW:  /api/room/<session_id>  (POST + GET)  – stores user room/speaker data
 """
 
-import os
 import sys
+from pathlib import Path
+
+# Ensure import from measurelyapp/
+APP_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(APP_ROOT))
+
+from led_status import update_led_state
+
+import os
 import json
 import re
 import time
@@ -20,10 +28,10 @@ import traceback
 import numpy as np
 import sounddevice as sd
 from datetime import datetime
-from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from scipy.ndimage import gaussian_filter1d
+
 
 # ------------------------------------------------------------------
 #  Flask init
@@ -31,9 +39,12 @@ from scipy.ndimage import gaussian_filter1d
 app = Flask(__name__)
 CORS(app)
 
+update_led_state("boot")
+
 # ------------------------------------------------------------------
 #  Single, unified Measurely root
 # ------------------------------------------------------------------
+
 APP_ROOT      = Path(__file__).resolve().parent        # /home/matt/measurely/measurelyapp
 SERVICE_ROOT  = APP_ROOT.parent                        # /home/matt/measurely
 
@@ -41,6 +52,42 @@ MEAS_ROOT     = SERVICE_ROOT / "measurements"
 PHRASES_DIR   = APP_ROOT / "phrases"                   # ← CORRECT!!
 WEB_DIR       = SERVICE_ROOT / "web"
 SPEAKERS_DIR  = SERVICE_ROOT / "speakers"
+
+# ------------------------------------------------------------------
+#  First-time detection
+# ------------------------------------------------------------------
+def is_first_time_user():
+    """
+    User is 'first time' if MEAS_ROOT contains ONLY:
+      - 'demo' (or 'DEMO')
+      - or is empty
+      - AND has no real measurement folders
+    """
+    if not MEAS_ROOT.exists():
+        return True
+
+    items = []
+    for entry in MEAS_ROOT.iterdir():
+        name = entry.name.lower()
+
+        # ignore symlink 'latest'
+        if name == "latest":
+            continue
+
+        # ignore hidden or temp junk
+        if name.startswith('.'):
+            continue
+
+        # ignore demo folder
+        if name.startswith("demo"):
+            continue
+
+        # anything else is a REAL measurement
+        if entry.is_dir():
+            return False
+
+    # If we get here → no real measurements found
+    return True
 
 # ------------------------------------------------------------------
 #  Ensure folders exist (installer may have copied them, but be safe)
@@ -304,6 +351,8 @@ def run_sweep():
         payload = request.get_json(silent=True) or {}
         speaker = payload.get('speaker')
 
+        update_led_state("sweep_running")
+
         # Detect audio devices
         devices = sd.query_devices()
         input_devices = [(i, d['name']) for i, d in enumerate(devices)
@@ -395,6 +444,8 @@ def run_sweep():
                 cwd=BASEDIR,
                 check=False
             )
+
+            update_led_state("sweep_complete")
 
         threading.Thread(target=run, daemon=True).start()
 
@@ -644,16 +695,21 @@ def api_latest():
     return jsonify(data)
 
 # ------------------------------------------------------------------
-#  static files
+#  serve onboarding or index
 # ------------------------------------------------------------------
 @app.route('/', methods=['GET'])
 def serve_index():
+    update_led_state("client_connected")   # LED goes green instantly
+    if is_first_time_user():
+        return send_from_directory(WEB_DIR, 'onboarding.html')
     return send_from_directory(WEB_DIR, 'index.html')
 
-
-@app.route('/<path:path>', methods=['GET'])
-def serve_static(path):
-    return send_from_directory(WEB_DIR, path)
+# ------------------------------------------------------------------
+#  static files (CSS, JS, icons, images, HTML)
+# ------------------------------------------------------------------
+@app.route('/<path:filename>', methods=['GET'])
+def serve_static(filename):
+    return send_from_directory(WEB_DIR, filename)
 
 
 # ------------------------------------------------------------------

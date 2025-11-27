@@ -10,12 +10,14 @@ measurelyapp/__init__.py
 measurelyapp/analyse.py
 measurelyapp/gui_tk.py
 measurelyapp/io.py
+measurelyapp/led_status.py
 measurelyapp/main.py
 measurelyapp/score.py
 measurelyapp/server.py
 measurelyapp/signal_math.py
 measurelyapp/speaker.py
 measurelyapp/sweep.py
+measurelyapp/update_led_state.py
 measurelyapp/util_io.py
 measurelyapp/writer.py
 measurelyapp/buddy/__init__.py

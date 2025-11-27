@@ -20,23 +20,23 @@
     </div>
 
     <!-- SIDEBAR -->
-    <aside id="sidebar" class="sidebar" role="complementary">
+    <aside id="sidebar" class="sidebar" aria-label="Main navigation sidebar">
       <div class="sidebar-logo">
-        <img src="icons/mainlogo.svg" alt="Measurely" style="height: 46px;">
+        <img src="icons/mainlogo.svg" alt="Measurely logo" style="height: 46px;">
         <span></span>
       </div>
 
-      <nav aria-label="Main">
+      <nav aria-label="Main navigation">
         <a href="index.html" class="nav-item">
-          <img src="icons/dashboard.svg" alt="">
+          <img src="icons/dashboard.svg" alt="" aria-hidden="true">
           Dashboard
         </a>
         <a href="room-setup.html" class="nav-item">
-          <img src="icons/home.svg" alt="">
+          <img src="icons/home.svg" alt="" aria-hidden="true">
           Room Setup
         </a>
-        <a href="tipsandtweaks.html" class="nav-item active">
-          <img src="icons/lightbulb.svg" alt="">
+        <a href="tipsandtweaks.html" class="nav-item active" aria-current="page">
+          <img src="icons/lightbulb.svg" alt="" aria-hidden="true">
           Tips & Tweaks
         </a>
       </nav>
@@ -46,29 +46,30 @@
           <div
             style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--c-text-muted);">
             <div id="systemReadyDot" class="status-indicator"
-              style="width: 8px; height: 8px; border-radius: 50%; background: var(--c-excellent);"></div>
+              style="width: 8px; height: 8px; border-radius: 50%; background: var(--c-excellent);" aria-hidden="true">
+            </div>
             <span id="systemReadyText" aria-live="polite">System Ready</span>
           </div>
           <div style="font-size: 0.75rem; color: rgba(255,255,255,0.3);">
-            Last updated: <span id="lastUpdated">Now</span>
+            Last updated: <span id="lastUpdated" aria-live="polite">Now</span>
           </div>
         </div>
       </div>
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="main-content" role="main">
+    <main id="main-content" class="main-content" role="main">
 
       <!-- HEADER -->
       <header class="header animate-enter" role="banner">
         <div class="header-title" style="display: flex; align-items: center; gap: 1rem;">
           <button id="mobile-menu-btn" class="btn btn-secondary" style="padding: 0.5rem; display: none;"
-            aria-label="Toggle navigation" aria-expanded="false">
-            <img src="icons/bars.svg" style="width: 24px;" alt="">
+            aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
+            <img src="icons/bars.svg" style="width: 24px;" alt="" aria-hidden="true">
           </button>
           <div>
             <h1>Tips & Tweaks</h1>
-            <p>Dave uses your sweep to highlight issues, explain what’s going on, and give practical advice.</p>
+            <p>Dave uses your sweep to highlight issues, explain what's going on, and give practical advice.</p>
           </div>
         </div>
       </header>
@@ -79,7 +80,8 @@
           by data, diagnosis, and solution.</p>
       </div>
 
-      <div id="tipsCardsWrapper" class="grid-3 animate-enter delay-2">
+      <div id="tipsCardsWrapper" class="grid-3 animate-enter delay-2" role="region" aria-label="Priority action areas"
+        aria-live="polite">
         <!-- Cards will be injected here -->
       </div>
 
@@ -159,7 +161,7 @@
         C.innerHTML = `
           <div class="card glass-panel" style="grid-column: span 3; text-align: center; padding: 3rem;">
               <div style="display: inline-flex; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 50%; margin-bottom: 1rem;">
-                  <img src="icons/chart-line.svg" style="width: 32px; opacity: 0.5;" alt="">
+                  <img src="icons/chart-line.svg" style="width: 32px; opacity: 0.5;" alt="" aria-hidden="true">
               </div>
               <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">No Analysis Data Yet</h3>
               <p style="color: var(--c-text-muted); margin-bottom: 1.5rem;">Run a sweep from the Dashboard to see your personalized tips.</p>
@@ -170,7 +172,7 @@
 
       const worst = getWorstThree();
 
-      C.innerHTML = worst.map(w => {
+      C.innerHTML = worst.map((w, index) => {
         const colors = getColorPalette(w.score);
         const sev = severityFromScore(w.score);
         const iconFile = getIconName(w.category);
@@ -186,7 +188,7 @@
         const solutionsHtml = solutionList.map(sol => {
           const formattedText = replaceBold(sol);
           return `<li style="position: relative; padding-left: 1.5rem; margin-bottom: 0.5rem; color: var(--c-text-muted); font-size: 0.9rem;">
-                        <span style="position: absolute; left: 0; color: var(--c-accent); font-weight: bold;">→</span>
+                        <span style="position: absolute; left: 0; color: var(--c-accent); font-weight: bold;" aria-hidden="true">→</span>
                         ${formattedText}
                       </li>`;
         }).join('');
@@ -200,47 +202,60 @@
           reverb: "Reverb"
         }[w.category];
 
+        const cardId = `tip-card-${w.category}`;
+        const headingId = `${cardId}-heading`;
+        const scoreId = `${cardId}-score`;
+        const daveId = `${cardId}-dave`;
+        const dataId = `${cardId}-data`;
+        const solutionsId = `${cardId}-solutions`;
+
         // CARD HTML
         return `
-              <div class="card glass-panel" style="display: flex; flex-direction: column; height: 100%;">
+              <article class="card glass-panel" style="display: flex; flex-direction: column; height: 100%;" 
+                       id="${cardId}" 
+                       role="group" 
+                       aria-labelledby="${headingId} ${scoreId}" 
+                       aria-describedby="${daveId} ${dataId} ${solutionsId}">
                   
                   <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
                       <div style="display: flex; align-items: center; gap: 1rem;">
-                          <div style="width: 48px; height: 48px; border-radius: 12px; background: ${colors.bg}; display: flex; align-items: center; justify-content: center;">
+                          <div style="width: 48px; height: 48px; border-radius: 12px; background: ${colors.bg}; display: flex; align-items: center; justify-content: center;" aria-hidden="true">
                               <img src="icons/${iconFile}" style="width: 24px;" class="${colors.text}" alt="">
                           </div>
                           <div>
-                              <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">${name}</h3>
-                              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; color: rgba(255,255,255,0.4);">Priority Fix</div>
+                              <h3 id="${headingId}" style="margin: 0; font-size: 1.1rem; font-weight: 700;">${name}</h3>
+                              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; color: rgba(255,255,255,0.4);">Priority Fix ${index + 1}</div>
                           </div>
                       </div>
-                      <div style="font-size: 2.5rem; font-weight: 900;" class="${colors.text}">${w.score.toFixed(1)}</div>
+                      <div id="${scoreId}" style="font-size: 2.5rem; font-weight: 900;" class="${colors.text}">
+                        <span class="sr-only">Score: </span>${w.score.toFixed(1)}<span class="sr-only"> out of 10</span>
+                      </div>
                   </div>
 
-                  <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 0.75rem; align-items: start; border: 1px solid rgba(255,255,255,0.05);">
-                      <img src="icons/dave.svg" style="width: 24px; opacity: 0.8; margin-top: 2px;" alt="">
+                  <div id="${daveId}" style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 0.75rem; align-items: start; border: 1px solid rgba(255,255,255,0.05);">
+                      <img src="icons/dave.svg" style="width: 24px; opacity: 0.8; margin-top: 2px;" alt="" aria-hidden="true">
                       <p style="margin: 0; font-size: 0.9rem; font-style: italic; color: var(--c-text-main); line-height: 1.5;">
                           "${translation}"
                       </p>
                   </div>
 
-                  <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <div id="${dataId}" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
                       <span style="font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.05em;">Technical Data</span>
                       <div style="font-family: monospace; font-size: 0.85rem; color: var(--c-text-muted); margin-top: 0.25rem; background: rgba(0,0,0,0.2); display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px;">
                           ${rawMetric}
                       </div>
                   </div>
 
-                  <div style="margin-top: auto;">
+                  <div id="${solutionsId}" style="margin-top: auto;">
                       <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-                          <img src="icons/toolbox.svg" style="width: 16px; opacity: 0.5;" alt="">
+                          <img src="icons/toolbox.svg" style="width: 16px; opacity: 0.5;" alt="" aria-hidden="true">
                           Action Plan
                       </h4>
                       <ul style="list-style: none; padding: 0; margin: 0;">
                           ${solutionsHtml}
                       </ul>
                   </div>
-              </div>
+              </article>
           `;
       }).join('');
     }
@@ -262,27 +277,111 @@
       renderTipsCards();
     });
 
-    /* ---------- Sidebar toggle ---------- */
+    /* ---------- Sidebar toggle with focus trap ---------- */
     const btn = document.getElementById('mobile-menu-btn');
     const side = document.getElementById('sidebar');
     const over = document.getElementById('sidebar-overlay');
+    const mainContent = document.getElementById('main-content');
+
+    // Store focusable elements
+    let focusableElements = [];
+    let firstFocusableElement = null;
+    let lastFocusableElement = null;
+    let previouslyFocusedElement = null;
+
+    function getFocusableElements() {
+      const focusableSelectors = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      focusableElements = Array.from(side.querySelectorAll(focusableSelectors));
+      firstFocusableElement = focusableElements[0];
+      lastFocusableElement = focusableElements[focusableElements.length - 1];
+    }
+
+    function trapFocus(e) {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstFocusableElement) {
+          e.preventDefault();
+          lastFocusableElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastFocusableElement) {
+          e.preventDefault();
+          firstFocusableElement.focus();
+        }
+      }
+    }
+
     function toggleMenu() {
+      const isOpening = !side.classList.contains('active');
+
       side.classList.toggle('active');
       over.classList.toggle('active');
-      const isActive = side.classList.contains('active');
-      btn.setAttribute('aria-expanded', isActive);
-      document.body.style.overflow = isActive ? 'hidden' : '';
+
+      if (isOpening) {
+        // Opening menu
+        previouslyFocusedElement = document.activeElement;
+
+        // Set ARIA attributes
+        btn.setAttribute('aria-expanded', 'true');
+        btn.setAttribute('aria-label', 'Close navigation menu');
+        side.setAttribute('role', 'dialog');
+        side.setAttribute('aria-modal', 'true');
+        over.setAttribute('aria-hidden', 'false');
+
+        // Add inert to main content
+        if (mainContent) mainContent.inert = true;
+
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+
+        // Setup focus trap
+        getFocusableElements();
+        document.addEventListener('keydown', trapFocus);
+
+        // Focus first element
+        setTimeout(() => {
+          if (firstFocusableElement) firstFocusableElement.focus();
+        }, 100);
+
+      } else {
+        // Closing menu
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-label', 'Open navigation menu');
+        side.removeAttribute('role');
+        side.removeAttribute('aria-modal');
+        over.setAttribute('aria-hidden', 'true');
+
+        // Remove inert from main content
+        if (mainContent) mainContent.inert = false;
+
+        // Restore body scroll
+        document.body.style.overflow = '';
+
+        // Remove focus trap
+        document.removeEventListener('keydown', trapFocus);
+
+        // Return focus to button
+        if (previouslyFocusedElement) {
+          previouslyFocusedElement.focus();
+        }
+      }
     }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && side.classList.contains('active')) {
+        toggleMenu();
+      }
+    });
+
     if (btn) btn.addEventListener('click', toggleMenu);
     if (over) over.addEventListener('click', toggleMenu);
 
     document.querySelectorAll('.nav-item').forEach(link => {
       link.addEventListener('click', () => {
-        if (window.innerWidth <= 1024) {
-          side.classList.remove('active');
-          over.classList.remove('active');
-          btn.setAttribute('aria-expanded', 'false');
-          document.body.style.overflow = '';
+        if (window.innerWidth <= 1024 && side.classList.contains('active')) {
+          toggleMenu();
         }
       });
     });

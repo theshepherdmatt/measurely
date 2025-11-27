@@ -107,7 +107,7 @@ systemctl disable --now measurely.service 2>/dev/null || true
 msg "Linking 'latest' to bundled starter measurement…"
 
 MEAS_DIR="$REPO_DIR/measurements"
-STARTER="20250112_213044_ab12cd"
+STARTER="DEMO_DO_NOT_DELETE"
 
 # Ensure folder exists
 if [[ ! -d "$MEAS_DIR/$STARTER" ]]; then
@@ -225,6 +225,49 @@ msg "✔ Samba is ready. Connect using:"
 msg "   \\\\MEASURELY\\measurely   (Windows)"
 msg "   smb://MEASURELY/measurely (Mac)"
 msg "   or smb://10.10.10.2/measurely"
+
+# ------------------------------------------------------------
+# LED STATUS SERVICE (Raspberry Pi 4/5 compatible)
+# ------------------------------------------------------------
+msg "Installing GPIO support for Pi 5…"
+apt-get install -y python3-rpi-lgpio
+
+LED_SCRIPT="$REPO_DIR/measurelyapp/led_status.py"
+
+if [[ ! -f "$LED_SCRIPT" ]]; then
+    die "LED script not found at $LED_SCRIPT"
+fi
+
+msg "Making LED script executable…"
+chmod +x "$LED_SCRIPT"
+
+msg "Creating initial LED state JSON…"
+rm -f /tmp/measurely_status.json
+echo "{\"state\":\"boot\"}" | tee /tmp/measurely_status.json >/dev/null || true
+chmod 666 /tmp/measurely_status.json
+
+msg "Writing LED systemd service…"
+
+cat >/etc/systemd/system/measurely-led.service <<EOF
+[Unit]
+Description=Measurely LED Status
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 $LED_SCRIPT
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+msg "Enabling Measurely LED service…"
+systemctl daemon-reload
+systemctl enable --now measurely-led.service
+
+msg "✔ LED status service installed and active."
 
 
 # ------------------------------------------------------------

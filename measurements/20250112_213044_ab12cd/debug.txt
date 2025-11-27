@@ -1,4 +1,0 @@
-IN_DEV_INFO:
-{'name': 'Usb  Microphone: USB Audio (hw:3,0)', 'index': 1, 'hostapi': 0, 'max_input_channels': 1, 'max_output_channels': 0, 'default_low_input_latency': 0.008684807256235827, 'default_low_output_latency': -1.0, 'default_high_input_latency': 0.034829931972789115, 'default_high_output_latency': -1.0, 'default_samplerate': 44100.0}
-OUT_DEV_INFO:
-{'name': 'snd_rpi_hifiberry_dac: HifiBerry DAC HiFi pcm5102a-hifi-0 (hw:0,0)', 'index': 0, 'hostapi': 0, 'max_input_channels': 0, 'max_output_channels': 2, 'default_low_input_latency': -1.0, 'default_low_output_latency': 0.005804988662131519, 'default_high_input_latency': -1.0, 'default_high_output_latency': 0.034829931972789115, 'default_samplerate': 44100.0}

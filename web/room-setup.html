@@ -20,23 +20,23 @@
     </div>
 
     <!-- SIDEBAR -->
-    <aside id="sidebar" class="sidebar" role="complementary">
+    <aside id="sidebar" class="sidebar" aria-label="Main navigation sidebar">
       <div class="sidebar-logo">
-        <img src="icons/mainlogo.svg" alt="Measurely" style="height: 46px;">
+        <img src="icons/mainlogo.svg" alt="Measurely logo" style="height: 46px;">
         <span></span>
       </div>
 
-      <nav aria-label="Main">
+      <nav aria-label="Main navigation">
         <a href="index.html" class="nav-item">
-          <img src="icons/dashboard.svg" alt="">
+          <img src="icons/dashboard.svg" alt="" aria-hidden="true">
           Dashboard
         </a>
-        <a href="room-setup.html" class="nav-item active">
-          <img src="icons/home.svg" alt="">
+        <a href="room-setup.html" class="nav-item active" aria-current="page">
+          <img src="icons/home.svg" alt="" aria-hidden="true">
           Room Setup
         </a>
         <a href="tipsandtweaks.html" class="nav-item">
-          <img src="icons/lightbulb.svg" alt="">
+          <img src="icons/lightbulb.svg" alt="" aria-hidden="true">
           Tips & Tweaks
         </a>
       </nav>
@@ -46,25 +46,26 @@
           <div
             style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--c-text-muted);">
             <div id="systemReadyDot" class="status-indicator"
-              style="width: 8px; height: 8px; border-radius: 50%; background: var(--c-excellent);"></div>
+              style="width: 8px; height: 8px; border-radius: 50%; background: var(--c-excellent);" aria-hidden="true">
+            </div>
             <span id="systemReadyText" aria-live="polite">System Ready</span>
           </div>
           <div style="font-size: 0.75rem; color: rgba(255,255,255,0.3);">
-            Last updated: <span id="lastUpdated">Now</span>
+            Last updated: <span id="lastUpdated" aria-live="polite">Now</span>
           </div>
         </div>
       </div>
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="main-content" role="main">
+    <main id="main-content" class="main-content" role="main">
 
       <!-- HEADER -->
       <header class="header animate-enter" role="banner">
         <div class="header-title" style="display: flex; align-items: center; gap: 1rem;">
           <button id="mobile-menu-btn" class="btn btn-secondary" style="padding: 0.5rem; display: none;"
-            aria-label="Toggle navigation" aria-expanded="false">
-            <img src="icons/bars.svg" style="width: 24px;" alt="">
+            aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
+            <img src="icons/bars.svg" style="width: 24px;" alt="" aria-hidden="true">
           </button>
           <div>
             <h1>Set Your Room Up With Dave</h1>
@@ -74,30 +75,35 @@
       </header>
 
       <!-- SECTION 1: DIMENSIONS -->
-      <section class="card glass-panel animate-enter delay-1" style="margin-bottom: 2rem;">
+      <section class="card glass-panel animate-enter delay-1" style="margin-bottom: 2rem;"
+        aria-labelledby="dimensions-heading">
         <div
           style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
           <div
-            style="width: 32px; height: 32px; background: rgba(99, 102, 241, 0.2); color: #818cf8; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+            style="width: 32px; height: 32px; background: rgba(99, 102, 241, 0.2); color: #818cf8; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;"
+            aria-hidden="true">
             1</div>
-          <h2 style="margin: 0; font-size: 1.25rem;">Room Dimensions</h2>
+          <h2 id="dimensions-heading" style="margin: 0; font-size: 1.25rem;">Room Dimensions</h2>
         </div>
 
-        <div class="grid-3">
+        <div class="grid-3" role="group" aria-labelledby="dimensions-heading">
           <div>
             <label for="room-length">Length (m)</label>
-            <input type="number" id="room-length" step="0.01" placeholder="4.9">
-            <p style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Front to rear wall.</p>
+            <input type="number" id="room-length" step="0.01" placeholder="4.9" aria-describedby="room-length-desc">
+            <p id="room-length-desc" style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Front to
+              rear wall.</p>
           </div>
           <div>
             <label for="room-width">Width (m)</label>
-            <input type="number" id="room-width" step="0.01" placeholder="3.7">
-            <p style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Side to side.</p>
+            <input type="number" id="room-width" step="0.01" placeholder="3.7" aria-describedby="room-width-desc">
+            <p id="room-width-desc" style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Side to
+              side.</p>
           </div>
           <div>
             <label for="room-height">Height (m)</label>
-            <input type="number" id="room-height" step="0.01" placeholder="2.4">
-            <p style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Floor to ceiling.</p>
+            <input type="number" id="room-height" step="0.01" placeholder="2.4" aria-describedby="room-height-desc">
+            <p id="room-height-desc" style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Floor to
+              ceiling.</p>
           </div>
         </div>
 
@@ -105,10 +111,10 @@
           style="background: rgba(99, 102, 241, 0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.1);">
           <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
             <label for="room-echo" style="margin:0; color: white;">How "Live" is the room?</label>
-            <span id="roomEchoValue" style="color: var(--c-accent); font-weight: 700;">20%</span>
+            <span id="roomEchoValue" style="color: var(--c-accent); font-weight: 700;" aria-live="polite">20%</span>
           </div>
-          <input type="range" id="room-echo" min="0" max="100" step="5">
-          <div
+          <input type="range" id="room-echo" min="0" max="100" step="5" aria-describedby="room-echo-desc">
+          <div id="room-echo-desc"
             style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--c-text-muted); margin-top: 0.5rem;">
             <span>Dry (Studio)</span>
             <span>Normal Living Room</span>
@@ -118,23 +124,26 @@
       </section>
 
       <!-- SECTION 2: MATERIALS -->
-      <section class="card glass-panel animate-enter delay-2" style="margin-bottom: 2rem;">
+      <section class="card glass-panel animate-enter delay-2" style="margin-bottom: 2rem;"
+        aria-labelledby="materials-heading">
         <div
           style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
           <div
-            style="width: 32px; height: 32px; background: rgba(168, 85, 247, 0.2); color: #c084fc; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+            style="width: 32px; height: 32px; background: rgba(168, 85, 247, 0.2); color: #c084fc; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;"
+            aria-hidden="true">
             2</div>
-          <h2 style="margin: 0; font-size: 1.25rem;">Materials & Furnishings</h2>
+          <h2 id="materials-heading" style="margin: 0; font-size: 1.25rem;">Materials & Furnishings</h2>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
           <div>
             <label for="floor-material">Base Floor Surface</label>
-            <select id="floor-material">
+            <select id="floor-material" aria-describedby="floor-material-desc">
               <option value="hard">Hardwood / Tile / Laminate</option>
               <option value="carpet">Wall-to-Wall Carpet</option>
             </select>
-            <p style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Hard floors create stronger
+            <p id="floor-material-desc" style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Hard
+              floors create stronger
               early reflections.</p>
           </div>
 
@@ -144,45 +153,50 @@
               style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
 
               <label class="checkbox-group">
-                <input type="checkbox" id="opt-area-rug">
+                <input type="checkbox" id="opt-area-rug" aria-describedby="opt-area-rug-desc">
                 <div>
                   <div style="color: white; font-weight: 500;">Area Rug</div>
-                  <div style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">Between speakers & seat
+                  <div id="opt-area-rug-desc" style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">
+                    Between speakers & seat
                   </div>
                 </div>
               </label>
 
               <label class="checkbox-group">
-                <input type="checkbox" id="opt-curtains">
+                <input type="checkbox" id="opt-curtains" aria-describedby="opt-curtains-desc">
                 <div>
                   <div style="color: white; font-weight: 500;">Curtains / Blinds</div>
-                  <div style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">Covering windows</div>
+                  <div id="opt-curtains-desc" style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">
+                    Covering windows</div>
                 </div>
               </label>
 
               <label class="checkbox-group">
-                <input type="checkbox" id="opt-sofa">
+                <input type="checkbox" id="opt-sofa" aria-describedby="opt-sofa-desc">
                 <div>
                   <div style="color: white; font-weight: 500;">Large Sofa</div>
-                  <div style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">Fabric/Soft furnishings
+                  <div id="opt-sofa-desc" style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">
+                    Fabric/Soft furnishings
                   </div>
                 </div>
               </label>
 
               <label class="checkbox-group">
-                <input type="checkbox" id="opt-wallart">
+                <input type="checkbox" id="opt-wallart" aria-describedby="opt-wallart-desc">
                 <div>
                   <div style="color: white; font-weight: 500;">Wall Art / Shelves</div>
-                  <div style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">Diffusers or books
+                  <div id="opt-wallart-desc" style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">
+                    Diffusers or books
                   </div>
                 </div>
               </label>
 
               <label class="checkbox-group" style="grid-column: span 2;">
-                <input type="checkbox" id="opt-barewalls">
+                <input type="checkbox" id="opt-barewalls" aria-describedby="opt-barewalls-desc">
                 <div>
                   <div style="color: white; font-weight: 500;">Mostly Bare Walls</div>
-                  <div style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">Minimal furniture, hard
+                  <div id="opt-barewalls-desc"
+                    style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">Minimal furniture, hard
                     surfaces dominating</div>
                 </div>
               </label>
@@ -193,38 +207,42 @@
       </section>
 
       <!-- SECTION 3: SPEAKER PROFILE -->
-      <section class="card glass-panel animate-enter delay-3" style="margin-bottom: 2rem;">
+      <section class="card glass-panel animate-enter delay-3" style="margin-bottom: 2rem;"
+        aria-labelledby="speaker-profile-heading">
         <div
           style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
           <div
-            style="width: 32px; height: 32px; background: rgba(249, 115, 22, 0.2); color: #fdba74; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+            style="width: 32px; height: 32px; background: rgba(249, 115, 22, 0.2); color: #fdba74; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;"
+            aria-hidden="true">
             3</div>
-          <h2 style="margin: 0; font-size: 1.25rem;">Speaker Profile</h2>
+          <h2 id="speaker-profile-heading" style="margin: 0; font-size: 1.25rem;">Speaker Profile</h2>
         </div>
 
         <div>
-          <label for="speakerSel" class="sr-only"
-            style="position:absolute; width:1px; height:1px; overflow:hidden;">Select Speaker Model</label>
-          <select id="speakerSel" style="font-size: 1.1rem; padding: 1rem;"></select>
+          <label for="speakerSel">Select Speaker Model</label>
+          <select id="speakerSel" style="font-size: 1.1rem; padding: 1rem;" aria-describedby="speakerHint"></select>
           <p id="speakerHint"
             style="font-size: 0.9rem; color: var(--c-text-muted); margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span style="width: 6px; height: 6px; background: var(--c-text-muted); border-radius: 50%;"></span>
+            <span style="width: 6px; height: 6px; background: var(--c-text-muted); border-radius: 50%;"
+              aria-hidden="true"></span>
             Select your model to load frequency limits and target curves.
           </p>
         </div>
       </section>
 
       <!-- SECTION 4: POSITIONING -->
-      <section class="card glass-panel animate-enter delay-3" style="margin-bottom: 2rem;">
+      <section class="card glass-panel animate-enter delay-3" style="margin-bottom: 2rem;"
+        aria-labelledby="positioning-heading">
         <div
           style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
           <div
-            style="width: 32px; height: 32px; background: rgba(20, 184, 166, 0.2); color: #5eead4; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+            style="width: 32px; height: 32px; background: rgba(20, 184, 166, 0.2); color: #5eead4; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;"
+            aria-hidden="true">
             4</div>
-          <h2 style="margin: 0; font-size: 1.25rem;">Positioning</h2>
+          <h2 id="positioning-heading" style="margin: 0; font-size: 1.25rem;">Positioning</h2>
         </div>
 
-        <div class="grid-3">
+        <div class="grid-3" role="group" aria-labelledby="positioning-heading">
           <div>
             <label for="speaker-type">Design Type</label>
             <select id="speaker-type">
@@ -236,42 +254,53 @@
           </div>
           <div>
             <label for="speaker-distance">Dist. From Front Wall (m)</label>
-            <input type="number" id="speaker-distance" step="0.01">
+            <input type="number" id="speaker-distance" step="0.01" aria-describedby="speaker-distance-desc">
+            <span id="speaker-distance-desc" class="sr-only">Distance from speakers to front wall in meters</span>
           </div>
           <div>
             <label for="speaker-width">Speaker Spacing (m)</label>
-            <input type="number" id="speaker-width" step="0.01">
+            <input type="number" id="speaker-width" step="0.01" aria-describedby="speaker-width-desc">
+            <span id="speaker-width-desc" class="sr-only">Distance between left and right speakers in meters</span>
           </div>
           <div>
             <label for="toe-angle">Toe-in Angle (deg)</label>
-            <input type="number" id="toe-angle" step="1">
+            <input type="number" id="toe-angle" step="1" aria-describedby="toe-angle-desc">
+            <span id="toe-angle-desc" class="sr-only">Angle of speakers pointing toward listening position in
+              degrees</span>
           </div>
           <div>
             <label for="listening-distance">Listening Distance (m)</label>
-            <input type="number" id="listening-distance" step="0.01">
+            <input type="number" id="listening-distance" step="0.01" aria-describedby="listening-distance-desc">
+            <span id="listening-distance-desc" class="sr-only">Distance from listening position to speakers in
+              meters</span>
           </div>
         </div>
       </section>
 
       <!-- DAVE'S CHECKLIST -->
-      <section class="card glass-panel animate-enter delay-3" style="position: relative; overflow: hidden;">
+      <section class="card glass-panel animate-enter delay-3" style="position: relative; overflow: hidden;"
+        aria-labelledby="checklist-heading">
         <div
-          style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(99, 102, 241, 0.1); border-radius: 50%; filter: blur(60px);">
+          style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(99, 102, 241, 0.1); border-radius: 50%; filter: blur(60px);"
+          aria-hidden="true">
         </div>
 
         <div style="position: relative; z-index: 10;">
-          <h2 style="margin: 0 0 1.5rem 0; font-size: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+          <h2 id="checklist-heading"
+            style="margin: 0 0 1.5rem 0; font-size: 1.5rem; display: flex; align-items: center; gap: 1rem;">
             <div
-              style="width: 48px; height: 48px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+              style="width: 48px; height: 48px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"
+              aria-hidden="true">
               🤖</div>
-            Dave’s Pre-Flight Checklist
+            Dave's Pre-Flight Checklist
           </h2>
 
-          <div id="recommendations-list" style="min-height: 100px;">
+          <div id="recommendations-list" role="region" aria-label="Dave's Pre-Flight Checklist" aria-live="polite"
+            style="min-height: 100px;">
             <div
               style="display: flex; align-items: center; gap: 0.5rem; color: var(--c-text-muted); font-style: italic;">
-              <span class="status-indicator"
-                style="background: var(--c-text-muted); animation: pulse 2s infinite;"></span>
+              <span class="status-indicator" style="background: var(--c-text-muted); animation: pulse 2s infinite;"
+                aria-hidden="true"></span>
               Waiting for room data to generate advice...
             </div>
           </div>
@@ -291,27 +320,111 @@
   </script>
 
   <script>
-    /* ---------- Sidebar toggle ---------- */
+    /* ---------- Sidebar toggle with focus trap ---------- */
     const btn = document.getElementById('mobile-menu-btn');
     const side = document.getElementById('sidebar');
     const over = document.getElementById('sidebar-overlay');
+    const mainContent = document.getElementById('main-content');
+
+    // Store focusable elements
+    let focusableElements = [];
+    let firstFocusableElement = null;
+    let lastFocusableElement = null;
+    let previouslyFocusedElement = null;
+
+    function getFocusableElements() {
+      const focusableSelectors = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      focusableElements = Array.from(side.querySelectorAll(focusableSelectors));
+      firstFocusableElement = focusableElements[0];
+      lastFocusableElement = focusableElements[focusableElements.length - 1];
+    }
+
+    function trapFocus(e) {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstFocusableElement) {
+          e.preventDefault();
+          lastFocusableElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastFocusableElement) {
+          e.preventDefault();
+          firstFocusableElement.focus();
+        }
+      }
+    }
+
     function toggleMenu() {
+      const isOpening = !side.classList.contains('active');
+
       side.classList.toggle('active');
       over.classList.toggle('active');
-      const isActive = side.classList.contains('active');
-      btn.setAttribute('aria-expanded', isActive);
-      document.body.style.overflow = isActive ? 'hidden' : '';
+
+      if (isOpening) {
+        // Opening menu
+        previouslyFocusedElement = document.activeElement;
+
+        // Set ARIA attributes
+        btn.setAttribute('aria-expanded', 'true');
+        btn.setAttribute('aria-label', 'Close navigation menu');
+        side.setAttribute('role', 'dialog');
+        side.setAttribute('aria-modal', 'true');
+        over.setAttribute('aria-hidden', 'false');
+
+        // Add inert to main content
+        if (mainContent) mainContent.inert = true;
+
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+
+        // Setup focus trap
+        getFocusableElements();
+        document.addEventListener('keydown', trapFocus);
+
+        // Focus first element
+        setTimeout(() => {
+          if (firstFocusableElement) firstFocusableElement.focus();
+        }, 100);
+
+      } else {
+        // Closing menu
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-label', 'Open navigation menu');
+        side.removeAttribute('role');
+        side.removeAttribute('aria-modal');
+        over.setAttribute('aria-hidden', 'true');
+
+        // Remove inert from main content
+        if (mainContent) mainContent.inert = false;
+
+        // Restore body scroll
+        document.body.style.overflow = '';
+
+        // Remove focus trap
+        document.removeEventListener('keydown', trapFocus);
+
+        // Return focus to button
+        if (previouslyFocusedElement) {
+          previouslyFocusedElement.focus();
+        }
+      }
     }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && side.classList.contains('active')) {
+        toggleMenu();
+      }
+    });
+
     if (btn) btn.addEventListener('click', toggleMenu);
     if (over) over.addEventListener('click', toggleMenu);
 
     document.querySelectorAll('.nav-item').forEach(link => {
       link.addEventListener('click', () => {
-        if (window.innerWidth <= 1024) {
-          side.classList.remove('active');
-          over.classList.remove('active');
-          btn.setAttribute('aria-expanded', 'false');
-          document.body.style.overflow = '';
+        if (window.innerWidth <= 1024 && side.classList.contains('active')) {
+          toggleMenu();
         }
       });
     });
@@ -319,6 +432,8 @@
     /* ---------- Toast ---------- */
     function toast(msg, type = 'info') {
       const box = document.createElement('div');
+      box.setAttribute('role', 'status');
+      box.setAttribute('aria-live', 'polite');
       // Using inline styles for toast since I didn't add toast classes to CSS
       box.style.cssText = `
       position: fixed; top: 1rem; right: 1rem; padding: 0.75rem 1rem; border-radius: 8px;
@@ -357,7 +472,7 @@
       listItems.push({
         icon: '🎯',
         title: 'Mic Placement is Everything',
-        text: 'Ear height, centred, in your normal listening spot — not “near it”.'
+        text: 'Ear height, centred, in your normal listening spot — not "near it".'
       });
 
       if (floor_material === 'hard' && !opt_area_rug) {
@@ -403,19 +518,19 @@
       const listHtml = listItems.map(item => `
           <li style="margin-bottom: 1rem;">
               <div style="font-weight: 600; color: white; display: flex; align-items: center; gap: 0.5rem;">
-                <span>${item.icon}</span> ${item.title}
+                <span aria-hidden="true">${item.icon}</span> ${item.title}
               </div>
               <div style="color: var(--c-text-muted); font-size: 0.9rem; margin-top: 0.25rem; padding-left: 1.75rem;">
-                ${replaceBold(item.text)}
+                ${replaceBoldHtml(item.text)}
               </div>
           </li>
       `).join('');
 
       listEl.innerHTML = `
           <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; display: flex; gap: 1rem; align-items: start;">
-              <img src="icons/dave.svg" alt="Dave" style="width: 48px; opacity: 0.9;">
+              <img src="icons/dave.svg" alt="" aria-hidden="true" style="width: 48px; opacity: 0.9;">
               <div>
-                  <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: white;">Dave’s Setup Checklist</h3>
+                  <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: white;">Dave's Setup Checklist</h3>
                   <ul style="list-style: none; padding: 0; margin: 0;">
                       ${listHtml}
                   </ul>
@@ -533,6 +648,15 @@
       loadBoolean('opt_sofa', 'opt-sofa');
 
       generateChecklist(roomConfig);
+    }
+
+    // Update room echo slider value display
+    const echoSlider = document.getElementById('room-echo');
+    const echoValue = document.getElementById('roomEchoValue');
+    if (echoSlider && echoValue) {
+      echoSlider.addEventListener('input', (e) => {
+        echoValue.textContent = e.target.value + '%';
+      });
     }
 
     setInterval(() => {
