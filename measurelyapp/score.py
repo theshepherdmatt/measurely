@@ -50,14 +50,20 @@ def score_smooth(std):
 def score_ref(refs):
     if not refs:
         return 10.0
-    s = 10
-    if any(t < 1 for t in refs):
-        s -= 3
-    if any(1 <= t < 5 for t in refs):
-        s -= 2
-    if len(refs) > 5:
-        s -= 2
-    return round(max(0, s), 1)
+
+    # Use ONLY the *first* strong reflection (the one that matters)
+    early = min(refs)
+
+    # If it's extremely early (<1ms) = bad
+    if early < 1:
+        return 4.0
+
+    # If it's between 1–5ms = okay-ish
+    if early < 5:
+        return 6.5
+
+    # If it's after 5ms = good
+    return 9.0
 
 def score_reverb(rt60, edt):
     metric = rt60 if rt60 is not None and np.isfinite(rt60) else (edt*6 if edt else None)

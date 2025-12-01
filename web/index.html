@@ -473,6 +473,11 @@
                     </div>
                 </div>
 
+                <!-- SWEEP HISTORY TIMELINE SECTION -->
+                <div id="sweepHistorySection" class="sweep-history-container"></div>
+
+                </div>
+
             </div>
 
         </main>
@@ -676,60 +681,11 @@
             }
         }
 
-        async function loadSessionExplorer() {
-            try {
-                const res = await fetch('/api/sessions');
-                if (!res.ok) throw new Error('Failed to fetch sessions');
-                const sessions = await res.json();
-
-                if (sessions.length === 0) {
-                    document.getElementById('sessionMetrics').innerHTML = '<p class="text-sm text-gray-500">No previous sweeps found. Run a Quick Sweep above!</p>';
-                    document.querySelectorAll('.session-btn').forEach(btn => btn.disabled = true);
-                    return;
-                }
-
-                const latest = sessions[0];
-                const previous = sessions[1] || null;
-                const oldest = sessions[sessions.length - 1];
-
-                const latestBtn = document.getElementById('sessionLatestBtn');
-                latestBtn.textContent = formatTimestamp(latest.timestamp);
-                latestBtn.dataset.sessionId = latest.id;
-
-                const previousBtn = document.getElementById('sessionPreviousBtn');
-                if (previous) {
-                    previousBtn.textContent = formatTimestamp(previous.timestamp);
-                    previousBtn.dataset.sessionId = previous.id;
-                    previousBtn.disabled = false;
-                    previousBtn.addEventListener('click', () => loadNewSession(previous.id));
-                } else {
-                    previousBtn.textContent = 'Previous (N/A)';
-                    previousBtn.disabled = true;
-                }
-
-                const oldestBtn = document.getElementById('sessionLastBtn');
-                if (sessions.length > 1 && latest.id !== oldest.id) {
-                    oldestBtn.textContent = formatTimestamp(oldest.timestamp);
-                    oldestBtn.dataset.sessionId = oldest.id;
-                    oldestBtn.disabled = false;
-                    oldestBtn.addEventListener('click', () => loadNewSession(oldest.id));
-                } else {
-                    oldestBtn.textContent = sessions.length === 1 ? 'Only One Sweep' : 'Oldest (N/A)';
-                    oldestBtn.disabled = true;
-                }
-
-                await loadSessionMetrics('latest');
-
-            } catch (error) {
-                console.error("Error loading Session Explorer:", error);
-                document.getElementById('sessionMetrics').innerHTML = '<p class="text-sm text-red-500">Error loading sessions.</p>';
-            }
-        }
 
         let firstDrawDone = false;
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof MeasurelyDashboard !== 'undefined') window.dashboard = new MeasurelyDashboard();
-            loadSessionExplorer();
+            //loadSessionExplorer();
             const draw = () => {
                 if (firstDrawDone) return;
                 const box = document.getElementById('frequencyChart');
@@ -766,6 +722,7 @@
             if (el) el.textContent = new Date().toLocaleTimeString();
         }, 1000);
     </script>
+    <script src="js/sweep-history.js"></script>
 </body>
 
 </html>

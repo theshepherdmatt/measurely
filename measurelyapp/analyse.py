@@ -108,8 +108,8 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "balance":     score_balance(bands, target_curve),
         "peaks_dips":  score_modes(mods),
         "smoothness":  score_smooth(sm),
-        "reflections": score_ref(refs),
-        "reverb":      score_reverb(rt["rt60"], rt["edt"]),
+        "reflections": score_ref(refs or [5]),
+        "reverb": score_reverb(rt.get("rt60") or 0.5, rt.get("edt") or 0.5),
     }
 
     # Furnishing damping modifies reflections
@@ -127,7 +127,18 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     # ---------------------------------------------------------
     # BUDDY SUMMARY (SHORT)
     # ---------------------------------------------------------
-    headline, actions = ask_buddy([], scores)
+    # Prepare full analysis context for smart Dave commentary
+    buddy_context = {
+        "modes": mods,
+        "bandwidth_lo_3db_hz": lo3,
+        "bandwidth_hi_3db_hz": hi3,
+        "rt60_s": rt["rt60"],
+        "edt_s": rt["edt"],
+        "speaker_profile": speaker_key,
+        "room": room,
+    }
+    
+    headline, actions = ask_buddy([], scores, room, buddy_context)
     if not headline:
         headline, actions = plain_summary({
             "band_levels_db": bands,
@@ -157,9 +168,12 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "speaker_profile": speaker_key,
         "room": room,
 
-        "buddy_summary": headline,
-        "buddy_actions": actions,
+        "dave": {
+            "freq": headline,
+            "action": "\n".join(actions) if actions else ""
+        }
     }
+
 
     # ---------------------------------------------------------
     # WRITE FILES

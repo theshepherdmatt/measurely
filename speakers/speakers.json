@@ -1,6 +1,7 @@
 {
   "quad_esl57": {
-    "name": "Quad ESL-57",
+    "type": "spotlight",
+    "name": "57s",
     "brand": "Quad",
     "folder": "57",
     "target_curve": "target_quad_esl57.csv",
@@ -18,7 +19,8 @@
   },
 
   "quad_esl63": {
-    "name": "Quad ESL-63",
+    "type": "spotlight",
+    "name": "63s",
     "brand": "Quad",
     "folder": "63",
     "target_curve": "target_quad_esl63.csv",
@@ -36,7 +38,8 @@
   },
 
   "gale_gs401": {
-    "name": "Gale GS401",
+    "type": "spotlight",
+    "name": "Gales",
     "brand": "Gale",
     "folder": "gale401",
     "target_curve": "gale_gs401a_target.json",
@@ -54,8 +57,9 @@
     ]
   },
 
-   "quad_11l_classic": {
-    "name": "Quad 11L Classic",
+  "quad_11l_classic": {
+    "type": "spotlight",
+    "name": "Quads",
     "brand": "Quad",
     "folder": "quad11l",
     "target_curve": "quad_11l_target.csv",
@@ -72,7 +76,8 @@
   },
 
   "kef_ls50_meta": {
-    "name": "KEF LS50 Meta",
+    "type": "spotlight",
+    "name": "KEFs",
     "brand": "KEF",
     "folder": "ls50",
     "target_curve": "kef_ls50_target.csv",
@@ -89,10 +94,11 @@
   },
 
   "bw_805d3": {
-    "name": "Bowers & Wilkins 805 D3",
+    "type": "spotlight",
+    "name": "805 D3s",
     "brand": "B&W",
     "folder": "bw805d3",
-    "target_curve": "speakers.json",
+    "target_curve": "bw_805d3_target.csv",
     "safe_level_dbfs": -10,
     "sweep_start_hz": 30,
     "sweep_end_hz": 20000,
@@ -106,7 +112,8 @@
   },
 
   "generic_bookshelf": {
-    "name": "Generic Bookshelf",
+    "type": "category",
+    "name": "Standmounts",
     "brand": "Universal",
     "folder": "generic_bookshelf",
     "target_curve": "generic_bookshelf_target.csv",
@@ -115,11 +122,15 @@
     "sweep_end_hz": 20000,
     "optimal_distance_ratio": 0.95,
     "toe_in_degrees": 5,
-    "notes": ["General-purpose profile useful as a fallback."]
+    "notes": [
+      "Broad-strokes guidance for compact speakers.",
+      "Typical bass behaviour for small enclosures."
+    ]
   },
 
   "generic_floorstander": {
-    "name": "Generic Floorstander",
+    "type": "category",
+    "name": "Floorstanders",
     "brand": "Universal",
     "folder": "generic_floorstander",
     "target_curve": "generic_floorstander_target.csv",
@@ -128,6 +139,214 @@
     "sweep_end_hz": 20000,
     "optimal_distance_ratio": 1.20,
     "toe_in_degrees": 10,
-    "notes": ["Broad-strokes guidance for large speakers."]
+    "notes": [
+      "General-purpose profile for larger speakers.",
+      "Rear wall distance strongly shapes bass."
+    ]
+  },
+
+  "standmount_sealed": {
+    "type": "category",
+    "name": "Sealed Standmounts",
+    "brand": "Universal",
+    "folder": "standmount_sealed",
+    "optimal_distance_ratio": 0.95,
+    "toe_in_degrees": 5,
+    "notes": [
+      "No port, so placement tolerance is high.",
+      "Bass is tight but limited — extension typically 55–70 Hz.",
+      "Very clean midrange due to lack of port turbulence."
+    ]
+  },
+
+  "standmount_front_ported": {
+    "type": "category",
+    "name": "Front-Ported Standmounts",
+    "brand": "Universal",
+    "folder": "standmount_front_ported",
+    "optimal_distance_ratio": 1.00,
+    "toe_in_degrees": 8,
+    "notes": [
+      "More forgiving of wall proximity.",
+      "Punchy mid-bass from front-ported design.",
+      "Wide sweet spot."
+    ]
+  },
+
+  "standmount_rear_ported": {
+    "type": "category",
+    "name": "Rear-Ported Standmounts",
+    "brand": "Universal",
+    "folder": "standmount_rear_ported",
+    "optimal_distance_ratio": 1.20,
+    "toe_in_degrees": 10,
+    "notes": [
+      "Needs space from rear wall.",
+      "Rear port can exaggerate 60–100 Hz region.",
+      "Placement critical — small moves make big differences."
+    ]
+  },
+
+  "floorstander_sealed": {
+    "type": "category",
+    "name": "Sealed Floorstanders",
+    "brand": "Universal",
+    "folder": "floorstander_sealed",
+    "optimal_distance_ratio": 1.25,
+    "toe_in_degrees": 8,
+    "notes": [
+      "Super tight bass behaviour.",
+      "Cleaner midrange due to no port interaction.",
+      "Often benefits from moderate toe-in."
+    ]
+  },
+
+  "floorstander_front_ported": {
+    "type": "category",
+    "name": "Front-Ported Floorstanders",
+    "brand": "Universal",
+    "folder": "floorstander_front_ported",
+    "optimal_distance_ratio": 1.10,
+    "toe_in_degrees": 12,
+    "notes": [
+      "Easier to place than rear-ported towers.",
+      "Moderate bass boost near boundaries.",
+      "Dynamic presentation with good punch."
+    ]
+  },
+
+  "floorstander_rear_ported": {
+    "type": "category",
+    "name": "Rear-Ported Floorstanders",
+    "brand": "Universal",
+    "folder": "floorstander_rear_ported",
+    "optimal_distance_ratio": 1.35,
+    "toe_in_degrees": 12,
+    "notes": [
+      "Requires breathing space behind.",
+      "Easily excites 40–80 Hz room modes.",
+      "High toe-in often helps reduce boom."
+    ]
+  },
+
+  "coaxial_uniQ": {
+    "type": "category",
+    "name": "Tannoy Coax",
+    "brand": "Universal",
+    "folder": "coaxial",
+    "notes": [
+      "Point-source radiation gives uniform dispersion.",
+      "2–4 kHz region can sound lively depending on room.",
+      "Excellent imaging when positioned correctly."
+    ]
+  },
+
+  "horn_loaded": {
+    "type": "category",
+    "name": "Horn Tweeters",
+    "brand": "Universal",
+    "folder": "horn",
+    "notes": [
+      "Very high efficiency.",
+      "Directivity is narrow — toe-in matters a LOT.",
+      "Can reduce sidewall energy dramatically."
+    ]
+  },
+
+  "ribbon": {
+    "type": "category",
+    "name": "Ribbon Tweeters",
+    "brand": "Universal",
+    "folder": "ribbon",
+    "notes": [
+      "Fast, airy treble.",
+      "Vertical dispersion is limited — ear height is critical.",
+      "May measure slightly dipped around 8–10 kHz depending on room."
+    ]
+  },
+
+  "amt_tweeter": {
+    "type": "category",
+    "name": "AMT Tweeters",
+    "brand": "Universal",
+    "folder": "amt",
+    "notes": [
+      "Extremely fast transient response.",
+      "Very wide horizontal dispersion.",
+      "May show off-axis brightness unless toe-in is adjusted."
+    ]
+  },
+
+  "planar_magnetic": {
+    "type": "category",
+    "name": "Planar Magnetics",
+    "brand": "Universal",
+    "folder": "planar",
+    "notes": [
+      "Dipole-like behaviour behind the speaker.",
+      "Requires more space from rear wall.",
+      "Treble roll-off smooth and extended."
+    ]
+  },
+
+  "electrostatic_generic": {
+    "type": "category",
+    "name": "Electrostatic Panels",
+    "brand": "Universal",
+    "folder": "electrostatic",
+    "notes": [
+      "Dipole radiation pattern.",
+      "Treble naturally rolls off above ~16 kHz.",
+      "Rear-wall distance has MAJOR impact on midrange."
+    ]
+  },
+
+  "dipole": {
+    "type": "category",
+    "name": "Bipole Surrounds",
+    "brand": "Universal",
+    "folder": "dipole",
+    "notes": [
+      "Strong rear-wave reflections.",
+      "Placement critical: 0.8–1.5m from rear wall recommended.",
+      "Wider soundstage but room-sensitive."
+    ]
+  },
+
+  "cardioid": {
+    "type": "category",
+    "name": "Cardioid Hybrids",
+    "brand": "Universal",
+    "folder": "cardioid",
+    "notes": [
+      "Reduces rear-wall bass reflections significantly.",
+      "One of the most room-friendly designs.",
+      "Smooth low-frequency behaviour even in small rooms."
+    ]
+  },
+
+  "studio_nearfield": {
+    "type": "category",
+    "name": "Nearfield Studio Monitors",
+    "brand": "Universal",
+    "folder": "studio_nearfield",
+    "notes": [
+      "Designed for 0.8–1.2m listening distance.",
+      "Very flat, revealing midrange.",
+      "Placement predictable, minimal room interaction."
+    ]
+  },
+
+  "studio_midfield": {
+    "type": "category",
+    "name": "Midfield Studio Monitors",
+    "brand": "Universal",
+    "folder": "studio_midfield",
+    "notes": [
+      "Optimised for 1.5–3m listening distance.",
+      "Controlled dispersion.",
+      "Clear modal behaviour in midbass."
+    ]
   }
 }
+

@@ -1,87 +1,169 @@
-import json, random, os
+import json, random
 from pathlib import Path
-import math # You need to import math for the calculations
 
 _PHRASE_FILE = Path(__file__).resolve().parent.parent / "phrases" / "buddy_phrases.json"
-_bank = json.load(open(_PHRASE_FILE))
+_SPEAKER_FILE = Path(__file__).resolve().parent.parent.parent / "speakers" / "speakers.json"
 
-def _pick(tag):          # fallback if bank grows
+# Load phrase banks
+_bank = json.load(open(_PHRASE_FILE))
+# Load speaker database
+try:
+    _speakers = json.load(open(_SPEAKER_FILE))
+except:
+    _speakers = {}
+
+def _pick(tag):
     return random.choice(_bank.get(tag, [f"Check {tag}"]))
 
-def _warm_phrase(score: float) -> str:
-    bucket = "cold" if score < 5 else "cool" if score < 7 else "warm" if score < 9 else "hot"
-    return random.choice(_bank[bucket])
+def _score_bucket(score: float) -> str:
+    if score < 5: return "needs_work"
+    elif score < 7: return "okay"
+    elif score < 8.5: return "good"
+    else: return "excellent"
 
-# Updated signature to accept room_config
-def ask_buddy(notes, scores, room_config: dict = {}) -> tuple[str, list[str]]:
-    """
-    Generate ONLY the overall bucket headline for the dashboard’s 3rd card.
-    Do NOT mix boom/mid/top/echo/fix here — those are for the 6 small cards.
-    """
+def _get_speaker_info(speaker_key: str) -> dict:
+    return _speakers.get(speaker_key, {})
 
-    # Determine overall bucket from overall score
-    overall = scores.get("overall", 5)
-    if overall < 5:
-        bucket = "overall_poor"
-    elif overall < 7:
-        bucket = "overall_fair"
-    elif overall < 8:
-        bucket = "overall_good"
-    else:
-        bucket = "overall_excellent"
+def _fill_tags(text: str, scores: dict, room: dict, analysis: dict, speaker_info: dict) -> str:
+    modes = analysis.get("modes", []) or []
+    worst = max(modes, key=lambda m: abs(m.get("delta_db", 0))) if modes else None
 
-    # Pull standard phrases from JSON
-    phrases = _bank.get(bucket, [])
-
-    # === NEW: Conditional, Specific Phrases based on Setup Data (Dave's Brain) ===
-    # Only run this logic if we have the configuration data and the score isn't excellent
-    if room_config and bucket != "overall_excellent":
+    def safe_fmt(val, fmt="{:g}"):
         try:
-            length = room_config.get("length_m")
-            listener_dist = room_config.get("listener_front_m")
+            if val is None: return ""
+            if isinstance(val, (int, float)): return fmt.format(val)
+            return str(val)
+        except:
+            return str(val)
 
-            # 1. Custom alert for sitting in the worst bass-null (half-way point)
-            if length and listener_dist and scores.get("peaks_dips", 10) < 6:
-                # The primary modal null is at 50% of room length
-                half_way_null = length / 2.0
-                
-                # Check if the listening position is within 10cm (0.10m) of the null
-                if abs(listener_dist - half_way_null) < 0.10:
-                    # Suggest a move to the 'golden ratio' position (~38% of room length)
-                    specific_move = round(length * 0.38, 2)
-                    
-                    phrases.append(
-                        f"⚠️ **Custom Alert:** Your 🔊 listening seat is at **{listener_dist:.2f}m** which is directly in the **dead-zone** of your room's main bass mode (half-way null at {half_way_null:.2f}m). Try moving forward to **{specific_move}m** to restore punch."
-                    )
-            
-            # 2. Acoustic Quick Fix: Hard floor with no rug
-            if room_config.get("opt_hardfloor") and not room_config.get("opt_rug") and scores.get("reflections", 10) < 7:
-                 phrases.append(
-                    f"🧶 **Acoustic Quick Fix:** Dave sees you have a **hard floor** and **no rug**. That's a major cause of mid-high harshness. Getting a rug down is your top priority for cleaner sound."
-                 )
-                 
-            # 3. Extreme liveliness warning for bare rooms
-            if room_config.get("echo_pct", 0) > 70 and not room_config.get("opt_curtains"):
-                 phrases.append(
-                    f"🪟 **Room is Very Live:** Your echo rating is high! If you have bare windows/walls, heavy curtains or a large blanket on the wall behind the speakers will make a huge difference."
-                 )
+    mapping = {
+        "overall_score": safe_fmt(scores.get("overall"), "{:.1f}"),
+        "bandwidth_score": safe_fmt(scores.get("bandwidth"), "{:.1f}"),
+        "peaks_dips_score": safe_fmt(scores.get("peaks_dips"), "{:.1f}"),
+        "reflections_score": safe_fmt(scores.get("reflections"), "{:.1f}"),
+        "reverb_score": safe_fmt(scores.get("reverb"), "{:.1f}"),
+        "smoothness_score": safe_fmt(scores.get("smoothness"), "{:.1f}"),
 
-        except Exception as e:
-            # Important: Log the error but continue to use standard phrases
-            print(f"Buddy custom logic error: {e}")
+        "room_width": safe_fmt(room.get("width_m")),
+        "room_length": safe_fmt(room.get("length_m")),
+        "room_height": safe_fmt(room.get("height_m")),
+        "spk_distance": safe_fmt(room.get("spk_front_m"), "{:.2f}"),
+        "toe_in": safe_fmt(room.get("toe_in_deg"), "{:.0f}"),
+        "listener_distance": safe_fmt(room.get("listener_front_m"), "{:.2f}"),
 
-    # Safety fallback
+        "speaker_name": speaker_info.get("name", "your speakers"),
+        "speaker_brand": speaker_info.get("brand", ""),
+        "speaker_key": analysis.get("speaker_profile", ""),
+
+        "worst_mode_freq": safe_fmt(worst["freq_hz"], "{:.0f}") if worst else "",
+        "worst_mode_delta": safe_fmt(worst["delta_db"], "{:+.1f}") if worst else "",
+
+        "rt60": safe_fmt(analysis.get("rt60_s"), "{:.2f}"),
+        "edt": safe_fmt(analysis.get("edt_s"), "{:.2f}")
+    }
+
+    out = text
+    for key, val in mapping.items():
+        out = out.replace(f"{{{{{key}}}}}", str(val))
+
+    return out
+
+
+# ============================================================
+# SMART SUGGESTIONS
+# ============================================================
+
+def _suggest_acoustic_treatment(room, reflections_score, reverb_score):
+    suggestions = []
+
+    has_rug = room.get("opt_area_rug", False) or room.get("opt_rug", False)
+    has_curtains = room.get("opt_curtains", False)
+    has_hard_floor = room.get("floor_material") == "hard" or room.get("opt_hardfloor", False)
+    has_bare_walls = room.get("opt_barewalls", False)
+
+    if reflections_score < 7 and has_hard_floor and not has_rug:
+        suggestions.append("Hard floors with no rug = reflections. Chuck a rug down between speakers and seat — instant improvement.")
+
+    if reflections_score < 7 and has_bare_walls and not has_curtains:
+        suggestions.append("Bare walls bouncing sound everywhere. Curtains or wall art help massively.")
+
+    if reverb_score < 7 and not has_curtains:
+        suggestions.append("Room's a bit lively. Curtains (even thin ones) tame high-frequency echo nicely.")
+
+    if reflections_score < 7 and has_rug:
+        suggestions.append("You've got a rug down already — try adding something soft on the side walls at the reflection points.")
+
+    return suggestions
+
+def _suggest_positioning(room, scores):
+    suggestions = []
+    spk_dist = room.get("spk_front_m")
+    toe_in = room.get("toe_in_deg")
+    listener = room.get("listener_front_m")
+    length = room.get("length_m")
+
+    if scores.get("peaks_dips", 10) < 7 and spk_dist and spk_dist < 0.3:
+        new_dist = round(spk_dist + 0.15, 2)
+        suggestions.append(f"Speakers only {spk_dist}m from wall — bass is bunching up. Try {new_dist}m.")
+
+    if scores.get("reflections", 10) < 7 and toe_in and toe_in > 12:
+        suggestions.append(f"Current {toe_in}° toe-in is sending a lot to the walls. Try {toe_in-3}°.")
+
+    if scores.get("peaks_dips", 10) < 6 and listener and length:
+        if abs(listener - (length/2)) < 0.15:
+            golden = round(length * 0.38, 2)
+            suggestions.append(f"You're at {listener}m in a {length}m room — sitting in a bass null. Move to {golden}m.")
+
+    return suggestions
+
+
+# ============================================================
+# MAIN DAVE ENGINE (FIXED)
+# ============================================================
+
+def generate_dave_says(scores, room, analysis):
+    overall = scores.get("overall", 5)
+
+    if overall < 5: bucket = "overall_poor"
+    elif overall < 7: bucket = "overall_fair"
+    elif overall < 8.5: bucket = "overall_good"
+    else: bucket = "overall_excellent"
+
+    print("[DAVE DEBUG] BUCKET:", bucket)
+
+    phrases = _bank.get(bucket, [])
     if not phrases:
-        headline = "Your room has potential — easy wins ahead."
-    else:
-        headline = random.choice(phrases)
+        phrases = ["Room's adding character — let's tidy it up."]
 
-    # We still return actions (empty list for now)
-    return headline, []
+    raw = random.choice(phrases)
 
-# Update ask_buddy_full to pass the room config that comes from server.py's load_session_data
-def ask_buddy_full(ana: dict) -> dict[str, str]:
-    # The full analysis dictionary 'ana' contains the 'room' key from meta.json
-    room_config = ana.get("room", {}) 
-    headline, _ = ask_buddy(ana.get("notes", []), ana.get("scores", {}), room_config)
-    return {"freq": headline, "treat": "", "action": ""}
+    speaker_key = room.get("speaker_key") or analysis.get("speaker_profile")
+    speaker_info = _get_speaker_info(speaker_key) if speaker_key else {}
+
+    headline = _fill_tags(raw, scores, room, analysis, speaker_info)
+
+    actions = []
+    actions.extend(_suggest_acoustic_treatment(room, scores.get("reflections", 10), scores.get("reverb", 10)))
+    actions.extend(_suggest_positioning(room, scores))
+
+    return headline, actions[:3]
+
+
+# ============================================================
+# PUBLIC API
+# ============================================================
+
+def ask_buddy(notes, scores, room={}, analysis=None):
+    if analysis is None: analysis = {}
+    return generate_dave_says(scores, room, analysis)
+
+def ask_buddy_full(ana):
+    room = ana.get("room", {})
+    scores = ana.get("scores", {})
+    headline, acts = ask_buddy([], scores, room, ana)
+
+    return {
+        "freq": headline,
+        "treat": "",
+        "action": "\n".join(acts) if acts else ""
+    }

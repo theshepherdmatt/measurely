@@ -1,19 +1,17 @@
-import RPi.GPIO as GPIO
-import time
+import json
+from measurelyapp.buddy import ask_buddy
 
-pins = [17, 27, 22]
+ana = json.load(open("/home/matt/measurely/measurements/Sweep6/analysis.json"))
 
-GPIO.setmode(GPIO.BCM)
-for p in pins:
-    GPIO.setup(p, GPIO.OUT)
+scores = ana["scores"]
+room   = ana["room"]
+full   = ana
 
-try:
-    for p in pins:
-        print(f"Testing GPIO {p}")
-        GPIO.output(p, 1)
-        time.sleep(2)
-        GPIO.output(p, 0)
-        time.sleep(1)
+headline, actions = ask_buddy([], scores, room, full)
 
-finally:
-    GPIO.cleanup()
+print("=== DAVE SAYS ===")
+print(headline)
+print("")
+print("=== ACTIONS ===")
+for a in actions:
+    print("-", a)

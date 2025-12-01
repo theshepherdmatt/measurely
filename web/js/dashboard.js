@@ -259,7 +259,7 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-    RUN SWEEP
+    RUN SWEEP (CLEAN — LET PYTHON DRIVE LOGGING)
     ============================================================ */
     async runSweep() {
         if (this.isSweepRunning) {
@@ -267,15 +267,12 @@ class MeasurelyDashboard {
             return;
         }
 
-        // 🔥 CLEAR OLD LOGS + START NEW ENTRY
+        // Clear old logs
         const logBox = document.getElementById("sessionLog");
         if (logBox) logBox.innerHTML = "";
         addLog("Starting new sweep…");
 
         this.isSweepRunning = true;
-        console.log('Starting sweep...');
-        addLog("Initialising…");
-
         this.showProgressBar();
 
         const runBtn = document.getElementById('runSweepBtn');
@@ -283,17 +280,11 @@ class MeasurelyDashboard {
         runBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Running Sweep...';
 
         try {
-            // 🔥 DEVICE CHECK LOGS
-            addLog("Detecting audio devices…");
-
             const response = await fetch('/api/run-sweep', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
             });
-
-            // 🔥 AFTER API REQUEST
-            addLog("Sweep command sent to Measurely engine…");
 
             if (!response.ok) {
                 addLog(`ERROR: Sweep failed to start (HTTP ${response.status})`);
@@ -303,8 +294,11 @@ class MeasurelyDashboard {
             const result = await response.json();
 
             if (result.status !== 'error') {
-                addLog("Sweep running… monitoring progress.");
+
+                // 🚀 IMPORTANT:
+                // from here onwards, Python is responsible for ALL logs
                 this.monitorSweepProgress();
+
             } else {
                 addLog("ERROR: " + (result.message || 'Sweep failed'));
                 this.showError(result.message || 'Sweep failed');
@@ -320,58 +314,57 @@ class MeasurelyDashboard {
 
 
     /* ============================================================
-    SWEEP PROGRESS MONITOR (CLEAN / FIXED)
+    SWEEP PROGRESS MONITOR — FINAL WORKING VERSION
+    (Fully compatible with your current server output)
     ============================================================ */
     async monitorSweepProgress() {
+        // Kill any old timers
+        if (this.sweepCheckInterval) {
+            clearInterval(this.sweepCheckInterval);
+        }
+
         this.sweepCheckInterval = setInterval(async () => {
             try {
-                const response = await fetch('/api/sweep-progress');
-                const progress = await response.json();
+                const res = await fetch('/api/sweep-progress');
+                const prog = await res.json();
 
-                // 🔥 PHASE LOGGING
-                if (progress.phase && progress.phase !== this.lastLoggedPhase) {
-                    addLog(progress.phase);   // e.g. "Left channel sweep…"
-                    this.lastLoggedPhase = progress.phase;
-                }
+                const box = document.getElementById("sessionLog");
+                if (!box) return;
 
-                // 🔥 PROGRESS LOGGING
-                if (typeof progress.progress === "number") {
-                    addLog(`Sweep progress: ${progress.progress}%`);
-                }
+                // Build a readable line
+                const line = `[${new Date().toLocaleTimeString()}] `
+                    + (prog.running ? "RUNNING" : "IDLE")
+                    + ` – ${prog.message || ""} (${prog.progress}%)`;
 
-                this.updateProgress(progress.progress);
+                // Append it
+                box.innerText += line + "\n";
+                box.scrollTop = box.scrollHeight;
 
-                if (!progress.running) {
+
+                // Sweep complete?
+                if (!prog.running) {
                     clearInterval(this.sweepCheckInterval);
 
-                    try {
-                        addLog("Sweep finished. Loading results…");
-
-                        await this.loadData();
-                        this.updateDashboard();
-
-                        addLog("Sweep complete ✔");
-                        this.showSuccess('Sweep complete!');
-
-                    } catch (e) {
-                        console.error("Load data failed:", e);
-                        addLog("ERROR: Could not load sweep results.");
-                        this.showError('Sweep failed');
-                    }
+                    await this.loadData();
+                    this.updateDashboard();
 
                     this.resetSweepState();
                 }
 
             } catch (err) {
                 console.error(err);
-                addLog("ERROR: Sweep monitor failed.");
+
+                const box = document.getElementById("sessionLogBox");
+                if (box) {
+                    box.value += `[${new Date().toLocaleTimeString()}] ERROR reading progress\n`;
+                    box.scrollTop = box.scrollHeight;
+                }
+
                 clearInterval(this.sweepCheckInterval);
                 this.resetSweepState();
             }
-        }, 2000);
+        }, 1000);
     }
-
-
 
     /* ============================================================
     RESET SWEEP UI
@@ -441,7 +434,9 @@ class MeasurelyDashboard {
         };
 
         /* ---------------- OVERALL SCORE ---------------- */
-        const overall = data.scores?.overall ?? data.overall ?? 5.0;
+        let overall = Number(data.scores?.overall ?? data.overall_score ?? data.overall);
+        if (!Number.isFinite(overall)) overall = 5.0;
+
 
         // Main score number
         const overallEl = document.getElementById('overallScore');
@@ -460,17 +455,79 @@ class MeasurelyDashboard {
             statusTextEl.innerHTML = this.getScoreStatusText(overall);
         }
 
-        /* ---------------- OVERALL BUDDY PHRASE ---------------- */
-        this.pickOverallPhrase(overall).then(dynamicPhrase => {
-            const backend = this.currentData.buddy_freq_blurb || "";
-            const finalPhrase = backend || dynamicPhrase;
+        /* ---------------- FIXED OVERALL BUDDY PHRASE ---------------- */
+        /* ---------------- FIXED OVERALL BUDDY PHRASE WITH LOGGING + TAG EXPANSION ---------------- */
+        (async () => {
+            console.log("=== OVERALL PHRASE DEBUG START ===");
 
+            const data = this.currentData || {};
+            console.log("CurrentData:", data);
+
+            const backend = data.buddy_summary;
+            console.log("Backend buddy_summary:", backend);
+
+            // Helper: expand tags {{tag}} WITH CURRENT DASHBOARD DATA
+            function expandTags(str) {
+                if (!str) return str;
+
+                const room = data.room || {};
+                const scores = data.scores || {};
+
+                const map = {
+                    overall_score: scores.overall,
+                    room_width: room.width_m,
+                    room_length: room.length_m,
+                    room_height: room.height_m,
+                    spk_distance: room.spk_front_m,
+                    toe_in: room.toe_in_deg,
+                    listener_distance: room.listener_front_m,
+                    speaker_name: room.speaker_key || "your speakers"
+                };
+
+                let out = str;
+
+                // LOG EACH TAG REPLACEMENT
+                Object.entries(map).forEach(([k, v]) => {
+                    console.log(`Replacing tag {{${k}}} with:`, v);
+                    out = out.replace(new RegExp(`{{${k}}}`, "g"), v ?? "");
+                });
+
+                return out;
+            }
+
+            let phrase = backend;
+
+            // CASE 1 — Backend exists, use it
+            if (phrase && phrase.trim() !== "") {
+                console.log("Using BACKEND phrase.");
+                phrase = expandTags(phrase);
+                console.log("Backend expanded phrase:", phrase);
+            } 
+            else {
+                // CASE 2 — Backend missing, pick fallback
+                console.log("Backend missing → picking fallback JS phrase.");
+
+                const fallback = await this.pickOverallPhrase(
+                    Number(data.scores?.overall ?? 5)
+                );
+
+                console.log("Raw fallback:", fallback);
+
+                phrase = expandTags(fallback);
+
+                console.log("Expanded fallback:", phrase);
+            }
+
+            // FINAL OUTPUT TO SCREEN
             const phraseEl = document.getElementById('overallBuddyPhrase');
-            if (phraseEl) phraseEl.textContent = `“${finalPhrase}”`;
+            if (phraseEl) {
+                phraseEl.textContent = `“${phrase}”`;
+            }
 
-            const footerEl = document.getElementById('buddyFooter');
-            if (footerEl) footerEl.textContent = "";
-        });
+            console.log("=== OVERALL PHRASE DEBUG END ===");
+        })();
+
+
 
         /* ---------------- SIX SMALL CARD SCORES ---------------- */
         const scores = {
@@ -1357,6 +1414,78 @@ class MeasurelyDashboard {
         };
     }
 
+    updateFrequencyChartStandalone(data) {
+        const chart = document.getElementById('frequencyChart');
+        if (!chart) return;
+
+        const mobile = window.innerWidth < 640;
+
+        const traces = [
+            {
+                x: data.left_freq_hz || [],
+                y: data.left_mag_db || [],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Left',
+                line: { color: '#6D28D9', width: mobile ? 3 : 2.5 }
+            },
+            {
+                x: data.right_freq_hz || [],
+                y: data.right_mag_db || [],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Right',
+                line: { color: '#3B82F6', width: mobile ? 3 : 2.5 }
+            }
+        ];
+
+        const layout = {
+            xaxis: {
+                type: 'log',
+                showline: true,
+                linewidth: 1,
+                linecolor: '#d1d5db',
+                tickfont: { size: mobile ? 10 : 11 },
+                title: mobile ? '' : 'Frequency (Hz)'
+            },
+            yaxis: {
+                showline: true,
+                linewidth: 1,
+                linecolor: '#d1d5db',
+                tickfont: { size: mobile ? 10 : 11 },
+                title: mobile ? '' : 'Magnitude (dB)'
+            },
+            showlegend: false,
+            margin: mobile
+                ? { t: 5, r: 5, b: 25, l: 30 }
+                : { t: 20, r: 20, b: 50, l: 55 },
+            plot_bgcolor: '#fff',
+            paper_bgcolor: '#fff',
+            font: { color: '#111', size: mobile ? 9 : 11 },
+            displayModeBar: false,
+            staticPlot: true
+        };
+
+        Plotly.newPlot('frequencyChart', traces, layout, {
+            responsive: true,
+            displayModeBar: false,
+            showLegend: false
+        });
+    }
+
+
+    updateCompareSessionMetricsStandalone(data) {
+        // temporarily use this.currentData ONLY for Nerds Corner
+        const prev = this.currentData;
+        this.currentData = data;
+
+        this.updateCompareSessionMetrics();
+
+        // restore original dashboard data afterwards
+        this.currentData = prev;
+    }
+
+
     /* ============================================================
     SESSION LOADING (Latest / Previous / Last)
     ============================================================ */
@@ -1364,6 +1493,9 @@ class MeasurelyDashboard {
         try {
             // Fetch list of real sessions
             const all = await fetch('/api/sessions').then(r => r.json());
+
+            // 🔥 Always enforce static button labels
+            this.resetSessionButtonLabels();
 
             // --- Safety checks ----------------------------------------------------
             if (!Array.isArray(all) || all.length === 0) {
@@ -1391,11 +1523,14 @@ class MeasurelyDashboard {
                 return;
             }
 
-            // The API returns the whole session, not wrapped in data.session
-            this.currentData = data;
+            // The API returns the whole session
+            //this.currentData = data;
 
             // Redraw the dashboard
-            this.updateDashboard();
+            //this.updateDashboard();
+
+            this.updateFrequencyChartStandalone(data);      // ✔ updates only the chart
+            this.updateCompareSessionMetricsStandalone(data);  // ✔ updates only Nerds Corner
 
             // Highlight the correct button
             this.highlightSessionButton(n);
@@ -1409,7 +1544,6 @@ class MeasurelyDashboard {
             this.showError("Error loading session");
         }
     }
-
 
 
     /* ============================================================

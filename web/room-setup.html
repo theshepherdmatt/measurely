@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Measurely – Room Setup</title>
+
   <link rel="icon" type="image/svg+xml" href="icons/dave.svg">
   <link rel="stylesheet" href="measurely.css">
   <script src="js/plotly.min.js"></script>
@@ -12,664 +13,511 @@
 
 <body>
 
-  <div class="app-layout">
+<div class="app-layout">
 
-    <!-- MOBILE OVERLAY -->
-    <div id="sidebar-overlay" aria-hidden="true"
-      style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; backdrop-filter: blur(4px);">
-    </div>
+  <!-- MOBILE OVERLAY -->
+  <div id="sidebar-overlay"
+       style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; backdrop-filter: blur(4px);">
+  </div>
 
   <!-- SIDEBAR -->
-  <aside id="sidebar" class="sidebar" aria-label="Main navigation sidebar">
+  <aside id="sidebar" class="sidebar">
     <div class="sidebar-logo">
       <img src="icons/mainlogo.svg" alt="Measurely logo" style="height: 46px;">
-      <span></span>
     </div>
 
-    <nav aria-label="Main navigation">
+    <nav>
       <a href="index.html" class="nav-item">
-        <img src="icons/dashboard.svg" alt="" aria-hidden="true">
-        Dashboard
+        <img src="icons/dashboard.svg" alt="">Dashboard
       </a>
 
-      <a href="room-setup.html" class="nav-item active" aria-current="page">
-        <img src="icons/home.svg" alt="" aria-hidden="true">
-        Room Setup
+      <a href="room-setup.html" class="nav-item active">
+        <img src="icons/home.svg" alt="">Room Setup
       </a>
 
       <a href="tipsandtweaks.html" class="nav-item">
-        <img src="icons/lightbulb.svg" alt="" aria-hidden="true">
-        Tips & Tweaks
+        <img src="icons/lightbulb.svg" alt="">Tips & Tweaks
       </a>
     </nav>
-
   </aside>
 
 
-    <!-- MAIN CONTENT -->
-    <main id="main-content" class="main-content" role="main">
+  <!-- MAIN CONTENT -->
+  <main id="main-content" class="main-content">
 
     <!-- HEADER -->
-    <header class="header animate-enter" role="banner">
-        <div class="header-title" 
-            style="display: flex; align-items: center; gap: 1rem; width: 100%;">
-
-            <!-- LEFT: Title -->
-            <div>
-                <h1>Set Your Room Up With Dave</h1>
-                <p>Accurate inputs mean tighter bass predictions and smarter reflection modelling.</p>
-            </div>
-
-            <!-- RIGHT: Hamburger -->
-            <button id="mobile-menu-btn" 
-                    class="btn btn-secondary" 
-                    style="padding: 0.5rem; display: none; margin-left: auto;"
-                    aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
-                <img src="icons/bars.svg" style="width: 24px;" alt="" aria-hidden="true">
-            </button>
-
+    <header class="header animate-enter">
+      <div style="display:flex; align-items:center; gap:1rem; width:100%;">
+        <div>
+          <h1>Set Your Room Up With Dave</h1>
+          <p>Accurate inputs mean tighter bass predictions and smarter reflection modelling.</p>
         </div>
+
+        <button id="mobile-menu-btn" class="btn btn-secondary"
+                style="padding:0.5rem; display:none; margin-left:auto;">
+          <img src="icons/bars.svg" style="width:24px;">
+        </button>
+      </div>
     </header>
 
 
-      <!-- SECTION 1: DIMENSIONS -->
-      <section class="card glass-panel animate-enter delay-1" style="margin-bottom: 2rem;"
-        aria-labelledby="dimensions-heading">
-        <div
-          style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
-          <div
-            style="width: 32px; height: 32px; background: rgba(99, 102, 241, 0.2); color: #818cf8; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;"
-            aria-hidden="true">
-            1</div>
-          <h2 id="dimensions-heading" style="margin: 0; font-size: 1.25rem;">Room Dimensions</h2>
+    <!-- ===================================================== -->
+    <!-- CARD 1 — SPEAKER POSITIONING & ROOM LAYOUT -->
+    <!-- ===================================================== -->
+    <section class="card glass-panel animate-enter delay-1" style="margin-bottom:2rem;">
+
+      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
+                  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+        <div style="width:32px; height:32px; background:rgba(20,184,166,0.2); color:#5eead4;
+                    border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
+          1
         </div>
+        <h2 style="margin:0; font-size:1.25rem;">Speaker Positioning & Room Layout</h2>
+      </div>
 
-        <div class="grid-3" role="group" aria-labelledby="dimensions-heading">
-          <div>
-            <label for="room-length">Length (m)</label>
-            <input type="number" id="room-length" step="0.01" placeholder="4.9" aria-describedby="room-length-desc">
-            <p id="room-length-desc" style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Front to
-              rear wall.</p>
-          </div>
-          <div>
-            <label for="room-width">Width (m)</label>
-            <input type="number" id="room-width" step="0.01" placeholder="3.7" aria-describedby="room-width-desc">
-            <p id="room-width-desc" style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Side to
-              side.</p>
-          </div>
-          <div>
-            <label for="room-height">Height (m)</label>
-            <input type="number" id="room-height" step="0.01" placeholder="2.4" aria-describedby="room-height-desc">
-            <p id="room-height-desc" style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Floor to
-              ceiling.</p>
-          </div>
-        </div>
+      <div style="display:grid; grid-template-columns:350px 1fr; gap:2rem;">
 
-        <div
-          style="background: rgba(99, 102, 241, 0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.1);">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-            <label for="room-echo" style="margin:0; color: white;">How "Live" is the room?</label>
-            <span id="roomEchoValue" style="color: var(--c-accent); font-weight: 700;" aria-live="polite">20%</span>
-          </div>
-          <input type="range" id="room-echo" min="0" max="100" step="5" aria-describedby="room-echo-desc">
-          <div id="room-echo-desc"
-            style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--c-text-muted); margin-top: 0.5rem;">
-            <span>Dry (Studio)</span>
-            <span>Normal Living Room</span>
-            <span>Echoey (Empty Hall)</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- SECTION 2: MATERIALS -->
-      <section class="card glass-panel animate-enter delay-2" style="margin-bottom: 2rem;"
-        aria-labelledby="materials-heading">
-        <div
-          style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
-          <div
-            style="width: 32px; height: 32px; background: rgba(168, 85, 247, 0.2); color: #c084fc; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;"
-            aria-hidden="true">
-            2</div>
-          <h2 id="materials-heading" style="margin: 0; font-size: 1.25rem;">Materials & Furnishings</h2>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
-          <div>
-            <label for="floor-material">Base Floor Surface</label>
-            <select id="floor-material" aria-describedby="floor-material-desc">
-              <option value="hard">Hardwood / Tile / Laminate</option>
-              <option value="carpet">Wall-to-Wall Carpet</option>
-            </select>
-            <p id="floor-material-desc" style="font-size: 0.8rem; color: var(--c-text-muted); margin-top: 0.5rem;">Hard
-              floors create stronger
-              early reflections.</p>
-          </div>
-
-          <div>
-            <label id="room-contents-label">Room Contents</label>
-            <div role="group" aria-labelledby="room-contents-label"
-              style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-
-              <label class="checkbox-group">
-                <input type="checkbox" id="opt-area-rug" aria-describedby="opt-area-rug-desc">
-                <div>
-                  <div style="color: white; font-weight: 500;">Area Rug</div>
-                  <div id="opt-area-rug-desc" style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">
-                    Between speakers & seat
-                  </div>
-                </div>
-              </label>
-
-              <label class="checkbox-group">
-                <input type="checkbox" id="opt-curtains" aria-describedby="opt-curtains-desc">
-                <div>
-                  <div style="color: white; font-weight: 500;">Curtains / Blinds</div>
-                  <div id="opt-curtains-desc" style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">
-                    Covering windows</div>
-                </div>
-              </label>
-
-              <label class="checkbox-group">
-                <input type="checkbox" id="opt-sofa" aria-describedby="opt-sofa-desc">
-                <div>
-                  <div style="color: white; font-weight: 500;">Large Sofa</div>
-                  <div id="opt-sofa-desc" style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">
-                    Fabric/Soft furnishings
-                  </div>
-                </div>
-              </label>
-
-              <label class="checkbox-group">
-                <input type="checkbox" id="opt-wallart" aria-describedby="opt-wallart-desc">
-                <div>
-                  <div style="color: white; font-weight: 500;">Wall Art / Shelves</div>
-                  <div id="opt-wallart-desc" style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">
-                    Diffusers or books
-                  </div>
-                </div>
-              </label>
-
-              <label class="checkbox-group" style="grid-column: span 2;">
-                <input type="checkbox" id="opt-barewalls" aria-describedby="opt-barewalls-desc">
-                <div>
-                  <div style="color: white; font-weight: 500;">Mostly Bare Walls</div>
-                  <div id="opt-barewalls-desc"
-                    style="font-size: 0.75rem; color: var(--c-text-muted); font-weight: 400;">Minimal furniture, hard
-                    surfaces dominating</div>
-                </div>
-              </label>
-
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- SECTION 3: SPEAKER PROFILE -->
-      <section class="card glass-panel animate-enter delay-3" style="margin-bottom: 2rem;"
-        aria-labelledby="speaker-profile-heading">
-        <div
-          style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
-          <div
-            style="width: 32px; height: 32px; background: rgba(249, 115, 22, 0.2); color: #fdba74; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;"
-            aria-hidden="true">
-            3</div>
-          <h2 id="speaker-profile-heading" style="margin: 0; font-size: 1.25rem;">Speaker Profile</h2>
-        </div>
-
+        <!-- LEFT INPUTS -->
         <div>
-          <label for="speakerSel">Select Speaker Model</label>
-          <select id="speakerSel" style="font-size: 1.1rem; padding: 1rem;" aria-describedby="speakerHint"></select>
-          <p id="speakerHint"
-            style="font-size: 0.9rem; color: var(--c-text-muted); margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span style="width: 6px; height: 6px; background: var(--c-text-muted); border-radius: 50%;"
-              aria-hidden="true"></span>
-            Select your model to load frequency limits and target curves.
-          </p>
-        </div>
-      </section>
 
-      <!-- SECTION 4: POSITIONING -->
-      <section class="card glass-panel animate-enter delay-3" style="margin-bottom: 2rem;"
-        aria-labelledby="positioning-heading">
-        <div
-          style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
-          <div
-            style="width: 32px; height: 32px; background: rgba(20, 184, 166, 0.2); color: #5eead4; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700;"
-            aria-hidden="true">
-            4</div>
-          <h2 id="positioning-heading" style="margin: 0; font-size: 1.25rem;">Positioning</h2>
-        </div>
+          <!-- ROOM DIMENSIONS -->
+          <div class="input-block">
+            <label for="room-width">Room Width (m)</label>
+            <input type="number" id="room-width" step="0.01">
+          </div>
 
-        <div class="grid-3" role="group" aria-labelledby="positioning-heading">
-          <div>
+          <div class="input-block">
+            <label for="room-length">Room Length (m)</label>
+            <input type="number" id="room-length" step="0.01">
+          </div>
+
+          <div class="input-block">
+            <label for="room-height">Room Height (m)</label>
+            <input type="number" id="room-height" step="0.01">
+          </div>
+
+          <!-- SPEAKER -->
+          <div class="input-block">
+            <label for="speaker-distance">Distance From Front Wall (m)</label>
+            <input type="number" id="speaker-distance" step="0.01">
+          </div>
+
+          <div class="input-block">
+            <label for="speaker-width">Speaker Spacing (m)</label>
+            <input type="number" id="speaker-width" step="0.01">
+          </div>
+
+          <div class="input-block">
+            <label for="listening-distance">Listening Distance (m)</label>
+            <input type="number" id="listening-distance" step="0.01">
+          </div>
+
+          <div class="input-block">
+            <label for="toe-angle">Toe-in Angle (°)</label>
+            <input type="number" id="toe-angle">
+          </div>
+
+          <div class="input-block">
             <label for="speaker-type">Design Type</label>
             <select id="speaker-type">
               <option value="sealed">Sealed / Infinite Baffle</option>
-              <option value="port_front">Ported (Front-Firing)</option>
-              <option value="port_rear">Ported (Rear-Firing)</option>
+              <option value="port_front">Ported (Front)</option>
+              <option value="port_rear">Ported (Rear)</option>
               <option value="dipole">Dipole / Open Baffle</option>
             </select>
           </div>
-          <div>
-            <label for="speaker-distance">Dist. From Front Wall (m)</label>
-            <input type="number" id="speaker-distance" step="0.01" aria-describedby="speaker-distance-desc">
-            <span id="speaker-distance-desc" class="sr-only">Distance from speakers to front wall in meters</span>
-          </div>
-          <div>
-            <label for="speaker-width">Speaker Spacing (m)</label>
-            <input type="number" id="speaker-width" step="0.01" aria-describedby="speaker-width-desc">
-            <span id="speaker-width-desc" class="sr-only">Distance between left and right speakers in meters</span>
-          </div>
-          <div>
-            <label for="toe-angle">Toe-in Angle (deg)</label>
-            <input type="number" id="toe-angle" step="1" aria-describedby="toe-angle-desc">
-            <span id="toe-angle-desc" class="sr-only">Angle of speakers pointing toward listening position in
-              degrees</span>
-          </div>
-          <div>
-            <label for="listening-distance">Listening Distance (m)</label>
-            <input type="number" id="listening-distance" step="0.01" aria-describedby="listening-distance-desc">
-            <span id="listening-distance-desc" class="sr-only">Distance from listening position to speakers in
-              meters</span>
-          </div>
-        </div>
-      </section>
 
-      <!-- DAVE'S CHECKLIST -->
-      <section class="card glass-panel animate-enter delay-3" style="position: relative; overflow: hidden;"
-        aria-labelledby="checklist-heading">
-        <div
-          style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(99, 102, 241, 0.1); border-radius: 50%; filter: blur(60px);"
-          aria-hidden="true">
         </div>
 
-        <div style="position: relative; z-index: 10;">
-          <h2 id="checklist-heading"
-            style="margin: 0 0 1.5rem 0; font-size: 1.5rem; display: flex; align-items: center; gap: 1rem;">
-            <div
-              style="width: 48px; height: 48px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"
-              aria-hidden="true">
-              🤖</div>
-            Dave's Pre-Flight Checklist
-          </h2>
+        <!-- RIGHT DIAGRAM -->
+        <div>
 
-          <div id="recommendations-list" role="region" aria-label="Dave's Pre-Flight Checklist" aria-live="polite"
-            style="min-height: 100px;">
-            <div
-              style="display: flex; align-items: center; gap: 0.5rem; color: var(--c-text-muted); font-style: italic;">
-              <span class="status-indicator" style="background: var(--c-text-muted); animation: pulse 2s infinite;"
-                aria-hidden="true"></span>
-              Waiting for room data to generate advice...
+          <div class="room-diagram-wrapper"
+              style="
+                  width: 100%;
+                  max-width: 100%;
+                  margin: 0 auto;
+                  aspect-ratio: 4 / 3;
+                  position: relative;
+                  overflow: hidden;
+              ">
+
+            <svg id="room-diagram"
+                viewBox="0 0 600 450"
+                preserveAspectRatio="xMidYMid meet"
+                style="
+                    position: absolute;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
+                    display: block;
+                ">
+
+
+              <rect width="600" height="450" fill="rgba(15,23,42,0.4)" />
+
+              <rect id="room-rect"
+                    x="75" y="50" width="450" height="300"
+                    fill="rgba(30,41,59,0.3)"
+                    stroke="rgba(129,140,248,0.6)"
+                    stroke-width="2"
+                    stroke-dasharray="5,5" />
+
+              <text x="300" y="35" text-anchor="middle"
+                    fill="rgba(129,140,248,0.8)" font-size="12" font-weight="600">
+                FRONT WALL
+              </text>
+
+              <g id="left-speaker">
+                <image href="icons/spl.svg" width="28" height="28" />
+              </g>
+
+              <g id="right-speaker">
+                <image href="icons/spr.svg" width="28" height="28" />
+              </g>
+
+              <g id="sofa-icon">
+                <image href="icons/sofa.svg" width="90" height="52" />
+              </g>
+
+              <text id="listening-pos-label"
+                    fill="rgba(248,250,252,0.9)" font-size="10" text-anchor="middle">
+                LISTENING POSITION
+              </text>
+
+              <line id="left-toe-line"
+                    stroke="rgba(236,72,153,0.5)" stroke-width="1.5" stroke-dasharray="3,3" />
+
+              <line id="right-toe-line"
+                    stroke="rgba(236,72,153,0.5)" stroke-width="1.5" stroke-dasharray="3,3" />
+
+            </svg>
+          </div>
+
+          <!-- METRICS -->
+          <div style="display:flex; gap:1rem; margin-top:1rem; flex-wrap:wrap;">
+
+            <div class="metric-box">
+              <div class="metric-label">Calculated Toe-in</div>
+              <div class="metric-value" id="calc-toe-angle">--°</div>
+            </div>
+
+            <div class="metric-box">
+              <div class="metric-label">Speaker Spacing</div>
+              <div class="metric-value" id="calc-spacing">--m</div>
+            </div>
+
+            <div class="metric-box">
+              <div class="metric-label">Triangle Side</div>
+              <div class="metric-value" id="calc-triangle-side">--m</div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+
+
+    <!-- ===================================================== -->
+    <!-- CARD 2 — SPEAKER PROFILE -->
+    <!-- ===================================================== -->
+    <section class="card glass-panel animate-enter delay-2" style="margin-bottom:2rem;">
+
+      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
+                  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+        <div style="width:32px; height:32px; background:rgba(249,115,22,0.2); color:#fdba74;
+                    border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
+          2
+        </div>
+        <h2 style="margin:0; font-size:1.25rem;">Speaker Profile</h2>
+      </div>
+
+      <label for="speakerSel">Select Speaker Model</label>
+      <select id="speakerSel" style="font-size:1.1rem; padding:1rem;"></select>
+      <p id="speakerHint"
+        style="font-size:0.9rem; color:var(--c-text-muted); margin-top:0.75rem;">
+        Select your model to load frequency limits and target behaviour.
+      </p>
+
+
+      <p style="font-size:0.9rem; color:var(--c-text-muted); margin-top:0.75rem;">
+        Choose your speaker model to load frequency limits and behaviour patterns.
+      </p>
+
+    </section>
+
+
+
+    <!-- ===================================================== -->
+    <!-- CARD 3 — MATERIALS & FURNISHINGS -->
+    <!-- ===================================================== -->
+    <section class="card glass-panel animate-enter delay-3" style="margin-bottom:2rem;">
+
+      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
+                  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+        <div style="width:32px; height:32px; background:rgba(168,85,247,0.2); color:#c084fc;
+                    border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
+          3
+        </div>
+        <h2 style="margin:0; font-size:1.25rem;">Materials & Furnishings</h2>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 2fr; gap:2rem;">
+
+        <div>
+          <label for="floor-material">Base Floor Surface</label>
+          <select id="floor-material">
+            <option value="hard">Hardwood / Tile / Laminate</option>
+            <option value="carpet">Wall-to-Wall Carpet</option>
+          </select>
+        </div>
+
+        <div>
+
+          <!-- ROOM LIVELINESS -->
+          <label for="room-echo">Room Liveliness</label>
+          <div style="background:rgba(99,102,241,0.05); padding:1rem; border-radius:12px; margin-bottom:1.5rem;">
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:white;">How "Live" is the room?</span>
+              <span id="roomEchoValue" style="color:var(--c-accent); font-weight:700;">20%</span>
+            </div>
+            <input type="range" id="room-echo" min="0" max="100" step="5">
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--c-text-muted); margin-top:0.5rem;">
+              <span>Dry</span><span>Normal</span><span>Echoey</span>
             </div>
           </div>
-        </div>
-      </section>
 
-    </main>
-  </div>
+          <!-- ROOM CONTENTS -->
+          <label>Room Contents</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
 
-  <script src="/js/dashboard.js"></script>
-  <script type="module" src="/js/devices.js"></script>
-  <script type="module">
-    import { initSpeakers } from '/js/speakers.js';
-    document.addEventListener('DOMContentLoaded', async () => {
-      await initSpeakers();
-    });
-  </script>
-
-  <script>
-    /* ---------- Sidebar toggle with focus trap ---------- */
-    const btn = document.getElementById('mobile-menu-btn');
-    const side = document.getElementById('sidebar');
-    const over = document.getElementById('sidebar-overlay');
-    const mainContent = document.getElementById('main-content');
-
-    // Store focusable elements
-    let focusableElements = [];
-    let firstFocusableElement = null;
-    let lastFocusableElement = null;
-    let previouslyFocusedElement = null;
-
-    function getFocusableElements() {
-      const focusableSelectors = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-      focusableElements = Array.from(side.querySelectorAll(focusableSelectors));
-      firstFocusableElement = focusableElements[0];
-      lastFocusableElement = focusableElements[focusableElements.length - 1];
-    }
-
-    function trapFocus(e) {
-      if (e.key !== 'Tab') return;
-
-      if (e.shiftKey) {
-        if (document.activeElement === firstFocusableElement) {
-          e.preventDefault();
-          lastFocusableElement.focus();
-        }
-      } else {
-        if (document.activeElement === lastFocusableElement) {
-          e.preventDefault();
-          firstFocusableElement.focus();
-        }
-      }
-    }
-
-    function toggleMenu() {
-      const isOpening = !side.classList.contains('active');
-
-      side.classList.toggle('active');
-      over.classList.toggle('active');
-
-      if (isOpening) {
-        // Opening menu
-        previouslyFocusedElement = document.activeElement;
-
-        // Set ARIA attributes
-        btn.setAttribute('aria-expanded', 'true');
-        btn.setAttribute('aria-label', 'Close navigation menu');
-        side.setAttribute('role', 'dialog');
-        side.setAttribute('aria-modal', 'true');
-        over.setAttribute('aria-hidden', 'false');
-
-        // Add inert to main content
-        if (mainContent) mainContent.inert = true;
-
-        // Prevent body scroll
-        document.body.style.overflow = 'hidden';
-
-        // Setup focus trap
-        getFocusableElements();
-        document.addEventListener('keydown', trapFocus);
-
-        // Focus first element
-        setTimeout(() => {
-          if (firstFocusableElement) firstFocusableElement.focus();
-        }, 100);
-
-      } else {
-        // Closing menu
-        btn.setAttribute('aria-expanded', 'false');
-        btn.setAttribute('aria-label', 'Open navigation menu');
-        side.removeAttribute('role');
-        side.removeAttribute('aria-modal');
-        over.setAttribute('aria-hidden', 'true');
-
-        // Remove inert from main content
-        if (mainContent) mainContent.inert = false;
-
-        // Restore body scroll
-        document.body.style.overflow = '';
-
-        // Remove focus trap
-        document.removeEventListener('keydown', trapFocus);
-
-        // Return focus to button
-        if (previouslyFocusedElement) {
-          previouslyFocusedElement.focus();
-        }
-      }
-    }
-
-    // Close on Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && side.classList.contains('active')) {
-        toggleMenu();
-      }
-    });
-
-    if (btn) btn.addEventListener('click', toggleMenu);
-    if (over) over.addEventListener('click', toggleMenu);
-
-    document.querySelectorAll('.nav-item').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 1024 && side.classList.contains('active')) {
-          toggleMenu();
-        }
-      });
-    });
-
-    /* ---------- Toast ---------- */
-    function toast(msg, type = 'info') {
-      const box = document.createElement('div');
-      box.setAttribute('role', 'status');
-      box.setAttribute('aria-live', 'polite');
-      // Using inline styles for toast since I didn't add toast classes to CSS
-      box.style.cssText = `
-      position: fixed; top: 1rem; right: 1rem; padding: 0.75rem 1rem; border-radius: 8px;
-      color: white; font-size: 0.9rem; z-index: 100; transition: all 0.3s;
-      background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6'};
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    `;
-      box.textContent = msg;
-      document.body.appendChild(box);
-      setTimeout(() => box.style.opacity = '0', 2000);
-      setTimeout(() => box.remove(), 2300);
-    }
-
-    /* ---------- Dynamic Checklist Generation ---------- */
-    // Helper to replace bold markdown
-    const replaceBoldHtml = (text) =>
-      text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:white;">$1</strong>');
-
-
-    function generateChecklist(roomConfig) {
-      const listEl = document.getElementById('recommendations-list');
-      listEl.innerHTML = '';
-
-      const {
-        length_m, spk_spacing_m, floor_material, opt_area_rug,
-        opt_curtains, speaker_type, listener_front_m
-      } = roomConfig;
-
-      const listItems = [];
-
-      listItems.push({
-        icon: '🧰',
-        title: 'Grab a tape measure',
-        text: 'Accurate distances make a huge difference to the sweep results.'
-      });
-      listItems.push({
-        icon: '🎯',
-        title: 'Mic Placement is Everything',
-        text: 'Ear height, centred, in your normal listening spot — not "near it".'
-      });
-
-      if (floor_material === 'hard' && !opt_area_rug) {
-        listItems.push({
-          icon: '💥',
-          title: 'Action: Floor Reflection Warning',
-          text: 'Your **hard floor** and lack of a rug is the biggest risk for harsh, early reflections. This is your **number one item to fix**.'
-        });
-      } else if (floor_material === 'hard' && opt_area_rug) {
-        listItems.push({
-          icon: '✅',
-          title: 'Floor Coverage is Good',
-          text: 'You have a hard floor, but your rug is a **strong defense** against vertical reflections. Nice work.'
-        });
-      }
-
-      if (speaker_type === 'port_rear' && length_m) {
-        const minDistance = 0.4;
-        listItems.push({
-          icon: '🔊',
-          title: 'Rear-Ported Speaker Minimum Distance',
-          text: `Since you have rear-ported speakers, ensure they are pulled out at least **${minDistance}m** from the front wall to avoid bass boom.`
-        });
-      }
-
-      if (length_m) {
-        const targetDistance = (length_m * 0.38).toFixed(2);
-        listItems.push({
-          icon: '🔍',
-          title: 'Ideal Seating Start Point',
-          text: `For your ${length_m}m long room, a great starting distance from the front wall is **${targetDistance}m**. Check your current position against this number.`
-        });
-      }
-
-      if (!opt_curtains) {
-        listItems.push({
-          icon: '🪟',
-          title: 'Tip: Tame Windows',
-          text: 'Curtains or heavy blinds are a simple way to instantly reduce reflections and make the room sound tighter.'
-        });
-      }
-
-      const listHtml = listItems.map(item => `
-          <li style="margin-bottom: 1rem;">
-              <div style="font-weight: 600; color: white; display: flex; align-items: center; gap: 0.5rem;">
-                <span aria-hidden="true">${item.icon}</span> ${item.title}
-              </div>
-              <div style="color: var(--c-text-muted); font-size: 0.9rem; margin-top: 0.25rem; padding-left: 1.75rem;">
-                ${replaceBoldHtml(item.text)}
-              </div>
-          </li>
-      `).join('');
-
-      listEl.innerHTML = `
-          <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; display: flex; gap: 1rem; align-items: start;">
-              <img src="icons/dave.svg" alt="" aria-hidden="true" style="width: 48px; opacity: 0.9;">
+            <label class="checkbox-group">
+              <input type="checkbox" id="opt-area-rug">
               <div>
-                  <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: white;">Dave's Setup Checklist</h3>
-                  <ul style="list-style: none; padding: 0; margin: 0;">
-                      ${listHtml}
-                  </ul>
+                <div style="color:white; font-weight:500;">Area Rug</div>
               </div>
+            </label>
+
+            <label class="checkbox-group">
+              <input type="checkbox" id="opt-curtains">
+              <div>
+                <div style="color:white; font-weight:500;">Curtains / Blinds</div>
+              </div>
+            </label>
+
+            <label class="checkbox-group">
+              <input type="checkbox" id="opt-sofa">
+              <div>
+                <div style="color:white; font-weight:500;">Large Sofa</div>
+              </div>
+            </label>
+
+            <label class="checkbox-group">
+              <input type="checkbox" id="opt-wallart">
+              <div>
+                <div style="color:white; font-weight:500;">Wall Art / Shelves</div>
+              </div>
+            </label>
+
+            <label class="checkbox-group" style="grid-column:span 2;">
+              <input type="checkbox" id="opt-barewalls">
+              <div>
+                <div style="color:white; font-weight:500;">Mostly Bare Walls</div>
+              </div>
+            </label>
+
           </div>
-          <div style="margin-top: 1.5rem;">
-            <button id="save-all-btn" class="btn btn-primary" style="width: 100%; justify-content: center;">
-              Save Setup
-            </button>
-          </div>
-      `;
+        </div>
 
-      document.getElementById('save-all-btn').addEventListener('click', saveAllSetup);
-    }
+      </div>
+    </section>
 
-    /* ---------- Save / Load ---------- */
-    const SESSION = 'latest';
-    const API = '/api/room';
 
-    async function saveAllSetup() {
-      const payload = {
-        length_m: parseFloat(document.getElementById('room-length').value),
-        width_m: parseFloat(document.getElementById('room-width').value),
-        height_m: parseFloat(document.getElementById('room-height').value),
-        echo_pct: parseInt(document.getElementById('room-echo').value),
-        floor_material: document.getElementById('floor-material').value,
-        opt_area_rug: document.getElementById('opt-area-rug').checked,
-        opt_barewalls: document.getElementById('opt-barewalls').checked,
-        opt_wallart: document.getElementById('opt-wallart').checked,
-        opt_curtains: document.getElementById('opt-curtains').checked,
-        opt_sofa: document.getElementById('opt-sofa').checked,
-        spk_front_m: parseFloat(document.getElementById('speaker-distance').value),
-        spk_spacing_m: parseFloat(document.getElementById('speaker-width').value),
-        toe_in_deg: parseFloat(document.getElementById('toe-angle').value),
-        listener_front_m: parseFloat(document.getElementById('listening-distance').value),
-        speaker_type: document.getElementById('speaker-type').value,
-        speaker_key: document.getElementById('speakerSel').value,
-        layout: 'stereo'
-      };
+    <!-- ===================================================== -->
+    <!-- SAVE BUTTON -->
+    <!-- ===================================================== -->
+    <section style="margin-bottom:3rem;">
+      <button id="save-all-btn" class="btn btn-primary"
+              style="width:100%; padding:1rem; font-size:1.1rem;">
+        Save Setup
+      </button>
+    </section>
 
-      console.log("💾 Saving all:", payload);
 
-      const res = await fetch('/api/room/latest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+  </main>
+</div>
 
-      if (!res.ok) {
-        toast('Save failed', 'error');
-      } else {
-        toast('Room & speakers saved', 'success');
-        loadRoomSetup();
-      }
-    }
 
-    async function loadRoomSetup() {
-      const res = await fetch(`${API}/${SESSION}`);
-      const roomConfig = {
-        length_m: 4.0, listener_front_m: 2.5, spk_front_m: 0.6,
-        floor_material: 'hard', opt_area_rug: false, opt_curtains: false,
-        speaker_type: 'sealed'
-      };
+<!-- ====================================================================== -->
+<!-- SCRIPT BLOCK -->
+<!-- ====================================================================== -->
 
-      if (!res.ok) {
-        generateChecklist(roomConfig);
-        return;
-      }
-      const j = await res.json();
+<script src="/js/dashboard.js"></script>
+<script type="module" src="/js/devices.js"></script>
+<script type="module">
+  import { initSpeakers } from '/js/speakers.js';
+  document.addEventListener('DOMContentLoaded', async () => {
+    await initSpeakers();
+  });
+</script>
 
-      const loadNumeric = (jsonKey, inputId) => {
-        if (j[jsonKey] != null) {
-          const el = document.getElementById(inputId);
-          if (el) {
-            el.value = j[jsonKey];
-            roomConfig[jsonKey] = parseFloat(j[jsonKey]);
-          }
-        }
-      };
+<script src="js/room-diagram.js"></script>
 
-      loadNumeric('length_m', 'room-length');
-      loadNumeric('width_m', 'room-width');
-      loadNumeric('height_m', 'room-height');
-      loadNumeric('spk_front_m', 'speaker-distance');
-      loadNumeric('spk_spacing_m', 'speaker-width');
-      loadNumeric('toe_in_deg', 'toe-angle');
-      loadNumeric('listener_front_m', 'listening-distance');
+<script>
+/* ============================================================
+   TOAST
+============================================================ */
+function toast(msg, type = 'info') {
+  const box = document.createElement('div');
+  box.style.cssText = `
+    position:fixed; top:1rem; right:1rem;
+    padding:0.75rem 1rem;
+    border-radius:8px;
+    color:white;
+    font-size:0.9rem;
+    z-index:200;
+    transition:all 0.3s;
+    background:${type === 'error'
+      ? '#ef4444'
+      : type === 'success'
+        ? '#10b981'
+        : '#3b82f6'};
+  `;
+  box.textContent = msg;
+  document.body.appendChild(box);
 
-      if (j.echo_pct != null) {
-        document.getElementById('room-echo').value = j.echo_pct;
-        document.getElementById('roomEchoValue').textContent = j.echo_pct + '%';
-      }
+  setTimeout(() => box.style.opacity = '0', 2000);
+  setTimeout(() => box.remove(), 2400);
+}
 
-      if (j.floor_material) {
-        document.getElementById('floor-material').value = j.floor_material;
-        roomConfig.floor_material = j.floor_material;
-      }
-      if (j.speaker_type) {
-        document.getElementById('speaker-type').value = j.speaker_type;
-        roomConfig.speaker_type = j.speaker_type;
-      }
-      document.getElementById('speakerSel').value = j.speaker_key || '';
 
-      const loadBoolean = (jsonKey, inputId) => {
-        const isChecked = !!j[jsonKey];
-        const el = document.getElementById(inputId);
-        if (el) el.checked = isChecked;
-        roomConfig[jsonKey] = isChecked;
-      };
+/* ============================================================
+   SAVE SETUP
+============================================================ */
+async function saveAllSetup() {
 
-      loadBoolean('opt_area_rug', 'opt-area-rug');
-      loadBoolean('opt_barewalls', 'opt-barewalls');
-      loadBoolean('opt_wallart', 'opt-wallart');
-      loadBoolean('opt_curtains', 'opt-curtains');
-      loadBoolean('opt_sofa', 'opt-sofa');
+  const payload = {
+    length_m: parseFloat(document.getElementById('room-length').value),
+    width_m: parseFloat(document.getElementById('room-width').value),
+    height_m: parseFloat(document.getElementById('room-height').value),
 
-      generateChecklist(roomConfig);
-    }
+    echo_pct: parseInt(document.getElementById('room-echo').value),
 
-    // Update room echo slider value display
-    const echoSlider = document.getElementById('room-echo');
-    const echoValue = document.getElementById('roomEchoValue');
-    if (echoSlider && echoValue) {
-      echoSlider.addEventListener('input', (e) => {
-        echoValue.textContent = e.target.value + '%';
-      });
-    }
+    floor_material: document.getElementById('floor-material').value,
 
-    setInterval(() => {
-      const el = document.getElementById('lastUpdated');
-      if (el) el.textContent = new Date().toLocaleTimeString();
-    }, 1000);
+    opt_area_rug: document.getElementById('opt-area-rug').checked,
+    opt_barewalls: document.getElementById('opt-barewalls').checked,
+    opt_wallart: document.getElementById('opt-wallart').checked,
+    opt_curtains: document.getElementById('opt-curtains').checked,
+    opt_sofa: document.getElementById('opt-sofa').checked,
 
-    document.addEventListener('DOMContentLoaded', () => {
-      if (typeof MeasurelyDashboard !== 'undefined' && !window.dashboard) {
-        window.dashboard = new MeasurelyDashboard();
-      }
-      loadRoomSetup();
-    });
-  </script>
+    spk_front_m: parseFloat(document.getElementById('speaker-distance').value),
+    spk_spacing_m: parseFloat(document.getElementById('speaker-width').value),
+    toe_in_deg: parseFloat(document.getElementById('toe-angle').value),
+    listener_front_m: parseFloat(document.getElementById('listening-distance').value),
+
+    speaker_type: document.getElementById('speaker-type').value,
+    speaker_key: document.getElementById('speakerSel').value,
+
+    layout: 'stereo'
+  };
+
+  console.log("💾 Saving all:", payload);
+
+  const res = await fetch('/api/room/latest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    toast('Save failed', 'error');
+    return;
+  }
+
+  toast('Room & speakers saved', 'success');
+  loadRoomSetup();
+}
+
+
+/* ============================================================
+   LOAD SETUP
+============================================================ */
+async function loadRoomSetup() {
+  const res = await fetch('/api/room/latest');
+
+  if (!res.ok) {
+    console.warn("No saved setup found.");
+    return;
+  }
+
+  const j = await res.json();
+
+  function setNum(key, id) {
+    if (j[key] != null) document.getElementById(id).value = j[key];
+  }
+
+  function setBool(key, id) {
+    document.getElementById(id).checked = !!j[key];
+  }
+
+  setNum('length_m', 'room-length');
+  setNum('width_m', 'room-width');
+  setNum('height_m', 'room-height');
+
+  setNum('spk_front_m', 'speaker-distance');
+  setNum('spk_spacing_m', 'speaker-width');
+  setNum('toe_in_deg', 'toe-angle');
+  setNum('listener_front_m', 'listening-distance');
+
+  setBool('opt_area_rug', 'opt-area-rug');
+  setBool('opt_barewalls', 'opt-barewalls');
+  setBool('opt_wallart', 'opt-wallart');
+  setBool('opt_curtains', 'opt-curtains');
+  setBool('opt_sofa', 'opt-sofa');
+
+  if (j.echo_pct != null) {
+    document.getElementById('room-echo').value = j.echo_pct;
+    document.getElementById('roomEchoValue').textContent = j.echo_pct + '%';
+  }
+
+  if (j.floor_material) {
+    document.getElementById('floor-material').value = j.floor_material;
+  }
+
+  if (j.speaker_type) {
+    document.getElementById('speaker-type').value = j.speaker_type;
+  }
+
+  if (j.speaker_key) {
+    document.getElementById('speakerSel').value = j.speaker_key;
+  }
+}
+
+
+/* ============================================================
+   BIND SAVE BUTTON
+============================================================ */
+document.getElementById('save-all-btn').addEventListener('click', saveAllSetup);
+
+
+/* ECHO SLIDER UI UPDATE */
+const echoSlider = document.getElementById('room-echo');
+const echoValue = document.getElementById('roomEchoValue');
+if (echoSlider && echoValue) {
+  echoSlider.addEventListener('input', e => {
+    echoValue.textContent = e.target.value + '%';
+  });
+}
+
+
+/* LOAD ON READY */
+document.addEventListener('DOMContentLoaded', loadRoomSetup);
+
+</script>
 
 </body>
-
 </html>

@@ -29,12 +29,58 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 # ------------------------------------------------------------------
+#  SWEEP STATUS WRITER
+# ------------------------------------------------------------------
+import json
+
+SWEEP_STATUS_FILE = "/tmp/measurely_sweep_status.json"
+
+def update_status(phase, percent, running=True):
+    try:
+        with open(SWEEP_STATUS_FILE, "w") as f:
+            json.dump({
+                "phase": phase,
+                "percent": percent,
+                "running": running,
+                "ts": time.time()   # <-- NEW: monotonic ordering
+            }, f)
+    except Exception:
+        pass
+
+
+# ------------------------------------------------------------------
 #  utilities
 # ------------------------------------------------------------------
 def session_dir() -> str:
+    """
+    Create sequential session folders: Sweep1, Sweep2, Sweep3…
+    Tracks next number inside next_sweep.txt.
+    """
     root = Path.home() / "measurely" / "measurements"
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
-    return str(root / stamp)
+    root.mkdir(parents=True, exist_ok=True)
+
+    counter_file = root / "next_sweep.txt"
+
+    # Load current number
+    if counter_file.exists():
+        try:
+            with open(counter_file, "r") as f:
+                n = int(f.read().strip())
+        except:
+            n = 1
+    else:
+        n = 1
+
+    # Folder name
+    sweep_name = f"Sweep{n}"
+    session_path = root / sweep_name
+
+    # Increment & save for next time
+    with open(counter_file, "w") as f:
+        f.write(str(n + 1))
+
+    return str(session_path)
+
 
 def route_to_left(sweep):  return np.column_stack([sweep, np.zeros_like(sweep)])
 def route_to_right(sweep): return np.column_stack([np.zeros_like(sweep), sweep])
@@ -224,17 +270,26 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
     log_base.mkdir(parents=True, exist_ok=True)
     print(f"[SWEEP] entered run_sweep, channel={channel_label}, playback={args.playback}, out_dev={args.out_dev}")
 
+    # 🔥 Tell UI we’re starting this channel
+    if channel_label == "left":
+        update_status("Left sweep started", 10)
+    elif channel_label == "right":
+        update_status("Right sweep started", 35)
+
     try:
         sd.default.samplerate = fs
         total_rec_s = args.prepad + args.dur + args.postpad
         total_frames = int(fs * total_rec_s)
 
         # --- 1. start recording (pre-pad) ------------------------------------
+        update_status(f"Recording {channel_label} mic input…", 12 if channel_label=="left" else 40)
         rec = sd.rec(total_frames, channels=1, dtype="float32", device=args.in_dev, blocking=False)
 
         print(f"[SWEEP] about to choose playback, args.playback={args.playback}, aplay avail={shutil.which('aplay') is not None}")
 
         # --- 2. playback ------------------------------------------------------
+        update_status(f"Playing {channel_label} test sweep…", 18 if channel_label=="left" else 45)
+
         if args.playback == "aplay" or (args.playback == "auto" and shutil.which("aplay")):
             play_via_aplay(stereo_sweep, fs, args.alsa_device)
         else:
@@ -243,6 +298,8 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
         sd.wait()   # wait for record to finish
 
         # --- 3. process recording -------------------------------------------
+        update_status(f"Processing {channel_label} recording…", 25 if channel_label=="left" else 55)
+
         rec_raw = np.nan_to_num(np.asarray(rec, dtype=np.float32).flatten())
         rms = float(np.sqrt(np.mean(rec_raw**2))) if rec_raw.size else 0.0
         if rms < 1e-6:
@@ -269,7 +326,16 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
         save_all(session_root, channel_label, fs, sweep, rec_raw, rec_used, ir, freqs, mag, meta, args.layout)
         print(f"Saved {channel_label} in '{session_root}'")
 
+        # 🔥 Tell UI we’re done with this channel
+        if channel_label == "left":
+            update_status("Left sweep finished", 30)
+        else:
+            update_status("Right sweep finished", 60)
+
     except Exception as e:
+        update_status(f"ERROR during {channel_label} sweep",  
+                      0 if channel_label=="left" else 35,  
+                      running=False)
         fail(log_base, e, where=f"sweep_{channel_label}")
 
 # ------------------------------------------------------------------
@@ -360,22 +426,13 @@ def main():
 
     args = ap.parse_args()
     if args.list:
-        print(sd.query_devices()); return
+        print(sd.query_devices())
+        return
 
-    fs = 48000  # force for consistency
-    sweep, inv = gen_log_sweep(fs, args.dur, args.f0, args.f1)
-    print(f"[SWEEP] stimulus shape={sweep.shape}  max={sweep.max():.3f}  rms={np.sqrt(np.mean(sweep**2)):.3f}")
-    outdir = session_dir()
-    Path(outdir).mkdir(parents=True, exist_ok=True)
-
-    write_log(outdir, ["IN_DEV_INFO:", dev_info(args.in_dev, 'input'),
-                       "OUT_DEV_INFO:", dev_info(args.out_dev, 'output')])
-    
     # ------------------------------------------------------------------
-    #  read user room & speaker config
+    # Load user config BEFORE generating sweep
     # ------------------------------------------------------------------
     latest_meta = Path.home() / "measurely" / "measurements" / "latest" / "meta.json"
-
     if latest_meta.exists():
         print(f"[SWEEP] loading room config from {latest_meta}")
         user_meta = json.loads(latest_meta.read_text())
@@ -387,10 +444,10 @@ def main():
         room_len = 4.0
         speaker_key = None
 
-    # tailor sweep length to room size
-    args.dur = max(4.0, room_len * 1.2)          # ~5 m room → 6 s sweep
+    # Tailor sweep duration to room size
+    args.dur = max(4.0, room_len * 1.2)
 
-    # tailor frequency limits to speaker profile
+    # Tailor frequency limits to speaker profile
     from measurelyapp.speaker import load_target_curve
     if speaker_key:
         curve = load_target_curve(speaker_key)
@@ -399,15 +456,47 @@ def main():
             args.f1 = float(curve.x[-1])
             print(f"[SWEEP] using {speaker_key} limits {args.f0:.0f} Hz – {args.f1:.0f} Hz")
 
+    # ------------------------------------------------------------------
+    # Prepare session + sweep
+    # ------------------------------------------------------------------
+    fs = 48000
+    sweep, inv = gen_log_sweep(fs, args.dur, args.f0, args.f1)
+    print(f"[SWEEP] stimulus shape={sweep.shape}  max={sweep.max():.3f}  rms={np.sqrt(np.mean(sweep**2)):.3f}")
+
+    outdir = session_dir()
+    Path(outdir).mkdir(parents=True, exist_ok=True)
+
+    write_log(outdir, [
+        "IN_DEV_INFO:",  dev_info(args.in_dev, 'input'),
+        "OUT_DEV_INFO:", dev_info(args.out_dev, 'output')
+    ])
+
+    # ------------------------------------------------------------------
+    # Run sweeps
+    # ------------------------------------------------------------------
     if args.mode in ("left", "both"):
         run_sweep(outdir, sweep, inv, fs, args, "left", route_to_left(sweep))
+
     if args.mode in ("right", "both"):
         run_sweep(outdir, sweep, inv, fs, args, "right", route_to_right(sweep))
+
+    # ------------------------------------------------------------------
+    # After both channels complete
+    # ------------------------------------------------------------------
+    try:
+        update_status("Analysing results…", 80, True)
+    except Exception:
+        pass
+
+    try:
+        update_status("Sweep complete ✔", 100, False)
+    except Exception:
+        pass
 
     print("Saved:", outdir)
 
     # ------------------------------------------------------------------
-    # Update latest symlink
+    # Update latest/ symlink
     # ------------------------------------------------------------------
     measurements_dir = Path.home() / "measurely" / "measurements"
     latest = measurements_dir / "latest"

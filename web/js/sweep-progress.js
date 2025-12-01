@@ -17,6 +17,23 @@ class SweepProgressManager {
     this.isActive = false;
   }
 
+  static PHASE_TEXT = {
+    "left_start": "Left sweep started",
+    "left_record": "Recording left channel…",
+    "left_play": "Playing left sweep…",
+    "left_process": "Processing left channel…",
+    "left_done": "Left sweep complete",
+
+    "right_start": "Right sweep started",
+    "right_record": "Recording right channel…",
+    "right_play": "Playing right sweep…",
+    "right_process": "Processing right channel…",
+    "right_done": "Right sweep complete",
+
+    "analysing": "Analysing results…",
+    "complete": "Sweep complete ✔"
+  }
+
   /**
    * Initialize the progress modal
    */
@@ -184,10 +201,16 @@ class SweepProgressManager {
     this.percentageElement.textContent = `${Math.round(this.currentProgress)}%`;
 
     // Update status if provided
+    // Translate backend phase (e.g. "left_start") → friendly text
+    if (message && SweepProgressManager.PHASE_TEXT[message]) {
+      message = SweepProgressManager.PHASE_TEXT[message];
+    }
+
     if (message) {
       this.statusElement.textContent = message;
       this.addLogMessage(message, status);
     }
+
   }
 
   /**

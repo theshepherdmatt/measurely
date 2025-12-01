@@ -1,40 +1,86 @@
-// web/js/speakers.js  --  MINIMAL, CLEAN
+// web/js/speakers.js
+
 const LS_KEY = 'mly.speaker.key';
 
-export async function initSpeakers(){
+export async function initSpeakers() {
   console.log('[spk] initSpeakers() started');
 
-  // 1. load index
-  const res = await fetch('/speakers/speakers.json', {cache:'no-store'});
-  if(!res.ok){ console.warn('[spk] speakers.json failed:', res.status); return; }
-  const index = await res.json();          // { quad_esl57:{ name, ... }, ... }
-  console.log('[spk] index loaded:', Object.keys(index).length, 'profiles');
+  // 1. Load speakers.json
+  const res = await fetch('/speakers/speakers.json', { cache: 'no-store' });
+  if (!res.ok) {
+    console.warn('[spk] speakers.json failed:', res.status);
+    return;
+  }
 
-  // 2. fill the <select> that already exists
+  const index = await res.json();  // entire profile index
+  console.log('[spk] loaded profiles:', Object.keys(index).length);
+
+  // 2. Find <select> element
   const sel = document.getElementById('speakerSel');
-  if(!sel){ console.warn('[spk] #speakerSel not found'); return; }
+  if (!sel) {
+    console.warn('[spk] #speakerSel not found');
+    return;
+  }
 
-  sel.innerHTML = '';                                           // clear
-  sel.appendChild(new Option('— None (generic sweep) —', '')); // default
+  sel.innerHTML = ''; // clear existing
 
-  Object.entries(index).forEach(([key, prof]) =>
-    sel.appendChild(new Option(prof.name || key, key))
-  );
-  console.log('[spk] filled dropdown with', sel.options.length - 1, 'profiles');
+  // Default top entry
+  sel.appendChild(new Option('— None (generic sweep) —', ''));
 
-  // 3. restore last choice
+  // Build grouped dropdown
+  const spotlightGroup = document.createElement('optgroup');
+  spotlightGroup.label = 'Spotlight Models';
+
+  const categoryGroup = document.createElement('optgroup');
+  categoryGroup.label = 'Speaker Categories';
+
+  Object.entries(index).forEach(([key, prof]) => {
+    const label = prof.name || key;
+    const opt = new Option(label, key);
+
+    if (prof.type === 'spotlight') {
+      spotlightGroup.appendChild(opt);
+    } else if (prof.type === 'category') {
+      categoryGroup.appendChild(opt);
+    } else {
+      // fallback to category group if unspecified
+      categoryGroup.appendChild(opt);
+    }
+  });
+
+  // Only append groups if they have children
+  if (spotlightGroup.children.length > 0) sel.appendChild(spotlightGroup);
+  if (categoryGroup.children.length > 0) sel.appendChild(categoryGroup);
+
+  console.log('[spk] dropdown built:',
+    sel.options.length - 1, 'profiles');
+
+  // 3. Restore saved selection
   const saved = localStorage.getItem(LS_KEY);
-  if(saved && sel.querySelector(`option[value="${CSS.escape(saved)}"]`)) sel.value = saved;
+  if (saved && sel.querySelector(`option[value="${CSS.escape(saved)}"]`)) {
+    sel.value = saved;
+  }
 
-  // 4. hint updater
+  // 4. Hint updater
   const hint = document.getElementById('speakerHint');
   const updateHint = () => {
     const prof = index[sel.value];
-    hint.textContent = prof
-      ? `${prof.name} • start ${prof.sweep_start_hz || '?'} Hz • end ${prof.sweep_end_hz || '?'} Hz • max ${prof.safe_level_dbfs || '?'} dBFS`
-      : 'Generic sweep. No speaker-specific limits or targets applied.';
+
+    if (!prof) {
+      hint.textContent = 'Generic sweep — no speaker-specific behaviour applied.';
+      return;
+    }
+
+    const start = prof.sweep_start_hz ?? '?';
+    const end = prof.sweep_end_hz ?? '?';
+    const max = prof.safe_level_dbfs ?? '?';
+
+    hint.textContent =
+      `${prof.name} • sweep ${start}–${end} Hz • max ${max} dBFS`;
   };
+
   updateHint();
+
   sel.addEventListener('change', () => {
     localStorage.setItem(LS_KEY, sel.value);
     updateHint();

@@ -96,28 +96,6 @@ for d in (MEAS_ROOT, PHRASES_DIR, SPEAKERS_DIR, WEB_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 # ------------------------------------------------------------------
-#  AUTO-FIX: ensure a valid /latest exists at all times
-# ------------------------------------------------------------------
-def ensure_latest_symlink():
-    latest = MEAS_ROOT / "latest"
-    demo = MEAS_ROOT / "DEMO_DO_NOT_DELETE"
-
-    # If latest is missing or broken → restore DEMO
-    if not latest.exists() or not latest.is_dir():
-        print("⚠ latest missing or invalid → restoring DEMO_DO_NOT_DELETE")
-        if latest.exists():
-            latest.unlink()
-        if demo.exists():
-            latest.symlink_to(demo.resolve())
-            print("✓ latest → DEMO_DO_NOT_DELETE restored")
-        else:
-            print("❌ DEMO_DO_NOT_DELETE folder not found!")
-
-# Call it once at server startup
-ensure_latest_symlink()
-
-
-# ------------------------------------------------------------------
 #  rest of your original config
 # ------------------------------------------------------------------
 SMOOTH_SIGMA = 6
@@ -136,6 +114,29 @@ sweep_progress = {
 # ------------------------------------------------------------------
 #  helpers
 # ------------------------------------------------------------------
+def ensure_latest():
+    meas = MEAS_ROOT
+    demo = meas / "DEMO_DO_NOT_DELETE"
+    latest = meas / "latest"
+
+    # Only fix when nothing else exists
+    real_sessions = [
+        d for d in meas.iterdir()
+        if d.is_dir() and d.name not in ("latest", "DEMO_DO_NOT_DELETE")
+    ]
+
+    # If there are no real sessions, latest must point to demo
+    if not real_sessions:
+        if latest.exists() or latest.is_symlink():
+            latest.unlink()
+        latest.symlink_to(demo)
+        print("✓ latest → DEMO_DO_NOT_DELETE")
+    else:
+        print("✓ real sessions exist → leaving latest alone")
+
+ensure_latest()
+
+
 def get_latest_measurement():
     import os, pprint
     print("DEBUG: MEAS_ROOT =", os.environ.get("MEASURELY_MEAS_ROOT"))
@@ -339,24 +340,77 @@ def get_ip_address():
 
 
 # ------------------------------------------------------------------
-#  FETCH A SINGLE SESSION'S ANALYSIS + FREQUENCY DATA
+#  FETCH ALL SESSION FOLDERS (SweepX or timestamped)
+# ------------------------------------------------------------------
+@app.route('/api/sessions/all', methods=['GET'])
+def get_sessions_all():
+    """Return ALL real session folders (SweepX or legacy timestamp format)."""
+    try:
+        sessions = []
+
+        # Accept:
+        #   - Sweep1, Sweep2, Sweep10...
+        #   - 20241201_191422_A4FBCD (old timestamp format)
+        pattern = re.compile(r"^(Sweep\d+|\d{8}_\d{6}_[0-9a-fA-F]{6})$")
+
+        if MEAS_ROOT.exists():
+            for entry in MEAS_ROOT.iterdir():
+                name = entry.name
+
+                # Skip irrelevant folders
+                if name.upper().startswith("DEMO"):
+                    continue
+                if name == "latest":
+                    continue
+
+                # Only accept folders matching SweepX or timestamp pattern
+                if not pattern.match(name):
+                    continue
+
+                sessions.append(entry)
+
+            # Sort newest → oldest
+            sessions.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+
+            # Build response objects
+            out = [{
+                "id": d.name,
+                "timestamp": datetime.fromtimestamp(d.stat().st_mtime).isoformat(),
+                "has_analysis": (d / "analysis.json").exists(),
+                "has_summary": (d / "summary.txt").exists(),
+                "session_dir": str(d)
+            } for d in sessions]
+
+            return jsonify(out)
+
+        # No MEAS_ROOT or no sessions
+        return jsonify([])
+
+    except Exception as e:
+        print(f"Error in get_sessions_all: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+
+# ------------------------------------------------------------------
+#  FETCH A SINGLE SESSION'S FULL ANALYSIS + FREQUENCY DATA
 # ------------------------------------------------------------------
 @app.route('/api/session/<session_id>', methods=['GET'])
 def api_get_session(session_id):
+    """Load a specific session (or 'latest') and return full analysis."""
     try:
-        ses = MEAS_ROOT / ("latest" if session_id == "latest" else session_id)
+        session_path = MEAS_ROOT / ("latest" if session_id == "latest" else session_id)
 
-        if not ses.exists():
+        if not session_path.exists():
             return jsonify({"error": f"Session not found: {session_id}"}), 404
 
-        data = load_session_data(ses)
+        data = load_session_data(session_path)
         if not data:
             return jsonify({"error": "Failed to load session"}), 500
 
         return jsonify(data)
 
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
@@ -374,6 +428,11 @@ def run_sweep():
         speaker = payload.get('speaker')
 
         update_led_state("sweep_running")
+
+        sweep_progress['running'] = True
+        sweep_progress['progress'] = 0
+        sweep_progress['message'] = "Starting sweep…"
+        sweep_progress['session_id'] = None
 
         # Detect audio devices
         devices = sd.query_devices()
@@ -414,6 +473,19 @@ def run_sweep():
         # Background thread
         # -----------------------------------------------------
         def run():
+
+            print("🔥🔥 run() background thread STARTED")
+
+            sweep_progress['session_id'] = None
+
+            def tick_progress():
+                while sweep_progress['running']:
+                    sweep_progress['progress'] = min(sweep_progress['progress'] + 5, 95)
+                    sweep_progress['message'] = "Sweep running…"
+                    time.sleep(1)
+
+            threading.Thread(target=tick_progress, daemon=True).start()
+
             # -----------------------------------------------------
             # 1. Run sweep
             # -----------------------------------------------------
@@ -478,6 +550,10 @@ def run_sweep():
                 cwd=BASEDIR,
                 check=False
             )
+
+            sweep_progress['progress'] = 100
+            sweep_progress['message'] = "Sweep complete"
+            sweep_progress['running'] = False
 
             update_led_state("sweep_complete")
 
