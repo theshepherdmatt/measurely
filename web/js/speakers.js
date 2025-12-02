@@ -12,8 +12,12 @@ export async function initSpeakers() {
     return;
   }
 
-  const index = await res.json();  // entire profile index
+  const index = await res.json();
   console.log('[spk] loaded profiles:', Object.keys(index).length);
+
+  // 🔥🔥 ADD THIS 🔥🔥
+  window.SPEAKERS = index;
+  console.log('[spk] window.SPEAKERS initialised');
 
   // 2. Find <select> element
   const sel = document.getElementById('speakerSel');

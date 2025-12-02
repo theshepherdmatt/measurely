@@ -541,8 +541,14 @@
 
         </main>
     </div>
+    <script type="module">
+    import { initSpeakers } from './js/speakers.js';
+    window.initSpeakers = initSpeakers;
+    initSpeakers();
+    </script>
 
     <script src="js/dashboard.js"></script>
+
     <script>
         window.rawMetrics = {
             peaks_dips: {

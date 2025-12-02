@@ -68,47 +68,58 @@
 
 
 
-            <!-- ====================  Speaker Positioning & Room Layout  ==================== -->
             <section class="card glass-panel animate-enter delay-1 room-layout-section">
 
                 <div class="room-layout-grid">
 
-                    <!-- LEFT CARD – Inputs -->
+                    <!-- LEFT CARD -->
                     <div class="room-card">
                         <h3 class="room-card-title">
                             <span class="step-badge">1</span>
-                            Speaker Positioning &amp; Room Layout
+                            Room Layout
                         </h3>
 
-                        <div id="room-viz-inputs">
-                            <div class="input-block">
-                                <label for="room-width">Room Width (m)</label>
-                                <input type="number" id="room-width" step="0.01">
-                            </div>
+                        <!-- ROOM DIMENSIONS -->
+                        <div class="input-section">
+                            <label class="section-label">Room Dimensions</label>
 
-                            <div class="input-block">
-                                <label for="room-length">Room Length (m)</label>
-                                <input type="number" id="room-length" step="0.01">
-                            </div>
+                            <div class="compact-row">
+                                <div class="input-block">
+                                    <label for="room-width">Width (m)</label>
+                                    <input type="number" id="room-width" step="0.01">
+                                </div>
 
-                            <div class="input-block">
-                                <label for="room-height">Room Height (m)</label>
-                                <input type="number" id="room-height" step="0.01">
-                            </div>
+                                <div class="input-block">
+                                    <label for="room-length">Length (m)</label>
+                                    <input type="number" id="room-length" step="0.01">
+                                </div>
 
-                            <div class="input-block">
-                                <label for="speaker-distance">Distance From Front Wall (m)</label>
-                                <input type="number" id="speaker-distance" step="0.01">
+                                <div class="input-block">
+                                    <label for="room-height">Height (m)</label>
+                                    <input type="number" id="room-height" step="0.01">
+                                </div>
                             </div>
+                        </div>
 
-                            <div class="input-block">
-                                <label for="speaker-width">Speaker Spacing (m)</label>
-                                <input type="number" id="speaker-width" step="0.01">
-                            </div>
+                        <!-- SPEAKER DISTANCING -->
+                        <div class="input-section">
+                            <label class="section-label">Speaker Distancing</label>
 
-                            <div class="input-block">
-                                <label for="listening-distance">Listening Distance (m)</label>
-                                <input type="number" id="listening-distance" step="0.01">
+                            <div class="compact-row">
+                                <div class="input-block">
+                                    <label for="speaker-distance">From Front Wall (m)</label>
+                                    <input type="number" id="speaker-distance" step="0.01">
+                                </div>
+
+                                <div class="input-block">
+                                    <label for="speaker-width">Spacing (m)</label>
+                                    <input type="number" id="speaker-width" step="0.01">
+                                </div>
+
+                                <div class="input-block">
+                                    <label for="listening-distance">Listening Distance (m)</label>
+                                    <input type="number" id="listening-distance" step="0.01">
+                                </div>
                             </div>
 
                             <div class="input-block">
@@ -123,7 +134,7 @@
                         </div>
                     </div>
 
-                    <!-- RIGHT CARD – Diagram -->
+                    <!-- RIGHT CARD – DIAGRAM -->
                     <div class="room-card">
                         <h3 class="room-card-title">
                             <span class="step-badge">1.a</span>
@@ -132,28 +143,35 @@
 
                         <div class="room-diagram-wrapper">
                             <svg id="room-diagram" viewBox="0 0 600 450" preserveAspectRatio="xMidYMid meet">
-                                <rect id="room-rect" x="0" y="0" width="600" height="450" fill="rgba(30,41,59,0.25)"
-                                    stroke="rgba(129,140,248,0.6)" stroke-width="2" stroke-dasharray="6 4" />
 
-                                <text id="room-front-label" x="300" y="20" text-anchor="middle"
-                                    fill="rgba(129,140,248,0.85)" font-size="14" font-weight="600">FRONT WALL</text>
+                                <rect id="room-rect"
+                                    x="0" y="0" width="600" height="450"
+                                    fill="rgba(30,41,59,0.25)"
+                                    stroke="rgba(129,140,248,0.7)"
+                                    stroke-width="3"
+                                    stroke-dasharray="8 6" />
 
-                                <image id="left-speaker" href="icons/spl.svg" width="32" height="32" />
-                                <image id="right-speaker" href="icons/spr.svg" width="32" height="32" />
+                                <text id="room-front-label"
+                                    x="300" y="22"
+                                    text-anchor="middle"
+                                    fill="rgba(129,140,248,0.85)"
+                                    font-size="16"
+                                    font-weight="700">
+                                    FRONT WALL
+                                </text>
 
-                                <line id="left-toe-line" stroke="rgba(236,72,153,0.5)" stroke-width="2"
-                                    stroke-dasharray="4 3" />
-                                <line id="right-toe-line" stroke="rgba(236,72,153,0.5)" stroke-width="2"
-                                    stroke-dasharray="4 3" />
+                                <image id="left-speaker"  class="plan-object" href="icons/spl.svg" width="54" height="54" />
+                                <image id="right-speaker" class="plan-object" href="icons/spr.svg" width="54" height="54" />
 
-                                <image id="sofa-icon" href="icons/sofa.svg" width="100" height="60" />
+                                <line id="left-toe-line"  class="toe-line" />
+                                <line id="right-toe-line" class="toe-line" />
 
-                                <text id="listening-pos-label" fill="rgba(248,250,252,0.9)" font-size="11"
-                                    text-anchor="middle">LISTENING POSITION</text>
+                                <image id="sofa-icon" class="plan-object" href="icons/sofa.svg" width="150" height="90" />
+
+                                <text id="listening-pos-label" text-anchor="middle">LISTENING POSITION</text>
                             </svg>
                         </div>
 
-                        <!-- ────────  EXPLAINER CARD (MOVED OUTSIDE WRAPPER) ──────── -->
                         <div class="explainer-card">
                             <h4 class="explainer-title">What's happening in your room?</h4>
 
@@ -162,17 +180,9 @@
                                 <span id="explainer-width">—</span> × <span id="explainer-length">—</span> m
                             </p>
 
-                            <p>
-                                <strong>Speaker spacing:</strong> <span id="explainer-spacing">—</span> m
-                            </p>
-
-                            <p>
-                                <strong>Listening distance:</strong> <span id="explainer-listen">—</span> m
-                            </p>
-
-                            <p>
-                                <strong>Ideal toe‑in angle:</strong> <span id="explainer-ideal-toe">—</span>°
-                            </p>
+                            <p><strong>Speaker spacing:</strong> <span id="explainer-spacing">—</span> m</p>
+                            <p><strong>Listening distance:</strong> <span id="explainer-listen">—</span> m</p>
+                            <p><strong>Ideal toe-in angle:</strong> <span id="explainer-ideal-toe">—</span>°</p>
 
                             <p class="explainer-reason" id="explainer-reason"></p>
                         </div>
@@ -180,6 +190,7 @@
 
                 </div>
             </section>
+
 
             <!-- ===================================================== -->
             <!-- CARD 2 — SPEAKER PROFILE -->

@@ -1,7 +1,8 @@
 {
   "quad_esl57": {
     "type": "spotlight",
-    "name": "57s",
+    "name": "Quad ESL 57",
+    "friendly_name": "57s",
     "brand": "Quad",
     "folder": "57",
     "target_curve": "target_quad_esl57.csv",
@@ -20,7 +21,8 @@
 
   "quad_esl63": {
     "type": "spotlight",
-    "name": "63s",
+    "name": "Quad ESL 63",
+    "friendly_name": "63s",
     "brand": "Quad",
     "folder": "63",
     "target_curve": "target_quad_esl63.csv",
@@ -39,7 +41,8 @@
 
   "gale_gs401": {
     "type": "spotlight",
-    "name": "Gales",
+    "name": "Gale GS401",
+    "friendly_name": "401s",
     "brand": "Gale",
     "folder": "gale401",
     "target_curve": "gale_gs401a_target.json",
@@ -59,7 +62,8 @@
 
   "quad_11l_classic": {
     "type": "spotlight",
-    "name": "Quads",
+    "name": "Quad 11L Classic",
+    "friendly_name": "11Ls",
     "brand": "Quad",
     "folder": "quad11l",
     "target_curve": "quad_11l_target.csv",
@@ -77,7 +81,8 @@
 
   "kef_ls50_meta": {
     "type": "spotlight",
-    "name": "KEFs",
+    "name": "KEF LS50 Meta",
+    "friendly_name": "LS50s",
     "brand": "KEF",
     "folder": "ls50",
     "target_curve": "kef_ls50_target.csv",
@@ -95,7 +100,8 @@
 
   "bw_805d3": {
     "type": "spotlight",
-    "name": "805 D3s",
+    "name": "B&W 805 D3",
+    "friendly_name": "805s",
     "brand": "B&W",
     "folder": "bw805d3",
     "target_curve": "bw_805d3_target.csv",
@@ -114,6 +120,7 @@
   "generic_bookshelf": {
     "type": "category",
     "name": "Standmounts",
+    "friendly_name": "standmounts",
     "brand": "Universal",
     "folder": "generic_bookshelf",
     "target_curve": "generic_bookshelf_target.csv",
@@ -131,6 +138,7 @@
   "generic_floorstander": {
     "type": "category",
     "name": "Floorstanders",
+    "friendly_name": "floorstanders",
     "brand": "Universal",
     "folder": "generic_floorstander",
     "target_curve": "generic_floorstander_target.csv",
@@ -148,6 +156,7 @@
   "standmount_sealed": {
     "type": "category",
     "name": "Sealed Standmounts",
+    "friendly_name": "sealed standmounts",
     "brand": "Universal",
     "folder": "standmount_sealed",
     "optimal_distance_ratio": 0.95,
@@ -162,6 +171,7 @@
   "standmount_front_ported": {
     "type": "category",
     "name": "Front-Ported Standmounts",
+    "friendly_name": "front ports",
     "brand": "Universal",
     "folder": "standmount_front_ported",
     "optimal_distance_ratio": 1.00,
@@ -176,6 +186,7 @@
   "standmount_rear_ported": {
     "type": "category",
     "name": "Rear-Ported Standmounts",
+    "friendly_name": "rear ports",
     "brand": "Universal",
     "folder": "standmount_rear_ported",
     "optimal_distance_ratio": 1.20,
@@ -190,6 +201,7 @@
   "floorstander_sealed": {
     "type": "category",
     "name": "Sealed Floorstanders",
+    "friendly_name": "sealed floorstanders",
     "brand": "Universal",
     "folder": "floorstander_sealed",
     "optimal_distance_ratio": 1.25,
@@ -204,6 +216,7 @@
   "floorstander_front_ported": {
     "type": "category",
     "name": "Front-Ported Floorstanders",
+    "friendly_name": "front-ported towers",
     "brand": "Universal",
     "folder": "floorstander_front_ported",
     "optimal_distance_ratio": 1.10,
@@ -218,6 +231,7 @@
   "floorstander_rear_ported": {
     "type": "category",
     "name": "Rear-Ported Floorstanders",
+    "friendly_name": "rear-ported towers",
     "brand": "Universal",
     "folder": "floorstander_rear_ported",
     "optimal_distance_ratio": 1.35,
@@ -232,6 +246,7 @@
   "coaxial_uniQ": {
     "type": "category",
     "name": "Tannoy Coax",
+    "friendly_name": "coaxials",
     "brand": "Universal",
     "folder": "coaxial",
     "notes": [
@@ -244,6 +259,7 @@
   "horn_loaded": {
     "type": "category",
     "name": "Horn Tweeters",
+    "friendly_name": "horns",
     "brand": "Universal",
     "folder": "horn",
     "notes": [
@@ -256,6 +272,7 @@
   "ribbon": {
     "type": "category",
     "name": "Ribbon Tweeters",
+    "friendly_name": "ribbons",
     "brand": "Universal",
     "folder": "ribbon",
     "notes": [
@@ -268,6 +285,7 @@
   "amt_tweeter": {
     "type": "category",
     "name": "AMT Tweeters",
+    "friendly_name": "AMTs",
     "brand": "Universal",
     "folder": "amt",
     "notes": [
@@ -280,6 +298,7 @@
   "planar_magnetic": {
     "type": "category",
     "name": "Planar Magnetics",
+    "friendly_name": "planars",
     "brand": "Universal",
     "folder": "planar",
     "notes": [
@@ -292,6 +311,7 @@
   "electrostatic_generic": {
     "type": "category",
     "name": "Electrostatic Panels",
+    "friendly_name": "electrostats",
     "brand": "Universal",
     "folder": "electrostatic",
     "notes": [
@@ -304,6 +324,7 @@
   "dipole": {
     "type": "category",
     "name": "Bipole Surrounds",
+    "friendly_name": "bipoles",
     "brand": "Universal",
     "folder": "dipole",
     "notes": [
@@ -316,6 +337,7 @@
   "cardioid": {
     "type": "category",
     "name": "Cardioid Hybrids",
+    "friendly_name": "cardioids",
     "brand": "Universal",
     "folder": "cardioid",
     "notes": [
@@ -328,6 +350,7 @@
   "studio_nearfield": {
     "type": "category",
     "name": "Nearfield Studio Monitors",
+    "friendly_name": "nearfields",
     "brand": "Universal",
     "folder": "studio_nearfield",
     "notes": [
@@ -340,6 +363,7 @@
   "studio_midfield": {
     "type": "category",
     "name": "Midfield Studio Monitors",
+    "friendly_name": "midfields",
     "brand": "Universal",
     "folder": "studio_midfield",
     "notes": [
@@ -349,4 +373,3 @@
     ]
   }
 }
-

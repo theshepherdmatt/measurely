@@ -496,6 +496,7 @@ class MeasurelyDashboard {
         /* ---------------- FIXED OVERALL BUDDY PHRASE WITH LOGGING + TAG EXPANSION ---------------- */
         (async () => {
             console.log("=== OVERALL PHRASE DEBUG START ===");
+            console.log("SPEAKERS:", window.SPEAKERS);
 
             const data = this.currentData || {};
             console.log("CurrentData:", data);
@@ -510,6 +511,8 @@ class MeasurelyDashboard {
                 const room = data.room || {};
                 const scores = data.scores || {};
 
+                const spk = window.SPEAKERS?.[room.speaker_key] || {};
+
                 const map = {
                     overall_score: scores.overall,
                     room_width: room.width_m,
@@ -518,8 +521,11 @@ class MeasurelyDashboard {
                     spk_distance: room.spk_front_m,
                     toe_in: room.toe_in_deg,
                     listener_distance: room.listener_front_m,
-                    speaker_name: room.speaker_key || "your speakers"
+                    speaker_friendly_name: spk.friendly_name || spk.name || "",
+                    speaker_name: spk.friendly_name || spk.name || ""
                 };
+
+
 
                 let out = str;
 

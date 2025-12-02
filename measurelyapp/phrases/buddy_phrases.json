@@ -138,22 +138,22 @@
   },
 
   "overall_excellent": [
-    "Spot-on work — an overall score of {{overall_score}} in a {{room_width}}m × {{room_length}}m room with your {{speaker_name}} is absolutely top-tier.",
-    "You’ve hit the sweet spot. In this {{room_width}}m × {{room_length}}m space, your {{speaker_name}} are performing exactly as they should.",
+    "Spot-on work — an overall score of {{overall_score}} in a {{room_width}}m × {{room_length}}m room with your {{speaker_friendly_name}} is absolutely top-tier.",
+    "You’ve hit the sweet spot. In this {{room_width}}m × {{room_length}}m space, your {{speaker_friendly_name}} are performing exactly as they should.",
     "The room is basically transparent — nothing in this layout (speakers {{spk_distance}}m out, listener at {{listener_distance}}m) is holding the system back.",
     "Clean, controlled, and effortless. Enjoy it — this is reference-level in a room of this size."
   ],
 
   "overall_good": [
-    "Really strong baseline — an overall score of {{overall_score}} in a {{room_width}}m × {{room_length}}m room with your {{speaker_name}} is a great place to be.",
+    "Really strong baseline — an overall score of {{overall_score}} in a {{room_width}}m × {{room_length}}m room with your {{speaker_friendly_name}} is a great place to be.",
     "Great foundation. With speakers {{spk_distance}}m from the wall and a listening distance of {{listener_distance}}m, only small tweaks remain.",
     "The main problems are already sorted — an overall score of {{overall_score}} in this {{room_width}}m × {{room_length}}m space is pretty damn solid.",
-    "A tight setup. Touch up the remaining yellows and your {{speaker_name}} will be right on the money."
+    "A tight setup. Touch up the remaining yellows and your {{speaker_friendly_name}} will be right on the money."
   ],
 
   "overall_fair": [
-    "Your room is shaping the sound — an overall score of {{overall_score}} in a {{room_width}}m × {{room_length}}m space with your {{speaker_name}} is a solid baseline.",
-    "You're close. One key issue is holding the system back — tackle that and your {{speaker_name}} will open up beautifully in this {{room_width}}m × {{room_length}}m room.",
+    "Your room is shaping the sound — an overall score of {{overall_score}} in a {{room_width}}m × {{room_length}}m space with your {{speaker_friendly_name}} is a solid baseline.",
+    "You're close. One key issue is holding the system back — tackle that and your {{speaker_friendly_name}} will open up beautifully in this {{room_width}}m × {{room_length}}m room.",
     "Some rough edges, totally normal. With this layout (speakers {{spk_distance}}m out, listener at {{listener_distance}}m), you’re not far off a really balanced setup.",
     "Room is adding a bit of character — in a {{room_width}}m × {{room_length}}m room this is expected. Sort the worst metric and you’ll hear an immediate lift."
   ],
@@ -161,7 +161,7 @@
   "overall_poor": [
     "Don’t worry — with an overall score of {{overall_score}} in a {{room_width}}m × {{room_length}}m room, this is totally normal for an early setup. Easy wins ahead.",
     "Room interaction is dominating, especially at this layout (speakers {{spk_distance}}m out, listener at {{listener_distance}}m). A few moves will make a big difference.",
-    "Acoustics aren’t cooperating yet, but everything here is fixable — especially for {{speaker_name}} in a room this size.",
+    "Acoustics aren’t cooperating yet, but everything here is fixable — especially for {{speaker_friendly_name}} in a room this size.",
     "A messy start, but absolutely salvageable. Tidy up the big issues, re-sweep, and you’ll see the score climb fast."
   ],
 
@@ -230,7 +230,7 @@
       "Move speakers forward 5–10 cm for extra low-end reach.",
       "Match ear height to the tweeter for more top-end clarity.",
       "Widen speakers 5–8 cm to open the mids and lows.",
-      "Your {{speaker_name}} often gain cleaner extension when placed slightly wider — try +5 cm from current spacing."
+      "Your {{speaker_friendly_name}} often gain cleaner extension when placed slightly wider — try +5 cm from current spacing."
     ],
     "okay": [
       "Pull speakers 10–20 cm from the wall for more extension.",
@@ -251,7 +251,7 @@
       "Try 1–2° of toe-in to lock vocals even tighter.",
       "Match both speaker distances exactly — millimetres matter.",
       "Adjust one speaker's height 1–2 cm if the centre image drifts.",
-      "Your {{speaker_name}} centre incredibly well — a 1° toe-in tune will dial it into perfection."
+      "Your {{speaker_friendly_name}} centre incredibly well — a 1° toe-in tune will dial it into perfection."
     ],
     "good": [
       "Toe-in by 2–3° to tighten the centre image.",
@@ -263,7 +263,7 @@
       "Shift the seat 5–10 cm if the image leans to one side.",
       "Reduce toe-in if mids feel too shouty.",
       "Widen speakers 5–10 cm to rebalance things.",
-      "Your {{speaker_name}} benefit from wider spacing in this {{room_width}}m room — try +8 cm."
+      "Your {{speaker_friendly_name}} benefit from wider spacing in this {{room_width}}m room — try +8 cm."
     ],
     "needs_work": [
       "Re-measure distances precisely — no eyeballing.",
@@ -317,7 +317,7 @@
       "Put a rug directly between speakers and seat.",
       "Add cushions/throws to nearby bare walls.",
       "Reduce toe-in if treble feels too strong.",
-      "Your {{speaker_name}} are exciting the room — shifting to {{listener_distance}}m listening distance tightens decay."
+      "Your {{speaker_friendly_name}} are exciting the room — shifting to {{listener_distance}}m listening distance tightens decay."
     ],
     "needs_work": [
       "Add soft surfaces ASAP — rug, curtains, throws.",

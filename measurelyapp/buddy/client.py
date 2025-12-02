@@ -51,7 +51,9 @@ def _fill_tags(text: str, scores: dict, room: dict, analysis: dict, speaker_info
         "toe_in": safe_fmt(room.get("toe_in_deg"), "{:.0f}"),
         "listener_distance": safe_fmt(room.get("listener_front_m"), "{:.2f}"),
 
-        "speaker_name": speaker_info.get("name", "your speakers"),
+        "speaker_friendly_name": speaker_info.get("friendly_name") or speaker_info.get("name") or "your speakers",
+        "speaker_name": speaker_info.get("friendly_name") or speaker_info.get("name") or "your speakers",
+
         "speaker_brand": speaker_info.get("brand", ""),
         "speaker_key": analysis.get("speaker_profile", ""),
 
