@@ -1581,6 +1581,12 @@ input[type='checkbox'] {
     font-size: 0.85rem;
 }
 
+.sweep-card .sweep-title {
+    color: var(--c-accent);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
 /* MOBILE: STACK */
 @media (max-width: 768px) {
     #sweepHistoryGrid {

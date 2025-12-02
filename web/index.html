@@ -444,38 +444,46 @@
                     <p id="frequencyChartDescription" class="hidden" aria-hidden="true"></p>
                 </div>
 
-                <!-- Session History Buttons (Hidden by default logic but keeping structure) -->
-                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05);">
-                    <h3 class="card-title">Session History</h3>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button id="sessionLatestBtn" class="session-btn session-active">Latest</button>
-                        <button id="sessionPreviousBtn" class="session-btn">Previous</button>
-                        <button id="sessionLastBtn" class="session-btn">Oldest</button>
-                    </div>
+                <!-- Session History Buttons (Replaced with Sweep Navigation) -->
+                <h3 class="card-title" style="display:flex; align-items:center; gap:0.5rem; margin-top:2rem;">
+                    <img src="icons/dave.svg" style="width:18px; opacity:0.9;">
+                    Sweeps
+                </h3>
 
-                    <!-- Hidden metrics container for JS -->
-                    <div id="sessionMetrics" class="hidden">
-                        <span id="sessOverallScore"></span><span id="sessOverallStatus"></span>
-                        <span id="sessPeaksDips"></span><span id="sessReflections"></span>
-                        <span id="sessBandwidth"></span><span id="sessBalance"></span>
-                        <span id="sessSmoothness"></span><span id="sessReverb"></span>
-                        <span id="sessBass"></span><span id="sessMid"></span>
-                        <span id="sessTreble"></span><span id="sessAir"></span>
-
-                        <!-- Added missing IDs that might be called -->
-                        <span id="bassLevel"></span><span id="midLevel"></span>
-                        <span id="trebleLevel"></span><span id="airLevel"></span>
-
-                        <div id="bassBar"></div>
-                        <div id="midBar"></div>
-                        <div id="trebleBar"></div>
-                        <div id="airBar"></div>
-                    </div>
+                <div id="sweepNav" style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
+                    <button class="session-btn session-active" data-sweep="0">Sweep 1</button>
+                    <button class="session-btn" data-sweep="1">Sweep 2</button>
+                    <button class="session-btn" data-sweep="2">Sweep 3</button>
+                    <button class="session-btn" data-sweep="3">Sweep 4</button>
                 </div>
+
+                <!-- Hidden metrics container for JS -->
+                <div id="sessionMetrics" class="hidden">
+                    <span id="sessOverallScore"></span><span id="sessOverallStatus"></span>
+                    <span id="sessPeaksDips"></span><span id="sessReflections"></span>
+                    <span id="sessBandwidth"></span><span id="sessBalance"></span>
+                    <span id="sessSmoothness"></span><span id="sessReverb"></span>
+                    <span id="sessBass"></span><span id="sessMid"></span>
+                    <span id="sessTreble"></span><span id="sessAir"></span>
+
+                    <!-- Extra band IDs -->
+                    <span id="bassLevel"></span><span id="midLevel"></span>
+                    <span id="trebleLevel"></span><span id="airLevel"></span>
+
+                    <div id="bassBar"></div>
+                    <div id="midBar"></div>
+                    <div id="trebleBar"></div>
+                    <div id="airBar"></div>
+                </div>
+
 
                 <!-- SWEEP HISTORY – BAKED IN -->
                 <div class="card glass-panel animate-enter delay-4" style="margin-top: 2rem;">
-                    <h2 style="margin-bottom: 1rem;">Sweep History</h2>
+                    <h2 style="margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;">
+                        <img src="icons/dave.svg" style="width:22px; opacity:0.9;">
+                        Sweep History
+                    </h2>
+
                     <p style="opacity: 0.7; margin-top: -0.5rem; margin-bottom: 1.5rem;">
                         Compare your last four sweeps at a glance
                     </p>
@@ -644,13 +652,51 @@
             else console.error(`Failed to load session ${sessionId}`);
         }
 
-        document.querySelectorAll('.session-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.session-btn').forEach(b => b.classList.remove('session-active'));
+        // Sweep Navigation — connects Sweep 1–4 buttons to sessionHistory[]
+        document.querySelectorAll('#sweepNav .session-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const index = parseInt(btn.dataset.sweep, 10);
+                console.log("Sweep clicked:", index);
+
+                // highlight active button
+                document.querySelectorAll('#sweepNav .session-btn')
+                    .forEach(b => b.classList.remove('session-active'));
                 btn.classList.add('session-active');
+
+                // fetch session list
+                const listRes = await fetch('/api/sessions/all');
+                const list = await listRes.json();
+                console.log("Session list:", list);
+
+                if (!list[index]) {
+                    console.error("No session at this index");
+                    return;
+                }
+
+                const sessionId = list[index].id || list[index];
+                console.log("Loading session:", sessionId);
+
+                // fetch sweep data
+                const sweepRes = await fetch(`/api/session/${sessionId}`);
+                const sweepData = await sweepRes.json();
+                console.log("Sweep data:", sweepData);
+
+                // ⭐ update the data the dashboard uses ⭐
+                window.dashboard.currentData = sweepData;
+                window.dashboard.data = sweepData;
+                window.dashboard.latestData = sweepData;
+
+                // ⭐ REDRAW THE WHOLE DASHBOARD ⭐
+                window.dashboard.updateDashboard();
+
+                // ⭐ RESTORE ACTIVE CHANNEL (left/right/both) ⭐
+                const active = document.querySelector(".channel-active")?.dataset.channel || "both";
+                window.dashboard.showChannel(active);
             });
         });
 
+        
+        
         async function loadSessionMetrics(sessionId) {
             try {
                 const res = await fetch(`/api/session/${sessionId}`);
