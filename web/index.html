@@ -473,12 +473,71 @@
                     </div>
                 </div>
 
-                <!-- SWEEP HISTORY TIMELINE SECTION -->
-                <div id="sweepHistorySection" class="sweep-history-container"></div>
+                <!-- SWEEP HISTORY – BAKED IN -->
+                <div class="card glass-panel animate-enter delay-4" style="margin-top: 2rem;">
+                    <h2 style="margin-bottom: 1rem;">Sweep History</h2>
+                    <p style="opacity: 0.7; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+                        Compare your last four sweeps at a glance
+                    </p>
 
+                    <div id="sweepHistoryGrid" class="grid-4-mobile grid-2 tablet-grid-4">
+                        
+                        <!-- SWEEP CARD TEMPLATE (four of these will be filled by JS) -->
+                        <div class="card glass-panel sweep-card" data-index="0">
+                            <h3 class="sweep-title">Sweep 1</h3>
+                            <div class="sweep-score">--</div>
+                            <div class="sweep-metrics">
+                                <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
+                                <div><span>Reflections</span><span class="m-reflections">--</span></div>
+                                <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
+                                <div><span>Balance</span><span class="m-balance">--</span></div>
+                                <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
+                                <div><span>Reverb</span><span class="m-reverb">--</span></div>
+                            </div>
+                        </div>
+
+                        <div class="card glass-panel sweep-card" data-index="1">
+                            <h3 class="sweep-title">Sweep 2</h3>
+                            <div class="sweep-score">--</div>
+                            <div class="sweep-metrics">
+                                <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
+                                <div><span>Reflections</span><span class="m-reflections">--</span></div>
+                                <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
+                                <div><span>Balance</span><span class="m-balance">--</span></div>
+                                <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
+                                <div><span>Reverb</span><span class="m-reverb">--</span></div>
+                            </div>
+                        </div>
+
+                        <div class="card glass-panel sweep-card" data-index="2">
+                            <h3 class="sweep-title">Sweep 3</h3>
+                            <div class="sweep-score">--</div>
+                            <div class="sweep-metrics">
+                                <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
+                                <div><span>Reflections</span><span class="m-reflections">--</span></div>
+                                <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
+                                <div><span>Balance</span><span class="m-balance">--</span></div>
+                                <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
+                                <div><span>Reverb</span><span class="m-reverb">--</span></div>
+                            </div>
+                        </div>
+
+                        <div class="card glass-panel sweep-card" data-index="3">
+                            <h3 class="sweep-title">Sweep 4</h3>
+                            <div class="sweep-score">--</div>
+                            <div class="sweep-metrics">
+                                <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
+                                <div><span>Reflections</span><span class="m-reflections">--</span></div>
+                                <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
+                                <div><span>Balance</span><span class="m-balance">--</span></div>
+                                <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
+                                <div><span>Reverb</span><span class="m-reverb">--</span></div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
 
-            </div>
 
         </main>
     </div>
@@ -722,7 +781,6 @@
             if (el) el.textContent = new Date().toLocaleTimeString();
         }, 1000);
     </script>
-    <script src="js/sweep-history.js"></script>
 </body>
 
 </html>

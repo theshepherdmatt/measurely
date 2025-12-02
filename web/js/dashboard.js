@@ -207,6 +207,40 @@ class MeasurelyDashboard {
         if (dipEl) dipEl.textContent = numDips;
     }
 
+    async loadSweepHistory() {
+        let sessions = [];
+        try {
+            sessions = await fetch("/api/sessions/all").then(r => r.json());
+        } catch {
+            return;
+        }
+
+        const recent = sessions.slice(0, 4);
+        const cards = document.querySelectorAll(".sweep-card");
+
+        for (let i = 0; i < cards.length; i++) {
+            const card = cards[i];
+            const id = recent[i]?.id;
+
+            if (!id) {
+                card.querySelector(".sweep-score").textContent = "--";
+                card.querySelectorAll(".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-reverb")
+                    .forEach(e => e.textContent = "--");
+                continue;
+            }
+
+            const data = await fetch(`/api/session/${id}`).then(r => r.json());
+
+            card.querySelector(".sweep-score").textContent = data.overall_score?.toFixed(1) ?? "--";
+            card.querySelector(".m-peaks").textContent = data.peaks_dips?.toFixed(1) ?? "--";
+            card.querySelector(".m-reflections").textContent = data.reflections?.toFixed(1) ?? "--";
+            card.querySelector(".m-bandwidth").textContent = data.bandwidth?.toFixed(1) ?? "--";
+            card.querySelector(".m-balance").textContent = data.balance?.toFixed(1) ?? "--";
+            card.querySelector(".m-smoothness").textContent = data.smoothness?.toFixed(1) ?? "--";
+            card.querySelector(".m-reverb").textContent = data.reverb?.toFixed(1) ?? "--";
+        }
+    }
+
 
     /* ============================================================
     INIT
@@ -401,7 +435,10 @@ class MeasurelyDashboard {
         this.updateDetailedAnalysis();
         this.updateModes();
 
-        // NEW: Call the dedicated tips/tweaks updater, relying on a safety check inside
+        // 🔥 ADD THIS — loads the 4 sweep cards into the dashboard
+        this.loadSweepHistory();
+
+        // Tips/tweaks updater
         this.updateTipsAndTweaksCards(this.currentData);
 
         if (window.updateRoomCanvas && this.currentData.room) {

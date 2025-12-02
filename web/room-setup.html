@@ -2,377 +2,328 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Measurely – Room Setup</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Measurely – Room Setup</title>
 
-  <link rel="icon" type="image/svg+xml" href="icons/dave.svg">
-  <link rel="stylesheet" href="measurely.css">
-  <script src="js/plotly.min.js"></script>
+    <link rel="icon" type="image/svg+xml" href="icons/dave.svg">
+    <link rel="stylesheet" href="measurely.css">
+    <script src="js/plotly.min.js"></script>
 </head>
 
 <body>
 
-<div class="app-layout">
+    <div class="app-layout">
 
-  <!-- MOBILE OVERLAY -->
-  <div id="sidebar-overlay"
-       style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; backdrop-filter: blur(4px);">
-  </div>
+        <!-- MOBILE OVERLAY -->
+        <div id="sidebar-overlay"
+            style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; backdrop-filter: blur(4px);">
+        </div>
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar" class="sidebar">
-    <div class="sidebar-logo">
-      <img src="icons/mainlogo.svg" alt="Measurely logo" style="height: 46px;">
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-logo">
+                <img src="icons/mainlogo.svg" alt="Measurely logo" style="height: 46px;">
+            </div>
+
+            <nav>
+                <a href="index.html" class="nav-item">
+                    <img src="icons/dashboard.svg" alt="">Dashboard
+                </a>
+
+                <a href="room-setup.html" class="nav-item active">
+                    <img src="icons/home.svg" alt="">Room Setup
+                </a>
+
+                <a href="tipsandtweaks.html" class="nav-item">
+                    <img src="icons/lightbulb.svg" alt="">Tips & Tweaks
+                </a>
+            </nav>
+        </aside>
+
+          <!-- MAIN CONTENT -->
+          <main id="main-content" class="main-content">
+
+          <header class="header animate-enter">
+
+              <!-- FIRST ROW (title + hamburger) -->
+              <div class="header-title"
+                  style="display:flex; align-items:center; gap:1rem; width:100%;">
+                  <div>
+                      <h1>Set Your Room Up</h1>
+                      <p>Accurate inputs mean tighter predictions.</p>
+                  </div>
+
+                  <button id="mobile-menu-btn" class="btn btn-secondary"
+                          style="padding:0.5rem; display:none; margin-left:auto;">
+                      <img src="icons/bars.svg" style="width:24px;">
+                  </button>
+              </div>
+
+              <!-- SECOND ROW (EMPTY) — this is the missing piece -->
+              <div style="height:1px;"></div>
+
+          </header>
+
+
+
+
+            <!-- ====================  Speaker Positioning & Room Layout  ==================== -->
+            <section class="card glass-panel animate-enter delay-1 room-layout-section">
+
+                <div class="room-layout-grid">
+
+                    <!-- LEFT CARD – Inputs -->
+                    <div class="room-card">
+                        <h3 class="room-card-title">
+                            <span class="step-badge">1</span>
+                            Speaker Positioning &amp; Room Layout
+                        </h3>
+
+                        <div id="room-viz-inputs">
+                            <div class="input-block">
+                                <label for="room-width">Room Width (m)</label>
+                                <input type="number" id="room-width" step="0.01">
+                            </div>
+
+                            <div class="input-block">
+                                <label for="room-length">Room Length (m)</label>
+                                <input type="number" id="room-length" step="0.01">
+                            </div>
+
+                            <div class="input-block">
+                                <label for="room-height">Room Height (m)</label>
+                                <input type="number" id="room-height" step="0.01">
+                            </div>
+
+                            <div class="input-block">
+                                <label for="speaker-distance">Distance From Front Wall (m)</label>
+                                <input type="number" id="speaker-distance" step="0.01">
+                            </div>
+
+                            <div class="input-block">
+                                <label for="speaker-width">Speaker Spacing (m)</label>
+                                <input type="number" id="speaker-width" step="0.01">
+                            </div>
+
+                            <div class="input-block">
+                                <label for="listening-distance">Listening Distance (m)</label>
+                                <input type="number" id="listening-distance" step="0.01">
+                            </div>
+
+                            <div class="input-block">
+                                <label for="speaker-type">Design Type</label>
+                                <select id="speaker-type">
+                                    <option value="sealed">Sealed / Infinite Baffle</option>
+                                    <option value="port_front">Ported (Front)</option>
+                                    <option value="port_rear">Ported (Rear)</option>
+                                    <option value="dipole">Dipole / Open Baffle</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT CARD – Diagram -->
+                    <div class="room-card">
+                        <h3 class="room-card-title">
+                            <span class="step-badge">1.a</span>
+                            Room Layout Diagram
+                        </h3>
+
+                        <div class="room-diagram-wrapper">
+                            <svg id="room-diagram" viewBox="0 0 600 450" preserveAspectRatio="xMidYMid meet">
+                                <rect id="room-rect" x="0" y="0" width="600" height="450" fill="rgba(30,41,59,0.25)"
+                                    stroke="rgba(129,140,248,0.6)" stroke-width="2" stroke-dasharray="6 4" />
+
+                                <text id="room-front-label" x="300" y="20" text-anchor="middle"
+                                    fill="rgba(129,140,248,0.85)" font-size="14" font-weight="600">FRONT WALL</text>
+
+                                <image id="left-speaker" href="icons/spl.svg" width="32" height="32" />
+                                <image id="right-speaker" href="icons/spr.svg" width="32" height="32" />
+
+                                <line id="left-toe-line" stroke="rgba(236,72,153,0.5)" stroke-width="2"
+                                    stroke-dasharray="4 3" />
+                                <line id="right-toe-line" stroke="rgba(236,72,153,0.5)" stroke-width="2"
+                                    stroke-dasharray="4 3" />
+
+                                <image id="sofa-icon" href="icons/sofa.svg" width="100" height="60" />
+
+                                <text id="listening-pos-label" fill="rgba(248,250,252,0.9)" font-size="11"
+                                    text-anchor="middle">LISTENING POSITION</text>
+                            </svg>
+                        </div>
+
+                        <!-- ────────  EXPLAINER CARD (MOVED OUTSIDE WRAPPER) ──────── -->
+                        <div class="explainer-card">
+                            <h4 class="explainer-title">What's happening in your room?</h4>
+
+                            <p>
+                                <strong>Room size:</strong>
+                                <span id="explainer-width">—</span> × <span id="explainer-length">—</span> m
+                            </p>
+
+                            <p>
+                                <strong>Speaker spacing:</strong> <span id="explainer-spacing">—</span> m
+                            </p>
+
+                            <p>
+                                <strong>Listening distance:</strong> <span id="explainer-listen">—</span> m
+                            </p>
+
+                            <p>
+                                <strong>Ideal toe‑in angle:</strong> <span id="explainer-ideal-toe">—</span>°
+                            </p>
+
+                            <p class="explainer-reason" id="explainer-reason"></p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- CARD 2 — SPEAKER PROFILE -->
+            <!-- ===================================================== -->
+            <section class="card glass-panel animate-enter delay-2" style="margin-bottom:2rem;">
+
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
+                  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+                    <div style="width:32px; height:32px; background:rgba(249,115,22,0.2); color:#fdba74;
+                    border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
+                        2
+                    </div>
+                    <h2 style="margin:0; font-size:1.25rem;">Speaker Profile</h2>
+                </div>
+
+                <label for="speakerSel">Select Speaker Model</label>
+                <select id="speakerSel" style="font-size:1.1rem; padding:1rem;"></select>
+
+                <p id="speakerHint" style="font-size:0.9rem; color:var(--c-text-muted); margin-top:0.75rem;">
+                    Select your model to load frequency limits and target behaviour.
+                </p>
+
+                <p style="font-size:0.9rem; color:var(--c-text-muted); margin-top:0.75rem;">
+                    Choose your speaker model to load frequency limits and behaviour patterns.
+                </p>
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- CARD 3 — MATERIALS & FURNISHINGS -->
+            <!-- ===================================================== -->
+            <section class="card glass-panel animate-enter delay-3" style="margin-bottom:2rem;">
+
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
+                  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+                    <div style="width:32px; height:32px; background:rgba(168,85,247,0.2); color:#c084fc;
+                    border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
+                        3
+                    </div>
+                    <h2 style="margin:0; font-size:1.25rem;">Materials & Furnishings</h2>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 2fr; gap:2rem;">
+
+                    <div>
+                        <label for="floor-material">Base Floor Surface</label>
+                        <select id="floor-material">
+                            <option value="hard">Hardwood / Tile / Laminate</option>
+                            <option value="carpet">Wall-to-Wall Carpet</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="room-echo">Room Liveliness</label>
+                        <div
+                            style="background:rgba(99,102,241,0.05); padding:1rem; border-radius:12px; margin-bottom:1.5rem;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:white;">How "Live" is the room?</span>
+                                <span id="roomEchoValue" style="color:var(--c-accent); font-weight:700;">20%</span>
+                            </div>
+                            <input type="range" id="room-echo" min="0" max="100" step="5">
+                            <div
+                                style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--c-text-muted); margin-top:0.5rem;">
+                                <span>Dry</span><span>Normal</span><span>Echoey</span>
+                            </div>
+                        </div>
+
+                        <label>Room Contents</label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+
+                            <label class="checkbox-group">
+                                <input type="checkbox" id="opt-area-rug">
+                                <div>
+                                    <div style="color:white; font-weight:500;">Area Rug</div>
+                                </div>
+                            </label>
+
+                            <label class="checkbox-group">
+                                <input type="checkbox" id="opt-curtains">
+                                <div>
+                                    <div style="color:white; font-weight:500;">Curtains / Blinds</div>
+                                </div>
+                            </label>
+
+                            <label class="checkbox-group">
+                                <input type="checkbox" id="opt-sofa">
+                                <div>
+                                    <div style="color:white; font-weight:500;">Large Sofa</div>
+                                </div>
+                            </label>
+
+                            <label class="checkbox-group">
+                                <input type="checkbox" id="opt-wallart">
+                                <div>
+                                    <div style="color:white; font-weight:500;">Wall Art / Shelves</div>
+                                </div>
+                            </label>
+
+                            <label class="checkbox-group" style="grid-column: span 2;">
+                                <input type="checkbox" id="opt-barewalls">
+                                <div>
+                                    <div style="color:white; font-weight:500;">Mostly Bare Walls</div>
+                                </div>
+                            </label>
+
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ===================================================== -->
+            <!-- SAVE BUTTON -->
+            <!-- ===================================================== -->
+            <section style="margin-bottom:3rem;">
+                <button id="save-all-btn" class="btn btn-primary" style="width:100%; padding:1rem; font-size:1.1rem;">
+                    Save Setup
+                </button>
+            </section>
+
+        </main>
     </div>
 
-    <nav>
-      <a href="index.html" class="nav-item">
-        <img src="icons/dashboard.svg" alt="">Dashboard
-      </a>
-
-      <a href="room-setup.html" class="nav-item active">
-        <img src="icons/home.svg" alt="">Room Setup
-      </a>
-
-      <a href="tipsandtweaks.html" class="nav-item">
-        <img src="icons/lightbulb.svg" alt="">Tips & Tweaks
-      </a>
-    </nav>
-  </aside>
-
-
-  <!-- MAIN CONTENT -->
-  <main id="main-content" class="main-content">
-
-    <!-- HEADER -->
-    <header class="header animate-enter">
-      <div style="display:flex; align-items:center; gap:1rem; width:100%;">
-        <div>
-          <h1>Set Your Room Up With Dave</h1>
-          <p>Accurate inputs mean tighter bass predictions and smarter reflection modelling.</p>
-        </div>
-
-        <button id="mobile-menu-btn" class="btn btn-secondary"
-                style="padding:0.5rem; display:none; margin-left:auto;">
-          <img src="icons/bars.svg" style="width:24px;">
-        </button>
-      </div>
-    </header>
-
-
-    <!-- ===================================================== -->
-    <!-- CARD 1 — SPEAKER POSITIONING & ROOM LAYOUT -->
-    <!-- ===================================================== -->
-    <section class="card glass-panel animate-enter delay-1" style="margin-bottom:2rem;">
-
-      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
-                  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
-        <div style="width:32px; height:32px; background:rgba(20,184,166,0.2); color:#5eead4;
-                    border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-          1
-        </div>
-        <h2 style="margin:0; font-size:1.25rem;">Speaker Positioning & Room Layout</h2>
-      </div>
-
-      <div style="display:grid; grid-template-columns:350px 1fr; gap:2rem;">
-
-        <!-- LEFT INPUTS -->
-        <div>
-
-          <!-- ROOM DIMENSIONS -->
-          <div class="input-block">
-            <label for="room-width">Room Width (m)</label>
-            <input type="number" id="room-width" step="0.01">
-          </div>
-
-          <div class="input-block">
-            <label for="room-length">Room Length (m)</label>
-            <input type="number" id="room-length" step="0.01">
-          </div>
-
-          <div class="input-block">
-            <label for="room-height">Room Height (m)</label>
-            <input type="number" id="room-height" step="0.01">
-          </div>
-
-          <!-- SPEAKER -->
-          <div class="input-block">
-            <label for="speaker-distance">Distance From Front Wall (m)</label>
-            <input type="number" id="speaker-distance" step="0.01">
-          </div>
-
-          <div class="input-block">
-            <label for="speaker-width">Speaker Spacing (m)</label>
-            <input type="number" id="speaker-width" step="0.01">
-          </div>
-
-          <div class="input-block">
-            <label for="listening-distance">Listening Distance (m)</label>
-            <input type="number" id="listening-distance" step="0.01">
-          </div>
-
-          <div class="input-block">
-            <label for="toe-angle">Toe-in Angle (°)</label>
-            <input type="number" id="toe-angle">
-          </div>
-
-          <div class="input-block">
-            <label for="speaker-type">Design Type</label>
-            <select id="speaker-type">
-              <option value="sealed">Sealed / Infinite Baffle</option>
-              <option value="port_front">Ported (Front)</option>
-              <option value="port_rear">Ported (Rear)</option>
-              <option value="dipole">Dipole / Open Baffle</option>
-            </select>
-          </div>
-
-        </div>
-
-        <!-- RIGHT DIAGRAM -->
-        <div>
-
-          <div class="room-diagram-wrapper"
-              style="
-                  width: 100%;
-                  max-width: 100%;
-                  margin: 0 auto;
-                  aspect-ratio: 4 / 3;
-                  position: relative;
-                  overflow: hidden;
-              ">
-
-            <svg id="room-diagram"
-                viewBox="0 0 600 450"
-                preserveAspectRatio="xMidYMid meet"
-                style="
-                    position: absolute;
-                    inset: 0;
-                    width: 100%;
-                    height: 100%;
-                    display: block;
-                ">
-
-
-              <rect width="600" height="450" fill="rgba(15,23,42,0.4)" />
-
-              <rect id="room-rect"
-                    x="75" y="50" width="450" height="300"
-                    fill="rgba(30,41,59,0.3)"
-                    stroke="rgba(129,140,248,0.6)"
-                    stroke-width="2"
-                    stroke-dasharray="5,5" />
-
-              <text x="300" y="35" text-anchor="middle"
-                    fill="rgba(129,140,248,0.8)" font-size="12" font-weight="600">
-                FRONT WALL
-              </text>
-
-              <g id="left-speaker">
-                <image href="icons/spl.svg" width="28" height="28" />
-              </g>
-
-              <g id="right-speaker">
-                <image href="icons/spr.svg" width="28" height="28" />
-              </g>
-
-              <g id="sofa-icon">
-                <image href="icons/sofa.svg" width="90" height="52" />
-              </g>
-
-              <text id="listening-pos-label"
-                    fill="rgba(248,250,252,0.9)" font-size="10" text-anchor="middle">
-                LISTENING POSITION
-              </text>
-
-              <line id="left-toe-line"
-                    stroke="rgba(236,72,153,0.5)" stroke-width="1.5" stroke-dasharray="3,3" />
-
-              <line id="right-toe-line"
-                    stroke="rgba(236,72,153,0.5)" stroke-width="1.5" stroke-dasharray="3,3" />
-
-            </svg>
-          </div>
-
-          <!-- METRICS -->
-          <div style="display:flex; gap:1rem; margin-top:1rem; flex-wrap:wrap;">
-
-            <div class="metric-box">
-              <div class="metric-label">Calculated Toe-in</div>
-              <div class="metric-value" id="calc-toe-angle">--°</div>
-            </div>
-
-            <div class="metric-box">
-              <div class="metric-label">Speaker Spacing</div>
-              <div class="metric-value" id="calc-spacing">--m</div>
-            </div>
-
-            <div class="metric-box">
-              <div class="metric-label">Triangle Side</div>
-              <div class="metric-value" id="calc-triangle-side">--m</div>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-    </section>
-
-
-
-    <!-- ===================================================== -->
-    <!-- CARD 2 — SPEAKER PROFILE -->
-    <!-- ===================================================== -->
-    <section class="card glass-panel animate-enter delay-2" style="margin-bottom:2rem;">
-
-      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
-                  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
-        <div style="width:32px; height:32px; background:rgba(249,115,22,0.2); color:#fdba74;
-                    border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-          2
-        </div>
-        <h2 style="margin:0; font-size:1.25rem;">Speaker Profile</h2>
-      </div>
-
-      <label for="speakerSel">Select Speaker Model</label>
-      <select id="speakerSel" style="font-size:1.1rem; padding:1rem;"></select>
-      <p id="speakerHint"
-        style="font-size:0.9rem; color:var(--c-text-muted); margin-top:0.75rem;">
-        Select your model to load frequency limits and target behaviour.
-      </p>
-
-
-      <p style="font-size:0.9rem; color:var(--c-text-muted); margin-top:0.75rem;">
-        Choose your speaker model to load frequency limits and behaviour patterns.
-      </p>
-
-    </section>
-
-
-
-    <!-- ===================================================== -->
-    <!-- CARD 3 — MATERIALS & FURNISHINGS -->
-    <!-- ===================================================== -->
-    <section class="card glass-panel animate-enter delay-3" style="margin-bottom:2rem;">
-
-      <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
-                  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
-        <div style="width:32px; height:32px; background:rgba(168,85,247,0.2); color:#c084fc;
-                    border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-          3
-        </div>
-        <h2 style="margin:0; font-size:1.25rem;">Materials & Furnishings</h2>
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 2fr; gap:2rem;">
-
-        <div>
-          <label for="floor-material">Base Floor Surface</label>
-          <select id="floor-material">
-            <option value="hard">Hardwood / Tile / Laminate</option>
-            <option value="carpet">Wall-to-Wall Carpet</option>
-          </select>
-        </div>
-
-        <div>
-
-          <!-- ROOM LIVELINESS -->
-          <label for="room-echo">Room Liveliness</label>
-          <div style="background:rgba(99,102,241,0.05); padding:1rem; border-radius:12px; margin-bottom:1.5rem;">
-            <div style="display:flex; justify-content:space-between;">
-              <span style="color:white;">How "Live" is the room?</span>
-              <span id="roomEchoValue" style="color:var(--c-accent); font-weight:700;">20%</span>
-            </div>
-            <input type="range" id="room-echo" min="0" max="100" step="5">
-            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--c-text-muted); margin-top:0.5rem;">
-              <span>Dry</span><span>Normal</span><span>Echoey</span>
-            </div>
-          </div>
-
-          <!-- ROOM CONTENTS -->
-          <label>Room Contents</label>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-
-            <label class="checkbox-group">
-              <input type="checkbox" id="opt-area-rug">
-              <div>
-                <div style="color:white; font-weight:500;">Area Rug</div>
-              </div>
-            </label>
-
-            <label class="checkbox-group">
-              <input type="checkbox" id="opt-curtains">
-              <div>
-                <div style="color:white; font-weight:500;">Curtains / Blinds</div>
-              </div>
-            </label>
-
-            <label class="checkbox-group">
-              <input type="checkbox" id="opt-sofa">
-              <div>
-                <div style="color:white; font-weight:500;">Large Sofa</div>
-              </div>
-            </label>
-
-            <label class="checkbox-group">
-              <input type="checkbox" id="opt-wallart">
-              <div>
-                <div style="color:white; font-weight:500;">Wall Art / Shelves</div>
-              </div>
-            </label>
-
-            <label class="checkbox-group" style="grid-column:span 2;">
-              <input type="checkbox" id="opt-barewalls">
-              <div>
-                <div style="color:white; font-weight:500;">Mostly Bare Walls</div>
-              </div>
-            </label>
-
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-
-    <!-- ===================================================== -->
-    <!-- SAVE BUTTON -->
-    <!-- ===================================================== -->
-    <section style="margin-bottom:3rem;">
-      <button id="save-all-btn" class="btn btn-primary"
-              style="width:100%; padding:1rem; font-size:1.1rem;">
-        Save Setup
-      </button>
-    </section>
-
-
-  </main>
-</div>
-
-
-<!-- ====================================================================== -->
-<!-- SCRIPT BLOCK -->
-<!-- ====================================================================== -->
-
-<script src="/js/dashboard.js"></script>
-<script type="module" src="/js/devices.js"></script>
-<script type="module">
-  import { initSpeakers } from '/js/speakers.js';
-  document.addEventListener('DOMContentLoaded', async () => {
-    await initSpeakers();
-  });
-</script>
-
-<script src="js/room-diagram.js"></script>
-
-<script>
-/* ============================================================
-   TOAST
-============================================================ */
-function toast(msg, type = 'info') {
-  const box = document.createElement('div');
-  box.style.cssText = `
+    <!-- ====================================================================== -->
+    <!-- SCRIPTS -->
+    <!-- ====================================================================== -->
+
+    <script src="/js/dashboard.js"></script>
+    <script type="module" src="/js/devices.js"></script>
+    <script type="module">
+        import { initSpeakers } from '/js/speakers.js';
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initSpeakers();
+        });
+    </script>
+
+    <script src="js/room-diagram.js"></script>
+
+    <script>
+        /* ============================================================
+           TOAST
+        ============================================================ */
+        function toast(msg, type = 'info') {
+            const box = document.createElement('div');
+            box.style.cssText = `
     position:fixed; top:1rem; right:1rem;
     padding:0.75rem 1rem;
     border-radius:8px;
@@ -381,143 +332,163 @@ function toast(msg, type = 'info') {
     z-index:200;
     transition:all 0.3s;
     background:${type === 'error'
-      ? '#ef4444'
-      : type === 'success'
-        ? '#10b981'
-        : '#3b82f6'};
+                    ? '#ef4444'
+                    : type === 'success'
+                        ? '#10b981'
+                        : '#3b82f6'};
   `;
-  box.textContent = msg;
-  document.body.appendChild(box);
+            box.textContent = msg;
+            document.body.appendChild(box);
 
-  setTimeout(() => box.style.opacity = '0', 2000);
-  setTimeout(() => box.remove(), 2400);
-}
+            setTimeout(() => box.style.opacity = '0', 2000);
+            setTimeout(() => box.remove(), 2400);
+        }
 
+        /* ============================================================
+           SAVE SETUP
+        ============================================================ */
+        async function saveAllSetup() {
+            const payload = {
+                length_m: parseFloat(document.getElementById('room-length').value),
+                width_m: parseFloat(document.getElementById('room-width').value),
+                height_m: parseFloat(document.getElementById('room-height').value),
 
-/* ============================================================
-   SAVE SETUP
-============================================================ */
-async function saveAllSetup() {
+                echo_pct: parseInt(document.getElementById('room-echo').value),
 
-  const payload = {
-    length_m: parseFloat(document.getElementById('room-length').value),
-    width_m: parseFloat(document.getElementById('room-width').value),
-    height_m: parseFloat(document.getElementById('room-height').value),
+                floor_material: document.getElementById('floor-material').value,
 
-    echo_pct: parseInt(document.getElementById('room-echo').value),
+                opt_area_rug: document.getElementById('opt-area-rug').checked,
+                opt_barewalls: document.getElementById('opt-barewalls').checked,
+                opt_wallart: document.getElementById('opt-wallart').checked,
+                opt_curtains: document.getElementById('opt-curtains').checked,
+                opt_sofa: document.getElementById('opt-sofa').checked,
 
-    floor_material: document.getElementById('floor-material').value,
+                spk_front_m: parseFloat(document.getElementById('speaker-distance').value),
+                spk_spacing_m: parseFloat(document.getElementById('speaker-width').value),
+                //toe_in_deg: parseFloat(document.getElementById('toe-angle').value),
+                listener_front_m: parseFloat(document.getElementById('listening-distance').value),
 
-    opt_area_rug: document.getElementById('opt-area-rug').checked,
-    opt_barewalls: document.getElementById('opt-barewalls').checked,
-    opt_wallart: document.getElementById('opt-wallart').checked,
-    opt_curtains: document.getElementById('opt-curtains').checked,
-    opt_sofa: document.getElementById('opt-sofa').checked,
+                speaker_type: document.getElementById('speaker-type').value,
+                speaker_key: document.getElementById('speakerSel').value,
 
-    spk_front_m: parseFloat(document.getElementById('speaker-distance').value),
-    spk_spacing_m: parseFloat(document.getElementById('speaker-width').value),
-    toe_in_deg: parseFloat(document.getElementById('toe-angle').value),
-    listener_front_m: parseFloat(document.getElementById('listening-distance').value),
+                layout: 'stereo'
+            };
 
-    speaker_type: document.getElementById('speaker-type').value,
-    speaker_key: document.getElementById('speakerSel').value,
+            console.log("💾 Saving all:", payload);
 
-    layout: 'stereo'
-  };
+            const res = await fetch('/api/room/latest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-  console.log("💾 Saving all:", payload);
+            if (!res.ok) {
+                toast('Save failed', 'error');
+                return;
+            }
 
-  const res = await fetch('/api/room/latest', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+            toast('Room & speakers saved', 'success');
+            loadRoomSetup();
+        }
 
-  if (!res.ok) {
-    toast('Save failed', 'error');
-    return;
-  }
+        /* ============================================================
+           LOAD SETUP
+        ============================================================ */
+        async function loadRoomSetup() {
+            const res = await fetch('/api/room/latest');
 
-  toast('Room & speakers saved', 'success');
-  loadRoomSetup();
-}
+            if (!res.ok) {
+                console.warn("No saved setup found.");
+                return;
+            }
 
+            const j = await res.json();
 
-/* ============================================================
-   LOAD SETUP
-============================================================ */
-async function loadRoomSetup() {
-  const res = await fetch('/api/room/latest');
+            function setNum(key, id) {
+                if (j[key] != null) document.getElementById(id).value = j[key];
+            }
 
-  if (!res.ok) {
-    console.warn("No saved setup found.");
-    return;
-  }
+            function setBool(key, id) {
+                document.getElementById(id).checked = !!j[key];
+            }
 
-  const j = await res.json();
+            setNum('length_m', 'room-length');
+            setNum('width_m', 'room-width');
+            setNum('height_m', 'room-height');
 
-  function setNum(key, id) {
-    if (j[key] != null) document.getElementById(id).value = j[key];
-  }
+            setNum('spk_front_m', 'speaker-distance');
+            setNum('spk_spacing_m', 'speaker-width');
+            setNum('listener_front_m', 'listening-distance');
 
-  function setBool(key, id) {
-    document.getElementById(id).checked = !!j[key];
-  }
+            setBool('opt_area_rug', 'opt-area-rug');
+            setBool('opt_barewalls', 'opt-barewalls');
+            setBool('opt_wallart', 'opt-wallart');
+            setBool('opt_curtains', 'opt-curtains');
+            setBool('opt_sofa', 'opt-sofa');
 
-  setNum('length_m', 'room-length');
-  setNum('width_m', 'room-width');
-  setNum('height_m', 'room-height');
+            if (j.echo_pct != null) {
+                document.getElementById('room-echo').value = j.echo_pct;
+                document.getElementById('roomEchoValue').textContent = j.echo_pct + '%';
+            }
 
-  setNum('spk_front_m', 'speaker-distance');
-  setNum('spk_spacing_m', 'speaker-width');
-  setNum('toe_in_deg', 'toe-angle');
-  setNum('listener_front_m', 'listening-distance');
+            if (j.floor_material) {
+                document.getElementById('floor-material').value = j.floor_material;
+            }
 
-  setBool('opt_area_rug', 'opt-area-rug');
-  setBool('opt_barewalls', 'opt-barewalls');
-  setBool('opt_wallart', 'opt-wallart');
-  setBool('opt_curtains', 'opt-curtains');
-  setBool('opt_sofa', 'opt-sofa');
+            if (j.speaker_type) {
+                document.getElementById('speaker-type').value = j.speaker_type;
+            }
 
-  if (j.echo_pct != null) {
-    document.getElementById('room-echo').value = j.echo_pct;
-    document.getElementById('roomEchoValue').textContent = j.echo_pct + '%';
-  }
+            if (j.speaker_key) {
+                document.getElementById('speakerSel').value = j.speaker_key;
+            }
+        }
 
-  if (j.floor_material) {
-    document.getElementById('floor-material').value = j.floor_material;
-  }
+        /* ============================================================
+           BIND SAVE BUTTON
+        ============================================================ */
+        document.getElementById('save-all-btn').addEventListener('click', saveAllSetup);
 
-  if (j.speaker_type) {
-    document.getElementById('speaker-type').value = j.speaker_type;
-  }
+        /* ECHO SLIDER UI UPDATE */
+        const echoSlider = document.getElementById('room-echo');
+        const echoValue = document.getElementById('roomEchoValue');
+        if (echoSlider && echoValue) {
+            echoSlider.addEventListener('input', e => {
+                echoValue.textContent = e.target.value + '%';
+            });
+        }
 
-  if (j.speaker_key) {
-    document.getElementById('speakerSel').value = j.speaker_key;
-  }
-}
+        /* LOAD ON READY */
+        document.addEventListener('DOMContentLoaded', loadRoomSetup);
 
+        /* ============================================================
+           MOBILE MENU TOGGLE
+        ============================================================ */
+        const btn = document.getElementById('mobile-menu-btn');
+        const side = document.getElementById('sidebar');
+        const over = document.getElementById('sidebar-overlay');
 
-/* ============================================================
-   BIND SAVE BUTTON
-============================================================ */
-document.getElementById('save-all-btn').addEventListener('click', saveAllSetup);
+        function toggleMenu() {
+            side.classList.toggle("active");
+            over.classList.toggle("active");
+            document.body.style.overflow = side.classList.contains("active") ? "hidden" : "";
+        }
 
+        if (btn) btn.addEventListener('click', toggleMenu);
+        if (over) over.addEventListener('click', toggleMenu);
 
-/* ECHO SLIDER UI UPDATE */
-const echoSlider = document.getElementById('room-echo');
-const echoValue = document.getElementById('roomEchoValue');
-if (echoSlider && echoValue) {
-  echoSlider.addEventListener('input', e => {
-    echoValue.textContent = e.target.value + '%';
-  });
-}
-
-
-/* LOAD ON READY */
-document.addEventListener('DOMContentLoaded', loadRoomSetup);
-
-</script>
+        // Close menu when clicking a nav item on mobile
+        document.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) {
+                    side.classList.remove('active');
+                    over.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+    </script>
 
 </body>
+
 </html>
