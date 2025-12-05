@@ -646,16 +646,10 @@ input[type='checkbox'] {
     margin-bottom: 3rem;
 }
 
-.sweep-card {
-    background: var(--c-surface-glass);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 1.25rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
+.sweep-card:not(:last-child) {
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+    margin-bottom: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
 }
 
 .sweep-card::before {
@@ -1141,6 +1135,24 @@ input[type='checkbox'] {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Fix Notes button styling */
+.notes-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--c-text-main);
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.notes-btn:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.25);
+}
+
+
 /* ------------------------------------------------------------
    ROOM SETUP SECTION
 ------------------------------------------------------------ */
@@ -1211,24 +1223,19 @@ input[type='checkbox'] {
     color: var(--c-text-muted);
 }
 
-.room-diagram-wrapper {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
-    overflow: visible;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+@media (max-width: 600px) {
+    .room-diagram-wrapper {
+        aspect-ratio: auto !important;
+        height: auto !important;
+        padding: 0 !important;
+    }
+
+    .room-diagram-wrapper svg {
+        width: 100% !important;
+        height: auto !important;
+    }
 }
 
-.room-diagram-wrapper svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
 
 #left-speaker,
 #right-speaker,
@@ -1318,11 +1325,6 @@ input[type='checkbox'] {
     font-weight: 600;
     color: white;
 }
-
-/* ------------------------------------------------------------
-   TIPS & TWEAKS SECTION
------------------------------------------------------------- */
-/* Uses Global Grid System (grid-3, grid-2) and Cards */
 
 /* ------------------------------------------------------------
    MOBILE BREAKPOINTS
@@ -1494,16 +1496,10 @@ input[type='checkbox'] {
     }
 }
 
-/* Diagram card gets BIGGER */
-.room-diagram-wrapper {
-    width: 100%;
-    height: 420px;
-    padding: 1.2rem;
-}
-
 #room-diagram {
     width: 100%;
-    height: 100%;
+    min-height: 350px;
+    height: auto;
 }
 
 /* Room rect outline */
@@ -1669,4 +1665,419 @@ input[type='checkbox'] {
     .compact-row {
         grid-template-columns: 1fr 1fr;
     }
+}
+
+/* ------------------------------------------------------------
+   NERDS CORNER — MOBILE LAYOUT FIX
+   Max-width: 600px only
+   Removes padding, flatten cards, full-width chart
+------------------------------------------------------------ */
+@media (max-width: 600px) {
+
+    /* Flatten the Nerds Corner outer card */
+    .card[aria-labelledby="nerdsCornerLabel"] {
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    /* Remove spacing on the header row */
+    .card[aria-labelledby="nerdsCornerLabel"] > div:first-child {
+        margin: 0 !important;
+        padding: 0.5rem 0.75rem !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Shrink icon box */
+    .card[aria-labelledby="nerdsCornerLabel"] img[src*="dave"] {
+        width: 20px !important;
+    }
+
+    /* Tighten heading + subheading */
+    #nerdsCornerLabel {
+        font-size: 1.1rem !important;
+        margin: 0 !important;
+        line-height: 1.2 !important;
+    }
+
+    .card[aria-labelledby="nerdsCornerLabel"] p {
+        margin: 0.15rem 0 0 0 !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* Toggle button group — compact */
+    .card[aria-labelledby="nerdsCornerLabel"] > div > div:last-child {
+        padding: 0.15rem !important;
+        border-radius: 6px !important;
+        gap: 0.15rem !important;
+    }
+
+    .card[aria-labelledby="nerdsCornerLabel"] button {
+        padding: 0.25rem 0.6rem !important;
+        font-size: 0.75rem !important;
+        border-radius: 6px !important;
+    }
+
+    /* Chart container — FULL WIDTH, minimal framing */
+    .chart-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Plotly wrapper */
+    .chart-responsive,
+    #frequencyChart {
+        width: 100% !important;
+        height: 350px !important; /* optional: tweak if needed */
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Reduce spacing before/after chart */
+    .card[aria-labelledby="nerdsCornerLabel"] h3 {
+        margin-top: 1rem !important;
+        padding-left: 0.75rem !important;
+    }
+
+    /* Sweep Nav - reduce spacing */
+    #sweepNav {
+        padding-left: 0.75rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .session-btn {
+        padding: 0.3rem 0.6rem !important;
+        font-size: 0.75rem !important;
+        border-radius: 6px !important;
+    }
+}
+
+/* ------------------------------------------------------------
+   MOBILE — Overall Score Left Align Fix
+------------------------------------------------------------ */
+@media (max-width: 600px) {
+
+    /* Force the score row to align left on mobile */
+    .overall-score-row {
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        text-align: left !important;
+    }
+
+    /* Score value itself */
+    .score-display,
+    .score-value,
+    .score-max {
+        text-align: left !important;
+        justify-content: flex-start !important;
+    }
+
+    /* Dave Says box stays full width but aligned left */
+    .dave-box {
+        align-items: flex-start !important;
+    }
+
+    /* Remove auto-centering if present */
+    .overall-score-row > * {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+}
+
+/* =======================================================================
+   MOBILE FIX: ROOM LAYOUT DIAGRAM (max-width: 600px)
+   Removes all padding/card layers so the SVG fills the screen properly.
+======================================================================= */
+@media (max-width: 600px) {
+
+    /* Flatten the entire diagram card */
+    .room-card--diagram {
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* Title spacing reduced */
+    .room-card--diagram .room-card-title {
+        margin: 0 !important;
+        padding: 0.5rem 0.75rem !important;
+        border-bottom: none !important;
+        font-size: 1rem !important;
+    }
+
+    /* The wrapper around the SVG — make it full-width and flat */
+    .room-card--diagram .room-diagram-wrapper {
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+
+        /* allow SVG to breathe */
+        aspect-ratio: unset !important;
+        height: auto !important;
+    }
+
+    /* SVG itself – must stretch to full width */
+    #room-diagram {
+        width: 100% !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        preserveAspectRatio: xMidYMid meet !important;
+    }
+
+    /* Tighten spacing before explainer card */
+    .room-card--diagram .explainer-card {
+        margin-top: 1rem !important;
+        padding: 0.75rem !important;
+    }
+}
+
+/* ============================================================
+   ROOM LAYOUT — REMOVE INNER CARDS (desktop + mobile)
+   Outer card stays. Inner .room-card boxes become flat sections.
+============================================================ */
+/* Restore main card container for Room Layout section */
+.room-layout-section {
+    padding: 1.5rem;
+}
+
+.room-layout-section.card {
+    background: var(--c-surface-glass);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+}
+
+.room-layout-section .room-card {
+    /* Remove “card” look */
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+
+    /* Keep section spacing tidy */
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Flatten the diagram card specifically */
+.room-layout-section .room-card.room-card--diagram {
+    margin-top: 1rem !important;
+    padding: 0 !important;
+}
+
+/* Make the diagram wrapper clean */
+.room-layout-section .room-diagram-wrapper {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+/* Title spacing inside the outer card */
+.room-layout-section .room-card-title {
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+    padding: 0.75rem 0 !important;
+    margin-bottom: 0.75rem !important;
+}
+
+/* NEW LAYOUT GRIDS */
+.room-layout-grid-new {
+    display: grid;
+    gap: 2rem;
+}
+
+/* Two-column inputs on desktop */
+.inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+/* Explainer left — Diagram right */
+.results-grid {
+    display: grid;
+    grid-template-columns: 0.45fr 0.55fr; /* Explainer narrower */
+    gap: 2rem;
+    align-items: start;
+}
+
+
+/* ===================================================================
+   MOBILE: STABILISE ROOM DIAGRAM LAYOUT
+   Fixes clipping, off-screen scaling, and wrapper collapse
+=================================================================== */
+@media (max-width: 600px) {
+
+    /* Ensure the DIAGRAM SECTION is NOT flexed or constrained */
+    .room-layout-grid {
+        display: block !important;
+    }
+
+    /* Flatten diagram card */
+    .room-card.room-card--diagram {
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    /* The wrapper MUST auto-size, NOT aspect-ratio, NOT height-fixed */
+    .room-diagram-wrapper {
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+
+        display: block !important;
+        height: auto !important;
+    }
+
+    /* SVG: this is the key */
+    #room-diagram {
+        width: 100% !important;
+        height: auto !important;
+        display: block !important;
+
+        /* Prevent overshoot / clipping */
+        max-width: 100% !important;
+        overflow: visible !important;
+    }
+
+    /* Prevent explainer from collapsing the diagram container */
+    .explainer-card {
+        margin-top: 1.25rem !important;
+        position: relative !important;
+        z-index: 2 !important;
+    }
+}
+
+/* ============================================================
+   SAFE SCORE SCALING (does NOT affect /10 alignment)
+============================================================ */
+
+.score-display {
+    transform: scale(1.3);      /* bump this up/down as you like */
+    transform-origin: left bottom; /* keeps alignment pinned */
+}
+.score-display {
+    transform: scale(1.15) translateY(4px);
+    transform-origin: left bottom;
+}
+
+
+/* ============================================================
+   FIX: NOTES MODAL – Prevent off-screen clipping
+   (Mobile + desktop stabilisation)
+============================================================ */
+
+.notes-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2000 !important;
+
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+
+    padding: 1rem !important;
+    overflow: hidden !important;
+}
+
+.notes-modal-content {
+    max-width: 500px !important;
+    width: calc(100% - 2rem) !important;
+
+    /* Prevent it drifting off top or bottom */
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+
+    /* Stop weird transforms causing drift */
+    transform: translateY(0) !important;
+    transform-origin: center !important;
+}
+
+/* MOBILE FIX */
+@media (max-width: 600px) {
+
+    .notes-modal {
+        padding: 0.5rem !important;
+        align-items: flex-start !important; /* stops vertical push offscreen */
+    }
+
+    .notes-modal-content {
+        margin-top: 1rem !important; /* keeps it visible */
+        width: 100% !important;
+        border-radius: 16px !important;
+
+        /* If keyboard appears, still stays visible */
+        max-height: calc(100vh - 2rem) !important;
+    }
+}
+
+/* FORCE-HIDE ANYTHING WITH .hidden */
+.hidden {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Clean sweep item styling */
+.sweep-item {
+    padding: 1rem;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sweep-item h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.sweep-score {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.sweep-metrics div {
+    display: flex;
+    justify-content: space-between;
+    opacity: 0.8;
+    font-size: 0.85rem;
+}
+
+.note-preview {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* truncate long text with ... */
+}
+
+.input-section .input-block {
+    margin-bottom: 1rem;
 }

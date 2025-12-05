@@ -49,7 +49,7 @@ APP_ROOT      = Path(__file__).resolve().parent        # /home/matt/measurely/me
 SERVICE_ROOT  = APP_ROOT.parent                        # /home/matt/measurely
 
 MEAS_ROOT     = SERVICE_ROOT / "measurements"
-PHRASES_DIR   = APP_ROOT / "phrases"                   # ← CORRECT!!
+PHRASES_DIR   = APP_ROOT / "dave" / "phrases"                   # ← CORRECT!!
 WEB_DIR       = SERVICE_ROOT / "web"
 SPEAKERS_DIR  = SERVICE_ROOT / "speakers"
 
@@ -215,6 +215,25 @@ def load_session_data(session_dir):
         meta = path / "meta.json"
         meta_data = meta.exists() and json.loads(meta.read_text()) or {}
         room_info = meta_data.get("settings", {}).get("room", {})
+        
+
+        # ---------------------------------------------------
+        # ✔️ Load Dave summary + action tips from summary.txt
+        # ---------------------------------------------------
+        summary_file = path / "summary.txt"
+        dave_summary = None
+        dave_actions = []
+
+        if summary_file.exists():
+            lines = summary_file.read_text(encoding='utf-8').splitlines()
+            if lines:
+                dave_summary = lines[0]
+                if len(lines) > 1:
+                    dave_actions = [
+                        line.lstrip("-• ").strip()
+                        for line in lines[1:]
+                        if line.strip()
+                    ]
 
         out = {
             # (keep everything you already have)
@@ -245,16 +264,12 @@ def load_session_data(session_dir):
 
             "session_dir": str(path),
             "analysis_notes": ana_data.get("notes", []),
+            "notes": meta_data.get("notes", ""),
             "simple_summary": ana_data.get("plain_summary", ""),
             "simple_fixes":   ana_data.get("simple_fixes", []),
-
+            "dave": ana_data.get("dave", {}),   # ← inject backend Dave summary + actions
             "band_levels_db": ana_data.get("band_levels_db", {}),
             "modes": ana_data.get("modes", []),
-
-            # NEW: buddy-friendly keys
-            "buddy_freq_blurb":   ana_data.get("buddy_freq_blurb", ""),
-            "buddy_treat_blurb":  ana_data.get("buddy_treat_blurb", ""),
-            "buddy_action_blurb": ana_data.get("buddy_action_blurb", ""),
 
             "has_analysis": ana.exists(),
             "has_summary":  (path / "summary.txt").exists(),
@@ -413,6 +428,45 @@ def api_get_session(session_id):
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+
+# ------------------------------------------------------------------
+# SAVE/UPDATE NOTE for a Session
+# ------------------------------------------------------------------
+@app.route("/api/session/<session_id>/note", methods=["POST"])
+def update_session_note(session_id):
+    """ Save per-sweep notes into meta.json """
+
+    try:
+        # Resolve session path exactly like GET handler does
+        session_dir = MEAS_ROOT / ( "latest" if session_id == "latest" else session_id )
+        if not session_dir.exists():
+            return jsonify(error=f"Session folder not found: {session_id}", session_dir=str(session_dir)), 404
+
+        meta_file = session_dir / "meta.json"
+        if not meta_file.exists():
+            return jsonify(error="meta.json missing", path=str(meta_file)), 404
+
+        payload = request.get_json(force=True) or {}
+        note = payload.get("note", "").strip()
+
+        # Load existing meta
+        meta = json.loads(meta_file.read_text(encoding='utf-8'))
+
+        # Update meta with notes field
+        meta["notes"] = note
+
+        # Save atomically
+        write_json_atomic(meta, meta_file)
+
+        print(f"[NOTE SAVED] {session_id}: {note}")
+
+        return jsonify(ok=True, note=note)
+
+    except Exception as e:
+        print("ERROR saving note:", e)
+        traceback.print_exc()
+        return jsonify(error=str(e)), 500
 
 
 # ------------------------------------------------------------------
@@ -682,25 +736,19 @@ def get_sessions():
 
     
 # ----------------------------------------------------------
-#  serve buddy_phrases.json from project root
+#  serve dave_phrases.json from project root
 # ----------------------------------------------------------
-@app.route('/buddy_phrases.json')
-def serve_buddy_phrases():
-    return send_from_directory(PHRASES_DIR, 'buddy_phrases.json')
+@app.route('/dave_phrases.json')
+def serve_dave_phrases():
+    return send_from_directory(PHRASES_DIR, 'dave_phrases.json')
 
-# ----------------------------------------------------------
-#  serve foot_tags.json from project root
-# ----------------------------------------------------------
-@app.route('/foot_tags.json')
-def serve_foot_tags():
-    return send_from_directory(PHRASES_DIR, 'foot_tags.json')
+@app.route('/overall_phrases.json')
+def serve_overall_phrases():
+    return send_from_directory(PHRASES_DIR, 'overall_phrases.json')
 
-# ----------------------------------------------------------
-#  serve foot_tags.json from project root
-# ----------------------------------------------------------
-@app.route('/buddy_recommends.json')
-def serve_buddy_recommends():
-    return send_from_directory(PHRASES_DIR, 'buddy_recommends.json')
+@app.route('/tipstweaks_phrases.json')
+def serve_tipstweaks_phrases():
+    return send_from_directory(PHRASES_DIR, 'tipstweaks_phrases.json')
 
 # ----------------------------------------------------------
 #  serve speakers.json from project root
@@ -793,16 +841,30 @@ def load_room():
     
 @app.route('/api/latest', methods=['GET'])
 def api_latest():
-    """Return latest session (alias for /api/session/latest)."""
+    """
+    Return the latest session, resolving the real folder name so
+    dashboard notes & UI always operate on the correct SweepX folder.
+    """
     ses = MEAS_ROOT / "latest"
+
     if not ses.exists():
         return jsonify({"error": "no latest session"}), 404
 
+    # Load current latest session data
     data = load_session_data(ses)
     if not data:
         return jsonify({"error": "failed to load latest"}), 500
 
+    # 🔥 FIX: Make sure the real ID is returned instead of "latest"
+    try:
+        real_path = ses.resolve(strict=True)
+        data["id"] = real_path.name
+        print(f"📌 Resolved latest → {data['id']}")
+    except Exception as e:
+        print(f"⚠️ Could not resolve real latest path: {e}")
+
     return jsonify(data)
+
 
 # ------------------------------------------------------------------
 #  serve onboarding or index

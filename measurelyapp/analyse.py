@@ -16,13 +16,16 @@ from measurelyapp.score import (
 )
 from measurelyapp.speaker import load_target_curve
 from measurelyapp.writer import _atomic_write, write_text_summary, yaml_camilla
-from measurelyapp.buddy import ask_buddy, plain_summary
+from measurelyapp.dave import dave_summary
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger("analyse")
 
 
 def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
+
+
+    from measurelyapp.dave import dave_summary
 
     # ---------------------------------------------------------
     # LOAD INPUT
@@ -112,6 +115,19 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "reverb": score_reverb(rt.get("rt60") or 0.5, rt.get("edt") or 0.5),
     }
 
+    scores["overall"] = round(np.mean(list(scores.values())), 1)
+
+    # --- scores have just been computed ---
+    print("\n=== DAVE DEBUG START ===")
+    print("Scores passed into dave_summary:", scores)
+
+    summary, actions = dave_summary(scores)
+
+    print("dave_summary returned:", summary)
+    print("dave_actions returned:", actions)
+    print("=== DAVE DEBUG END ===\n")
+
+
     # Furnishing damping modifies reflections
     damping = 0
     if room.get("opt_rug"):        damping += 0.2
@@ -122,29 +138,8 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
 
     scores["reflections"] *= (1 - damping)
     
-    scores["overall"] = round(np.mean(list(scores.values())), 1)
-
-    # ---------------------------------------------------------
-    # BUDDY SUMMARY (SHORT)
-    # ---------------------------------------------------------
-    # Prepare full analysis context for smart Dave commentary
-    buddy_context = {
-        "modes": mods,
-        "bandwidth_lo_3db_hz": lo3,
-        "bandwidth_hi_3db_hz": hi3,
-        "rt60_s": rt["rt60"],
-        "edt_s": rt["edt"],
-        "speaker_profile": speaker_key,
-        "room": room,
-    }
-    
-    headline, actions = ask_buddy([], scores, room, buddy_context)
-    if not headline:
-        headline, actions = plain_summary({
-            "band_levels_db": bands,
-            "reflections_ms": refs,
-            "rt60_s": rt["rt60"],
-        })
+    # DAVE SUMMARY ENGINE
+    summary, actions = dave_summary(scores)
 
     # ---------------------------------------------------------
     # EXPORT CLEAN JSON
@@ -169,11 +164,15 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "room": room,
 
         "dave": {
-            "freq": headline,
-            "action": "\n".join(actions) if actions else ""
-        }
+            "summary": summary or "",
+            "actions": actions or [],
+            "overall_score": scores.get("overall"),
+            "speaker_friendly_name": (
+                speaker_key.replace("_", " ").title()
+                if speaker_key else room.get("speaker_friendly_name", "")
+            )
+        },
     }
-
 
     # ---------------------------------------------------------
     # WRITE FILES

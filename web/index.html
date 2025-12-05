@@ -134,7 +134,7 @@
                         style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; font-size:1rem; font-weight:normal;">
                         <img src="icons/chart-line.svg" style="width:16px; opacity:0.7;" alt="" aria-hidden="true">
                         <span id="overallRoomScoreLabel"
-                            style="text-transform:uppercase; letter-spacing:0.5px;">Overall Room Score</span>
+                            style="text-transform:uppercase; letter-spacing:0.5px;">Overall Room Score (latest)</span>
                     </h2>
 
                     <!-- SCORE LEFT + DAVE RIGHT -->
@@ -166,7 +166,7 @@
                             </div>
 
                             <!-- PHRASE STARTS DIRECTLY UNDER THE ICON -->
-                            <p id="overallBuddyPhrase" class="dave-quote"
+                            <p id="overallDavePhrase" class="dave-quote"
                                 style="margin:0; font-style:italic; font-size:0.95rem; line-height:1.45; color:var(--c-text-main);">
                                 “Run a sweep to get started.”
                             </p>
@@ -252,7 +252,7 @@
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
                         <span style="font-size: 0.75rem;">DAVE SAYS</span>
                     </div>
-                    <span id="peaksDipsBuddy" class="dave-quote"
+                    <span id="peaksDipsDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
                     <!-- Hidden spans for JS compatibility -->
                     <span id="peaksDipsStatus" class="hidden"></span>
@@ -282,7 +282,7 @@
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
                         <span style="font-size: 0.75rem;">DAVE SAYS</span>
                     </div>
-                    <span id="reflectionsBuddy" class="dave-quote"
+                    <span id="reflectionsDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
                     <span id="reflectionsStatus" class="hidden"></span>
                     <span id="reflectionsStatusText" class="hidden"></span>
@@ -309,7 +309,7 @@
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
                         <span style="font-size: 0.75rem;">DAVE SAYS</span>
                     </div>
-                    <span id="bandwidthBuddy" class="dave-quote"
+                    <span id="bandwidthDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
                     <span id="bandwidthStatus" class="hidden"></span>
                     <span id="bandwidthStatusText" class="hidden"></span>
@@ -336,7 +336,7 @@
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
                         <span style="font-size: 0.75rem;">DAVE SAYS</span>
                     </div>
-                    <span id="balanceBuddy" class="dave-quote"
+                    <span id="balanceDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
                     <span id="balanceStatus" class="hidden"></span>
                     <span id="balanceStatusText" class="hidden"></span>
@@ -363,7 +363,7 @@
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
                         <span style="font-size: 0.75rem;">DAVE SAYS</span>
                     </div>
-                    <span id="smoothnessBuddy" class="dave-quote"
+                    <span id="smoothnessDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
                     <span id="smoothnessStatus" class="hidden"></span>
                     <span id="smoothnessStatusText" class="hidden"></span>
@@ -390,7 +390,7 @@
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
                         <span style="font-size: 0.75rem;">DAVE SAYS</span>
                     </div>
-                    <span id="reverbBuddy" class="dave-quote"
+                    <span id="reverbDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
                     <span id="reverbStatus" class="hidden"></span>
                     <span id="reverbStatusText" class="hidden"></span>
@@ -401,10 +401,11 @@
 
             <!-- NERDS CORNER -->
             <div class="card glass-panel animate-enter delay-3" 
-                 role="region" 
-                 aria-labelledby="nerdsCornerLabel" 
-                 aria-label="">
-                 
+                role="region" 
+                aria-labelledby="nerdsCornerLabel" 
+                aria-label="">
+                
+                <!-- HEADER -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <div style="display: flex; align-items: center; gap: 1rem;">
                         <div style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px;">
@@ -431,33 +432,33 @@
                     </div>
                 </div>
 
+                <!-- CHART -->
                 <div class="chart-container">
                     <div id="frequencyChart" 
-                         class="chart-responsive" 
-                         style="width: 100%; height: 400px;" 
-                         role="img"
-                         aria-live="polite"
-                         aria-label=""
-                         aria-describedby="frequencyChartDescription"></div>
+                        class="chart-responsive" 
+                        style="width: 100%; height: 400px;" 
+                        role="img"
+                        aria-live="polite"
+                        aria-label=""
+                        aria-describedby="frequencyChartDescription"></div>
 
-                    <!-- Invisible text summary for screen readers -->
                     <p id="frequencyChartDescription" class="hidden" aria-hidden="true"></p>
                 </div>
 
-                <!-- Session History Buttons (Replaced with Sweep Navigation) -->
+                <!-- SWEEP NAV -->
                 <h3 class="card-title" style="display:flex; align-items:center; gap:0.5rem; margin-top:2rem;">
                     <img src="icons/dave.svg" style="width:18px; opacity:0.9;">
                     Sweeps
                 </h3>
 
                 <div id="sweepNav" style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
-                    <button class="session-btn session-active" data-sweep="0">Sweep 1</button>
-                    <button class="session-btn" data-sweep="1">Sweep 2</button>
-                    <button class="session-btn" data-sweep="2">Sweep 3</button>
-                    <button class="session-btn" data-sweep="3">Sweep 4</button>
+                    <button class="session-btn session-active" data-sweep="0">Latest</button>
+                    <button class="session-btn" data-sweep="1">Previous</button>
+                    <button class="session-btn" data-sweep="2">Earlier</button>
+                    <button class="session-btn" data-sweep="3">Oldest</button>
                 </div>
 
-                <!-- Hidden metrics container for JS -->
+                <!-- HIDDEN METRICS -->
                 <div id="sessionMetrics" class="hidden">
                     <span id="sessOverallScore"></span><span id="sessOverallStatus"></span>
                     <span id="sessPeaksDips"></span><span id="sessReflections"></span>
@@ -466,7 +467,6 @@
                     <span id="sessBass"></span><span id="sessMid"></span>
                     <span id="sessTreble"></span><span id="sessAir"></span>
 
-                    <!-- Extra band IDs -->
                     <span id="bassLevel"></span><span id="midLevel"></span>
                     <span id="trebleLevel"></span><span id="airLevel"></span>
 
@@ -476,9 +476,9 @@
                     <div id="airBar"></div>
                 </div>
 
+                <!-- SWEEP HISTORY – CLEAN, NO INNER CARD -->
+                <section class="sweep-history-wrapper" style="margin-top: 2rem;">
 
-                <!-- SWEEP HISTORY – BAKED IN -->
-                <div class="card glass-panel animate-enter delay-4" style="margin-top: 2rem;">
                     <h2 style="margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;">
                         <img src="icons/dave.svg" style="width:22px; opacity:0.9;">
                         Sweep History
@@ -489,11 +489,12 @@
                     </p>
 
                     <div id="sweepHistoryGrid" class="grid-4-mobile grid-2 tablet-grid-4">
-                        
-                        <!-- SWEEP CARD TEMPLATE (four of these will be filled by JS) -->
-                        <div class="card glass-panel sweep-card" data-index="0">
-                            <h3 class="sweep-title">Sweep 1</h3>
+
+                        <!-- SWEEP 1 -->
+                        <div class="sweep-card sweep-item" data-index="0">
+                            <h3 class="sweep-title">Latest</h3>
                             <div class="sweep-score">--</div>
+
                             <div class="sweep-metrics">
                                 <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
                                 <div><span>Reflections</span><span class="m-reflections">--</span></div>
@@ -502,11 +503,16 @@
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
                                 <div><span>Reverb</span><span class="m-reverb">--</span></div>
                             </div>
+
+                            <button class="notes-btn" data-sweep-note>Notes</button>
+                            <div class="note-preview" data-note-preview>—</div>
                         </div>
 
-                        <div class="card glass-panel sweep-card" data-index="1">
-                            <h3 class="sweep-title">Sweep 2</h3>
+                        <!-- SWEEP 2 -->
+                        <div class="sweep-card sweep-item" data-index="1">
+                            <h3 class="sweep-title">Previous</h3>
                             <div class="sweep-score">--</div>
+
                             <div class="sweep-metrics">
                                 <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
                                 <div><span>Reflections</span><span class="m-reflections">--</span></div>
@@ -515,11 +521,16 @@
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
                                 <div><span>Reverb</span><span class="m-reverb">--</span></div>
                             </div>
+
+                            <button class="notes-btn" data-sweep-note>Notes</button>
+                            <div class="note-preview" data-note-preview>—</div>
                         </div>
 
-                        <div class="card glass-panel sweep-card" data-index="2">
-                            <h3 class="sweep-title">Sweep 3</h3>
+                        <!-- SWEEP 3 -->
+                        <div class="sweep-card sweep-item" data-index="2">
+                            <h3 class="sweep-title">Earlier</h3>
                             <div class="sweep-score">--</div>
+
                             <div class="sweep-metrics">
                                 <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
                                 <div><span>Reflections</span><span class="m-reflections">--</span></div>
@@ -528,11 +539,16 @@
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
                                 <div><span>Reverb</span><span class="m-reverb">--</span></div>
                             </div>
+
+                            <button class="notes-btn" data-sweep-note>Notes</button>
+                            <div class="note-preview" data-note-preview>—</div>
                         </div>
 
-                        <div class="card glass-panel sweep-card" data-index="3">
-                            <h3 class="sweep-title">Sweep 4</h3>
+                        <!-- SWEEP 4 -->
+                        <div class="sweep-card sweep-item" data-index="3">
+                            <h3 class="sweep-title">Oldest</h3>
                             <div class="sweep-score">--</div>
+
                             <div class="sweep-metrics">
                                 <div><span>Peaks & Dips</span><span class="m-peaks">--</span></div>
                                 <div><span>Reflections</span><span class="m-reflections">--</span></div>
@@ -541,10 +557,17 @@
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
                                 <div><span>Reverb</span><span class="m-reverb">--</span></div>
                             </div>
+
+                            <button class="notes-btn" data-sweep-note>Notes</button>
+                            <div class="note-preview" data-note-preview>—</div>
                         </div>
 
                     </div>
-                </div>
+                </section>
+
+            </div>
+
+
 
 
         </main>
@@ -652,50 +675,15 @@
             else console.error(`Failed to load session ${sessionId}`);
         }
 
-        // Sweep Navigation — connects Sweep 1–4 buttons to sessionHistory[]
-        document.querySelectorAll('#sweepNav .session-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const index = parseInt(btn.dataset.sweep, 10);
-                console.log("Sweep clicked:", index);
-
-                // highlight active button
-                document.querySelectorAll('#sweepNav .session-btn')
-                    .forEach(b => b.classList.remove('session-active'));
-                btn.classList.add('session-active');
-
-                // fetch session list
-                const listRes = await fetch('/api/sessions/all');
-                const list = await listRes.json();
-                console.log("Session list:", list);
-
-                if (!list[index]) {
-                    console.error("No session at this index");
-                    return;
-                }
-
-                const sessionId = list[index].id || list[index];
-                console.log("Loading session:", sessionId);
-
-                // fetch sweep data
-                const sweepRes = await fetch(`/api/session/${sessionId}`);
-                const sweepData = await sweepRes.json();
-                console.log("Sweep data:", sweepData);
-
-                // ⭐ update the data the dashboard uses ⭐
-                window.dashboard.currentData = sweepData;
-                window.dashboard.data = sweepData;
-                window.dashboard.latestData = sweepData;
-
-                // ⭐ REDRAW THE WHOLE DASHBOARD ⭐
-                window.dashboard.updateDashboard();
-
-                // ⭐ RESTORE ACTIVE CHANNEL (left/right/both) ⭐
-                const active = document.querySelector(".channel-active")?.dataset.channel || "both";
-                window.dashboard.showChannel(active);
+        // Fully replace SweepNav click logic
+        document.querySelectorAll("#sweepNav .session-btn").forEach((btn, index) => {
+            btn.addEventListener("click", () => {
+                console.log(`👉 SweepNav clicked - index ${index}`);
+                // Use the correct function in dashboard.js
+                window.dashboard.loadNthSession(index);
             });
         });
-
-        
+       
         
         async function loadSessionMetrics(sessionId) {
             try {
@@ -833,6 +821,87 @@
             if (el) el.textContent = new Date().toLocaleTimeString();
         }, 1000);
     </script>
+
+<!-- NOTES MODAL (GLOBAL POPUP) -->
+<div id="notesModal" class="notes-modal hidden" aria-hidden="true">
+    <div class="notes-modal-backdrop"></div>
+
+    <div class="notes-modal-content">
+        <div class="notes-modal-header">
+            <h3 id="notesModalTitle">Sweep Notes</h3>
+            <button class="notes-modal-close" aria-label="Close notes">&times;</button>
+        </div>
+
+        <div class="notes-modal-body">
+            <textarea id="notesTextarea" 
+                      class="notes-textarea" 
+                      placeholder="Write your notes here…"></textarea>
+        </div>
+
+        <div class="notes-modal-footer">
+            <button id="saveNotesBtn" class="btn btn-primary">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========================
+// NOTES MODAL LOGIC
+// ========================
+
+let currentSweepIndex = null;
+
+// OPEN modal
+function openNotesModal(index) {
+    currentSweepIndex = index;
+
+    const modal = document.getElementById("notesModal");
+    const textarea = document.getElementById("notesTextarea");
+
+    // Load previous notes
+    textarea.value = localStorage.getItem(`sweepNote_${index}`) || "";
+
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+}
+
+// CLOSE modal
+function closeNotesModal() {
+    const modal = document.getElementById("notesModal");
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+}
+
+// OPEN BUTTONS (Notes buttons on each sweep card)
+document.querySelectorAll("[data-sweep-note]").forEach((btn, i) => {
+    btn.addEventListener("click", () => openNotesModal(i));
+});
+
+// SAVE button
+document.getElementById("saveNotesBtn").addEventListener("click", () => {
+    const textarea = document.getElementById("notesTextarea");
+
+    // Save to localStorage
+    localStorage.setItem(`sweepNote_${currentSweepIndex}`, textarea.value);
+
+    // Update preview text in the card
+    const preview = document.querySelector(
+        `.sweep-card[data-index="${currentSweepIndex}"] [data-note-preview]`
+    );
+    preview.textContent = textarea.value || "—";
+
+    closeNotesModal();
+});
+
+// CLOSE button (the X)
+document.querySelector(".notes-modal-close")
+    .addEventListener("click", closeNotesModal);
+
+// Backdrop click closes the modal
+document.querySelector(".notes-modal-backdrop")
+    .addEventListener("click", closeNotesModal);
+</script>
+
 </body>
 
 </html>

@@ -66,22 +66,20 @@
           </header>
 
 
-
-
             <section class="card glass-panel animate-enter delay-1 room-layout-section">
 
-                <div class="room-layout-grid">
+                <div class="room-layout-grid-new">
 
-                    <!-- LEFT CARD -->
-                    <div class="room-card">
-                        <h3 class="room-card-title">
-                            <span class="step-badge">1</span>
-                            Room Layout
-                        </h3>
+                    <!-- TOP ROW — INPUTS (TWO COLUMNS) -->
+                    <div class="inputs-grid">
 
                         <!-- ROOM DIMENSIONS -->
                         <div class="input-section">
-                            <label class="section-label">Room Dimensions</label>
+                            <h3 class="room-card-title">
+                                <span class="step-badge">1</span>
+                                Room Layout
+                            </h3>
+                            <h4 class="section-label">Room Dimensions</h4>
 
                             <div class="compact-row">
                                 <div class="input-block">
@@ -103,22 +101,33 @@
 
                         <!-- SPEAKER DISTANCING -->
                         <div class="input-section">
-                            <label class="section-label">Speaker Distancing</label>
+                            <h3 class="room-card-title">
+                                <span class="step-badge">1.b</span>
+                                Speaker Layout
+                            </h3>
+
+                            <h4 class="section-label">Speaker Distancing</h4>
+
 
                             <div class="compact-row">
                                 <div class="input-block">
-                                    <label for="speaker-distance">From Front Wall (m)</label>
+                                    <label for="speaker-distance">Speaker Distance (m)</label>
                                     <input type="number" id="speaker-distance" step="0.01">
                                 </div>
 
                                 <div class="input-block">
-                                    <label for="speaker-width">Spacing (m)</label>
+                                    <label for="speaker-width">Speaker Spacing (m)</label>
                                     <input type="number" id="speaker-width" step="0.01">
                                 </div>
 
                                 <div class="input-block">
                                     <label for="listening-distance">Listening Distance (m)</label>
                                     <input type="number" id="listening-distance" step="0.01">
+                                </div>
+
+                                <div class="input-block">
+                                    <label for="toe-angle">Toe-In Angle (°)</label>
+                                    <input type="number" id="toe-angle" step="0.1" min="0" max="90">
                                 </div>
                             </div>
 
@@ -131,16 +140,28 @@
                                     <option value="dipole">Dipole / Open Baffle</option>
                                 </select>
                             </div>
+
                         </div>
-                    </div>
 
-                    <!-- RIGHT CARD – DIAGRAM -->
-                    <div class="room-card">
-                        <h3 class="room-card-title">
-                            <span class="step-badge">1.a</span>
-                            Room Layout Diagram
-                        </h3>
+                    </div> <!-- end .inputs-grid -->
 
+
+                    <!-- BOTTOM ROW — EXPLAINER + DIAGRAM -->
+                    <div class="results-grid">
+
+                        <!-- EXPLAINER LEFT -->
+                        <div class="explainer-card">
+                            <h4 class="explainer-title">What's happening in your room?</h4>
+
+                            <p><strong>Room size:</strong> <span id="explainer-width">—</span> × <span id="explainer-length">—</span> m</p>
+                            <p><strong>Speaker spacing:</strong> <span id="explainer-spacing">—</span> m</p>
+                            <p><strong>Listening distance:</strong> <span id="explainer-listen">—</span> m</p>
+                            <p><strong>Ideal toe-in angle:</strong> <span id="explainer-ideal-toe">—</span>°</p>
+
+
+                        </div>
+
+                        <!-- DIAGRAM RIGHT -->
                         <div class="room-diagram-wrapper">
                             <svg id="room-diagram" viewBox="0 0 600 450" preserveAspectRatio="xMidYMid meet">
 
@@ -151,45 +172,28 @@
                                     stroke-width="3"
                                     stroke-dasharray="8 6" />
 
-                                <text id="room-front-label"
-                                    x="300" y="22"
-                                    text-anchor="middle"
-                                    fill="rgba(129,140,248,0.85)"
-                                    font-size="16"
-                                    font-weight="700">
-                                    FRONT WALL
-                                </text>
+                                <!-- SPEAKERS -->
+                                <image id="left-speaker" class="plan-object" href="icons/spl.svg" width="40" height="40" />
+                                <image id="right-speaker" class="plan-object" href="icons/spr.svg" width="40" height="40" />
 
-                                <image id="left-speaker"  class="plan-object" href="icons/spl.svg" width="54" height="54" />
-                                <image id="right-speaker" class="plan-object" href="icons/spr.svg" width="54" height="54" />
+                                <!-- SOFA -->
+                                <image id="sofa-icon" class="plan-object" href="icons/sofa.svg" width="200" height="120" />
 
-                                <line id="left-toe-line"  class="toe-line" />
+                                <!-- TOE-IN -->
+                                <line id="left-toe-line" class="toe-line" />
                                 <line id="right-toe-line" class="toe-line" />
 
-                                <image id="sofa-icon" class="plan-object" href="icons/sofa.svg" width="150" height="90" />
+                                <text id="listening-pos-label" text-anchor="middle"></text>
 
-                                <text id="listening-pos-label" text-anchor="middle">LISTENING POSITION</text>
                             </svg>
                         </div>
 
-                        <div class="explainer-card">
-                            <h4 class="explainer-title">What's happening in your room?</h4>
+                    </div> <!-- end .results-grid -->
 
-                            <p>
-                                <strong>Room size:</strong>
-                                <span id="explainer-width">—</span> × <span id="explainer-length">—</span> m
-                            </p>
+                </div> <!-- end .room-layout-grid-new -->
 
-                            <p><strong>Speaker spacing:</strong> <span id="explainer-spacing">—</span> m</p>
-                            <p><strong>Listening distance:</strong> <span id="explainer-listen">—</span> m</p>
-                            <p><strong>Ideal toe-in angle:</strong> <span id="explainer-ideal-toe">—</span>°</p>
-
-                            <p class="explainer-reason" id="explainer-reason"></p>
-                        </div>
-                    </div>
-
-                </div>
             </section>
+
 
 
             <!-- ===================================================== -->
@@ -355,105 +359,115 @@
             setTimeout(() => box.remove(), 2400);
         }
 
-        /* ============================================================
-           SAVE SETUP
-        ============================================================ */
-        async function saveAllSetup() {
-            const payload = {
-                length_m: parseFloat(document.getElementById('room-length').value),
-                width_m: parseFloat(document.getElementById('room-width').value),
-                height_m: parseFloat(document.getElementById('room-height').value),
+    /* ============================================================
+    SAVE SETUP
+    ============================================================ */
+    async function saveAllSetup() {
+        const payload = {
+            length_m: parseFloat(document.getElementById('room-length').value),
+            width_m: parseFloat(document.getElementById('room-width').value),
+            height_m: parseFloat(document.getElementById('room-height').value),
 
-                echo_pct: parseInt(document.getElementById('room-echo').value),
+            echo_pct: parseInt(document.getElementById('room-echo').value),
 
-                floor_material: document.getElementById('floor-material').value,
+            floor_material: document.getElementById('floor-material').value,
 
-                opt_area_rug: document.getElementById('opt-area-rug').checked,
-                opt_barewalls: document.getElementById('opt-barewalls').checked,
-                opt_wallart: document.getElementById('opt-wallart').checked,
-                opt_curtains: document.getElementById('opt-curtains').checked,
-                opt_sofa: document.getElementById('opt-sofa').checked,
+            opt_area_rug: document.getElementById('opt-area-rug').checked,
+            opt_barewalls: document.getElementById('opt-barewalls').checked,
+            opt_wallart: document.getElementById('opt-wallart').checked,
+            opt_curtains: document.getElementById('opt-curtains').checked,
+            opt_sofa: document.getElementById('opt-sofa').checked,
 
-                spk_front_m: parseFloat(document.getElementById('speaker-distance').value),
-                spk_spacing_m: parseFloat(document.getElementById('speaker-width').value),
-                //toe_in_deg: parseFloat(document.getElementById('toe-angle').value),
-                listener_front_m: parseFloat(document.getElementById('listening-distance').value),
+            spk_front_m: parseFloat(document.getElementById('speaker-distance').value),
+            spk_spacing_m: parseFloat(document.getElementById('speaker-width').value),
+            listener_front_m: parseFloat(document.getElementById('listening-distance').value),
+            toe_in_deg: parseFloat(document.getElementById('toe-angle').value),
 
-                speaker_type: document.getElementById('speaker-type').value,
-                speaker_key: document.getElementById('speakerSel').value,
+            speaker_type: document.getElementById('speaker-type').value,
+            speaker_key: document.getElementById('speakerSel').value,
 
-                layout: 'stereo'
-            };
+            layout: 'stereo'
+        };
 
-            console.log("💾 Saving all:", payload);
+        console.log("💾 [SAVE] Payload being sent:", payload);
 
-            const res = await fetch('/api/room/latest', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+        const res = await fetch('/api/room/latest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-            if (!res.ok) {
-                toast('Save failed', 'error');
-                return;
-            }
+        console.log("📩 [SAVE] Response status:", res.status);
 
-            toast('Room & speakers saved', 'success');
-            loadRoomSetup();
+        if (!res.ok) {
+            toast('Save failed', 'error');
+            return;
         }
 
-        /* ============================================================
-           LOAD SETUP
-        ============================================================ */
-        async function loadRoomSetup() {
-            const res = await fetch('/api/room/latest');
+        toast('Room & speakers saved', 'success');
+        loadRoomSetup();
+    }
 
-            if (!res.ok) {
-                console.warn("No saved setup found.");
-                return;
-            }
+    /* ============================================================
+    LOAD SETUP
+    ============================================================ */
+    async function loadRoomSetup() {
+        const res = await fetch('/api/room/latest');
 
-            const j = await res.json();
+        console.log("📥 [LOAD] Fetch status:", res.status);
 
-            function setNum(key, id) {
-                if (j[key] != null) document.getElementById(id).value = j[key];
-            }
-
-            function setBool(key, id) {
-                document.getElementById(id).checked = !!j[key];
-            }
-
-            setNum('length_m', 'room-length');
-            setNum('width_m', 'room-width');
-            setNum('height_m', 'room-height');
-
-            setNum('spk_front_m', 'speaker-distance');
-            setNum('spk_spacing_m', 'speaker-width');
-            setNum('listener_front_m', 'listening-distance');
-
-            setBool('opt_area_rug', 'opt-area-rug');
-            setBool('opt_barewalls', 'opt-barewalls');
-            setBool('opt_wallart', 'opt-wallart');
-            setBool('opt_curtains', 'opt-curtains');
-            setBool('opt_sofa', 'opt-sofa');
-
-            if (j.echo_pct != null) {
-                document.getElementById('room-echo').value = j.echo_pct;
-                document.getElementById('roomEchoValue').textContent = j.echo_pct + '%';
-            }
-
-            if (j.floor_material) {
-                document.getElementById('floor-material').value = j.floor_material;
-            }
-
-            if (j.speaker_type) {
-                document.getElementById('speaker-type').value = j.speaker_type;
-            }
-
-            if (j.speaker_key) {
-                document.getElementById('speakerSel').value = j.speaker_key;
-            }
+        if (!res.ok) {
+            console.warn("⚠️ No saved room setup found.");
+            return;
         }
+
+        const j = await res.json();
+        console.log("📥 [LOAD] Parsed room setup:", j);
+
+        function setNum(key, id) {
+            if (j[key] != null) document.getElementById(id).value = j[key];
+        }
+
+        function setBool(key, id) {
+            document.getElementById(id).checked = !!j[key];
+        }
+
+        setNum('length_m', 'room-length');
+        setNum('width_m', 'room-width');
+        setNum('height_m', 'room-height');
+
+        setNum('spk_front_m', 'speaker-distance');
+        setNum('spk_spacing_m', 'speaker-width');
+        setNum('listener_front_m', 'listening-distance');
+
+        setNum('toe_in_deg', 'toe-angle');
+
+        setBool('opt_area_rug', 'opt-area-rug');
+        setBool('opt_barewalls', 'opt-barewalls');
+        setBool('opt_wallart', 'opt-wallart');
+        setBool('opt_curtains', 'opt-curtains');
+        setBool('opt_sofa', 'opt-sofa');
+
+        if (j.echo_pct != null) {
+            document.getElementById('room-echo').value = j.echo_pct;
+            document.getElementById('roomEchoValue').textContent = j.echo_pct + '%';
+        }
+
+        if (j.floor_material) {
+            document.getElementById('floor-material').value = j.floor_material;
+        }
+
+        if (j.speaker_type) {
+            document.getElementById('speaker-type').value = j.speaker_type;
+        }
+
+        if (j.speaker_key) {
+            document.getElementById('speakerSel').value = j.speaker_key;
+        }
+
+        if (window.roomDiagram) window.roomDiagram.update();
+    }
+
 
         /* ============================================================
            BIND SAVE BUTTON

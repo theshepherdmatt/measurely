@@ -1,7 +1,7 @@
 /* ============================================================
     GLOBAL TIP MEMORY + UNIQUE PICKING
     ============================================================ */
-window.usedBuddyTips = {
+window.usedDaveTips = {
     peaks_dips: new Set(),
     reflections: new Set(),
     bandwidth: new Set(),
@@ -29,7 +29,7 @@ const replaceBold = (text) => text.replace(/\*\*(.*?)\*\*/g, '<span class="font-
 window.pickUniqueTip = function(bucket, allTips) {
     if (!allTips || allTips.length === 0) return '';
 
-    const used = window.usedBuddyTips[bucket];
+    const used = window.usedDaveTips[bucket];
 
     // Reset if we've used all
     if (used.size >= allTips.length) used.clear();
@@ -97,27 +97,27 @@ function applyMainBand(elLevel, elBar, value) {
     elBar.classList.add(`mainbar-${c}`);
 }
 
-function updateMetricAria(labelId, scoreId, statusId, buddyId) {
+function updateMetricAria(labelId, scoreId, statusId, daveId) {
     const score = document.getElementById(scoreId)?.textContent.trim() || "--";
     const status = document.getElementById(statusId)?.textContent.trim() || "";
-    const buddy = document.getElementById(buddyId)?.textContent.trim() || "";
+    const dave = document.getElementById(daveId)?.textContent.trim() || "";
 
     const card = document.querySelector(`[aria-labelledby="${labelId}"]`);
     if (card) {
         card.setAttribute(
             "aria-label",
-            `${document.getElementById(labelId).textContent}. Score ${score} out of 10. ${status}. Dave says: ${buddy}`
+            `${document.getElementById(labelId).textContent}. Score ${score} out of 10. ${status}. Dave says: ${dave}`
         );
     }
 }
 
 function updateAllMetricAria() {
-    updateMetricAria("peaksDipsLabel", "peaksDipsScore", "peaksDipsStatusText", "peaksDipsBuddy");
-    updateMetricAria("reflectionsLabel", "reflectionsScore", "reflectionsStatusText", "reflectionsBuddy");
-    updateMetricAria("bandwidthLabel", "bandwidthScore", "bandwidthStatusText", "bandwidthBuddy");
-    updateMetricAria("balanceLabel", "balanceScore", "balanceStatusText", "balanceBuddy");
-    updateMetricAria("smoothnessLabel", "smoothnessScore", "smoothnessStatusText", "smoothnessBuddy");
-    updateMetricAria("reverbLabel", "reverbScore", "reverbStatusText", "reverbBuddy");
+    updateMetricAria("peaksDipsLabel", "peaksDipsScore", "peaksDipsStatusText", "peaksDipsDave");
+    updateMetricAria("reflectionsLabel", "reflectionsScore", "reflectionsStatusText", "reflectionsDave");
+    updateMetricAria("bandwidthLabel", "bandwidthScore", "bandwidthStatusText", "bandwidthDave");
+    updateMetricAria("balanceLabel", "balanceScore", "balanceStatusText", "balanceDave");
+    updateMetricAria("smoothnessLabel", "smoothnessScore", "smoothnessStatusText", "smoothnessDave");
+    updateMetricAria("reverbLabel", "reverbScore", "reverbStatusText", "reverbDave");
 }
 
 function updateChartAria(channel, summaryText) {
@@ -146,8 +146,7 @@ class MeasurelyDashboard {
         this.updateInterval = null;
         this.sweepCheckInterval = null;
 
-        this.loadFootTags();
-        this.loadBuddyPhrases();
+        this.loadDavePhrases();
         this.init();
     }
 
@@ -160,26 +159,39 @@ class MeasurelyDashboard {
     }
 
 
-    /* ---------- load foot tag-lines once ---------- */
-    async loadFootTags() {
+    async loadDavePhrases() {
         try {
-            const res = await fetch('/foot_tags.json');
+            const res = await fetch('/dave_phrases.json');
             if (!res.ok) throw new Error(res.status);
-            window.footBank = await res.json();
-            console.log("foot_tags loaded");
+            window.daveCards = await res.json();
+            console.log("dave_cards loaded");
         } catch {
-            window.footBank = {};
+            window.daveCards = {};
+            console.warn("Failed to load dave_cards");
         }
     }
 
-    async loadBuddyPhrases() {
+    async loadDaveOverall() {
         try {
-            const res = await fetch('/buddy_phrases.json');
+            const res = await fetch('/overall_phrases.json');
             if (!res.ok) throw new Error(res.status);
-            window.buddyBank = await res.json();
-            console.log("buddy_phrases loaded");
+            window.daveOverall = await res.json();
+            console.log("dave_overall loaded");
         } catch {
-            window.buddyBank = {};
+            window.daveOverall = {};
+            console.warn("Failed to load dave_overall");
+        }
+    }
+
+    async loadDaveFixes() {
+        try {
+            const res = await fetch('/tipstweaks_phrases.json');
+            if (!res.ok) throw new Error(res.status);
+            window.daveFixes = await res.json();
+            console.log("dave_fixes loaded");
+        } catch {
+            window.daveFixes = {};
+            console.warn("Failed to load dave_fixes");
         }
     }
 
@@ -207,40 +219,130 @@ class MeasurelyDashboard {
         if (dipEl) dipEl.textContent = numDips;
     }
 
+    /* ============================================================
+    SWEEP HISTORY (NEWEST → OLDEST, NOTES INCLUDED)
+    ============================================================ */
     async loadSweepHistory() {
-        let sessions = [];
         try {
-            sessions = await fetch("/api/sessions/all").then(r => r.json());
-        } catch {
-            return;
-        }
+            const all = await fetch("/api/sessions/all").then(r => r.json());
+            const cards = document.querySelectorAll(".sweep-card");
 
-        const recent = sessions.slice(0, 4);
-        const cards = document.querySelectorAll(".sweep-card");
-
-        for (let i = 0; i < cards.length; i++) {
-            const card = cards[i];
-            const id = recent[i]?.id;
-
-            if (!id) {
-                card.querySelector(".sweep-score").textContent = "--";
-                card.querySelectorAll(".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-reverb")
-                    .forEach(e => e.textContent = "--");
-                continue;
+            if (!Array.isArray(all) || all.length === 0) {
+                console.warn("No sweep history found.");
+                cards.forEach(card => {
+                    card.dataset.sweepid = "";
+                    card.querySelector(".sweep-score").textContent = "--";
+                    card.querySelectorAll(
+                        ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-reverb"
+                    ).forEach(e => e.textContent = "--");
+                    const preview = card.querySelector("[data-note-preview]");
+                    preview.textContent = "—";
+                    preview.style.opacity = "0.3";
+                });
+                return;
             }
 
-            const data = await fetch(`/api/session/${id}`).then(r => r.json());
+            const extractNum = (id) => {
+                const m = String(id).match(/(\d+)(?!.*\d)/);
+                return m ? parseInt(m[1], 10) : -1;
+            };
 
-            card.querySelector(".sweep-score").textContent = data.overall_score?.toFixed(1) ?? "--";
-            card.querySelector(".m-peaks").textContent = data.peaks_dips?.toFixed(1) ?? "--";
-            card.querySelector(".m-reflections").textContent = data.reflections?.toFixed(1) ?? "--";
-            card.querySelector(".m-bandwidth").textContent = data.bandwidth?.toFixed(1) ?? "--";
-            card.querySelector(".m-balance").textContent = data.balance?.toFixed(1) ?? "--";
-            card.querySelector(".m-smoothness").textContent = data.smoothness?.toFixed(1) ?? "--";
-            card.querySelector(".m-reverb").textContent = data.reverb?.toFixed(1) ?? "--";
+            // Sort newest → oldest and filter Sweep0 if others exist
+            const filtered = all
+                .slice()
+                .sort((a, b) => extractNum(b.id) - extractNum(a.id))
+                .filter(s => !(extractNum(s.id) === 0 && all.length > 1));
+
+            const recent = filtered.slice(0, 4);
+            console.warn("🟪 SWEEP MAP:", recent.map(s => s.id));
+
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                const meta = recent[i];
+
+                if (!meta) {
+                    card.dataset.sweepid = "";
+                    card.querySelector(".sweep-score").textContent = "--";
+                    card.querySelectorAll(
+                        ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-reverb"
+                    ).forEach(e => e.textContent = "--");
+                    const preview = card.querySelector("[data-note-preview]");
+                    preview.textContent = "—";
+                    preview.style.opacity = "0.3";
+                    continue;
+                }
+
+                const sweepId = meta.id;
+                card.dataset.sweepid = sweepId;
+
+                let data;
+                try {
+                    data = await fetch(`/api/session/${sweepId}`).then(r => r.json());
+                } catch (err) {
+                    console.error("Failed to load sweep for card:", sweepId, err);
+                    continue;
+                }
+
+                // Scores
+                const scoreEl = card.querySelector(".sweep-score");
+                scoreEl.textContent = (data.overall_score ?? "--");
+
+                const setMetric = (cls, val) => {
+                    const el = card.querySelector(cls);
+                    if (!el) return;
+                    el.textContent = (val !== undefined && val !== null)
+                        ? val.toFixed(1)
+                        : "--";
+                };
+
+                setMetric(".m-peaks",       data.peaks_dips);
+                setMetric(".m-reflections", data.reflections);
+                setMetric(".m-bandwidth",   data.bandwidth);
+                setMetric(".m-balance",     data.balance);
+                setMetric(".m-smoothness",  data.smoothness);
+                setMetric(".m-reverb",      data.reverb);
+
+                // 📝 Load note preview correctly from saved sweep
+                const note =
+                    (Array.isArray(data.analysis_notes) && data.analysis_notes.length > 0 && data.analysis_notes[0]) ||
+                    data.notes ||
+                    data.note ||
+                    "";
+
+                const tidiedNote = note.trim();
+
+
+                const previewEl = card.querySelector("[data-note-preview]");
+                previewEl.textContent = tidiedNote !== "" ? tidiedNote : "—";
+                previewEl.style.opacity = tidiedNote !== "" ? "1" : "0.3";
+
+                console.log(`📝 Note restored into card(${i}): ${sweepId} → "${tidiedNote}"`);
+
+            }
+
+        } catch (err) {
+            console.error("❌ loadSweepHistory failed:", err);
         }
     }
 
+
+    /* ============================================================
+   SAVE NOTE TO BACKEND (PERSIST IN ANALYSIS.JSON)
+   ============================================================ */
+    async saveNote(sessionId, note) {
+        try {
+            await fetch(`/api/session/${encodeURIComponent(sessionId)}/note`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ note })
+            });
+
+            this.showSuccess("Note saved");
+        } catch (err) {
+            console.error("Failed to save note:", err);
+            this.showError("Failed to save note");
+        }
+    }
 
     /* ============================================================
     INIT
@@ -250,12 +352,17 @@ class MeasurelyDashboard {
 
         this.setupEventListeners();
         this.resetSessionButtonLabels();  
-        
-        await this.loadData();
-        this.startPolling();
-        this.updateDashboard(); 
-        this.showSuccess('Sweep complete!');
 
+        // 🔑 Load Dave's phrase bank first
+        await this.loadDavePhrases();
+        await this.loadDaveOverall();
+        await this.loadDaveFixes();
+
+        // Then load measurement data
+        await this.loadData();
+
+        this.startPolling();
+        this.showSuccess('Sweep complete!');
 
         console.log('Dashboard initialized successfully');
     }
@@ -492,82 +599,56 @@ class MeasurelyDashboard {
             statusTextEl.innerHTML = this.getScoreStatusText(overall);
         }
 
-        /* ---------------- FIXED OVERALL BUDDY PHRASE ---------------- */
-        /* ---------------- FIXED OVERALL BUDDY PHRASE WITH LOGGING + TAG EXPANSION ---------------- */
+        /* ---------------- FIXED OVERALL Dave PHRASE ---------------- */
+        /* ---------------- OVERALL DAVE PHRASE — USE overall_phrases.json ONLY ---------------- */
         (async () => {
-            console.log("=== OVERALL PHRASE DEBUG START ===");
-            console.log("SPEAKERS:", window.SPEAKERS);
-
             const data = this.currentData || {};
-            console.log("CurrentData:", data);
+            const room = data.room || {};
+            const scoresObj = data.scores || {};
 
-            const backend = data.buddy_summary;
-            console.log("Backend buddy_summary:", backend);
+            // Numeric overall score we’ll use for bucket + tag
+            let overallScore = Number(
+                scoresObj.overall ?? data.overall_score ?? data.overall ?? 5
+            );
+            if (!Number.isFinite(overallScore)) overallScore = 5;
 
-            // Helper: expand tags {{tag}} WITH CURRENT DASHBOARD DATA
-            function expandTags(str) {
+            // Speaker lookup (safe default)
+            const speakerKey = room.speaker_key;
+            const spk = (speakerKey && window.SPEAKERS?.[speakerKey])
+                ? window.SPEAKERS[speakerKey]
+                : { friendly_name: "your speakers", name: "your speakers" };
+
+            // Values for all the {{tags}} in overall_phrases.json
+            const tagMap = {
+                overall_score: overallScore.toFixed(1),
+                room_width: room.width_m ?? room.length_m ?? "--",
+                room_length: room.length_m ?? room.width_m ?? "--",
+                room_height: room.height_m ?? room.height ?? "--",
+                spk_distance: room.spk_distance_m ?? room.listener_front_m ?? "--",
+                listener_distance: room.listener_front_m ?? "--",
+                toe_in: room.toe_in ?? "--",
+                speaker_friendly_name: spk.friendly_name,
+                speaker_name: spk.name
+            };
+
+            const expandTags = (str) => {
                 if (!str) return str;
-
-                const room = data.room || {};
-                const scores = data.scores || {};
-
-                const spk = window.SPEAKERS?.[room.speaker_key] || {};
-
-                const map = {
-                    overall_score: scores.overall,
-                    room_width: room.width_m,
-                    room_length: room.length_m,
-                    room_height: room.height_m,
-                    spk_distance: room.spk_front_m,
-                    toe_in: room.toe_in_deg,
-                    listener_distance: room.listener_front_m,
-                    speaker_friendly_name: spk.friendly_name || spk.name || "",
-                    speaker_name: spk.friendly_name || spk.name || ""
-                };
-
-
-
                 let out = str;
-
-                // LOG EACH TAG REPLACEMENT
-                Object.entries(map).forEach(([k, v]) => {
-                    console.log(`Replacing tag {{${k}}} with:`, v);
-                    out = out.replace(new RegExp(`{{${k}}}`, "g"), v ?? "");
-                });
-
+                for (const [key, value] of Object.entries(tagMap)) {
+                    const re = new RegExp(`{{${key}}}`, "g");
+                    out = out.replace(re, value ?? "");
+                }
                 return out;
-            }
+            };
 
-            let phrase = backend;
+            // Pick a template line from overall_phrases.json based on score
+            const template = await this.pickOverallPhrase(overallScore);
+            const phrase = expandTags(template);
 
-            // CASE 1 — Backend exists, use it
-            if (phrase && phrase.trim() !== "") {
-                console.log("Using BACKEND phrase.");
-                phrase = expandTags(phrase);
-                console.log("Backend expanded phrase:", phrase);
-            } 
-            else {
-                // CASE 2 — Backend missing, pick fallback
-                console.log("Backend missing → picking fallback JS phrase.");
-
-                const fallback = await this.pickOverallPhrase(
-                    Number(data.scores?.overall ?? 5)
-                );
-
-                console.log("Raw fallback:", fallback);
-
-                phrase = expandTags(fallback);
-
-                console.log("Expanded fallback:", phrase);
-            }
-
-            // FINAL OUTPUT TO SCREEN
-            const phraseEl = document.getElementById('overallBuddyPhrase');
+            const phraseEl = document.getElementById("overallDavePhrase");
             if (phraseEl) {
                 phraseEl.textContent = `“${phrase}”`;
             }
-
-            console.log("=== OVERALL PHRASE DEBUG END ===");
         })();
 
 
@@ -597,8 +678,9 @@ class MeasurelyDashboard {
             this.applySixCardColor(baseId, val);
         }
 
-        /* ---------------- SUMMARIES + BUDDY TIPS ---------------- */
+        /* ---------------- SUMMARIES + Dave TIPS ---------------- */
         this.updateDescriptions(data);
+
     }
 
     /* ============================================================
@@ -637,7 +719,7 @@ class MeasurelyDashboard {
             // --- BOX 2: DAVE'S TRANSLATION (Uses the simple descriptive phrase) ---
             const transEl = document.getElementById(metric.id + 'Translation');
             if (transEl) {
-                const choices = window.buddyBank[metric.id]?.[bucket] || ['Dave cannot compute.'];
+                const choices = window.daveFixes[metric.id]?.[bucket] || ['Dave cannot compute.'];
                 const translatedPhrase = window.pickUniqueTip(metric.id, choices); 
                 transEl.textContent = `“${translatedPhrase}”`; // Apply quotes for Dave's voice
             }
@@ -645,7 +727,7 @@ class MeasurelyDashboard {
             // --- BOX 3: SOLUTIONS (The list of specific fixes) ---
             const solutionsEl = document.getElementById(metric.id + 'Solutions');
             if (solutionsEl) {
-                const solutionChoices = window.buddyBank[metric.id + '_solutions']?.[bucket] || ['<li>No fixes available.</li>'];
+                const solutionChoices = window.daveFixes[metric.id + '_solutions']?.[bucket] || ['<li>No fixes available.</li>'];
                 
                 // Format the specific solutions into an HTML list
                 const htmlList = solutionChoices.map(solution => {
@@ -660,7 +742,7 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-    BUDDY TIP PICKER — OVERALL
+    Dave TIP PICKER — OVERALL
     ============================================================ */
     async pickOverallPhrase(score) {
 
@@ -670,7 +752,7 @@ class MeasurelyDashboard {
             score >= 4 ? 'overall_fair' :
                         'overall_poor';
 
-        const bank = window.buddyBank || {};
+        const bank = window.daveOverall || {};
         const choices = bank[bucket] || [];
 
         if (choices.length === 0) {
@@ -696,7 +778,7 @@ class MeasurelyDashboard {
 
 
     /* ============================================================
-    CARD SUMMARIES + BUDDY TIPS + RAW METRICS
+    CARD SUMMARIES + Dave TIPS + RAW METRICS
     ============================================================ */
     updateDescriptions(data) {
 
@@ -794,25 +876,59 @@ class MeasurelyDashboard {
 
 
         /* ============================================================
-        BUDDY PHRASES
+        Dave PHRASES (new system - no buckets)
         ============================================================ */
-        this.injectBuddyPhrase("bandwidthBuddy",   "bandwidth",   bwBucket);
-        this.injectBuddyPhrase("balanceBuddy",     "balance",     balBucket);
-        this.injectBuddyPhrase("smoothnessBuddy",  "smoothness",  smBucket);
-        this.injectBuddyPhrase("peaksDipsBuddy",   "peaks_dips",  pdBucket);
-        this.injectBuddyPhrase("reflectionsBuddy", "reflections", refBucket);
-        this.injectBuddyPhrase("reverbBuddy",      "reverb",      rvBucket);
+        const spk = (data.room?.speaker_key && window.SPEAKERS?.[data.room.speaker_key])
+            ? window.SPEAKERS[data.room.speaker_key]
+            : { friendly_name: "your speakers" };
+
+        const tagMap = {
+            room_width: data.room?.width_m ?? "--",
+            room_length: data.room?.length_m ?? "--",
+            listener_distance: data.room?.listener_front_m ?? "--",
+            spk_distance: data.room?.spk_distance ?? "--",
+            speaker_friendly_name: spk.friendly_name
+        };
+
+        const expandTags = str => {
+            if (!str) return str;
+            return Object.entries(tagMap).reduce((out, [k, v]) =>
+                out.replace(new RegExp(`{{${k}}}`, "g"), v ?? ""), str);
+        };
+
+        const metricMap = {
+            bandwidth: "bandwidthDave",
+            balance: "balanceDave",
+            smoothness: "smoothnessDave",
+            peaks_dips: "peaksDipsDave",
+            reflections: "reflectionsDave",
+            reverb: "reverbDave"
+        };
+
+        for (const [metric, elId] of Object.entries(metricMap)) {
+            const el = document.getElementById(elId);
+            if (!el) continue;
+
+            const arr = window.daveCards?.[metric];
+            if (!Array.isArray(arr) || arr.length === 0) {
+                el.textContent = "";
+                continue;
+            }
+
+            const phrase = expandTags(arr[Math.floor(Math.random() * arr.length)]);
+            el.textContent = phrase;
+        }
+
     }
 
-
     /* ============================================================
-    BUDDY TIP INJECTION (PER CARD)
+    Dave TIP INJECTION (PER CARD)
     ============================================================ */
-    async injectBuddyPhrase(elId, cardName, bucket) {
+    async injectDavePhrase(elId, cardName, bucket) {
         const el = document.getElementById(elId);
         if (!el) return;
 
-        const bank = window.buddyBank || {};
+        const bank = window.daveCards || {};
 
         const cardBucket = bank[cardName];
         if (!cardBucket) {
@@ -1265,6 +1381,7 @@ class MeasurelyDashboard {
         this.updateCompareSessionMetrics(); // Redraw metrics after chart update
 
     }
+    
 
 
     /* ============================================================
@@ -1530,61 +1647,68 @@ class MeasurelyDashboard {
 
 
     /* ============================================================
-    SESSION LOADING (Latest / Previous / Last)
+    LOAD SESSION BY INDEX (NEWEST → OLDEST, EXACT MATCH)
     ============================================================ */
     async loadNthSession(n) {
         try {
-            // Fetch list of real sessions
-            const all = await fetch('/api/sessions').then(r => r.json());
+            console.log(`📦 Loading sweep index: ${n}`);
 
-            // 🔥 Always enforce static button labels
-            this.resetSessionButtonLabels();
+            // Fetch all sweeps
+            const all = await fetch('/api/sessions/all').then(r => r.json());
 
-            // --- Safety checks ----------------------------------------------------
-            if (!Array.isArray(all) || all.length === 0) {
-                this.showError("No real sessions found");
-                return;
-            }
+            const extractNum = (val) => {
+                const m = String(val).match(/(\d+)(?!.*\d)/);
+                return m ? parseInt(m[1], 10) : 0;
+            };
 
-            if (n >= all.length) {
-                this.showError("Not enough sessions yet");
-                return;
-            }
+            // Order newest → oldest & REMOVE Sweep0 if others exist
+            const sorted = all
+                .slice()
+                .sort((a, b) => extractNum(b.id) - extractNum(a.id))
+                .filter((s) => !(extractNum(s.id) === 0 && all.length > 1));
 
-            const sessionId = all[n].id;
-            if (!sessionId) {
-                this.showError("Invalid session ID");
-                return;
-            }
+            console.warn("🔹 SWEEP ORDER:", sorted.map(s => s.id));
 
-            // --- Fetch actual session data ---------------------------------------
+            if (!sorted.length) return this.showError("No sweeps found");
+            if (n >= sorted.length) return this.showError("Not enough sweeps");
+
+            const sessionId = sorted[n].id;
+            console.log(`📂 Fetching sweep → ${sessionId}`);
+
             const data = await fetch(`/api/session/${encodeURIComponent(sessionId)}`)
                 .then(r => r.json());
 
             if (!data || data.error) {
-                this.showError("Failed to load session");
-                return;
+                console.error("❌ Invalid sweep:", data);
+                return this.showError("Sweep load failed");
             }
 
-            // The API returns the whole session
-            //this.currentData = data;
+            this.currentData = data; // required for notes save
+            this.updateFrequencyChartStandalone(data);
+            this.updateCompareSessionMetricsStandalone(data);
 
-            // Redraw the dashboard
-            //this.updateDashboard();
+            // Restore saved note to modal
+            const note = (data.analysis_notes?.[0] || data.notes || "").trim();
+            const textarea = document.getElementById("notesTextarea");
+            if (textarea) {
+                textarea.value = note;
+                textarea.style.opacity = note ? "1" : "0.3";
+                console.log(`📝 Restored note for ${sessionId}:`, note);
+            }
 
-            this.updateFrequencyChartStandalone(data);      // ✔ updates only the chart
-            this.updateCompareSessionMetricsStandalone(data);  // ✔ updates only Nerds Corner
+            await this.loadSweepHistory();
 
-            // Highlight the correct button
-            this.highlightSessionButton(n);
+            // Highlight correct button
+            const btns = document.querySelectorAll("#sweepNav button");
+            btns.forEach(b => b.classList.remove("session-active"));
+            if (btns[n]) btns[n].classList.add("session-active");
 
-            // Success toast
-            const label = (n === 0 ? "Latest" : n === 1 ? "Previous" : "Last");
-            this.showSuccess(`Loaded ${label} session`);
+            const tag = ["Latest", "Previous", "Earlier", "Oldest"][n] || "Sweep";
+            this.showSuccess(`Loaded ${tag}`);
 
         } catch (err) {
-            console.error(err);
-            this.showError("Error loading session");
+            console.error("❌ loadNthSession error:", err);
+            this.showError("Error loading sweep");
         }
     }
 
@@ -1636,31 +1760,66 @@ class MeasurelyDashboard {
 
         const safe = (id, handler) => {
             const el = document.getElementById(id);
-            if (el) el.addEventListener('click', handler);
+            if (!el) {
+                console.warn(`[WARN] Missing element for listener: ${id}`);
+                return;
+            }
+            el.addEventListener('click', handler);
         };
 
-        // Sweep controls — only on Dashboard
-        safe('runSweepBtn', () => this.runSweep());
-        safe('saveResultsBtn', () => this.saveResults());
-        safe('exportReportBtn', () => this.exportReport());
+        // Sweep controls — Dashboard only
+        safe('runSweepBtn',      () => this.runSweep());
+        //safe('saveResultsBtn',   () => this.saveResults());
+        //safe('exportReportBtn',  () => this.exportReport());
 
-        // Channel buttons — only on Dashboard
-        safe('leftChannelBtn',  () => this.showChannel('left'));
-        safe('rightChannelBtn', () => this.showChannel('right'));
-        safe('bothChannelsBtn', () => this.showChannel('both'));
+        // Channel buttons — toggle frequency chart
+        safe('leftChannelBtn',   () => this.showChannel('left'));
+        safe('rightChannelBtn',  () => this.showChannel('right'));
+        safe('bothChannelsBtn',  () => this.showChannel('both'));
 
-        safe('sessionLatestBtn',   () => this.loadNthSession(0));
-        safe('sessionPreviousBtn', () => this.loadNthSession(1));
-        safe('sessionLastBtn',     () => this.loadNthSession(2));
+        // Sweep Navigation – handled exclusively via index.html listener
+        // (see bottom of index.html for sweepNav click handler)
+        // ❌ No direct sessionLatestBtn or legacy event bindings here
 
-        // 🔥 FIX: Manual refresh button
+        // Refresh dashboard
         safe('refreshDashboardBtn', async () => {
-            console.log("Manual dashboard refresh… forcing full reload");
+            console.log("Manual dashboard refresh triggered");
             await this.loadData();
             this.updateDashboard();
         });
 
+        safe('saveNotesBtn', async () => {
+            const textarea = document.getElementById("notesTextarea");
+            const note = textarea ? textarea.value.trim() : "";
+
+            // Determine correct sweep ID from currently displayed session
+            const sweepId = this.currentData?.id;
+            if (!sweepId || sweepId === "latest") {
+                console.error("❌ Cannot resolve real sweep ID from currentData.id:", this.currentData?.id);
+                this.showError("Cannot save note – invalid sweep ID");
+                return;
+            }
+
+            console.log(`💾 Saving note for ${sweepId}:`, note);
+
+            await this.saveNote(sweepId, note);
+
+            // Update preview on the correct sweep card
+            document.querySelectorAll(".sweep-card").forEach(card => {
+                if (card.dataset.sweepid === sweepId) {
+                    const preview = card.querySelector("[data-note-preview]");
+                    if (preview) preview.textContent = note || "—";
+                }
+            });
+
+            if (typeof closeNotesModal === "function") {
+                closeNotesModal();
+            }
+
+            this.showSuccess("Note saved!");
+        });
     }
+
 
     /* ============================================================
      TOAST MESSAGES
