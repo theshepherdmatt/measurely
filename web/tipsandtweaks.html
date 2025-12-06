@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,387 +7,266 @@
   <link rel="icon" type="image/svg+xml" href="icons/dave.svg">
   <link rel="stylesheet" href="measurely.css">
   <script src="js/plotly.min.js"></script>
+
+  <style>
+    .metric-explain {
+      color: var(--c-text-muted);
+      font-size: 0.85rem;
+      margin: 0.25rem 0 1rem 0;
+      line-height: 1.4;
+    }
+    .dave-steps li {
+      margin-bottom: 0.75rem;
+      line-height: 1.45;
+    }
+    .score-focus {
+      color: var(--c-accent);
+    }
+    .simple-icon {
+      width: 22px;
+      opacity: 0.8;
+    }
+    .run-again {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.55);
+    }
+  </style>
 </head>
 
 <body>
+<div class="app-layout">
 
-  <div class="app-layout">
+  <!-- OVERLAY -->
+  <div id="sidebar-overlay" aria-hidden="true"
+    style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display:none; backdrop-filter: blur(4px);"></div>
 
-    <!-- MOBILE OVERLAY -->
-    <div id="sidebar-overlay" aria-hidden="true"
-      style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; backdrop-filter: blur(4px);">
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-logo">
+      <img src="icons/mainlogo.svg" alt="Measurely logo" style="height:46px;">
     </div>
 
-    <!-- SIDEBAR -->
-    <aside id="sidebar" class="sidebar" aria-label="Main navigation sidebar">
-      <div class="sidebar-logo">
-        <img src="icons/mainlogo.svg" alt="Measurely logo" style="height: 46px;">
-        <span></span>
+    <nav>
+      <a href="index.html" class="nav-item">
+        <img src="icons/dashboard.svg" alt=""> Dashboard
+      </a>
+      <a href="room-setup.html" class="nav-item">
+        <img src="icons/home.svg" alt=""> Room Setup
+      </a>
+      <a href="tipsandtweaks.html" class="nav-item active" aria-current="page">
+        <img src="icons/lightbulb.svg" alt=""> Tips & Tweaks
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main-content" class="main-content">
+
+    <header class="header animate-enter">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div>
+          <h1>Tips & Tweaks</h1>
+          <p>Dave highlights the biggest issues holding back your sound — and tells you exactly what to do next.</p>
+        </div>
+        <button id="mobile-menu-btn"
+          class="btn btn-secondary"
+          style="padding:0.5rem;display:none;margin-left:auto;">
+          <img src="icons/bars.svg" style="width:24px;">
+        </button>
       </div>
+    </header>
 
-      <nav aria-label="Main navigation">
-        <a href="index.html" class="nav-item">
-          <img src="icons/dashboard.svg" alt="" aria-hidden="true">
-          Dashboard
-        </a>
+    <div class="animate-enter delay-1" style="margin-bottom:2rem;">
+      <h2>Your Priority Action Areas</h2>
+      <p style="font-size:0.9rem;color:var(--c-text-muted);">
+        These are the top three things limiting your system right now.
+      </p>
+    </div>
 
-        <a href="room-setup.html" class="nav-item">
-          <img src="icons/home.svg" alt="" aria-hidden="true">
-          Room Setup
-        </a>
+    <div id="tipsCardsWrapper" class="grid-3 animate-enter delay-2"
+      role="region" aria-live="polite">
+    </div>
 
-        <a href="tipsandtweaks.html" class="nav-item active" aria-current="page">
-          <img src="icons/lightbulb.svg" alt="" aria-hidden="true">
-          Tips & Tweaks
-        </a>
-      </nav>
+  </main>
+</div>
 
-    </aside>
+<script src="/js/dashboard.js"></script>
+<script type="module" src="/js/devices.js"></script>
 
-    <!-- MAIN CONTENT -->
-    <main id="main-content" class="main-content" role="main">
+<script>
+// =====================================================
+// DEBUG LOGS + TAG MAPPING FIXED
+// =====================================================
+console.log("🔥 Tips & Tweaks loaded");
 
-      <!-- HEADER -->
-      <header class="header animate-enter" role="banner">
-          <div class="header-title" 
-              style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+let Solutions = {};
+let data = null;
 
-              <!-- LEFT: Title -->
-              <div>
-                  <h1>Tips & Tweaks</h1>
-                  <p>Dave uses your sweep to highlight issues, explain what's going on, and give practical advice.</p>
-              </div>
+function log(step, obj) {
+  console.log(`📌 [Tips&Tweaks] ${step}`, obj ? JSON.parse(JSON.stringify(obj)) : '');
+}
 
-              <!-- RIGHT: Hamburger -->
-              <button id="mobile-menu-btn" 
-                      class="btn btn-secondary" 
-                      style="padding: 0.5rem; display: none; margin-left: auto;"
-                      aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
-                  <img src="icons/bars.svg" style="width: 24px;" alt="" aria-hidden="true">
-              </button>
+async function loadSolutions() {
+  log("Fetching Solutions JSON…");
+  const r = await fetch('/tipstweaks_phrases.json');
+  Solutions = await r.json();
+  log("Solutions Loaded", Solutions);
+}
 
+async function loadLatest() {
+  log("Fetching /api/latest…");
+  const r = await fetch('/api/latest');
+  data = await r.json();
+  log("Latest Sweep Loaded", data);
+}
+
+// Score → severity label
+function severityFromScore(n) {
+  let sev = (n >= 8) ? "excellent"
+          : (n >= 6) ? "good"
+          : (n >= 4) ? "okay"
+          : "needs_work";
+  log("Severity From Score", { score: n, severity: sev });
+  return sev;
+}
+
+function colorClass(n) {
+  if (n < 4) return "score-focus";
+  if (n >= 8) return "text-excellent";
+  if (n >= 6) return "text-good";
+  return "text-okay";
+}
+
+// EXPLANATIONS
+const METRIC_EXPLAIN = {
+  peaks_dips: `Some bass notes boom, others disappear — that’s Peaks & Dips.<br>The room is messing with your bass loudness from note to note.`,
+  reflections: `Sound bounces off walls and smears detail.<br>Clarity and focus go out the window.`,
+  bandwidth: `The room can choke deep bass and airy highs.<br>You lose fullness and sparkle.`,
+  balance: `If the room pulls sound to one side,<br>voices won’t stay locked in the centre.`,
+  smoothness: `Harsh bumps in mids/highs make music edgy.<br>Flattening them brings clarity back.`,
+  reverb: `Sound hangs around after it should stop.<br>Muddiness and echo creep in.`
+};
+
+function pick(arr) {
+  if (!arr || !arr.length) return "-- Missing phrase --";
+  const item = arr[Math.floor(Math.random() * arr.length)];
+  log("Picked phrase", item);
+  return item;
+}
+
+// 🔥 BIG FIX: Correct tag mapping
+function interpolateTags(text) {
+  if (!data || typeof text !== 'string') return text;
+
+  const room = data.room || {};
+
+  const tags = {
+    room_length: room.length_m,
+    room_width: room.width_m,
+    listener_distance: room.listener_front_m,
+    spk_distance: room.spk_spacing_m,
+    toe_in: room.toe_in_deg,
+    echo_pct: room.echo_pct,
+    speaker_name: data.speaker_friendly_name
+  };
+
+  return text.replace(/\{\{(.*?)\}\}/g, (_, key) => {
+    key = key.trim();
+    const val = tags[key];
+    if (val !== undefined && val !== null) {
+      console.log(`🔁 Replaced {{${key}}} →`, val);
+      return val;
+    } else {
+      console.warn(`🚫 Missing tag value → {{${key}}}`);
+      return '--';
+    }
+  });
+}
+
+function worstThree() {
+  const arr = ["peaks_dips","reflections","bandwidth","balance","smoothness","reverb"]
+    .map(c => ({ c, score: data[c] ?? 0 }))
+    .sort((a,b)=>a.score-b.score)
+    .slice(0,3);
+  log("Worst Three Metrics", arr);
+  return arr;
+}
+
+function generateCards() {
+  const wrap = document.getElementById("tipsCardsWrapper");
+
+  if (!data || !data.has_analysis) {
+    wrap.innerHTML = `<p style="grid-column:span 3;">Run a sweep to see results.</p>`;
+    return;
+  }
+
+  const worst = worstThree();
+
+  wrap.innerHTML = worst.map((w,i)=>{
+    log(`Rendering Card: ${w.c}`, w);
+
+    const sev = severityFromScore(w.score);
+    const bucket = Solutions[w.c]?.[sev];
+
+    const name = {
+      peaks_dips:"Peaks & Dips",
+      reflections:"Reflections",
+      bandwidth:"Bandwidth",
+      balance:"Balance",
+      smoothness:"Smoothness",
+      reverb:"Reverb"
+    }[w.c];
+
+    const icon = {
+      peaks_dips:"mountain.svg",
+      reflections:"square-caret-left.svg",
+      bandwidth:"signal.svg",
+      balance:"balance-scale.svg",
+      smoothness:"wave-square.svg",
+      reverb:"clock.svg"
+    }[w.c];
+
+    const fix1 = interpolateTags(pick(bucket?.fix));
+    const fix2 = interpolateTags(pick(bucket?.problem));
+    const fix3 = interpolateTags(pick(bucket?.stroke));
+
+    return `
+      <article class="card glass-panel" style="padding:1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <img src="icons/${icon}" class="simple-icon">
+            <div>
+              <h3>${name}</h3>
+              <div style="font-size:0.7rem;opacity:0.5;">Priority Fix ${i+1}</div>
+            </div>
           </div>
-      </header>
+          <div style="font-size:2rem;font-weight:800;" class="${colorClass(w.score)}">
+            ${w.score.toFixed(1)}
+          </div>
+        </div>
 
+        <p class="metric-explain">${METRIC_EXPLAIN[w.c]}</p>
+        <ul class="dave-steps" style="list-style:none;padding:0;">
+          <li><strong>① Fix this first:</strong> ${fix1}</li>
+          <li><strong>② Then try:</strong> ${fix2}</li>
+          <li><strong>③ Bonus improvement:</strong> ${fix3}</li>
+        </ul>
+        <p class="run-again">After each change, run another sweep and note what helped.</p>
+      </article>
+    `;
+  }).join('');
 
-      <div class="animate-enter delay-1" style="margin-bottom: 2rem;">
-        <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Your Priority Action Areas</h2>
-        <p style="color: var(--c-text-muted); font-size: 0.9rem;">These are your top three weakest metrics, broken down
-          by data, diagnosis, and solution.</p>
-      </div>
+  log("Cards Rendered");
+}
 
-      <div id="tipsCardsWrapper" class="grid-3 animate-enter delay-2" role="region" aria-label="Priority action areas"
-        aria-live="polite">
-        <!-- Cards will be injected here -->
-      </div>
-
-    </main>
-  </div>
-
-  <script src="/js/dashboard.js"></script>
-  <script type="module" src="/js/devices.js"></script>
-
-  <script>
-    /* -------------------- TIPS AND TWEAKS CORE LOGIC --------------------- */
-
-    var Solutions = {};
-    var data = null;
-
-    async function loadSolutions() {
-      const r = await fetch('/buddy_phrases.json');
-      Solutions = await r.json();
-    }
-    async function loadLatest() {
-      const r = await fetch('/api/latest');
-      data = await r.json();
-    }
-
-    function severityFromScore(n) {
-      if (n >= 8) return "excellent";
-      if (n >= 6) return "good";
-      if (n >= 4) return "okay";
-      return "needs_work";
-    }
-
-    /* UPDATED COLOR LOGIC for new dark theme */
-    function getColorPalette(score) {
-      if (score >= 8) return { text: "text-excellent", bg: "rgba(16, 185, 129, 0.1)" };
-      if (score >= 6) return { text: "text-good", bg: "rgba(245, 158, 11, 0.1)" };
-      if (score >= 4) return { text: "text-okay", bg: "rgba(59, 130, 246, 0.1)" };
-      return { text: "text-poor", bg: "rgba(239, 68, 68, 0.1)" };
-    }
-
-    function getIconName(category) {
-      switch (category) {
-        case 'peaks_dips': return 'mountain.svg';
-        case 'reflections': return 'square-caret-left.svg';
-        case 'bandwidth': return 'signal.svg';
-        case 'balance': return 'balance-scale.svg';
-        case 'smoothness': return 'wave-square.svg';
-        case 'reverb': return 'clock.svg';
-        default: return 'lightbulb.svg';
-      }
-    }
-
-    function getWorstThree() {
-      const cats = ["peaks_dips", "reflections", "bandwidth", "balance", "smoothness", "reverb"];
-      return cats.map(c => ({ category: c, score: data[c] ?? 0 }))
-        .sort((a, b) => a.score - b.score)
-        .slice(0, 3);
-    }
-
-    function getRawMetricDisplay(category, score) {
-      const s = score;
-      switch (category) {
-        case 'peaks_dips': return `Low Frequency Std Dev: ${(10 - s).toFixed(1)} dB`;
-        case 'reflections': return s > 6 ? 'Low Early Reflection Energy' : 'High Early Reflection Energy';
-        case 'bandwidth': return s > 6 ? 'Wide ±3dB Range' : 'Limited ±3dB Range';
-        case 'balance': return s > 4 && s < 7 ? 'Low L/R Skew' : 'High L/R Skew';
-        case 'smoothness': return `Mid/High Variance: ${(10 - s).toFixed(1)} dB`;
-        case 'reverb': return `Decay Time: ${(s / 100).toFixed(2)}s EDT`;
-        default: return '-- N/A --';
-      }
-    }
-
-    /* -------------------- MAIN RENDER FUNCTION --------------------- */
-    function renderTipsCards() {
-      const C = document.getElementById('tipsCardsWrapper');
-
-      if (!C || !data || !data.has_analysis) {
-        C.innerHTML = `
-          <div class="card glass-panel" style="grid-column: span 3; text-align: center; padding: 3rem;">
-              <div style="display: inline-flex; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 50%; margin-bottom: 1rem;">
-                  <img src="icons/chart-line.svg" style="width: 32px; opacity: 0.5;" alt="" aria-hidden="true">
-              </div>
-              <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">No Analysis Data Yet</h3>
-              <p style="color: var(--c-text-muted); margin-bottom: 1.5rem;">Run a sweep from the Dashboard to see your personalized tips.</p>
-              <a href="index.html" class="btn btn-primary" style="display: inline-flex;">Go to Dashboard</a>
-          </div>`;
-        return;
-      }
-
-      const worst = getWorstThree();
-
-      C.innerHTML = worst.map((w, index) => {
-        const colors = getColorPalette(w.score);
-        const sev = severityFromScore(w.score);
-        const iconFile = getIconName(w.category);
-
-        // DATA PREP
-        const rawMetric = getRawMetricDisplay(w.category, w.score);
-        const translation = window.pickUniqueTip(w.category, Solutions[w.category]?.[sev]);
-        const solutionList = Solutions[w.category + '_solutions']?.[sev] || ["No specific solutions found for this category."];
-
-        // Helper to replace bold markdown
-        const replaceBold = (text) => text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:white;">$1</strong>');
-
-        const solutionsHtml = solutionList.map(sol => {
-          const formattedText = replaceBold(sol);
-          return `<li style="position: relative; padding-left: 1.5rem; margin-bottom: 0.5rem; color: var(--c-text-muted); font-size: 0.9rem;">
-                        <span style="position: absolute; left: 0; color: var(--c-accent); font-weight: bold;" aria-hidden="true">→</span>
-                        ${formattedText}
-                      </li>`;
-        }).join('');
-
-        const name = {
-          peaks_dips: "Peaks & Dips",
-          reflections: "Reflections",
-          bandwidth: "Bandwidth",
-          balance: "Balance",
-          smoothness: "Smoothness",
-          reverb: "Reverb"
-        }[w.category];
-
-        const cardId = `tip-card-${w.category}`;
-        const headingId = `${cardId}-heading`;
-        const scoreId = `${cardId}-score`;
-        const daveId = `${cardId}-dave`;
-        const dataId = `${cardId}-data`;
-        const solutionsId = `${cardId}-solutions`;
-
-        // CARD HTML
-        return `
-              <article class="card glass-panel" style="display: flex; flex-direction: column; height: 100%;" 
-                       id="${cardId}" 
-                       role="group" 
-                       aria-labelledby="${headingId} ${scoreId}" 
-                       aria-describedby="${daveId} ${dataId} ${solutionsId}">
-                  
-                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
-                      <div style="display: flex; align-items: center; gap: 1rem;">
-                          <div style="width: 48px; height: 48px; border-radius: 12px; background: ${colors.bg}; display: flex; align-items: center; justify-content: center;" aria-hidden="true">
-                              <img src="icons/${iconFile}" style="width: 24px;" class="${colors.text}" alt="">
-                          </div>
-                          <div>
-                              <h3 id="${headingId}" style="margin: 0; font-size: 1.1rem; font-weight: 700;">${name}</h3>
-                              <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; color: rgba(255,255,255,0.4);">Priority Fix ${index + 1}</div>
-                          </div>
-                      </div>
-                      <div id="${scoreId}" style="font-size: 2.5rem; font-weight: 900;" class="${colors.text}">
-                        <span class="sr-only">Score: </span>${w.score.toFixed(1)}<span class="sr-only"> out of 10</span>
-                      </div>
-                  </div>
-
-                  <div id="${daveId}" style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 0.75rem; align-items: start; border: 1px solid rgba(255,255,255,0.05);">
-                      <img src="icons/dave.svg" style="width: 24px; opacity: 0.8; margin-top: 2px;" alt="" aria-hidden="true">
-                      <p style="margin: 0; font-size: 0.9rem; font-style: italic; color: var(--c-text-main); line-height: 1.5;">
-                          "${translation}"
-                      </p>
-                  </div>
-
-                  <div id="${dataId}" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                      <span style="font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.05em;">Technical Data</span>
-                      <div style="font-family: monospace; font-size: 0.85rem; color: var(--c-text-muted); margin-top: 0.25rem; background: rgba(0,0,0,0.2); display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px;">
-                          ${rawMetric}
-                      </div>
-                  </div>
-
-                  <div id="${solutionsId}" style="margin-top: auto;">
-                      <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-                          <img src="icons/toolbox.svg" style="width: 16px; opacity: 0.5;" alt="" aria-hidden="true">
-                          Action Plan
-                      </h4>
-                      <ul style="list-style: none; padding: 0; margin: 0;">
-                          ${solutionsHtml}
-                      </ul>
-                  </div>
-              </article>
-          `;
-      }).join('');
-    }
-
-
-    /* -------------------- BOOTSTRAP --------------------- */
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      if (typeof MeasurelyDashboard !== 'undefined' && !window.dashboard) {
-        window.dashboard = new MeasurelyDashboard();
-      }
-
-      const [solutionsStatus, dataStatus] = await Promise.allSettled([loadSolutions(), loadLatest()]);
-
-      if (solutionsStatus.status === 'rejected' || dataStatus.status === 'rejected') {
-        console.error("Failed to load necessary data for Tips & Tweaks page.");
-      }
-
-      renderTipsCards();
-    });
-
-    /* ---------- Sidebar toggle with focus trap ---------- */
-    const btn = document.getElementById('mobile-menu-btn');
-    const side = document.getElementById('sidebar');
-    const over = document.getElementById('sidebar-overlay');
-    const mainContent = document.getElementById('main-content');
-
-    // Store focusable elements
-    let focusableElements = [];
-    let firstFocusableElement = null;
-    let lastFocusableElement = null;
-    let previouslyFocusedElement = null;
-
-    function getFocusableElements() {
-      const focusableSelectors = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-      focusableElements = Array.from(side.querySelectorAll(focusableSelectors));
-      firstFocusableElement = focusableElements[0];
-      lastFocusableElement = focusableElements[focusableElements.length - 1];
-    }
-
-    function trapFocus(e) {
-      if (e.key !== 'Tab') return;
-
-      if (e.shiftKey) {
-        if (document.activeElement === firstFocusableElement) {
-          e.preventDefault();
-          lastFocusableElement.focus();
-        }
-      } else {
-        if (document.activeElement === lastFocusableElement) {
-          e.preventDefault();
-          firstFocusableElement.focus();
-        }
-      }
-    }
-
-    function toggleMenu() {
-      const isOpening = !side.classList.contains('active');
-
-      side.classList.toggle('active');
-      over.classList.toggle('active');
-
-      if (isOpening) {
-        // Opening menu
-        previouslyFocusedElement = document.activeElement;
-
-        // Set ARIA attributes
-        btn.setAttribute('aria-expanded', 'true');
-        btn.setAttribute('aria-label', 'Close navigation menu');
-        side.setAttribute('role', 'dialog');
-        side.setAttribute('aria-modal', 'true');
-        over.setAttribute('aria-hidden', 'false');
-
-        // Add inert to main content
-        if (mainContent) mainContent.inert = true;
-
-        // Prevent body scroll
-        document.body.style.overflow = 'hidden';
-
-        // Setup focus trap
-        getFocusableElements();
-        document.addEventListener('keydown', trapFocus);
-
-        // Focus first element
-        setTimeout(() => {
-          if (firstFocusableElement) firstFocusableElement.focus();
-        }, 100);
-
-      } else {
-        // Closing menu
-        btn.setAttribute('aria-expanded', 'false');
-        btn.setAttribute('aria-label', 'Open navigation menu');
-        side.removeAttribute('role');
-        side.removeAttribute('aria-modal');
-        over.setAttribute('aria-hidden', 'true');
-
-        // Remove inert from main content
-        if (mainContent) mainContent.inert = false;
-
-        // Restore body scroll
-        document.body.style.overflow = '';
-
-        // Remove focus trap
-        document.removeEventListener('keydown', trapFocus);
-
-        // Return focus to button
-        if (previouslyFocusedElement) {
-          previouslyFocusedElement.focus();
-        }
-      }
-    }
-
-    // Close on Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && side.classList.contains('active')) {
-        toggleMenu();
-      }
-    });
-
-    if (btn) btn.addEventListener('click', toggleMenu);
-    if (over) over.addEventListener('click', toggleMenu);
-
-    document.querySelectorAll('.nav-item').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 1024 && side.classList.contains('active')) {
-          toggleMenu();
-        }
-      });
-    });
-
-    setInterval(() => {
-      const el = document.getElementById('lastUpdated');
-      if (el) el.textContent = new Date().toLocaleTimeString();
-    }, 1000);
-  </script>
+document.addEventListener("DOMContentLoaded", async () => {
+  log("Boot");
+  await Promise.all([loadSolutions(), loadLatest()]);
+  generateCards();
+  log("Done");
+});
+</script>
 
 </body>
-
 </html>

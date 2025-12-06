@@ -754,9 +754,49 @@ def serve_tipstweaks_phrases():
 #  serve speakers.json from project root
 # ----------------------------------------------------------
 
-@app.route('/speakers/<path:filename>')
-def serve_speakers(filename):
-    return send_from_directory(SPEAKERS_DIR, filename)
+@app.route('/api/speakers', methods=['GET'])
+def api_speakers():
+    """
+    Provide active speaker and a list of selectable speaker profiles.
+    Current speaker comes from latest session metadata.
+    Speaker list comes from files in /speakers/*.json
+    """
+    try:
+        # Load latest session to determine active speaker
+        latest = load_session_data(MEAS_ROOT / "latest")
+        current_key = latest.get("room", {}).get("speaker_key") \
+            or latest.get("speaker_key") \
+            or "unknown"
+
+        # Load available speakers from /speakers/ folder
+        speakers = []
+        for file in SPEAKERS_DIR.glob("*.json"):
+            try:
+                data = json.loads(file.read_text())
+                speakers.append({
+                    "key": data.get("key", file.stem),
+                    "name": data.get("name", file.stem.replace("_", " ").title()),
+                    "type": data.get("type", "unknown")
+                })
+            except:
+                continue
+
+        # Find matching friendly name
+        current = next(
+            (s for s in speakers if s["key"] == current_key),
+            {"key": current_key, "name": current_key, "type": "unknown"}
+        )
+
+        return jsonify({
+            "current": current,
+            "list": speakers
+        })
+
+    except Exception as e:
+        print("ERROR in /api/speakers:", e)
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
     
 # ------------------------------------------------------------------
 #  LOAD (make live) a previous session
