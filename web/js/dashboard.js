@@ -1244,84 +1244,92 @@ class MeasurelyDashboard {
 
 
     /* ============================================================
-    FREQUENCY RESPONSE CHART
+    FREQUENCY RESPONSE CHART  (REPORT-CURVE SOURCE OF TRUTH)
     ============================================================ */
     updateFrequencyChart() {
+
         const chart = document.getElementById('frequencyChart');
-        if (!chart) {
-            return; // <-- skip whole function on non-dashboard pages
-        }
+        if (!chart) return;
+
         const data = this.currentData;
-        if (!data) return;
+        if (!data || !data.id) return;
 
-        const mobile = window.innerWidth < 640;
+        fetch(`/api/session/${data.id}/report_curve`)
+            .then(res => {
+                if (!res.ok) throw new Error("report_curve fetch failed");
+                return res.json();
+            })
+            .then(curve => {
 
-        const traces = [
-            {
-                x: data.left_freq_hz || [],
-                y: data.left_mag_db || [],
-                type: 'scatter',
-                mode: 'lines',
-                name: 'Left',
-                line: { color: '#6D28D9', width: mobile ? 3 : 2.5 }
-            },
-            {
-                x: data.right_freq_hz || [],
-                y: data.right_mag_db || [],
-                type: 'scatter',
-                mode: 'lines',
-                name: 'Right',
-                line: { color: '#3B82F6', width: mobile ? 3 : 2.5 }
-            }
-        ];
+                const mobile = window.innerWidth < 640;
 
-        const active = document.querySelector('.channel-active')?.dataset.channel || 'both';
-        const toPlot = active === 'left' ? [traces[0]]
-                     : active === 'right' ? [traces[1]]
-                     : traces;
+                Plotly.newPlot('frequencyChart', [{
+                    x: curve.freqs,
+                    y: curve.mag,
+                    mode: 'lines',
+                    line: {
+                        color: '#a855f7',   // Measurely purple
+                        width: mobile ? 3 : 2.5
+                    }
+                }], {
+                    xaxis: {
+                        type: 'log',
+                        range: [Math.log10(20), Math.log10(20000)],
+                        tickvals: [20,50,100,200,500,1000,2000,5000,10000,20000],
+                        ticktext: ['20','50','100','200','500','1k','2k','5k','10k','20k'],
+                        showline: true,
+                        linewidth: 1,
+                        linecolor: '#9ca3af',
+                        tickfont: {
+                            color: '#e5e7eb',
+                            size: mobile ? 10 : 11
+                        },
+                        showgrid: true,
+                        gridcolor: 'rgba(255,255,255,0.08)',
+                        zeroline: false
+                    },
 
-        const layout = {
-            xaxis: {
-                type: 'log',
-                showline: true,
-                linewidth: 1,
-                linecolor: '#d1d5db',
-                tickfont: { size: mobile ? 10 : 11 },
-                title: mobile ? '' : 'Frequency (Hz)'
-            },
-            yaxis: {
-                showline: true,
-                linewidth: 1,
-                linecolor: '#d1d5db',
-                tickfont: { size: mobile ? 10 : 11 },
-                title: mobile ? '' : 'Magnitude (dB)'
-            },
-            showlegend: false,
-            margin: mobile
-                ? { t: 5, r: 5, b: 25, l: 30 }
-                : { t: 20, r: 20, b: 50, l: 55 },
-            plot_bgcolor: '#fff',
-            paper_bgcolor: '#fff',
-            font: { color: '#111', size: mobile ? 9 : 11 },
-            displayModeBar: false,
-            staticPlot: true
-        };
+                    yaxis: {
+                        range: [-10, 15],
+                        showline: true,
+                        linewidth: 1,
+                        linecolor: '#9ca3af',
+                        tickfont: {
+                            color: '#e5e7eb',
+                            size: mobile ? 10 : 11
+                        },
+                        tickvals: [-10, -5, 0, 5, 10, 15],
+                        showgrid: true,
+                        gridcolor: 'rgba(255,255,255,0.08)',
+                        zeroline: true,
+                        zerolinecolor: 'rgba(255,255,255,0.25)',
+                        zerolinewidth: 1
+                    },
 
-        Plotly.newPlot('frequencyChart', traces, layout, {
-            responsive: true,
-            displayModeBar: false,
-            showLegend: false
-        });
+                    showlegend: false,
+                    margin: mobile
+                        ? { t: 5, r: 5, b: 25, l: 30 }
+                        : { t: 20, r: 20, b: 50, l: 55 },
+                    plot_bgcolor: '#1f2937',      // dark grey graph area
+                    paper_bgcolor: 'transparent',
+                }, {
+                    staticPlot: true,
+                    displayModeBar: false,
+                    responsive: true
+                });
 
-        // NEW — update the chart’s aria label (fixed)
-        const activeChannel = document.querySelector('.channel-active')?.dataset.channel || 'both';
+                updateChartAria(
+                    'both',
+                    'Showing frequency response.'
+                );
 
-        updateChartAria(
-            activeChannel,
-            `Showing ${activeChannel} channel frequency response.`
-        );
-
+            })
+            .catch(err => {
+                console.error("❌ Frequency chart error:", err);
+            });
     }
+
+
 
     /* ============================================================
     NERDS CORNER: SESSION EXPLORER METRICS
@@ -1617,7 +1625,7 @@ class MeasurelyDashboard {
     EXPORT REPORT (Placeholder)
     ============================================================ */
     exportReport() {
-        this.showInfo('Export report feature coming soon');
+        window.location.href = '/api/report/latest';
     }
 
     /* ============================================================
@@ -1970,6 +1978,7 @@ class MeasurelyDashboard {
         // Sweep controls — Dashboard only
         safe('runSweepBtn',      () => this.runSweep());
         safe('cancelSweepBtn', () => this.cancelSweep());
+        safe('downloadReportBtn', () => this.exportReport());
         //safe('saveResultsBtn',   () => this.saveResults());
         //safe('exportReportBtn',  () => this.exportReport());
 

@@ -40,7 +40,8 @@ apt-get update -qq
 apt-get install -y \
     python3-venv python3-pip python3-dev \
     libportaudio2 libasound2-dev libsndfile1 \
-    git
+    git \
+    nodejs npm chromium
 
 # ------------------------------------------------------------
 # 2. Create venv
@@ -60,6 +61,16 @@ fi
 
 msg "Installing Python dependencies…"
 sudo -u "$APP_USER" "$VENV_DIR/bin/pip" install --quiet -r "$REPO_DIR/requirements.txt"
+
+# ------------------------------------------------------------
+# 3.5 Install Node dependencies for report export
+# ------------------------------------------------------------
+msg "Installing Node dependencies (report export)…"
+
+cd "$REPO_DIR/web/js"
+
+sudo -u "$APP_USER" npm init -y >/dev/null
+sudo -u "$APP_USER" npm install puppeteer --save
 
 # ------------------------------------------------------------
 # 4. Install Measurely package (editable)

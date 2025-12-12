@@ -21,6 +21,14 @@ from measurelyapp.dave import dave_summary
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger("analyse")
 
+def smooth_curve(y, window=7):
+    if window < 3:
+        return y
+    pad = window // 2
+    ypad = np.pad(y, (pad, pad), mode="edge")
+    return np.convolve(ypad, np.ones(window)/window, mode="valid")
+
+
 # ---------------------------------------------------------
 # Analysis UI status writer
 # Mirror sweep progress but separate file
@@ -92,6 +100,34 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     freq_raw, mag_raw = log_bins(freq, mag, ppo=ppo_raw)
     update_analysis_status("Processing raw bins for analysis…", 25)
     print(f"Analysis: {len(freq_raw)} points ({ppo_raw} PPO)")
+
+    # ---------------------------------------------------------
+    # REPORT CURVE — DASHBOARD IDENTICAL, SMOOTHED, TRIMMED
+    # ---------------------------------------------------------
+
+    # Hard trim to kill HF noise tail
+    MAX_F_REPORT = 18000
+
+    freqs = np.array(freq_ui)
+    mag   = np.array(mag_ui)
+
+    mask = freqs <= MAX_F_REPORT
+    freqs = freqs[mask]
+    mag   = mag[mask]
+
+    # Smooth exactly once (dashboard feel)
+    mag = smooth_curve(mag, window=9)
+
+    report_curve = {
+        "freqs": freqs.tolist(),
+        "mag": mag.tolist()
+    }
+
+    _atomic_write(
+        session_dir / "report_curve.json",
+        json.dumps(report_curve, indent=2)
+    )
+
 
     # ----------- band energy ----------------
     bands = {

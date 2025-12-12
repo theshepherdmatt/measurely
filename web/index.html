@@ -108,7 +108,7 @@
                 <!-- Buttons Row -->
                 <div style="display: flex; gap: 1rem;">
                     <button id="runSweepBtn" class="btn btn-primary">
-                        <img src="icons/sweep.svg" style="width: 18px; filter: brightness(100);" alt="">
+                        <img src="icons/sweep.svg" style="width: 16px; filter: brightness(100);" alt="">
                         Run Sweep
                     </button>
 
@@ -116,9 +116,15 @@
                         <img src="icons/refresh.svg" style="width: 16px;" alt="">
                     </button>
 
+                    <button id="downloadReportBtn" class="btn btn-secondary" aria-label="Download Report">
+                        <img src="icons/arrow-down.svg" style="width: 16px;" alt="">
+                        Download Report
+                    </button>
+
+
                     <!-- NEW: Cancel Sweep button (hidden until sweeping) -->
                     <button id="cancelSweepBtn" class="btn btn-poor hidden" aria-label="Cancel Sweep">
-                        <img src="icons/save.svg" style="width: 18px;" alt="">
+                        <img src="icons/save.svg" style="width: 16px;" alt="">
                         Cancel Sweep
                     </button>
                 </div>
@@ -156,7 +162,7 @@
                         ">
 
                         <!-- SCORE -->
-                        <div class="score-display" style="display:flex; align-items:flex-end;">
+                        <div class="score-display" style="display:flex; align-items:flex-end; margin-top:1.25rem;">
                             <span id="overallScore" class="score-value text-gradient-accent"
                                 style="font-size:5.25rem; font-weight:700;" data-color-target="overall">--</span>
                             <span class="score-max"
@@ -205,35 +211,36 @@
                 </div>
 
                 <!-- QUICK ACTIONS / INFO -->
-                <!-- SESSION INFO -->
-                <div class="card glass-panel" aria-hidden="true">
-                    <h2 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
-                        <img src="icons/sessions.svg" style="width: 20px;" data-color-icon="peaksDips" alt="">
-                        Session Info
-                    </h2>
+                <!-- LIVE LOGS CARD -->
+                <div class="card glass-panel" aria-hidden="true" style="margin-top:1rem;">
 
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
-
-                        <!-- LIVE LOGS HEADER -->
-                        <div
-                            style="display:flex; justify-content: space-between; align-items:center; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <div style="display:flex; align-items:center; gap:0.5rem;">
-                                <img src="icons/dave.svg" style="width:16px;">
-                                <span style="color: var(--c-text-muted);">Live Logs</span>
-                            </div>
-                            <span style="font-weight:600; color:var(--c-text-main);">Active</span>
-                        </div>
-
-                        <!-- LOG AREA -->
-                        <div id="sessionLog"
-                            style="display:flex; flex-direction:column; gap:0.5rem; font-size:0.85rem; color:var(--c-text-muted); min-height:40px;">
-                            <div>Logs will appear here once you run a sweep!</div>
-                        </div>
-
+                    <!-- DAVE LOG BADGE -->
+                    <div class="dave-badge"
+                        style="display:inline-flex; align-items:center; gap:0.4rem;
+                            background:rgba(99,102,241,0.15);
+                            padding:0.35rem 0.65rem;
+                            border-radius:8px;
+                            width:fit-content;
+                            font-size:0.78rem;
+                            color:var(--c-text-main);
+                            margin-bottom:0.75rem;">
+                        <img src="icons/dave.svg" style="width:14px;" alt="">
+                        Live Logs
                     </div>
-                </div>
-            </div>
 
+                    <!-- LOG AREA -->
+                    <div id="sessionLog"
+                        style="display:flex; flex-direction:column; gap:0.5rem;
+                            font-size:0.85rem; color:var(--c-text-muted);
+                            min-height:40px; border-top:1px solid rgba(255,255,255,0.05);
+                            padding-top:0.75rem;">
+                        <div style="opacity:0.6;">Logs will appear here once you run a sweep!
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
 
             <!-- METRICS GRID -->
             <div class="grid-3 animate-enter delay-2">
@@ -418,20 +425,6 @@
                             <h2 id="nerdsCornerLabel" style="margin: 0; font-size: 1.25rem; font-weight: 700;">Nerds Corner</h2>
                             <p style="margin: 0; color: var(--c-text-muted); font-size: 0.9rem;">Deep dive analysis and raw curves.</p>
                         </div>
-                    </div>
-
-                    <div style="background: rgba(0,0,0,0.2); padding: 0.25rem; border-radius: 8px; display: flex; gap: 0.25rem;">
-                        <button id="leftChannelBtn" data-channel="left" class="btn btn-secondary"
-                                aria-pressed="false"
-                                style="padding: 0.4rem 1rem; font-size: 0.85rem;">Left</button>
-
-                        <button id="rightChannelBtn" data-channel="right" class="btn btn-secondary"
-                                aria-pressed="false"
-                                style="padding: 0.4rem 1rem; font-size: 0.85rem;">Right</button>
-
-                        <button id="bothChannelsBtn" data-channel="both" class="btn btn-primary"
-                                aria-pressed="true"
-                                style="padding: 0.4rem 1rem; font-size: 0.85rem;">Both</button>
                     </div>
                 </div>
 
