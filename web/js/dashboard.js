@@ -1983,9 +1983,9 @@ class MeasurelyDashboard {
         //safe('exportReportBtn',  () => this.exportReport());
 
         // Channel buttons — toggle frequency chart
-        safe('leftChannelBtn',   () => this.showChannel('left'));
-        safe('rightChannelBtn',  () => this.showChannel('right'));
-        safe('bothChannelsBtn',  () => this.showChannel('both'));
+        //safe('leftChannelBtn',   () => this.showChannel('left'));
+        //safe('rightChannelBtn',  () => this.showChannel('right'));
+        //safe('bothChannelsBtn',  () => this.showChannel('both'));
 
         // Sweep Navigation – handled exclusively via index.html listener
         // (see bottom of index.html for sweepNav click handler)

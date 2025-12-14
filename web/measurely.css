@@ -357,6 +357,10 @@ img[src*="dave.svg"] {
     gap: 0.5rem;
 }
 
+.card.glass-panel {
+  min-height: 260px;
+}
+
 /* Form Elements */
 input[type='text'],
 input[type='number'],
