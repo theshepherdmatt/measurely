@@ -32,12 +32,17 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from scipy.ndimage import gaussian_filter1d
 
+from measurelyapp.network.api import network_api
+
+
 
 # ------------------------------------------------------------------
 #  Flask init
 # ------------------------------------------------------------------
 app = Flask(__name__)
 CORS(app)
+
+app.register_blueprint(network_api)
 
 update_led_state("boot")
 
@@ -58,35 +63,38 @@ SPEAKERS_DIR  = SERVICE_ROOT / "speakers"
 # ------------------------------------------------------------------
 def is_first_time_user():
     """
-    User is 'first time' if MEAS_ROOT contains ONLY:
-      - 'demo' (or 'DEMO')
-      - or is empty
-      - AND has no real measurement folders
+    User is 'first time' if onboarding has not been completed.
+    Falls back to legacy sweep-based detection if state file is missing.
     """
+
+    STATE_FILE = SERVICE_ROOT / "state" / "onboarding.json"
+
+    # --- NEW: explicit onboarding state ---
+    if STATE_FILE.exists():
+        try:
+            data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+            if data.get("completed") is False:
+                return True
+        except Exception as e:
+            print("⚠️ onboarding.json unreadable, falling back:", e)
+
+    # --- LEGACY: sweep-based fallback ---
     if not MEAS_ROOT.exists():
         return True
 
-    items = []
     for entry in MEAS_ROOT.iterdir():
         name = entry.name.lower()
 
-        # ignore symlink 'latest'
-        if name == "latest":
+        if name in ("latest",):
             continue
-
-        # ignore hidden or temp junk
         if name.startswith('.'):
             continue
-
-        # ignore demo folder
         if name.startswith("demo"):
             continue
 
-        # anything else is a REAL measurement
         if entry.is_dir():
             return False
 
-    # If we get here → no real measurements found
     return True
 
 # ------------------------------------------------------------------

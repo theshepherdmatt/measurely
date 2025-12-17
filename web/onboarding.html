@@ -1,244 +1,299 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Measurely – First-Time Setup</title>
-  <link rel="icon" type="image/svg+xml" href="icons/dave.svg">
-  <link rel="stylesheet" href="measurely.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Measurely – Connect to Wi-Fi</title>
+
+<link rel="icon" type="image/svg+xml" href="icons/dave.svg">
+<link rel="stylesheet" href="measurely.css">
+
+<style>
+/* ======================================================
+   MEASURELY CAPTIVE PORTAL (AP MODE)
+   ====================================================== */
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background:
+    radial-gradient(900px 500px at 15% 10%, rgba(124,92,255,0.35), transparent 60%),
+    radial-gradient(800px 600px at 85% 25%, rgba(99,102,241,0.25), transparent 65%),
+    radial-gradient(600px 600px at 50% 85%, rgba(45,212,191,0.18), transparent 60%),
+    #0b0f1a;
+  color: #e5e7eb;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+/* Outer container */
+.portal-wrap {
+  width: min(520px, 100%);
+}
+
+/* Brand header */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c5cff, #5b6cff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(124,92,255,0.45);
+}
+
+.brand h1 {
+  font-size: 1.45rem;
+  margin: 0;
+}
+
+.brand p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.65);
+}
+
+/* Main card */
+.portal-card {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.08),
+      rgba(255,255,255,0.02)
+    );
+  border-radius: 22px;
+  padding: 1.75rem;
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 40px 90px rgba(0,0,0,0.65),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Inner panel */
+.panel {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(13,17,35,0.9),
+      rgba(13,17,35,0.75)
+    );
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Inputs */
+label {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.65);
+}
+
+.input {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  margin-top: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+
+.input::placeholder {
+  color: rgba(255,255,255,0.35);
+}
+
+.input:focus {
+  outline: none;
+  border-color: rgba(124,92,255,0.85);
+  box-shadow: 0 0 0 3px rgba(124,92,255,0.35);
+}
+
+/* Status pills */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+}
+
+.dot.warn { background: #fbbf24; }
+.dot.ok { background: #22c55e; }
+.dot.bad { background: #ef4444; }
+
+/* Buttons */
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1.25rem;
+}
+
+/* Footer text */
+.footer {
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.5;
+  text-align: center;
+}
+</style>
 </head>
 
 <body>
 
-  <div class="app-layout">
+<div class="portal-wrap">
 
-    <!-- MOBILE OVERLAY -->
-    <div id="sidebar-overlay" aria-hidden="true"
-      style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; display: none; backdrop-filter: blur(4px);">
+  <div class="brand">
+    <div class="brand-logo">
+      <img src="icons/signal.svg" alt="" style="width:22px;">
     </div>
-
-    <!-- SIDEBAR -->
-    <aside id="sidebar" class="sidebar" aria-label="Primary navigation">
-      <div class="sidebar-logo">
-        <img src="icons/mainlogo.svg" alt="Measurely" style="height: 46px;">
-        <span></span>
-      </div>
-
-      <nav aria-label="Main">
-        <a href="index.html" class="nav-item active">
-          <img src="icons/dashboard.svg" alt="" aria-hidden="true">
-          Dashboard
-        </a>
-        <a href="room-setup.html" class="nav-item">
-          <img src="icons/home.svg" alt="" aria-hidden="true">
-
-          Room Setup
-        </a>
-        <a href="tipsandtweaks.html" class="nav-item">
-          <img src="icons/lightbulb.svg" alt="" aria-hidden="true">
-          Tips & Tweaks
-        </a>
-      </nav>
-
-<div style="margin-top: auto;">
-  <div class="glass-panel" style="padding: 1rem; border-radius: 12px; display: flex; flex-direction: column; gap: 0.75rem;">
-
-          <!-- SYSTEM READY -->
-          <!-- SYSTEM READY -->
-          <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--c-text-muted);">
-            <div id="systemReadyDot"
-                class="status-indicator"
-                role="img"
-                aria-label="System operational"
-                style="width: 8px; height: 8px; border-radius: 50%; background: var(--c-excellent);">
-            </div>
-            <span id="systemReadyText" aria-live="polite">System Ready</span>
-          </div>
-
-          <!-- LAST UPDATED -->
-          <div style="font-size: 0.75rem; color: rgba(255,255,255,0.3); margin-top: 0.5rem;">
-            Last updated: <span id="lastUpdated">Now</span>
-          </div>
-        </div>
-      </div>
-
-    </aside>
-
-
-    <!-- MAIN CONTENT -->
-    <main class="main-content" role="main">
-
-    <!-- HEADER -->
-    <header class="header animate-enter" role="banner">
-      <div class="header-title" style="display: flex; align-items: center; gap: 1rem;">
-
-        <!-- MOBILE MENU BUTTON -->
-        <button id="mobile-menu-btn"
-                class="btn btn-secondary"
-                style="padding: 0.5rem; display: none;"
-                aria-label="Toggle navigation"
-                aria-controls="sidebar"
-                aria-expanded="false">
-          <img src="icons/bars.svg"
-              style="width: 24px;"
-              alt=""
-              aria-hidden="true">
-        </button>
-
-        <!-- PAGE TITLE -->
-        <div>
-          <h1>Welcome to Measurely</h1>
-          <p>Your first-time setup only takes a couple of minutes.</p>
-        </div>
-
-      </div>
-    </header>
-
-
-      <!-- ONBOARDING CARD -->
-      <div class="card glass-panel animate-enter delay-1" style="max-width: 800px; margin: 0 auto;">
-
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-          <div style="background: rgba(99, 102, 241, 0.1); padding: 0.75rem; border-radius: 12px;">
-            <img src="icons/dave.svg" style="width: 32px; opacity: 0.9;" alt="" aria-hidden="true">
-          </div>
-          <div>
-            <h2 class="card-title" style="margin: 0; font-size: 1.1rem; color: var(--c-accent);">First-Time Setup</h2>
-            <p style="margin: 0; font-size: 0.9rem; color: var(--c-text-muted);">Let's get your room dialled in.</p>
-          </div>
-        </div>
-
-        <p style="color: var(--c-text-main); font-size: 1.05rem; line-height: 1.6; margin-bottom: 2rem;">
-          Before we run your first sweep, Dave needs a few details about your room and speaker
-          layout. Don’t worry — he’ll guide you through it step by step. Grab a tape measure (or use
-          the Measure app on your iPhone) and we’ll get started.
-        </p>
-
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-
-          <!-- STEP 1 -->
-          <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: var(--c-accent);"></div>
-            <div style="display: flex; gap: 1rem;">
-              <div
-                style="background: rgba(255,255,255,0.05); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--c-accent); flex-shrink: 0;">
-                1</div>
-              <div>
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 600;">Measure Your Room</h3>
-                <p style="margin: 0; color: var(--c-text-muted); line-height: 1.5;">
-                  Jot down the length, width, and height of your room. Close enough is fine — no need for millimetre
-                  precision.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- STEP 2 -->
-          <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: var(--c-accent);"></div>
-            <div style="display: flex; gap: 1rem;">
-              <div
-                style="background: rgba(255,255,255,0.05); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--c-accent); flex-shrink: 0;">
-                2</div>
-              <div>
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 600;">Measure Listening Position</h3>
-                <p style="margin: 0; color: var(--c-text-muted); line-height: 1.5;">
-                  Measure the distance between your ears and each speaker. Distance between the speakers helps too.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- STEP 3 -->
-          <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: var(--c-accent);"></div>
-            <div style="display: flex; gap: 1rem;">
-              <div
-                style="background: rgba(255,255,255,0.05); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--c-accent); flex-shrink: 0;">
-                3</div>
-              <div>
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 600;">Fill Out Room Setup</h3>
-                <p style="margin: 0 0 1rem 0; color: var(--c-text-muted); line-height: 1.5;">
-                  Enter the measurements into the Room Setup page so Dave understands your space before he analyses it.
-                </p>
-                <a href="room-setup.html" class="btn btn-primary">
-                  Go to Room Setup
-                  <img src="icons/arrow-right.svg" style="width: 16px;" alt="" aria-hidden="true">
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- STEP 4 -->
-          <div class="glass-panel" style="padding: 1.5rem; border-radius: 16px; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: var(--c-good);"></div>
-            <div style="display: flex; gap: 1rem;">
-              <div
-                style="background: rgba(255,255,255,0.05); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--c-good); flex-shrink: 0;">
-                4</div>
-              <div>
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 600;">Run Your First Sweep</h3>
-                <p style="margin: 0 0 1rem 0; color: var(--c-text-muted); line-height: 1.5;">
-                  Once Room Setup is complete, head to the dashboard and run your first sweep. Dave will score your room
-                  and explain everything in simple English.
-                </p>
-                <a href="index.html" class="btn btn-secondary">
-                  Go to Dashboard
-                </a>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-    </main>
-
+    <div>
+      <h1>Connect Measurely to Wi-Fi</h1>
+      <p>You’re connected to <strong>MeasurelyConnect</strong></p>
+    </div>
   </div>
 
-  <script>
-    console.log("Onboarding page loaded – Plotly intentionally disabled.");
-    // Mobile Menu Logic
-    const btn = document.getElementById('mobile-menu-btn');
-    const side = document.getElementById('sidebar');
-    const over = document.getElementById('sidebar-overlay');
+  <div class="portal-card">
 
-    function toggleMenu() {
-      const isOpening = !side.classList.contains("active");
-      side.classList.toggle("active");
-      over.classList.toggle("active");
+    <div class="panel">
 
-      if (isOpening) {
-        btn.setAttribute('aria-expanded', 'true');
-        btn.setAttribute('aria-label', 'Close navigation menu');
-        document.body.style.overflow = "hidden";
-      } else {
-        btn.setAttribute('aria-expanded', 'false');
-        btn.setAttribute('aria-label', 'Open navigation menu');
-        document.body.style.overflow = "";
-      }
-    }
+      <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:1rem;">
+        <button id="scanBtn" class="btn btn-secondary">Scan networks</button>
+        <span id="scanStatus" class="pill">
+          <span class="dot warn"></span>
+          <span>Ready</span>
+        </span>
+      </div>
 
-    if (btn) btn.addEventListener('click', toggleMenu);
-    if (over) over.addEventListener('click', toggleMenu);
+      <div style="display:grid; gap:0.9rem;">
+        <div>
+          <label>Wi-Fi network</label>
+          <select id="ssidSelect" class="input">
+            <option value="">Select a network…</option>
+          </select>
+        </div>
 
-    // Close menu when clicking a link on mobile
-    document.querySelectorAll('.nav-item').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 1024 && side.classList.contains('active')) {
-          toggleMenu();
-        }
-      });
+        <div>
+          <label>Password</label>
+          <input id="passwordInput" type="password" class="input" placeholder="Wi-Fi password">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="connectBtn" class="btn btn-primary">
+          Connect & restart
+        </button>
+        <span id="connectStatus" class="pill">
+          <span class="dot warn"></span>
+          <span>Waiting</span>
+        </span>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      After connecting, Measurely will restart and this page will disconnect.<br>
+      Reconnect on your normal Wi-Fi and visit <strong>measurely.local</strong>.
+    </div>
+
+  </div>
+</div>
+
+<script>
+const scanBtn = document.getElementById('scanBtn');
+const connectBtn = document.getElementById('connectBtn');
+const ssidSelect = document.getElementById('ssidSelect');
+const passwordInput = document.getElementById('passwordInput');
+
+function setPill(id, state, text) {
+  const el = document.getElementById(id);
+  el.querySelector('.dot').className = 'dot ' + state;
+  el.querySelector('span:last-child').textContent = text;
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts
+  });
+  try { return await res.json(); } catch { return {}; }
+}
+
+scanBtn.onclick = async () => {
+  scanBtn.disabled = true;
+  setPill('scanStatus', 'warn', 'Scanning…');
+
+  const data = await api('/api/network/scan');
+  ssidSelect.innerHTML = '<option value="">Select a network…</option>';
+
+  if (data.ok && Array.isArray(data.networks)) {
+    data.networks.forEach(n => {
+      if (!n.ssid) return;
+      const o = document.createElement('option');
+      o.value = n.ssid;
+      o.textContent = n.signal != null ? `${n.ssid} (${n.signal}%)` : n.ssid;
+      ssidSelect.appendChild(o);
     });
+    setPill('scanStatus', 'ok', `Found ${data.networks.length}`);
+  } else {
+    setPill('scanStatus', 'bad', 'Scan failed');
+  }
 
-    // Clock
-    setInterval(() => {
-      const el = document.getElementById('lastUpdated');
-      if (el) el.textContent = new Date().toLocaleTimeString();
-    }, 1000);
-  </script>
+  scanBtn.disabled = false;
+};
+
+connectBtn.onclick = async () => {
+  const ssid = ssidSelect.value;
+  const password = passwordInput.value;
+
+  if (!ssid) {
+    setPill('connectStatus', 'bad', 'Select a network');
+    return;
+  }
+
+  connectBtn.disabled = true;
+  setPill('connectStatus', 'warn', 'Connecting…');
+
+  const res = await api('/api/network/connect', {
+    method: 'POST',
+    body: JSON.stringify({ ssid, password })
+  });
+
+  if (!res.ok) {
+    setPill('connectStatus', 'bad', 'Failed');
+    connectBtn.disabled = false;
+    return;
+  }
+
+  setPill('connectStatus', 'ok', 'Restarting…');
+};
+</script>
+
 </body>
-
 </html>

@@ -235,11 +235,56 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     }
 
     # ---------------------------------------------------------
+    # AI-SPECIFIC EXPORT (LEAN, FAST)
+    # ---------------------------------------------------------
+    ai_export = {
+        "label": label,
+
+        "scores": scores,
+
+        "band_levels_db": bands,
+
+        "bandwidth_3db_hz": {
+            "low": lo3,
+            "high": hi3
+        },
+
+        "smoothness_std_db": sm,
+
+        "reflections_ms": refs[:5] if refs else [],
+
+        "rt60_s": rt.get("rt60"),
+        "edt_s": rt.get("edt"),
+
+        "room": {
+            "opt_hardfloor": room.get("opt_hardfloor"),
+            "opt_barewalls": room.get("opt_barewalls"),
+            "opt_rug": room.get("opt_rug"),
+            "opt_curtains": room.get("opt_curtains"),
+            "opt_sofa": room.get("opt_sofa"),
+        },
+
+        "dave": {
+            "summary": summary or "",
+            "actions": actions or [],
+            "overall_score": scores.get("overall"),
+        }
+    }
+
+
+    # ---------------------------------------------------------
     # WRITE FILES
     # ---------------------------------------------------------
     update_analysis_status("Writing filter & report files…", 90)
 
     write_text_summary(session_dir, export)
+
+
+    # --- AI-friendly slim export ---
+    _atomic_write(
+        session_dir / "analysis_ai.json",
+        json.dumps(ai_export, indent=2)
+    )
 
     export_small = export.copy()
     _atomic_write(session_dir / "analysis.json",
