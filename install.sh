@@ -44,6 +44,27 @@ apt-get install -y \
     nodejs npm chromium
 
 # ------------------------------------------------------------
+# 1.5 Detect Wi-Fi interface (wlan0 / wlan1 / etc)
+# ------------------------------------------------------------
+msg "Detecting Wi-Fi interface…"
+
+WIFI_IFACE="$(iw dev | awk '$1=="Interface"{print $2; exit}')"
+
+if [[ -z "$WIFI_IFACE" ]]; then
+    die "No Wi-Fi interface detected. Is Wi-Fi hardware present?"
+fi
+
+msg "✔ Detected Wi-Fi interface: $WIFI_IFACE"
+
+# Persist for runtime use
+CONF_FILE="/etc/measurely.conf"
+echo "WIFI_IFACE=$WIFI_IFACE" > "$CONF_FILE"
+chmod 644 "$CONF_FILE"
+
+msg "✔ Saved Wi-Fi interface to $CONF_FILE"
+
+
+# ------------------------------------------------------------
 # 2. Create venv
 # ------------------------------------------------------------
 msg "Creating virtualenv…"

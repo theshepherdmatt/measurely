@@ -1,8 +1,10 @@
 import time
 from .util import run, try_run
+from .util import get_wifi_iface
 
-IFACE = "wlan1"
-WPA_CONF = "/etc/wpa_supplicant/wpa_supplicant-wlan1.conf"
+IFACE = get_wifi_iface()
+
+WPA_CONF = f"/etc/wpa_supplicant/wpa_supplicant-{IFACE}.conf"
 
 
 def write_config(ssid, psk):
@@ -32,7 +34,7 @@ def connect(ssid, psk, timeout=25):
     print("[STA] Hard-resetting Wi-Fi state")
     try_run("pkill -9 wpa_supplicant")
     try_run("pkill -9 dhclient")
-    try_run("rm -rf /run/wpa_supplicant/wlan1")
+    try_run(f"rm -rf /run/wpa_supplicant/{IFACE}")
     try_run("rm -f /var/lib/dhcp/dhclient.*")
     try_run(f"ip route flush dev {IFACE}")
     try_run(f"ip addr flush dev {IFACE}")

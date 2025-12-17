@@ -23,3 +23,13 @@ def try_run(cmd):
         return run(cmd, check=False)
     except Exception:
         return ""
+
+def get_wifi_iface():
+    try:
+        with open("/etc/measurely.conf") as f:
+            for line in f:
+                if line.startswith("WIFI_IFACE="):
+                    return line.strip().split("=", 1)[1]
+    except Exception:
+        pass
+    return "wlan0"  # sane fallback

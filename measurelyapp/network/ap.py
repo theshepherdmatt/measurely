@@ -1,6 +1,9 @@
 from .util import run, try_run
 
-IFACE = "wlan1"
+from .util import get_wifi_iface
+
+IFACE = get_wifi_iface()
+
 AP_IP = "192.168.4.1/24"
 
 def start():

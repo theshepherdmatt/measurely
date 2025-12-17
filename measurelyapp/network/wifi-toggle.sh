@@ -2,7 +2,9 @@
 # WiFi ↔ AP toggle for Measurely (NetworkManager + hostapd + dnsmasq)
 # Bookworm-compatible (no dhcpcd)
 
-IFACE="wlan1"
+IFACE="$(grep ^WIFI_IFACE= /etc/measurely.conf | cut -d= -f2)"
+[ -z "$IFACE" ] && IFACE="wlan0"
+
 NM_IGNORE="/etc/NetworkManager/conf.d/unmanaged-${IFACE}.conf"
 
 case "$1" in

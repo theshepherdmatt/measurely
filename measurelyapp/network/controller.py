@@ -5,6 +5,9 @@ import time
 from . import ap, sta
 from .util import run, try_run
 
+from .util import get_wifi_iface
+
+
 STATE_DIR = "/home/matt/measurely/state"
 ONBOARDING_FILE = os.path.join(STATE_DIR, "onboarding.json")
 
@@ -62,12 +65,11 @@ def scan():
 
 
 def _get_ip():
-    # returns first IPv4 on wlan1, or None
-    out = try_run("ip -4 addr show dev wlan1")
+    iface = get_wifi_iface()
+    out = try_run(f"ip -4 addr show dev {iface}")
     for line in out.splitlines():
         line = line.strip()
         if line.startswith("inet "):
-            # inet 192.168.x.x/24 ...
             return line.split()[1].split("/")[0]
     return None
 
