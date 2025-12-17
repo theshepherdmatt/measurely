@@ -80,3 +80,20 @@ def status():
         "connected": connected,
         "ip": _get_ip()
     }
+
+def init_network_on_boot():
+    try:
+        with open(ONBOARDING_FILE, "r") as f:
+            data = json.load(f)
+            onboarded = data.get("onboarded") is True
+    except Exception:
+        onboarded = False
+
+    print(f"[BOOT] onboarded={onboarded}")
+
+    if not onboarded:
+        print("[BOOT] Starting AP mode")
+        ap.start()
+
+
+

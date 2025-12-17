@@ -33,8 +33,7 @@ from flask_cors import CORS
 from scipy.ndimage import gaussian_filter1d
 
 from measurelyapp.network.api import network_api
-
-
+from measurelyapp.network import controller
 
 # ------------------------------------------------------------------
 #  Flask init
@@ -45,6 +44,8 @@ CORS(app)
 app.register_blueprint(network_api)
 
 update_led_state("boot")
+
+controller.init_network_on_boot()
 
 # ------------------------------------------------------------------
 #  Single, unified Measurely root
