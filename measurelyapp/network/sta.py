@@ -46,8 +46,7 @@ def connect(ssid, psk, timeout=25):
     run(f"wpa_supplicant -B -i {IFACE} -c {WPA_CONF}", check=False)
 
     print("[STA] Starting DHCP client")
-    run(f"dhclient -4 {IFACE}", check=False)
-
+    run(f"sudo dhclient -4 {IFACE}", check=False)
     start = time.time()
     while time.time() - start < timeout:
         routes = try_run("ip route")

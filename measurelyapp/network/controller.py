@@ -96,6 +96,11 @@ def init_network_on_boot():
     if not onboarded:
         print("[BOOT] Starting AP mode")
         ap.start()
+        return
+
+    print("[BOOT] Onboarded – ensuring DHCP route")
+    run(f"sudo dhclient -4 {get_wifi_iface()}", check=False)
+
 
 
 

@@ -44,6 +44,20 @@ apt-get install -y \
     nodejs npm chromium
 
 # ------------------------------------------------------------
+# Allow Measurely to run DHCP client without full root
+# ------------------------------------------------------------
+msg "Installing minimal sudo rule for DHCP…"
+
+cat >/etc/sudoers.d/measurely-network <<EOF
+$APP_USER ALL=(root) NOPASSWD: /sbin/dhclient, /usr/sbin/dhclient
+EOF
+
+chmod 440 /etc/sudoers.d/measurely-network
+
+msg "✔ DHCP sudo rule installed."
+
+
+# ------------------------------------------------------------
 # 1.5 Detect Wi-Fi interface (wlan0 / wlan1 / etc)
 # ------------------------------------------------------------
 msg "Detecting Wi-Fi interface…"
