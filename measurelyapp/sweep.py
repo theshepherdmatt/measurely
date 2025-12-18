@@ -27,12 +27,29 @@ from scipy.signal import fftconvolve
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from pathlib import Path
+
+
+def get_next_sweep_dir(measurements_dir: Path) -> Path:
+    """
+    Returns Path to next SweepN directory.
+    Requires Sweep0 to already exist.
+    """
+    max_n = -1
+
+    for p in measurements_dir.iterdir():
+        if p.is_dir() and p.name.startswith("Sweep"):
+            try:
+                n = int(p.name.replace("Sweep", ""))
+                max_n = max(max_n, n)
+            except ValueError:
+                pass
+
+    return measurements_dir / f"Sweep{max_n + 1}"
 
 # ------------------------------------------------------------------
 #  SWEEP STATUS WRITER
 # ------------------------------------------------------------------
-import json
-
 SWEEP_STATUS_FILE = "/tmp/measurely_sweep_status.json"
 
 def update_status(phase, percent, running=True):
@@ -42,44 +59,53 @@ def update_status(phase, percent, running=True):
                 "phase": phase,
                 "percent": percent,
                 "running": running,
-                "ts": time.time()   # <-- NEW: monotonic ordering
+                "ts": time.time()   # <-- monotonic ordering
             }, f)
     except Exception:
         pass
+
+def write_session_meta(session_root, fs, args, speaker_key):
+    meta = {
+        "fs": fs,
+        "dur": args.dur,
+        "f0": args.f0,
+        "f1": args.f1,
+        "in_dev": args.in_dev,
+        "out_dev": args.out_dev,
+        "playback": args.playback,
+        "alsa_device": args.alsa_device,
+        "layout": args.layout,
+        "speaker_key": speaker_key,
+        "timestamp": datetime.now().isoformat(),
+    }
+
+    write_json_atomic(meta, Path(session_root) / "meta.json")
 
 
 # ------------------------------------------------------------------
 #  utilities
 # ------------------------------------------------------------------
-def session_dir() -> str:
+def session_dir() -> Path:
     """
-    Create sequential session folders: Sweep1, Sweep2, Sweep3…
-    Tracks next number inside next_sweep.txt.
+    Create next sequential SweepN directory based on filesystem.
+    Requires Sweep0 to exist.
     """
     root = Path.home() / "measurely" / "measurements"
     root.mkdir(parents=True, exist_ok=True)
 
-    counter_file = root / "next_sweep.txt"
+    max_n = -1
+    for p in root.iterdir():
+        if p.is_dir() and p.name.startswith("Sweep"):
+            try:
+                n = int(p.name.replace("Sweep", ""))
+                max_n = max(max_n, n)
+            except ValueError:
+                pass
 
-    # Load current number
-    if counter_file.exists():
-        try:
-            with open(counter_file, "r") as f:
-                n = int(f.read().strip())
-        except:
-            n = 1
-    else:
-        n = 1
+    session_path = root / f"Sweep{max_n + 1}"
+    session_path.mkdir(parents=False, exist_ok=False)
 
-    # Folder name
-    sweep_name = f"Sweep{n}"
-    session_path = root / sweep_name
-
-    # Increment & save for next time
-    with open(counter_file, "w") as f:
-        f.write(str(n + 1))
-
-    return str(session_path)
+    return session_path
 
 
 def route_to_left(sweep):  return np.column_stack([sweep, np.zeros_like(sweep)])
@@ -117,6 +143,7 @@ def dev_info(idx, kind=None):
 def fail(outdir, e, where=""):
     write_log(outdir, f"FATAL{(' @'+where) if where else ''}: {e}")
     raise
+
 
 # ------------------------------------------------------------------
 #  atomic file I/O
@@ -157,6 +184,7 @@ def write_wav_atomic(dest: Path, data, fs: int):
         try: os.unlink(tmp)
         except FileNotFoundError: pass
 
+
 # ------------------------------------------------------------------
 #  graceful shutdown
 # ------------------------------------------------------------------
@@ -168,6 +196,7 @@ def _graceful_stop(sig, _frame):
 
 signal.signal(signal.SIGINT, _graceful_stop)
 signal.signal(signal.SIGTERM, _graceful_stop)
+
 
 # ------------------------------------------------------------------
 #  DSP core
@@ -187,12 +216,31 @@ def xcorr_peak_index(rec, ref):
     k = int(np.argmax(np.abs(c)))
     return max(0, k - (len(ref) - 1))
 
-def deconvolve(y, inv):
-    ir = fftconvolve(y, inv, mode="full")
-    p  = int(np.argmax(np.abs(ir)))
-    s  = max(p - 2048, 0)
-    ir = ir[s : s + len(y)]
-    return (ir / (np.max(np.abs(ir)) + 1e-12)).astype(np.float32)
+# FIX: keep the IR tail for RT/EDT, don’t truncate to len(y), and don’t normalise the *saved* IR.
+IR_PRE_ROLL_S   = 0.10   # seconds before peak to include
+IR_WINDOW_S     = 4.0    # seconds after peak to keep (captures decay tail for RT/EDT)
+IR_NORM_FOR_PLOT = True  # only affects plotted IR, not saved impulse.wav
+
+def deconvolve(y, inv, fs):
+    """
+    Deconvolve recorded sweep segment into an impulse response.
+    Keeps a fixed window long enough for RT/EDT (instead of truncating to len(y)).
+    Saves *raw* IR amplitude (no normalisation) so decay maths works.
+    """
+    ir_full = fftconvolve(y, inv, mode="full").astype(np.float32)
+    if ir_full.size == 0 or not np.isfinite(ir_full).any():
+        return np.array([], dtype=np.float32)
+
+    p = int(np.argmax(np.abs(ir_full)))
+
+    pre = int(IR_PRE_ROLL_S * fs)
+    win = int(IR_WINDOW_S * fs)
+
+    s = max(p - pre, 0)
+    e = min(s + win, ir_full.size)
+
+    ir = ir_full[s:e].astype(np.float32, copy=False)
+    return ir
 
 def mag_response(ir, fs):
     L = int(len(ir))
@@ -206,6 +254,7 @@ def mag_response(ir, fs):
     freqs = np.fft.rfftfreq(n, 1.0 / float(fs))[1:]
     mag   = mag[1:]
     return freqs, mag
+
 
 # ------------------------------------------------------------------
 #  playback helpers
@@ -223,7 +272,7 @@ def play_via_aplay(stereo, fs, alsa_device=None):
         cmd = ["aplay", "-q", "-D", device, path]
         print(f"[SWEEP] running: {' '.join(cmd)}")
         subprocess.run(cmd, check=True, capture_output=True)
-        time.sleep(1.0)          # <-- NEW: let ALSA finish
+        time.sleep(1.0)          # <-- let ALSA finish
     finally:
         td.cleanup()
 
@@ -231,6 +280,7 @@ def play_via_portaudio(stereo, fs, out_dev=None):
     print(f"[SWEEP] playing on device {out_dev}  name={sd.query_devices(out_dev)['name']}")
     # BLOCKING so we hear the whole sweep
     sd.play(stereo.astype(np.float32, copy=False), fs, device=out_dev, blocking=True)
+
 
 # ------------------------------------------------------------------
 #  file-target helpers
@@ -248,17 +298,18 @@ def _folder_targets(root: Path, channel: str):
         "meta_json": base / "meta.json",
     }
 
+# FIX: flat targets must be Path objects under root (your old code returned strings → write_wav_atomic expects Path)
 def _flat_targets(root: Path, channel: str):
     pfx = f"{channel}-"
     return {
-        "sweep": f"{pfx}sweep.wav",
-        "mic_recording_raw": f"{pfx}mic_recording_raw.wav",
-        "mic_recording_used": f"{pfx}mic_recording_used.wav",
-        "impulse": f"{pfx}impulse.wav",
-        "response_csv": f"{pfx}response.csv",
-        "impulse_png": f"{pfx}impulse_response.png",
-        "response_png": f"{pfx}response.png",
-        "meta_json": f"{pfx}meta.json",
+        "sweep": root / f"{pfx}sweep.wav",
+        "mic_recording_raw": root / f"{pfx}mic_recording_raw.wav",
+        "mic_recording_used": root / f"{pfx}mic_recording_used.wav",
+        "impulse": root / f"{pfx}impulse.wav",
+        "response_csv": root / f"{pfx}response.csv",
+        "impulse_png": root / f"{pfx}impulse_response.png",
+        "response_png": root / f"{pfx}response.png",
+        "meta_json": root / f"{pfx}meta.json",
     }
 
 def _targets_for_layout(root: Path, channel: str, layout: str):
@@ -269,6 +320,7 @@ def _targets_for_layout(root: Path, channel: str, layout: str):
     if layout == "both":
         return [_folder_targets(root, channel), _flat_targets(root, channel)]
     raise ValueError(f"Unknown layout: {layout}")
+
 
 # ------------------------------------------------------------------
 #  single sweep run
@@ -321,7 +373,7 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
         end_idx   = min(start_idx + len(sweep) + int(fs * args.postpad), len(rec_raw))
         rec_used  = rec_raw[start_idx:end_idx].copy()
 
-        ir = deconvolve(rec_used, inv)
+        ir = deconvolve(rec_used, inv, fs)
         freqs, mag = mag_response(ir, fs)
 
         # -------------------------------------------------------------
@@ -331,6 +383,7 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
             peak_idx = int(np.argmax(np.abs(ir)))
             peak_val = float(ir[peak_idx])
             print(f"[DEBUG] IR peak frame={peak_idx}  value={peak_val:.4f}")
+            print(f"[DEBUG] IR length frames={len(ir)}  seconds={len(ir)/float(fs):.3f}")
         else:
             print("[DEBUG] IR EMPTY or invalid!")
 
@@ -343,6 +396,8 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
             timestamp=datetime.now().isoformat(),
             channel=channel_label,
             layout=args.layout,
+            ir_window_s=IR_WINDOW_S,
+            ir_pre_roll_s=IR_PRE_ROLL_S,
         )
 
         save_all(session_root, channel_label, fs, sweep, rec_raw, rec_used, ir, freqs, mag, meta, args.layout)
@@ -355,10 +410,11 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
             update_status("Right sweep finished", 60)
 
     except Exception as e:
-        update_status(f"ERROR during {channel_label} sweep",  
-                      0 if channel_label=="left" else 35,  
+        update_status(f"ERROR during {channel_label} sweep",
+                      0 if channel_label=="left" else 35,
                       running=False)
         fail(log_base, e, where=f"sweep_{channel_label}")
+
 
 # ------------------------------------------------------------------
 #  plot + save bundle
@@ -372,12 +428,17 @@ def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag
     lines += [f"{float(fr):.6f},{float(db):.2f}\n" for fr, db in zip(freqs, mag)]
     csv_text = "".join(lines)
 
-    # IR plot
+    # IR plot (optionally normalise FOR PLOT ONLY)
     try:
-        t = np.arange(len(ir)) / float(fs)
+        ir_plot = ir
+        if IR_NORM_FOR_PLOT and ir_plot is not None and len(ir_plot) > 0:
+            m = float(np.max(np.abs(ir_plot))) + 1e-12
+            ir_plot = (ir_plot / m).astype(np.float32, copy=False)
+
+        t = np.arange(len(ir_plot)) / float(fs)
         fig_ir = plt.figure(figsize=(9, 4))
         ax = fig_ir.add_subplot(111)
-        ax.plot(t, ir)
+        ax.plot(t, ir_plot)
         ax.set(xlabel="Time (s)", ylabel="Amplitude", title=f"Impulse Response ({channel})")
         ax.grid(True, ls=":")
         fig_ir.tight_layout()
@@ -411,12 +472,9 @@ def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag
         if fig_fr is not None:
             savefig_atomic(fig_fr, targets["response_png"], dpi=150)
 
-        # JSON **inside the loop**
+        # JSON (FIX: write meta for EACH target set; your old code wrote only the last one)
         print(f"[DEBUG] save_all called, meta_json={targets['meta_json']}")
-
-
-    # JSON
-    write_json_atomic(meta, targets["meta_json"])
+        write_json_atomic(meta, targets["meta_json"])
 
     # close figures
     try:
@@ -424,6 +482,7 @@ def save_all(session_root, channel, fs, sweep, rec_raw, rec_used, ir, freqs, mag
         if fig_fr: plt.close(fig_fr)
     except Exception:
         pass
+
 
 # ------------------------------------------------------------------
 #  CLI entry
@@ -455,14 +514,18 @@ def main():
     # Load user config BEFORE generating sweep
     # ------------------------------------------------------------------
     latest_meta = Path.home() / "measurely" / "measurements" / "latest" / "meta.json"
-    if latest_meta.exists():
-        print(f"[SWEEP] loading room config from {latest_meta}")
-        user_meta = json.loads(latest_meta.read_text())
-        room = user_meta.get("settings", {}).get("room", {})
-        room_len = float(room.get("length_m", 4.0))
-        speaker_key = room.get("speaker_key")
-    else:
-        print("[SWEEP] WARNING: no /latest/meta.json found — using defaults")
+
+    try:
+        if latest_meta.is_file():
+            print(f"[SWEEP] loading room config from {latest_meta}")
+            user_meta = json.loads(latest_meta.read_text())
+            room = user_meta.get("settings", {}).get("room", {})
+            room_len = float(room.get("length_m", 4.0))
+            speaker_key = room.get("speaker_key")
+        else:
+            raise FileNotFoundError
+    except Exception as e:
+        print(f"[SWEEP] WARNING: cannot read latest/meta.json ({e}) — using defaults")
         room_len = 4.0
         speaker_key = None
 
@@ -505,15 +568,15 @@ def main():
     except Exception as e:
         print(f"[DEBUG] Failed writing early sweep debug log: {e}")
 
-
     # ------------------------------------------------------------------
     # Prepare session + sweep
     # ------------------------------------------------------------------
-    fs = 48000
+    fs = int(args.fs)
     sweep, inv = gen_log_sweep(fs, args.dur, args.f0, args.f1)
     print(f"[SWEEP] stimulus shape={sweep.shape}  max={sweep.max():.3f}  rms={np.sqrt(np.mean(sweep**2)):.3f}")
 
-    outdir = session_dir()
+    outdir = Path(session_dir())
+
     Path(outdir).mkdir(parents=True, exist_ok=True)
 
     write_log(outdir, [
@@ -530,6 +593,8 @@ def main():
     if args.mode in ("right", "both"):
         run_sweep(outdir, sweep, inv, fs, args, "right", route_to_right(sweep))
 
+    write_session_meta(outdir, fs, args, speaker_key)
+
     # ------------------------------------------------------------------
     # After both channels complete
     # ------------------------------------------------------------------
@@ -544,6 +609,40 @@ def main():
         pass
 
     print("Saved:", outdir)
+
+    # ---------------------------------------------------------
+    # Auto-run analysis on completed sweep
+    # ---------------------------------------------------------
+    try:
+        print("[SWEEP] Running analysis…")
+        subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).parent / "analyse.py"),
+                outdir,
+            ],
+            check=True,
+        )
+    except Exception as e:
+        print(f"[SWEEP] Analysis failed: {e}")
+
+
+    # ------------------------------------------------------------------
+    # Write session-level meta.json (FIX)
+    # ------------------------------------------------------------------
+    write_json_atomic({
+        "fs": fs,
+        "dur": args.dur,
+        "f0": args.f0,
+        "f1": args.f1,
+        "in_dev": args.in_dev,
+        "out_dev": args.out_dev,
+        "playback": args.playback,
+        "alsa_device": args.alsa_device,
+        "layout": args.layout,
+        "speaker_key": speaker_key,
+        "timestamp": datetime.now().isoformat(),
+    }, Path(outdir) / "meta.json")
 
     # ------------------------------------------------------------------
     # Update latest/ symlink

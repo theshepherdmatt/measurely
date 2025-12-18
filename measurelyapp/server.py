@@ -269,7 +269,7 @@ def load_session_data(session_dir):
             "smoothness":    ana_data.get("scores", {}).get("smoothness", 7.3),
             "peaks_dips":    ana_data.get("scores", {}).get("peaks_dips", 3.3),
             "reflections":   ana_data.get("scores", {}).get("reflections", 4.0),
-            "reverb":        ana_data.get("scores", {}).get("reverb", 10.0),
+            "signal_integrity": ana_data.get("scores", {}).get("signal_integrity", 0.0),
 
             "session_dir": str(path),
             "analysis_notes": ana_data.get("notes", []),

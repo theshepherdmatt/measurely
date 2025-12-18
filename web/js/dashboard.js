@@ -7,7 +7,8 @@ window.usedDaveTips = {
     bandwidth: new Set(),
     balance: new Set(),
     smoothness: new Set(),
-    reverb: new Set(),
+    signal_integrity: new Set(),
+    
 
     // score buckets
     excellent: new Set(),
@@ -118,7 +119,7 @@ function updateAllMetricAria() {
     updateMetricAria("bandwidthLabel", "bandwidthScore", "bandwidthStatusText", "bandwidthDave");
     updateMetricAria("balanceLabel", "balanceScore", "balanceStatusText", "balanceDave");
     updateMetricAria("smoothnessLabel", "smoothnessScore", "smoothnessStatusText", "smoothnessDave");
-    updateMetricAria("reverbLabel", "reverbScore", "reverbStatusText", "reverbDave");
+    updateMetricAria("signalIntegrityLabel", "signalIntegrityScore", "signalIntegrityStatusText", "signalIntegrityDave");
 }
 
 function updateChartAria(channel, summaryText) {
@@ -134,6 +135,7 @@ function updateChartAria(channel, summaryText) {
 
     desc.textContent = summaryText;
 }
+
 
 
 /* ============================================================
@@ -289,7 +291,7 @@ class MeasurelyDashboard {
                     card.dataset.sweepid = "";
                     card.querySelector(".sweep-score").textContent = "--";
                     card.querySelectorAll(
-                        ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-reverb"
+                        ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-signal-integrity"
                     ).forEach(e => e.textContent = "--");
                     const preview = card.querySelector("[data-note-preview]");
                     preview.textContent = "—";
@@ -320,7 +322,7 @@ class MeasurelyDashboard {
                     card.dataset.sweepid = "";
                     card.querySelector(".sweep-score").textContent = "--";
                     card.querySelectorAll(
-                        ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-reverb"
+                        ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-signal-integrity"
                     ).forEach(e => e.textContent = "--");
                     const preview = card.querySelector("[data-note-preview]");
                     preview.textContent = "—";
@@ -356,7 +358,7 @@ class MeasurelyDashboard {
                 setMetric(".m-bandwidth",   data.bandwidth);
                 setMetric(".m-balance",     data.balance);
                 setMetric(".m-smoothness",  data.smoothness);
-                setMetric(".m-reverb",      data.reverb);
+                setMetric(".m-signal-integrity", data.signal_integrity);
 
                 // 📝 Load note preview correctly from saved sweep
                 const note =
@@ -751,6 +753,16 @@ class MeasurelyDashboard {
         const data = this.currentData;
         if (!data) return;
 
+        console.log(
+            "[DEBUG] signal integrity raw:",
+            {
+                root: data.signal_integrity,
+                scores: data.scores,
+                scores_signal: data.scores?.signal_integrity
+            }
+        );
+
+
         /* ----------------- HELPER FOR DOT COLOURS ----------------- */
         const setDotColour = (el, score) => {
             if (!el) return;
@@ -860,7 +872,10 @@ class MeasurelyDashboard {
             smoothnessScore: data.smoothness ?? 0,
             peaksDipsScore: data.scores?.peaks_dips ?? data.peaks_dips ?? 0,
             reflectionsScore: data.reflections ?? 0,
-            reverbScore: data.reverb ?? 0
+            signalIntegrityScore:
+                data.scores?.signal_integrity ??
+                data.signal_integrity ??
+                0
         };
 
         for (const [id, val] of Object.entries(scores)) {
@@ -903,8 +918,12 @@ class MeasurelyDashboard {
               rawFunc: (s) => (s > 4 && s < 7 ? 'Low L/R Skew' : 'High L/R Skew') },
             { id: 'smoothness', score: data.smoothness ?? 3, 
               rawFunc: (s) => `Mid/High Variance: ${(10 - s).toFixed(1)} dB` },
-            { id: 'reverb', score: data.reverb ?? 3, 
-              rawFunc: (s) => `Decay Time: ${(s / 100).toFixed(2)}s EDT` }
+            { id: 'signal_integrity', score: data.scores?.signal_integrity ?? 3,
+                rawFunc: (s) => s >= 7
+                    ? 'Clean sweep signal'
+                    : 'Weak or unreliable sweep signal'
+                }
+
         ];
         
         metrics.forEach(metric => {
@@ -991,7 +1010,7 @@ class MeasurelyDashboard {
         const smoothness  = data.smoothness  ?? 3;
         const peaksDips   = data.peaks_dips  ?? 3;
         const reflections = data.reflections ?? 3;
-        const reverb      = data.reverb      ?? 3;
+
 
         /* Convert scores to buckets */
         const bwBucket   = this.toBucket(bandwidth);
@@ -999,7 +1018,7 @@ class MeasurelyDashboard {
         const smBucket   = this.toBucket(smoothness);
         const pdBucket   = this.toBucket(peaksDips);
         const refBucket  = this.toBucket(reflections);
-        const rvBucket   = this.toBucket(reverb);
+
 
 
         /* ============================================================
@@ -1062,20 +1081,6 @@ class MeasurelyDashboard {
 
 
         /* ============================================================
-        6. REVERB
-        ============================================================ */
-        const edt = (reverb / 100).toFixed(2);
-
-        document.getElementById('reverbStatusText').textContent =
-            reverb > 7 ? "Excellent control" :
-            reverb > 4 ? "Acceptable" :
-                        "Too live";
-
-        const revRaw = document.getElementById("reverbRaw");
-        if (revRaw) revRaw.textContent = this.pickRawMetric("reverb", rvBucket);
-
-
-        /* ============================================================
         Dave PHRASES (new system - no buckets)
         ============================================================ */
         const spk = (data.room?.speaker_key && window.SPEAKERS?.[data.room.speaker_key])
@@ -1102,7 +1107,7 @@ class MeasurelyDashboard {
             smoothness: "smoothnessDave",
             peaks_dips: "peaksDipsDave",
             reflections: "reflectionsDave",
-            reverb: "reverbDave"
+            signal_integrity: "signalIntegrityDave"
         };
 
         for (const [metric, elId] of Object.entries(metricMap)) {
@@ -1348,7 +1353,7 @@ class MeasurelyDashboard {
             const emptyMetrics = {
                 sessOverallScore: '--', sessOverallStatus: 'No Analysis',
                 sessPeaksDips: '--', sessReflections: '--', sessBandwidth: '--',
-                sessBalance: '--', sessSmoothness: '--', sessReverb: '--',
+                sessBalance: '--', sessSmoothness: '--', sessSignalIntegrity: '--',
                 sessBass: '-- dB', sessMid: '-- dB', sessTreble: '-- dB', sessAir: '-- dB'
             };
             for (const [id, value] of Object.entries(emptyMetrics)) {
@@ -1369,7 +1374,7 @@ class MeasurelyDashboard {
         set("sessBandwidth", d.bandwidth, true);
         set("sessBalance", d.balance, true);
         set("sessSmoothness", d.smoothness, true);
-        set("sessReverb", d.reverb, true);
+        set("sessSignalIntegrity", d.scores?.signal_integrity, true);
 
         // Four Bands
         set("sessBass", bands.bass ? `${bands.bass.toFixed(1)} dB` : '-- dB');
@@ -1655,7 +1660,7 @@ class MeasurelyDashboard {
     showLoadingState() {
         const ids = [
             'overallScore','bandwidthScore','balanceScore','smoothnessScore',
-            'peaksDipsScore','reflectionsScore','reverbScore'
+            'peaksDipsScore','reflectionsScore','signalIntegrityScore'
         ];
 
         ids.forEach(id => {
@@ -1776,7 +1781,7 @@ class MeasurelyDashboard {
             smoothness: 7.3,
             peaks_dips: 3.9,
             reflections: 5.0,
-            reverb: 8.5,
+            signal_integrity: 9.5,
             has_analysis: true,
             band_levels_db: { bass: 5.5, mid: 0.5, treble: -3.0, air: -8.0 }
         };

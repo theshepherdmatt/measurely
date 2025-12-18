@@ -1,328 +1,306 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import argparse, json, os, sys, logging
+import argparse
+import json
+import os
+import logging
 from pathlib import Path
+
 import numpy as np
 
 from measurelyapp.io import load_session
 from measurelyapp.signal_math import (
-    log_bins, band_mean, modes, bandwidth_3db, smoothness,
-    early_reflections, rt60_edt
+    log_bins,
+    band_mean,
+    modes,
+    bandwidth_3db,
+    smoothness,
+    early_reflections,
 )
 from measurelyapp.score import (
-    score_bandwidth, score_balance, score_modes,
-    score_smooth, score_ref, score_reverb
+    score_bandwidth,
+    score_balance,
+    score_modes,
+    score_smooth,
+    score_ref,
 )
 from measurelyapp.speaker import load_target_curve
-from measurelyapp.writer import _atomic_write, write_text_summary, yaml_camilla
-from measurelyapp.dave import dave_summary
+from measurelyapp.writer import _atomic_write, yaml_camilla
 
+
+# ---------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger("analyse")
 
-def smooth_curve(y, window=7):
-    if window < 3:
-        return y
-    pad = window // 2
-    ypad = np.pad(y, (pad, pad), mode="edge")
-    return np.convolve(ypad, np.ones(window)/window, mode="valid")
 
-
-# ---------------------------------------------------------
-# Analysis UI status writer
-# Mirror sweep progress but separate file
-# ---------------------------------------------------------
+# ---------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------
 ANALYSIS_STATUS_FILE = "/tmp/measurely_analysis_status.json"
+MAX_F_REPORT = 18_000
 
-def update_analysis_status(message: str, progress: int, running=True):
+SWEEP_PEAK_MIN = 1e-4
+SWEEP_SNR_MIN_DB = 10.0
+
+# Signal Integrity thresholds
+SIGINT_SNR_MIN_DB = 10.0
+SIGINT_SNR_GOOD_DB = 25.0
+SIGINT_PEAK_SOFT_MIN = 5e-4
+
+SIGINT_HARD_FAIL = 0.0
+SIGINT_SOFT_MIN = 5.0
+SIGINT_SOFT_CAP = 6.5
+
+
+# ---------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------
+def update_analysis_status(message: str, progress: int, running: bool = True):
     try:
         with open(ANALYSIS_STATUS_FILE, "w") as f:
-            json.dump({
-                "running": running,
-                "progress": progress,
-                "message": message
-            }, f)
+            json.dump(
+                {"running": running, "progress": progress, "message": message},
+                f,
+            )
     except Exception as e:
         log.error(f"Status write failed: {e}")
 
 
+def smooth_curve(y: np.ndarray, window: int = 9) -> np.ndarray:
+    if window < 3:
+        return y
+    pad = window // 2
+    ypad = np.pad(y, (pad, pad), mode="edge")
+    return np.convolve(ypad, np.ones(window) / window, mode="valid")
 
+
+def assess_sweep_validity(ir: np.ndarray, fs: int) -> tuple[bool, str | None]:
+    if ir.size == 0:
+        return False, "empty_impulse_response"
+
+    ir_abs = np.abs(ir)
+    peak = float(np.max(ir_abs))
+
+    if peak < SWEEP_PEAK_MIN:
+        return False, "no_signal_detected"
+
+    tail = ir_abs[int(len(ir_abs) * 0.8):]
+    noise = float(np.median(tail)) + 1e-12
+    snr = 20.0 * np.log10(peak / noise)
+
+    log.info(f"Sweep SNR: {snr:.1f} dB")
+
+    if snr < SWEEP_SNR_MIN_DB:
+        return False, "insufficient_snr"
+
+    return True, None
+
+
+def compute_signal_integrity(ir: np.ndarray) -> dict:
+    if ir.size == 0:
+        return {"score": 0.0, "snr_db": None, "peak": 0.0, "noise_floor": None}
+
+    ir_abs = np.abs(ir)
+    peak = float(np.max(ir_abs))
+
+    if peak < SWEEP_PEAK_MIN:
+        return {"score": 0.0, "snr_db": None, "peak": peak, "noise_floor": None}
+
+    tail = ir_abs[int(len(ir_abs) * 0.8):]
+    noise = float(np.median(tail)) + 1e-12
+    snr = 20.0 * np.log10(peak / noise)
+
+    if snr <= 0:
+        score = 0.0
+    else:
+        score = 3.0 + (snr - SIGINT_SNR_MIN_DB) * (
+            7.0 / (SIGINT_SNR_GOOD_DB - SIGINT_SNR_MIN_DB)
+        )
+        score = max(0.0, min(10.0, score))
+
+        if peak < SIGINT_PEAK_SOFT_MIN:
+            score = min(score, 5.0)
+
+    return {
+        "score": round(score, 1),
+        "snr_db": round(snr, 1),
+        "peak": round(peak, 6),
+        "noise_floor": round(noise, 6),
+    }
+
+
+# ---------------------------------------------------------------------
+# Main analysis
+# ---------------------------------------------------------------------
 def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
 
-
-    from measurelyapp.dave import dave_summary
-
-    # ---------------------------------------------------------
-    # LOAD INPUT
-    # ---------------------------------------------------------
     freq, mag, ir, fs, label = load_session(session_dir)
     update_analysis_status("Loaded sweep data", 5)
 
-    # ---------------------------------------------------------
-    # LOAD ROOM SETTINGS (GLOBAL, PERSISTENT)
-    # ---------------------------------------------------------
-
     room_file = Path.home() / "measurely" / "room.json"
+    if not room_file.exists():
+        raise RuntimeError("room.json missing — room setup must be completed first")
 
-    defaults = {
-        "speaker_key": None,
-        "toe_in_deg": 0,
-        "echo_pct": 50,
-        "opt_hardfloor": False,
-        "opt_barewalls": False,
-        "opt_rug": False,
-        "opt_curtains": False,
-        "opt_sofa": False,
-        "opt_wallart": False,
-    }
+    json.loads(room_file.read_text())
+    log.info("Loaded room settings")
 
-    if room_file.exists():
-        room = { **defaults, **json.loads(room_file.read_text()) }
-        print("Loaded room settings from room.json")
-    else:
-        print("WARNING: room.json missing, using defaults")
-        room = defaults.copy()
+    sweep_valid, invalid_reason = assess_sweep_validity(ir, fs)
+    signal_integrity = compute_signal_integrity(ir)
 
+    log.info(
+        f"Signal Integrity → score={signal_integrity['score']} "
+        f"SNR={signal_integrity.get('snr_db')} dB "
+        f"peak={signal_integrity['peak']}"
+    )
 
-
-    # ---------------------------------------------------------
-    # DSP PIPELINE
-    # ---------------------------------------------------------
-
-    # Graph bins — UI consumes this
     freq_ui, mag_ui = log_bins(freq, mag, ppo=ppo)
     update_analysis_status("Computing UI frequency bins…", 15)
-    print(f"UI: {len(freq_ui)} points ({ppo} PPO)")
 
-    # Raw bins for analysis — capped for correct mode detection
     ppo_raw = min(ppo, 12)
     freq_raw, mag_raw = log_bins(freq, mag, ppo=ppo_raw)
-    update_analysis_status("Processing raw bins for analysis…", 25)
-    print(f"Analysis: {len(freq_raw)} points ({ppo_raw} PPO)")
+    update_analysis_status("Processing analysis bins…", 25)
 
-    # ---------------------------------------------------------
-    # REPORT CURVE — DASHBOARD IDENTICAL, SMOOTHED, TRIMMED
-    # ---------------------------------------------------------
-
-    # Hard trim to kill HF noise tail
-    MAX_F_REPORT = 18000
-
-    freqs = np.array(freq_ui)
-    mag   = np.array(mag_ui)
-
-    mask = freqs <= MAX_F_REPORT
-    freqs = freqs[mask]
-    mag   = mag[mask]
-
-    # Smooth exactly once (dashboard feel)
-    mag = smooth_curve(mag, window=9)
-
-    report_curve = {
-        "freqs": freqs.tolist(),
-        "mag": mag.tolist()
-    }
+    freqs = np.asarray(freq_ui)
+    mags = smooth_curve(np.asarray(mag_ui)[freqs <= MAX_F_REPORT])
+    freqs = freqs[freqs <= MAX_F_REPORT]
 
     _atomic_write(
         session_dir / "report_curve.json",
-        json.dumps(report_curve, indent=2)
+        json.dumps({"freqs": freqs.tolist(), "mag": mags.tolist()}, indent=2),
     )
 
+    if not sweep_valid:
+        export = {
+            "label": label,
+            "fs": fs,
+            "freq": freq_ui.tolist(),
+            "mag": mag_ui.tolist(),
+            "scores": {
+                "bandwidth": np.nan,
+                "balance": np.nan,
+                "peaks_dips": np.nan,
+                "smoothness": np.nan,
+                "reflections": np.nan,
+                "signal_integrity": signal_integrity["score"],
+                "overall": np.nan,
+            },
+            "analysis_meta": {
+                "engine": "measurely-core",
+                "version": "1.0",
+                "valid_sweep": False,
+                "invalid_reason": invalid_reason,
+            },
+        }
 
-    # ----------- band energy ----------------
+        _atomic_write(session_dir / "analysis.json", json.dumps(export, indent=2))
+        _atomic_write(session_dir / "analysis_ai.json", json.dumps(export, indent=2))
+        update_analysis_status("Invalid sweep detected", 100, running=False)
+        return export
+
     bands = {
-        "bass_20_200":   band_mean(freq_raw, mag_raw, 20, 200),
-        "mid_200_2k":    band_mean(freq_raw, mag_raw, 200, 2000),
+        "bass_20_200": band_mean(freq_raw, mag_raw, 20, 200),
+        "mid_200_2k": band_mean(freq_raw, mag_raw, 200, 2000),
         "treble_2k_10k": band_mean(freq_raw, mag_raw, 2000, 10000),
-        "air_10k_20k":   band_mean(freq_raw, mag_raw, 10000, 20000),
+        "air_10k_20k": band_mean(freq_raw, mag_raw, 10000, 20000),
     }
 
     lo3, hi3 = bandwidth_3db(freq_raw, mag_raw)
-    mods     = modes(freq_raw, mag_raw)
-    mods     = [m for m in mods if m["freq_hz"] <= 1000]
-    sm       = smoothness(freq_raw, mag_raw)
-    refs     = early_reflections(ir, fs)
-    rt       = rt60_edt(ir, fs)
-    update_analysis_status("Analysing band energy and metrics…", 40)
+    mode_list = [m for m in modes(freq_raw, mag_raw) if m["freq_hz"] <= 1000]
+    sm = smoothness(freq_raw, mag_raw)
+    refs = early_reflections(ir, fs)
 
-    # Furnishing modifiers
-    if refs:
-        if room.get("opt_hardfloor"): refs = [r * 1.10 for r in refs]
-        if room.get("opt_barewalls"): refs = [r * 1.08 for r in refs]
-        if room.get("opt_rug"):       refs = [r * 0.90 for r in refs]
-        if room.get("opt_curtains"):  refs = [r * 0.85 for r in refs]
-        if room.get("opt_sofa"):      refs = [r * 0.95 for r in refs]
-
-    # Echo slider modifies RT
-    if isinstance(rt, dict) and rt.get("rt60"):
-        echo_pct = room.get("echo_pct", 50)
-        rt_mod = (echo_pct - 50) / 200.0
-        rt["rt60"] *= (1 + rt_mod)
-
-    # ---------------------------------------------------------
-    # SCORING
-    # ---------------------------------------------------------
-    update_analysis_status("Scoring frequency response…", 60)
     target_curve = load_target_curve(speaker_key)
 
     scores = {
-        "bandwidth":   score_bandwidth(lo3, hi3),
-        "balance":     score_balance(bands, target_curve),
-        "peaks_dips":  score_modes(mods),
-        "smoothness":  score_smooth(sm),
-        "reflections": score_ref(refs or [5]),
-        "reverb": score_reverb(rt.get("rt60") or 0.5, rt.get("edt") or 0.5),
+        "bandwidth": score_bandwidth(lo3, hi3),
+        "balance": score_balance(bands, target_curve),
+        "peaks_dips": score_modes(mode_list),
+        "smoothness": score_smooth(sm),
+        "reflections": score_ref(refs),
+        "signal_integrity": signal_integrity["score"],
     }
 
-    scores["overall"] = round(np.mean(list(scores.values())), 1)
+    base_scores = [
+        scores["bandwidth"],
+        scores["balance"],
+        scores["peaks_dips"],
+        scores["smoothness"],
+        scores["reflections"],
+    ]
 
-    # --- scores have just been computed ---
-    print("\n=== DAVE DEBUG START ===")
-    print("Scores passed into dave_summary:", scores)
+    base_overall = np.nanmean(base_scores)
 
-    summary, actions = dave_summary(scores)
-    update_analysis_status("Generating recommendations…", 75)
+    if signal_integrity["score"] <= SIGINT_HARD_FAIL:
+        scores["overall"] = np.nan
+    elif signal_integrity["score"] < SIGINT_SOFT_MIN:
+        scores["overall"] = round(min(base_overall, SIGINT_SOFT_CAP), 1)
+    else:
+        scores["overall"] = round(base_overall, 1)
 
-    print("dave_summary returned:", summary)
-    print("dave_actions returned:", actions)
-    print("=== DAVE DEBUG END ===\n")
-
-
-    # Furnishing damping modifies reflections
-    damping = 0
-    if room.get("opt_rug"):        damping += 0.2
-    if room.get("opt_curtains"):   damping += 0.2
-    if room.get("opt_sofa"):       damping += 0.1
-    if room.get("opt_hardfloor"):  damping -= 0.2
-    if room.get("opt_barewalls"):  damping -= 0.2
-
-    scores["reflections"] *= (1 - damping)
-    
-    # DAVE SUMMARY ENGINE
-    summary, actions = dave_summary(scores)
-
-    # ---------------------------------------------------------
-    # EXPORT CLEAN JSON
-    # ---------------------------------------------------------
     export = {
         "label": label,
         "fs": fs,
         "freq": freq_ui.tolist(),
         "mag": mag_ui.tolist(),
-
+        "band_levels_db": bands,
         "bandwidth_lo_3db_hz": lo3,
         "bandwidth_hi_3db_hz": hi3,
-        "band_levels_db": bands,
         "smoothness_std_db": sm,
-        "modes": mods,
+        "modes": mode_list,
         "reflections_ms": refs,
-        "rt60_s": rt["rt60"],
-        "edt_s": rt["edt"],
-
+        "signal_integrity": signal_integrity,
         "scores": scores,
         "speaker_profile": speaker_key,
-        "room": room,
-
-        "dave": {
-            "summary": summary or "",
-            "actions": actions or [],
-            "overall_score": scores.get("overall"),
-            "speaker_friendly_name": (
-                speaker_key.replace("_", " ").title()
-                if speaker_key else room.get("speaker_friendly_name", "")
-            )
+        "analysis_meta": {
+            "engine": "measurely-core",
+            "version": "1.0",
+            "valid_sweep": True,
+            "signal_integrity": {
+                "score": signal_integrity["score"],
+                "hard_fail": signal_integrity["score"] <= SIGINT_HARD_FAIL,
+                "soft_fail": signal_integrity["score"] < SIGINT_SOFT_MIN,
+            },
         },
     }
 
-    # ---------------------------------------------------------
-    # AI-SPECIFIC EXPORT (LEAN, FAST)
-    # ---------------------------------------------------------
     ai_export = {
         "label": label,
-
         "scores": scores,
-
         "band_levels_db": bands,
-
-        "bandwidth_3db_hz": {
-            "low": lo3,
-            "high": hi3
-        },
-
+        "bandwidth_3db_hz": {"low": lo3, "high": hi3},
         "smoothness_std_db": sm,
-
-        "reflections_ms": refs[:5] if refs else [],
-
-        "rt60_s": rt.get("rt60"),
-        "edt_s": rt.get("edt"),
-
-        "room": {
-            "opt_hardfloor": room.get("opt_hardfloor"),
-            "opt_barewalls": room.get("opt_barewalls"),
-            "opt_rug": room.get("opt_rug"),
-            "opt_curtains": room.get("opt_curtains"),
-            "opt_sofa": room.get("opt_sofa"),
-        },
-
-        "dave": {
-            "summary": summary or "",
-            "actions": actions or [],
-            "overall_score": scores.get("overall"),
-        }
+        "reflections_ms": refs[:5],
+        "signal_integrity": signal_integrity,
     }
 
-
-    # ---------------------------------------------------------
-    # WRITE FILES
-    # ---------------------------------------------------------
-    update_analysis_status("Writing filter & report files…", 90)
-
-    write_text_summary(session_dir, export)
-
-
-    # --- AI-friendly slim export ---
-    _atomic_write(
-        session_dir / "analysis_ai.json",
-        json.dumps(ai_export, indent=2)
-    )
-
-    export_small = export.copy()
-    _atomic_write(session_dir / "analysis.json",
-                  json.dumps(export_small, indent=2))
+    _atomic_write(session_dir / "analysis.json", json.dumps(export, indent=2))
+    _atomic_write(session_dir / "analysis_ai.json", json.dumps(ai_export, indent=2))
 
     target = os.getenv("MEASURELY_DSP_TARGET", "moode")
-    _atomic_write(session_dir / "camilladsp.yaml",
-                  yaml_camilla(export_small, target=target))
-
-    meta_file = session_dir / "meta.json"
-
-    # Load old meta so we don’t wipe room settings
-    old_meta = {}
-    if meta_file.exists():
-        try:
-            old_meta = json.loads(meta_file.read_text())
-        except:
-            old_meta = {}
-
-    # Preserve settings.room
-    export_small["settings"] = old_meta.get("settings", {})
-
-    _atomic_write(meta_file, json.dumps(export_small, indent=2))
-
+    _atomic_write(
+        session_dir / "camilladsp.yaml",
+        yaml_camilla(export, target=target),
+    )
 
     update_analysis_status("Analysis complete ✔", 100, running=False)
-    print("Analysis complete →", session_dir)
+    log.info(f"Analysis complete → {session_dir}")
 
     return export
 
 
+# ---------------------------------------------------------------------
 # CLI
+# ---------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("session")
     ap.add_argument("--speaker")
     ap.add_argument("--ppo", type=int, default=48)
     args = ap.parse_args()
+
     analyse(Path(args.session), ppo=args.ppo, speaker_key=args.speaker)
 
 

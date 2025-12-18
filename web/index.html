@@ -102,7 +102,8 @@
                 </div>
 
                 <!-- Buttons Row -->
-                <div style="display: flex; gap: 1rem;">
+                <div class="header-actions">
+
                     <button id="runSweepBtn" class="btn btn-primary">
                         <img src="icons/sweep.svg" style="width: 16px; filter: brightness(100);" alt="">
                         Run Sweep
@@ -112,9 +113,9 @@
                         <img src="icons/refresh.svg" style="width: 16px;" alt="">
                     </button>
 
-                    <button id="downloadReportBtn" class="btn btn-secondary" aria-label="Download Report">
+                    <button id="downloadReportBtn" class="btn btn-secondary" aria-label="Download">
                         <img src="icons/arrow-down.svg" style="width: 16px;" alt="">
-                        Download Report
+                        Download
                     </button>
 
 
@@ -208,7 +209,7 @@
 
                 <!-- QUICK ACTIONS / INFO -->
                 <!-- LIVE LOGS CARD -->
-                <div class="card glass-panel" aria-hidden="true" style="margin-top:1rem;">
+                <div class="card glass-panel" aria-hidden="true">
 
                     <!-- DAVE LOG BADGE -->
                     <div class="dave-badge"
@@ -218,7 +219,6 @@
                             border-radius:8px;
                             width:fit-content;
                             font-size:0.78rem;
-                            color:var(--c-text-main);
                             margin-bottom:0.75rem;">
                         <img src="icons/dave.svg" style="width:14px;" alt="">
                         Live Logs
@@ -376,32 +376,44 @@
                     <span id="smoothnessRaw" class="hidden"></span>
                 </div>
 
-                <!-- Reverb -->
+                <!-- Signal Integrity -->
                 <div class="card glass-panel"
-                     role="region"
-                     aria-labelledby="reverbLabel"
-                     aria-label="">
+                    role="region"
+                    aria-labelledby="signalIntegrityLabel"
+                    aria-label="">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <h2 id="reverbLabel" class="card-title" style="margin:0;">Reverb</h2>
-                        <img src="icons/clock.svg" style="width: 20px;" data-color-icon="reverb" alt="">
+                        <h2 id="signalIntegrityLabel" class="card-title" style="margin:0;">
+                            Signal Integrity
+                        </h2>
+                        <img src="icons/clock.svg" style="width: 20px;"
+                            data-color-icon="signalIntegrity" alt="">
                     </div>
+
                     <div class="score-display" style="margin-bottom: 1rem;">
-                        <span id="reverbScore" class="score-value" style="font-size: 2.5rem;"
-                            data-color-target="reverb">--</span>
+                        <span id="signalIntegrityScore"
+                            class="score-value"
+                            style="font-size: 2.5rem;"
+                            data-color-target="signalIntegrity">--</span>
                     </div>
-                    <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">How long the room
-                        holds onto
-                        sound.</p>
+
+                    <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">
+                        Reliability of the sweep signal itself.
+                    </p>
+
                     <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
                         <img src="icons/dave.svg" style="width: 16px;" alt="">
                         <span style="font-size: 0.75rem;">Report</span>
                     </div>
-                    <span id="reverbDave" class="dave-quote"
+
+                    <span id="signalIntegrityDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
-                    <span id="reverbStatus" class="hidden"></span>
-                    <span id="reverbStatusText" class="hidden"></span>
-                    <span id="reverbRaw" class="hidden"></span>
+
+                    <!-- Hidden spans for JS compatibility -->
+                    <span id="signalIntegrityStatus" class="hidden"></span>
+                    <span id="signalIntegrityStatusText" class="hidden"></span>
+                    <span id="signalIntegrityRaw" class="hidden"></span>
                 </div>
+
 
             </div>
 
@@ -451,7 +463,7 @@
                 </div>
 
 
-                <!-- SWEEP HISTORY – CLEAN, NO INNER CARD -->
+                <!-- SWEEP HISTORY -->
                 <section class="sweep-history-wrapper" style="margin-top: 2rem;">
 
                     <h2 style="margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;">
@@ -476,11 +488,13 @@
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
-                                <div><span>Reverb</span><span class="m-reverb">--</span></div>
+                                <div><span>Signal</span><span class="m-signal-integrity">--</span></div>
                             </div>
 
-                            <button class="notes-btn" data-sweep-note>Notes</button>
-                            <div class="note-preview" data-note-preview>—</div>
+                            <div class="sweep-footer">
+                                <button class="notes-btn" data-sweep-note>Notes</button>
+                                <div class="note-preview" data-note-preview>—</div>
+                            </div>
                         </div>
 
                         <!-- SWEEP 2 -->
@@ -494,11 +508,13 @@
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
-                                <div><span>Reverb</span><span class="m-reverb">--</span></div>
+                                <div><span>Signal</span><span class="m-signal-integrity">--</span></div>
                             </div>
 
-                            <button class="notes-btn" data-sweep-note>Notes</button>
-                            <div class="note-preview" data-note-preview>—</div>
+                            <div class="sweep-footer">
+                                <button class="notes-btn" data-sweep-note>Notes</button>
+                                <div class="note-preview" data-note-preview>—</div>
+                            </div>
                         </div>
 
                         <!-- SWEEP 3 -->
@@ -512,11 +528,13 @@
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
-                                <div><span>Reverb</span><span class="m-reverb">--</span></div>
+                                <div><span>Signal</span><span class="m-signal-integrity">--</span></div>
                             </div>
 
-                            <button class="notes-btn" data-sweep-note>Notes</button>
-                            <div class="note-preview" data-note-preview>—</div>
+                            <div class="sweep-footer">
+                                <button class="notes-btn" data-sweep-note>Notes</button>
+                                <div class="note-preview" data-note-preview>—</div>
+                            </div>
                         </div>
 
                         <!-- SWEEP 4 -->
@@ -530,11 +548,13 @@
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
-                                <div><span>Reverb</span><span class="m-reverb">--</span></div>
+                                <div><span>Signal</span><span class="m-signal-integrity">--</span></div>
                             </div>
 
-                            <button class="notes-btn" data-sweep-note>Notes</button>
-                            <div class="note-preview" data-note-preview>—</div>
+                            <div class="sweep-footer">
+                                <button class="notes-btn" data-sweep-note>Notes</button>
+                                <div class="note-preview" data-note-preview>—</div>
+                            </div>
                         </div>
 
                     </div>

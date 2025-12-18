@@ -547,6 +547,7 @@ input[type='checkbox'] {
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
     margin-bottom: 2rem;
+    align-items: stretch;
 }
 
 .grid-2 {
@@ -648,22 +649,6 @@ input[type='checkbox'] {
     grid-template-columns: repeat(4, 1fr);
     gap: 1.25rem;
     margin-bottom: 3rem;
-}
-
-.sweep-card:not(:last-child) {
-    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
-    margin-bottom: 1.5rem !important;
-    padding-bottom: 1.5rem !important;
-}
-
-.sweep-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
 .sweep-card:hover {
@@ -1405,7 +1390,7 @@ input[type='checkbox'] {
 
 }
 
-/* --- SLIDER/SPINBOX RESPONSIVE SWITCHING --- */
+
 /* --- SLIDER/SPINBOX RESPONSIVE SWITCHING --- */
 @media (max-width: 768px) {
     input[type="range"] {
@@ -1889,42 +1874,69 @@ input[type='checkbox'] {
     pointer-events: none !important;
 }
 
-/* Clean sweep item styling */
+/* ============================================================
+   SWEEP HISTORY – FINAL CLEAN STYLING
+   Equal height cards, locked layout, no stretch
+============================================================ */
+
 .sweep-item {
     padding: 1rem;
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
     background: rgba(255,255,255,0.03);
-    display: flex;
-    flex-direction: column;
+
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
     gap: 0.75rem;
 }
 
+/* Title */
 .sweep-item h3 {
     margin: 0;
     font-size: 1rem;
+    font-weight: 600;
 }
 
+/* Main score */
 .sweep-score {
     font-size: 2rem;
     font-weight: 700;
+    line-height: 1;
+}
+
+/* Metrics list */
+.sweep-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 .sweep-metrics div {
     display: flex;
     justify-content: space-between;
-    opacity: 0.8;
     font-size: 0.85rem;
-}
-
-.note-preview {
-    font-size: 0.8rem;
     opacity: 0.8;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis; /* truncate long text with ... */
 }
 
+/* Push notes to bottom consistently */
+.sweep-item .notes-btn {
+    margin-top: auto;
+}
+
+/* Lock note preview height so cards never stretch */
+.sweep-item .note-preview {
+    height: 1.2em;
+    line-height: 1.2em;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    opacity: 0.75;
+    font-size: 0.8rem;
+}
+
+/* ------------------------------------------------------------
+   Responsive tidy-up (unrelated but kept as requested)
+------------------------------------------------------------ */
 .input-section .input-block {
     margin-bottom: 1rem;
 }
@@ -2021,3 +2033,28 @@ select:focus,
     color: var(--c-accent); /* Measurely purple */
     font-weight: 700;
 }
+
+/* ============================================================
+   MOBILE FIX — HEADER BUTTON STACKING (FINAL OVERRIDE)
+   This MUST live at the end of the file
+============================================================ */
+@media (max-width: 768px) {
+
+    /* Stack the header action buttons */
+    .header > div:last-child {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 0.5rem;
+        white-space: normal;
+    }
+
+    /* Make buttons full-width and centred */
+    .header > div:last-child .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+}
+
