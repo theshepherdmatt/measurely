@@ -113,12 +113,6 @@
                         <img src="icons/refresh.svg" style="width: 16px;" alt="">
                     </button>
 
-                    <button id="downloadReportBtn" class="btn btn-secondary" aria-label="Download">
-                        <img src="icons/arrow-down.svg" style="width: 16px;" alt="">
-                        Download
-                    </button>
-
-
                     <!-- NEW: Cancel Sweep button (hidden until sweeping) -->
                     <button id="cancelSweepBtn" class="btn btn-poor hidden" aria-label="Cancel Sweep">
                         <img src="icons/save.svg" style="width: 16px;" alt="">
@@ -135,77 +129,70 @@
             <div class="grid-3 animate-enter delay-1">
 
                 <!-- OVERALL SCORE CARD -->
-                <div class="card glass-panel" style="grid-column: span 2; padding: 1.75rem; border-radius: 18px;"
-     role="region"
-     aria-labelledby="overallRoomScoreLabel"
-     aria-label="">
-
+                <div class="card glass-panel"
+                    style="grid-column: span 2; padding: 2rem; border-radius: 18px;"
+                    role="region"
+                    aria-labelledby="overallRoomScoreLabel">
 
                     <!-- Title -->
-                    <h2 class="card-title"
-                        style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; font-size:1rem; font-weight:normal;">
+                    <h2 id="overallRoomScoreLabel"
+                        class="card-title"
+                        style="display:flex; align-items:center; gap:0.5rem;
+                            margin-bottom:1.25rem; font-size:0.95rem; font-weight:500;
+                            text-transform:uppercase; letter-spacing:0.5px; opacity:0.85;">
                         <img src="icons/chart-line.svg" style="width:16px; opacity:0.7;" alt="" aria-hidden="true">
-                        <span id="overallRoomScoreLabel"
-                            style="text-transform:uppercase; letter-spacing:0.5px;">Overall Room Score (latest)</span>
+                        Overall Room Score (latest)
                     </h2>
 
-                    <!-- SCORE LEFT + DAVE RIGHT -->
-                    <div class="overall-score-row" style="
-                            display:flex;
-                            justify-content:space-between;
-                            align-items:flex-start;
-                            gap:2rem;
-                            flex-wrap:wrap;
-                        ">
-
-                        <!-- SCORE -->
-                        <div class="score-display" style="display:flex; align-items:flex-end; margin-top:1.25rem;">
-                            <span id="overallScore" class="score-value text-gradient-accent"
-                                style="font-size:5.25rem; font-weight:700;" data-color-target="overall">--</span>
-                            <span class="score-max"
-                                style="opacity:0.5; font-size:1rem; margin-left:0.25rem; transform: translateY(-8px);">/
-                                10</span>
-                        </div>
-
-                        <!-- DAVE SAYS -->
-                        <div class="dave-box"
-                            style="max-width:260px; text-align:left; display:flex; flex-direction:column;">
-
-                            <!-- ICON + TITLE LEFT -->
-                            <div class="dave-badge" style="margin-bottom:0.4rem; align-self:flex-start;">
-                                <img src="icons/dave.svg" style="width:20px;" alt="" aria-hidden="true">
-                                <span>Report</span>
-                            </div>
-
-                            <!-- PHRASE STARTS DIRECTLY UNDER THE ICON -->
-                            <p id="overallDavePhrase" class="dave-quote"
-                                style="margin:0; font-style:italic; font-size:0.95rem; line-height:1.45; color:var(--c-text-main);">
-                                “Run a sweep to get started.”
-                            </p>
-
-                        </div>
-
-
+                    <!-- SCORE -->
+                    <div class="score-display"
+                        style="display:flex; align-items:flex-end; margin-bottom:1.5rem;">
+                        <span id="overallScore"
+                            class="score-value text-gradient-accent"
+                            style="font-size:5.5rem; font-weight:700;"
+                            data-color-target="overall">--</span>
+                        <span class="score-max"
+                            style="opacity:0.5; font-size:1rem; margin-left:0.35rem; transform: translateY(-10px);">
+                            /10
+                        </span>
                     </div>
 
-                    <!-- VERDICT -->
-                    <div style="
-            margin-top:1.5rem;
-            padding-top:1rem;
-            border-top:1px solid rgba(255,255,255,0.06);
-            display:flex;
-            align-items:center;
-            gap:0.75rem;
-            font-size:0.95rem;
-            color:var(--c-text-main);
-          ">
-                        <span id="overallStatus" class="status-indicator"
-                            style="width:10px; height:10px; border-radius:50%; background:#6B7280;" aria-hidden="true"></span>
+                    <!-- SUMMARY -->
+                    <p id="overallDavePhrase"
+                    class="dave-quote"
+                    style="margin:0;
+                            max-width: 720px;
+                            font-style: italic;
+                            font-size: 1rem;
+                            line-height: 1.55;
+                            color: var(--c-text-main);">
+                        “Run a sweep to get started.”
+                    </p>
 
-                        <span style="opacity:0.6;">Based on 6 key acoustic metrics</span>
+                    <!-- FOOTER -->
+                    <div style="
+                        margin-top:1.75rem;
+                        padding-top:1rem;
+                        border-top:1px solid rgba(255,255,255,0.06);
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        gap:1rem;
+                        font-size:0.85rem;
+                        color:var(--c-text-muted);
+                    ">
+                        <span style="opacity:0.7;">Based on 6 key acoustic metrics</span>
+
+                        <button id="downloadReportBtn"
+                                class="btn btn-secondary"
+                                aria-label="Download report">
+                            <img src="icons/arrow-down.svg" style="width:14px;" alt="">
+                            Download report
+                        </button>
                     </div>
 
                 </div>
+
 
                 <!-- QUICK ACTIONS / INFO -->
                 <!-- LIVE LOGS CARD -->

@@ -193,6 +193,16 @@ body {
     flex-shrink: 0 !important;
 }
 
+#downloadReportBtn {
+    color: var(--c-accent);
+}
+
+#downloadReportBtn img {
+    filter: brightness(0) saturate(100%) invert(64%) sepia(62%) saturate(433%)
+            hue-rotate(210deg) brightness(102%) contrast(95%);
+}
+
+
 /* ------------------------------------------------------------
    GLOBAL COMPONENTS (Cards, Buttons, Forms)
 ------------------------------------------------------------ */

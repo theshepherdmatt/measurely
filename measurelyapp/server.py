@@ -59,6 +59,9 @@ PHRASES_DIR   = APP_ROOT / "dave" / "phrases"                   # ← CORRECT!!
 WEB_DIR       = SERVICE_ROOT / "web"
 SPEAKERS_DIR  = SERVICE_ROOT / "speakers"
 
+AI_SUMMARY_FILE = MEAS_ROOT / "latest" / "ai.json"
+
+
 # ------------------------------------------------------------------
 #  First-time detection
 # ------------------------------------------------------------------
@@ -1043,7 +1046,24 @@ def api_latest():
     except Exception as e:
         print(f"⚠️ Could not resolve real latest path: {e}")
 
+    # --------------------------------------------------
+    # 🔥 AI SUMMARY INJECTION (THIS WAS MISSING)
+    # --------------------------------------------------
+    ai_file = ses / "ai.json"
+    if ai_file.exists():
+        try:
+            with ai_file.open() as f:
+                ai = json.load(f)
+            data["ai_summary"] = ai.get("summary")
+            data["has_summary"] = True
+        except Exception as e:
+            print("⚠️ Failed to load AI summary:", e)
+            data["has_summary"] = False
+    else:
+        data["has_summary"] = False
+
     return jsonify(data)
+
 
 
 # ------------------------------------------------------------------

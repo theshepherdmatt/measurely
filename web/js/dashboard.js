@@ -144,6 +144,7 @@ function updateChartAria(channel, summaryText) {
 class MeasurelyDashboard {
     constructor() {
         this.currentData = null;
+        this.aiSummary = null;
         this.isSweepRunning = false;
         this.deviceStatus = {};
         this.updateInterval = null;
@@ -221,6 +222,7 @@ class MeasurelyDashboard {
             console.warn("Failed to load dave_fixes");
         }
     }
+
 
     /* ============================================================
     PEAK / DIP MODE LIST PARSER (from analysis.json)
@@ -420,7 +422,6 @@ class MeasurelyDashboard {
         await this.loadDaveOverall();
         await this.loadDaveFixes();
         await this.loadSpeakerProfiles(); 
-        // Then load measurement data
         await this.loadData();
 
         this.startPolling();
@@ -441,6 +442,8 @@ class MeasurelyDashboard {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             this.currentData = await response.json();
+
+            this.aiSummary = this.currentData.ai_summary || null;
 
             const room = this.currentData.room;
             if (room) {
@@ -860,8 +863,14 @@ class MeasurelyDashboard {
 
             const phraseEl = document.getElementById("overallDavePhrase");
             if (phraseEl) {
-                phraseEl.textContent = `“${phrase}”`;
+                if (this.aiSummary) {
+                    phraseEl.textContent = `“${this.aiSummary}”`;
+                    phraseEl.classList.add("ai-voice"); // optional hook for styling
+                } else {
+                    phraseEl.textContent = `“${phrase}”`;
+                }
             }
+
         })();
 
 
