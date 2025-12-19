@@ -1,10 +1,17 @@
 """
-Room acoustics engine for Measurely.
-Predicts modal frequencies, SBIR nulls, RT60, room gain,
-listening triangle quality, and full room health metrics.
+Room acoustics prediction engine for Measurely.
 
-All values are debug-logged and structured for easy injection
-into the scoring engine.
+Purely geometry- and layout-driven.
+NO dependence on sweep data, signal strength, or measurements.
+
+Predicts:
+- Axial room modes
+- SBIR nulls
+- Room gain onset
+- Stereo triangle quality
+- Aggregate room severity factors
+
+Designed to contextualise measurement results, not alter them.
 
 Author: Matt + AI
 """
@@ -12,37 +19,37 @@ Author: Matt + AI
 import numpy as np
 
 DEBUG = True
+C = 343.0  # speed of sound (m/s)
 
+
+# ------------------------------------------------------------
+# Logging
+# ------------------------------------------------------------
 def _log(section, msg):
     if DEBUG:
-        print(f"[ACOUSTICS:{section}] {msg}")
-
-C = 343.0  # speed of sound m/s
+        print(f"[ACOUSTICS:{section.upper()}] {msg}")
 
 
 # ------------------------------------------------------------
-# 1. ROOM GEOMETRY + BASIC METRICS
+# 1. ROOM GEOMETRY
 # ------------------------------------------------------------
 def compute_room_geometry(room):
-    L = float(room.get("length_m", 0))
-    W = float(room.get("width_m", 0))
-    H = float(room.get("height_m", 0))
+    L = float(room.get("length_m", 0.0))
+    W = float(room.get("width_m", 0.0))
+    H = float(room.get("height_m", 0.0))
 
     vol = L * W * H
-    area = 2 * (L*W + L*H + W*H)
+    area = 2.0 * (L * W + L * H + W * H)
 
-    # Schroeder frequency
-    # ~ 2000 * sqrt(RT60 / V)
-    rt_guess = 0.4  # fallback in case of nothing else
-    f_sch = 2000 * np.sqrt(rt_guess / max(vol, 1e-6))
+    # Schroeder frequency estimate (geometry-only placeholder)
+    f_sch = 2000.0 / max(np.sqrt(vol), 1e-6)
 
-    # Critical distance (approx)
-    # Dc = 0.15 * sqrt(V / T60)
-    Dc = 0.15 * np.sqrt(vol / max(rt_guess, 0.1))
-
-    _log("geometry",
-         f"L={L}m W={W}m H={H}m vol={vol:.2f}m³ area={area:.2f}m² "
-         f"Schroeder~{f_sch:.1f}Hz Dc~{Dc:.2f}m")
+    _log(
+        "geometry",
+        f"L={L:.2f}m W={W:.2f}m H={H:.2f}m | "
+        f"V={vol:.1f}m³ A={area:.1f}m² | "
+        f"Schroeder≈{f_sch:.1f}Hz"
+    )
 
     return {
         "L": L,
@@ -51,265 +58,201 @@ def compute_room_geometry(room):
         "volume": vol,
         "surface_area": area,
         "schroeder_hz": f_sch,
-        "critical_distance_m": Dc,
     }
 
 
 # ------------------------------------------------------------
-# 2. ROOM MODES — axial only (best predictor)
+# 2. AXIAL ROOM MODES
 # ------------------------------------------------------------
-def compute_room_modes(room, max_modes=20):
-    L = float(room.get("length_m", 0))
-    W = float(room.get("width_m", 0))
-    H = float(room.get("height_m", 0))
+def compute_room_modes(room, max_modes=15):
+    dims = {
+        "length": float(room.get("length_m", 0.0)),
+        "width":  float(room.get("width_m", 0.0)),
+        "height": float(room.get("height_m", 0.0)),
+    }
 
-    dims = [("length", L), ("width", W), ("height", H)]
     modes = []
 
-    for label, dim in dims:
+    for axis, dim in dims.items():
         if dim <= 0:
             continue
         for n in range(1, max_modes + 1):
-            f = (C / 2) * (n / dim)
-            modes.append({"axis": label, "order": n, "freq": f})
+            f = (C / 2.0) * (n / dim)
+            modes.append({"axis": axis, "order": n, "freq_hz": f})
 
-    modes_sorted = sorted(modes, key=lambda m: m["freq"])
+    modes.sort(key=lambda m: m["freq_hz"])
 
-    _log("modes",
-         "Axial modes: " + ", ".join(f"{m['freq']:.1f}Hz" for m in modes_sorted[:10]))
+    _log(
+        "modes",
+        "Lowest axial modes: "
+        + ", ".join(f"{m['freq_hz']:.1f}Hz({m['axis'][0]})" for m in modes[:8])
+    )
 
-    return modes_sorted
+    return modes
 
 
 # ------------------------------------------------------------
-# 3. SBIR — Speaker Boundary Interference Response
+# 3. SBIR (Speaker Boundary Interference)
 # ------------------------------------------------------------
 def compute_sbir(room):
-    """
-    SBIR null frequencies:
-    f = c / (4 * distance)
-    using the speaker_front distance (distance from wall)
-    """
-
-    d = float(room.get("spk_front_m", 0.2))  # metres from front wall
+    d = float(room.get("spk_front_m", 0.0))
 
     if d <= 0:
-        return {}
+        _log("sbir", "No speaker-front-wall distance provided")
+        return {"distance_m": None, "nulls_hz": []}
 
-    f_null = C / (4 * d)
+    f0 = C / (4.0 * d)
+    nulls = [f0 * (2 * k + 1) for k in range(6)]
 
-    # Higher-order nulls (odd multiples)
-    nulls = [f_null * (2*k + 1) for k in range(6)]
-
-    _log("sbir", f"distance={d} m → nulls={', '.join(f'{n:.1f}Hz' for n in nulls)}")
+    _log(
+        "sbir",
+        f"front-wall distance={d:.2f}m → "
+        f"nulls={', '.join(f'{n:.1f}Hz' for n in nulls)}"
+    )
 
     return {
         "distance_m": d,
-        "nulls_hz": nulls
+        "nulls_hz": nulls,
     }
 
 
 # ------------------------------------------------------------
-# 4. REVERB PREDICTION — Sabine (with absorption model)
-# ------------------------------------------------------------
-def compute_rt60(room):
-    """
-    Very simplified but practical frequency-averaged RT60 model.
-    Uses surface materials + rug + curtains + sofa to adjust absorption.
-    """
-
-    L = float(room.get("length_m"))
-    W = float(room.get("width_m"))
-    H = float(room.get("height_m"))
-    V = L * W * H
-    S = 2 * (L*W + L*H + W*H)
-
-    if V <= 0 or S <= 0:
-        return {"rt60": 0.30, "absorption": 0.2}
-
-    # Base absorption (bare hard room)
-    alpha = 0.10
-
-    # Rug → big absorber
-    if room.get("opt_area_rug", False):
-        alpha += 0.08
-
-    # Curtains
-    if room.get("opt_curtains", False):
-        alpha += 0.06
-
-    # Sofa
-    if room.get("opt_sofa", False):
-        alpha += 0.04
-
-    # Wall art
-    if room.get("opt_wallart", False):
-        alpha += 0.03
-
-    # Barewalls (penalty)
-    if room.get("opt_barewalls", False):
-        alpha -= 0.03
-
-    # Floor type
-    floor = room.get("floor_material", "hard")
-    if floor == "carpet":
-        alpha += 0.08
-
-    alpha = max(0.02, min(alpha, 0.8))  # clamp
-
-    # Sabine RT60
-    rt60 = 0.161 * V / (S * alpha)
-
-    _log("rt60",
-         f"V={V:.2f}m³ S={S:.2f}m² α={alpha:.3f} → RT60≈{rt60:.3f}s")
-
-    return {
-        "rt60": rt60,
-        "absorption": alpha
-    }
-
-
-# ------------------------------------------------------------
-# 5. LISTENING TRIANGLE GEOMETRY
+# 4. STEREO LISTENING TRIANGLE
 # ------------------------------------------------------------
 def compute_triangle(room):
     spacing = float(room.get("spk_spacing_m", 0.0))
     listener = float(room.get("listener_front_m", 0.0))
 
     if spacing <= 0 or listener <= 0:
+        _log("triangle", "Incomplete triangle geometry")
         return {
             "ideal": False,
             "ratio": None,
-            "penalty": 0,
+            "penalty": 2,
         }
 
-    ratio = listener / spacing  # ideal = 1.0
+    ratio = listener / spacing
 
     if 0.9 <= ratio <= 1.1:
         penalty = 0
     elif 0.75 <= ratio <= 1.25:
         penalty = 1
-    elif 0.50 <= ratio <= 1.50:
-        penalty = 2
     else:
-        penalty = 3
+        penalty = 2
 
-    _log("triangle", f"spacing={spacing} listener={listener} ratio={ratio:.2f} penalty={penalty}")
+    _log(
+        "triangle",
+        f"spacing={spacing:.2f}m listener={listener:.2f}m "
+        f"ratio={ratio:.2f} penalty={penalty}"
+    )
 
     return {
-        "ideal": (penalty == 0),
+        "ideal": penalty == 0,
         "ratio": ratio,
         "penalty": penalty,
     }
 
 
 # ------------------------------------------------------------
-# 6. ROOM GAIN PREDICTION
+# 5. ROOM GAIN ESTIMATE
 # ------------------------------------------------------------
 def compute_room_gain(room):
-    L = float(room.get("length_m"))
-    W = float(room.get("width_m"))
-    H = float(room.get("height_m"))
-    V = L * W * H
+    L = float(room.get("length_m", 0.0))
+    W = float(room.get("width_m", 0.0))
+    H = float(room.get("height_m", 0.0))
 
-    if V <= 0:
-        return {"gain_hz": 200, "gain_db": 3}
+    if min(L, W, H) <= 0:
+        _log("roomgain", "Invalid dimensions")
+        return {"gain_hz": None, "gain_db": None}
 
-    # Rough rule of thumb:
-    # room gain starts ~ (1 / smallest dimension) * c / 2
     dim_min = min(L, W, H)
-    gain_freq = C / (2 * dim_min)
-    gain_db = 3 + (20 - dim_min) * 0.1  # crude but sensible
+    gain_freq = C / (2.0 * dim_min)
+    gain_db = 3.0 + max(0.0, 20.0 - dim_min) * 0.1
 
-    _log("roomgain", f"gain starts ~{gain_freq:.1f}Hz magnitude ~{gain_db:.1f}dB")
+    _log(
+        "roomgain",
+        f"gain onset≈{gain_freq:.1f}Hz magnitude≈{gain_db:.1f}dB"
+    )
 
     return {
         "gain_hz": gain_freq,
-        "gain_db": gain_db
+        "gain_db": gain_db,
     }
 
 
 # ------------------------------------------------------------
 # MASTER: FULL ROOM MODEL
 # ------------------------------------------------------------
-def analyse_room(room_json):
-    """
-    Returns a full room acoustics model dictionary.
-    Includes geometry, modes, SBIR, RT prediction,
-    triangle alignment and room-gain — plus scoring factors.
-    """
+def analyse_room(room):
+    _log("input", f"Room JSON keys={list(room.keys())}")
 
-    # --- Core sub-models ---
-    geometry = compute_room_geometry(room_json)
-    modes_list = compute_room_modes(room_json)
-    sbir = compute_sbir(room_json)
-    rt = compute_rt60(room_json)
-    triangle = compute_triangle(room_json)
-    gain = compute_room_gain(room_json)
+    geometry = compute_room_geometry(room)
+    modes = compute_room_modes(room)
+    sbir = compute_sbir(room)
+    triangle = compute_triangle(room)
+    gain = compute_room_gain(room)
 
-    # Convenience handles
-    geo = geometry
-    rt60_predicted = rt["rt60"]
-    absorption = rt["absorption"]
+    # --------------------------------------------------------
+    # SEVERITY & CONTEXT FACTORS
+    # --------------------------------------------------------
+    sch = geometry["schroeder_hz"]
 
-    # ============================================================
-    # ROOM SCORING FACTORS (the bit you were missing)
-    # ============================================================
+    low_modes = [m for m in modes if m["freq_hz"] < sch]
+    modal_severity = min(len(low_modes) / 10.0, 1.0)
 
-    # 1) Modal severity (only modes below Schroeder matter)
-    sch = geo["schroeder_hz"]
-    modal_low = [m for m in modes_list if m["freq"] < sch]
-    modal_severity = min(len(modal_low) / 12, 1.0)  # normalised 0–1
-
-    # 2) SBIR severity (front-wall distance only)
-    d = sbir["distance_m"]
-    if d < 0.35:
-        sbir_severity = 0.25
-    elif d < 0.50:
+    d = sbir.get("distance_m")
+    if d is None:
         sbir_severity = 0.15
-    elif d < 0.70:
-        sbir_severity = 0.05
+    elif d < 0.35:
+        sbir_severity = 0.30
+    elif d < 0.55:
+        sbir_severity = 0.15
     else:
-        sbir_severity = 0.0
+        sbir_severity = 0.05
 
-    # 3) RT60 expected vs predicted (echo slider)
-    slider_rt = 0.15 + (room_json.get("echo_pct", 50) / 100.0) * 0.40
-    rt_dev = abs(slider_rt - rt60_predicted) / slider_rt
-    rt_severity = min(rt_dev, 1.0)
+    combined = modal_severity * 0.6 + sbir_severity * 0.4
 
-    # Combine → weighted room severity 0–1
-    combined = (
-        modal_severity * 0.5 +
-        sbir_severity * 0.3 +
-        rt_severity * 0.2
-    )
-
-    # Convert to multiplier 0.85–1.15
-    room_factor = 1.15 - (combined * 0.30)
+    room_factor = 1.15 - combined * 0.30
     room_factor = max(0.85, min(room_factor, 1.15))
 
-    # 4) Stereo triangle alignment
-    if triangle["penalty"] == 0:
-        stereo_factor = 1.10
-    elif triangle["penalty"] == 1:
-        stereo_factor = 1.00
-    else:
-        stereo_factor = 0.90
+    stereo_factor = 1.10 if triangle["penalty"] == 0 else (
+        1.00 if triangle["penalty"] == 1 else 0.90
+    )
 
-    # ============================================================
-    # FINAL OUTPUT MODEL
-    # ============================================================
+    _log(
+        "severity",
+        f"modal={modal_severity:.2f} sbir={sbir_severity:.2f} "
+        f"combined={combined:.2f}"
+    )
+
+    _log(
+        "factors",
+        f"room_factor={room_factor:.2f} stereo_factor={stereo_factor:.2f}"
+    )
+
+    # --------------------------------------------------------
+    # TRIM MODES FOR AI / UI (CRITICAL)
+    # --------------------------------------------------------
+    MAX_AI_MODES = 8
+
+    trimmed_modes = [
+        {
+            "axis": m["axis"],
+            "freq_hz": round(m["freq_hz"], 1),
+        }
+        for m in modes
+        if m["freq_hz"] < geometry["schroeder_hz"]
+    ]
+
+    trimmed_modes = trimmed_modes[:MAX_AI_MODES]
 
     return {
         "geometry": geometry,
-        "modes": modes_list,
+        "modes": trimmed_modes,
         "sbir": sbir,
-        "rt60_predicted": rt60_predicted,
-        "absorption": absorption,
         "triangle": triangle,
         "room_gain": gain,
-
-        # NEW:
         "room_factor": room_factor,
         "stereo_factor": stereo_factor,
     }
+

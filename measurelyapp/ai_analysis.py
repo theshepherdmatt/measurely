@@ -5,6 +5,38 @@ from datetime import datetime
 from openai import OpenAI
 
 # -------------------------------------------------
+# NORMALISE AI-FACING DATA (HIDE TECHNICAL LABELS)
+# -------------------------------------------------
+def normalise_for_ai(data: dict) -> dict:
+    clean = dict(data)
+
+    # --- Rename score concepts to human terms ---
+    scores = clean.get("scores", {})
+    clean["scores"] = {
+        "weight": scores.get("bandwidth"),
+        "evenness": scores.get("balance"),
+        "control": scores.get("peaks_dips"),
+        "flow": scores.get("smoothness"),
+        "focus": scores.get("reflections"),
+        "confidence": scores.get("signal_integrity"),
+        "overall": scores.get("overall"),
+    }
+
+    # --- Strip technical room internals ---
+    room = clean.get("room_context", {})
+    clean["room_context"] = {
+        "speaker_distance": room.get("sbir", {}).get("distance_m"),
+        "triangle_quality": room.get("triangle", {}).get("penalty"),
+        "room_feel": (
+            "tight" if room.get("room_factor", 1.0) > 1.0
+            else "forgiving" if room.get("room_factor", 1.0) < 0.95
+            else "neutral"
+        ),
+    }
+
+    return clean
+
+# -------------------------------------------------
 # CONFIG
 # -------------------------------------------------
 OPENAI_API_KEY = os.environ.get("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")
@@ -31,7 +63,7 @@ for path in (ANALYSIS_AI_FILE, ROOM_FILE, SPEAKERS_FILE):
         raise FileNotFoundError(f"Missing required file: {path}")
 
 with ANALYSIS_AI_FILE.open("r") as f:
-    analysis_ai_data = json.load(f)
+    analysis_ai_data = normalise_for_ai(json.load(f))
 
 with ROOM_FILE.open("r") as f:
     room_data = json.load(f)
@@ -84,6 +116,7 @@ Known traits:
 - {notes[1] if len(notes) > 1 else ""}
 """.strip()
 
+
 # -------------------------------------------------
 # BUILD PROMPT
 # -------------------------------------------------
@@ -123,7 +156,7 @@ Tone and voice:
 Use this structure:
 1) System stroke (already provided)
 2) What it sounds like right now
-3) What’s holding it back (usually the room)
+3) What’s holding it back, described only by how it sounds, not why
 4) One thing I’d fix first
 
 Rules:
@@ -132,6 +165,10 @@ Rules:
 - Do not suggest buying new equipment
 - Plain English only
 - No hedging or qualifiers
+- Use room context only to guide judgement, not explanation
+- Do NOT explain why something sounds the way it does
+- Never mention the room directly; describe its effect instead
+
 
 Room options are authoritative:
 - If opt_area_rug is true, do NOT recommend adding a rug

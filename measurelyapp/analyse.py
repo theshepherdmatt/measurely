@@ -28,6 +28,7 @@ from measurelyapp.score import (
 from measurelyapp.speaker import load_target_curve
 from measurelyapp.writer import _atomic_write, yaml_camilla
 
+from measurelyapp.acoustics import analyse_room
 
 # ---------------------------------------------------------------------
 # Logging
@@ -260,11 +261,23 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
             "valid_sweep": True,
             "signal_integrity": {
                 "score": signal_integrity["score"],
-                "hard_fail": signal_integrity["score"] <= SIGINT_HARD_FAIL,
-                "soft_fail": signal_integrity["score"] < SIGINT_SOFT_MIN,
+                "hard_fail": bool(signal_integrity["score"] <= SIGINT_HARD_FAIL),
+                "soft_fail": bool(signal_integrity["score"] < SIGINT_SOFT_MIN),
+
             },
         },
     }
+
+
+    room = json.loads(room_file.read_text())
+
+    try:
+        acoustics_context = analyse_room(room)
+    except Exception as e:
+        log.warning(f"Acoustics analysis failed: {e}")
+        acoustics_context = None
+            
+    log.info("Acoustics context attached to analysis_ai.json")
 
     ai_export = {
         "label": label,
@@ -274,6 +287,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "smoothness_std_db": sm,
         "reflections_ms": refs[:5],
         "signal_integrity": signal_integrity,
+        "room_context": acoustics_context,
     }
 
     _atomic_write(session_dir / "analysis.json", json.dumps(export, indent=2))
@@ -289,6 +303,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     log.info(f"Analysis complete → {session_dir}")
 
     return export
+    
 
 
 # ---------------------------------------------------------------------

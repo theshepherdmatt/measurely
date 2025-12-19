@@ -79,117 +79,82 @@
 
                 <div class="room-layout-grid-new">
 
-                    <!-- TOP ROW — INPUTS (TWO COLUMNS) -->
-                    <!-- NEW — ONE CLEAN CARD LAYOUT -->
-                    <div class="room-setup-grid">
+                    <!-- 🎛 CONTROLS GRID (Sliders + Spin Boxes for Mobile) -->
+                    <!-- 🎛 CONTROLS GRID (Sliders + Spin Boxes for Mobile) -->
+                    <div class="controls-grid">
 
-                        <!-- ⭐ DIAGRAM ALWAYS FIRST -->
-                        <div class="diagram-container">
-                            <svg id="room-diagram" viewBox="0 0 600 450" preserveAspectRatio="xMidYMid meet">
-                                <rect id="room-rect" x="0" y="0" width="600" height="450"
-                                    fill="rgba(30,41,59,0.25)"
-                                    stroke="rgba(129,140,248,0.7)"
-                                    stroke-width="3"
-                                    stroke-dasharray="8 6" />
+                        <!-- Inline intro (not a card) -->
+                        <div class="room-setup-intro"
+                            style="grid-column: 1 / -1; margin-bottom: 0.75rem;">
 
-                                <!-- Speakers -->
-                                <image id="left-speaker" class="plan-object" href="icons/spl.svg" width="40" height="40"/>
-                                <image id="right-speaker" class="plan-object" href="icons/spr.svg" width="40" height="40"/>
+                            <p style="margin:0 0 0.25rem 0; font-size:1rem;">
+                                This step helps Measurely understand the <strong>physical space</strong> your system is in.
+                            </p>
 
-                                <!-- Sofa -->
-                                <image id="sofa-icon" class="plan-object" href="icons/sofa.svg" width="200" height="120"/>
-
-                                <!-- Toe-in -->
-                                <line id="left-toe-line" class="toe-line"/>
-                                <line id="right-toe-line" class="toe-line"/>
-
-                                <text id="listening-pos-label" text-anchor="middle"></text>
-                            </svg>
-
-                            <div class="explainer-inline">
-                                <span><strong>Room:</strong>
-                                    <span id="explainer-width">—</span> ×
-                                    <span id="explainer-length">—</span> m
-                                </span>
-                                <span><strong>Speakers:</strong>
-                                    <span id="explainer-spacing">—</span> m apart
-                                </span>
-                                <span><strong>Listening:</strong>
-                                    <span id="explainer-listen">—</span> m
-                                </span>
-                                <span><strong>Toe-in:</strong>
-                                    <span id="explainer-ideal-toe">—</span>°
-                                </span>
-                            </div>
-
-
-                        </div>
-                        </div>
-
-                        <!-- 🎛 SLIDERS + NUMBER INPUTS -->
-                        <!-- 🎛 CONTROLS GRID (Sliders + Spin Boxes for Mobile) -->
-                        <div class="controls-grid">
-
-                            <!-- Row 1 -->
-                            <div class="ctrl-block">
-                                <label>Width (m): <span id="room-width-val">—</span></label>
-                                <input type="range" id="room-width" min="2" max="10" step="0.05">
-                                <input type="number" id="room-width-num" min="2" max="10" step="0.05">
-                            </div>
-
-                            <div class="ctrl-block">
-                                <label>Length (m): <span id="room-length-val">—</span></label>
-                                <input type="range" id="room-length" min="2" max="10" step="0.05">
-                                <input type="number" id="room-length-num" min="2" max="10" step="0.05">
-                            </div>
-
-                            <div class="ctrl-block">
-                                <label>Height (m): <span id="room-height-val">—</span></label>
-                                <input type="range" id="room-height" min="2" max="3.5" step="0.01">
-                                <input type="number" id="room-height-num" min="2" max="3.5" step="0.01">
-                            </div>
-
-                            <!-- Row 2 -->
-                            <div class="ctrl-block">
-                                <label>Speaker Distance (m): <span id="speaker-distance-val">—</span></label>
-                                <input type="range" id="speaker-distance" min="0" max="3" step="0.05">
-                                <input type="number" id="speaker-distance-num" min="0" max="3" step="0.05">
-                            </div>
-
-                            <div class="ctrl-block">
-                                <label>Speaker Spacing (m): <span id="speaker-width-val">—</span></label>
-                                <input type="range" id="speaker-width" min="0.5" max="4" step="0.05">
-                                <input type="number" id="speaker-width-num" min="0.5" max="4" step="0.05">
-                            </div>
-
-                            <div class="ctrl-block">
-                                <label>Listening Distance (m): <span id="listening-distance-val">—</span></label>
-                                <input type="range" id="listening-distance" min="0.5" max="5" step="0.05">
-                                <input type="number" id="listening-distance-num" min="0.5" max="5" step="0.05">
-                            </div>
-
-                            <!-- Row 3 -->
-                            <div class="ctrl-block">
-                                <label>Toe-In Angle (°): <span id="toe-angle-val">—</span></label>
-                                <input type="number" id="toe-angle" step="0.1">
-                            </div>
-
-                            <div class="ctrl-block">
-                                <label>Design Type</label>
-                                <select id="speaker-type">
-                                    <option value="sealed">Sealed / Infinite Baffle</option>
-                                    <option value="port_front">Ported (Front)</option>
-                                    <option value="port_rear">Ported (Rear)</option>
-                                    <option value="dipole">Dipole / Open Baffle</option>
-                                </select>
-                            </div>
-
-                            <div class="ctrl-block"></div>
+                            <p style="margin:0; color:var(--c-text-muted); font-size:0.9rem;">
+                                Approximate measurements are absolutely fine — you can tweak these later.
+                            </p>
 
                         </div>
 
+                        <!-- Row 1 -->
+                        <div class="ctrl-block">
+                            <label>Room width (wall to wall): <span id="room-width-val">—</span></label>
+                            <input type="range" id="room-width" min="2" max="10" step="0.05">
+                            <input type="number" id="room-width-num" min="2" max="10" step="0.05">
+                        </div>
+
+                        <div class="ctrl-block">
+                            <label>Room length (front to back): <span id="room-length-val">—</span></label>
+                            <input type="range" id="room-length" min="2" max="10" step="0.05">
+                            <input type="number" id="room-length-num" min="2" max="10" step="0.05">
+                        </div>
+
+                        <div class="ctrl-block">
+                            <label>Ceiling height (floor to ceiling): <span id="room-height-val">—</span></label>
+                            <input type="range" id="room-height" min="2" max="3.5" step="0.01">
+                            <input type="number" id="room-height-num" min="2" max="3.5" step="0.01">
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div class="ctrl-block">
+                            <label>Speaker distance from front wall: <span id="speaker-distance-val">—</span></label>
+                            <input type="range" id="speaker-distance" min="0" max="3" step="0.05">
+                            <input type="number" id="speaker-distance-num" min="0" max="3" step="0.05">
+                        </div>
+
+                        <div class="ctrl-block">
+                            <label>Speaker spacing (left to right): <span id="speaker-width-val">—</span></label>
+                            <input type="range" id="speaker-width" min="0.5" max="4" step="0.05">
+                            <input type="number" id="speaker-width-num" min="0.5" max="4" step="0.05">
+                        </div>
+
+                        <div class="ctrl-block">
+                            <label>Listening distance (speaker to seat): <span id="listening-distance-val">—</span></label>
+                            <input type="range" id="listening-distance" min="0.5" max="5" step="0.05">
+                            <input type="number" id="listening-distance-num" min="0.5" max="5" step="0.05">
+                        </div>
+
+                        <!-- Row 3 -->
+                        <div class="ctrl-block">
+                            <label>Toe-In Angle (°): <span id="toe-angle-val">—</span></label>
+                            <input type="number" id="toe-angle" step="0.1">
+                        </div>
+
+                        <div class="ctrl-block">
+                            <label>Design Type</label>
+                            <select id="speaker-type">
+                                <option value="sealed">Sealed / Infinite Baffle</option>
+                                <option value="port_front">Ported (Front)</option>
+                                <option value="port_rear">Ported (Rear)</option>
+                                <option value="dipole">Dipole / Open Baffle</option>
+                            </select>
+                        </div>
+
+                        <div class="ctrl-block"></div>
 
                     </div>
+
 
             </section>
 
@@ -350,7 +315,6 @@
     <script src="/js/dashboard.js"></script>
     <script type="module" src="/js/devices.js"></script>
     <script type="module" src="js/room.js"></script>
-    <script src="js/room-diagram.js"></script>
 
     <script>
     document.getElementById('save-all-btn').addEventListener('click', () => {
