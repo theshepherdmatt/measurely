@@ -4,6 +4,12 @@ from pathlib import Path
 from datetime import datetime
 from openai import OpenAI
 
+from dotenv import load_dotenv
+from pathlib import Path
+
+load_dotenv(Path.home() / "measurely" / ".env")
+
+
 # -------------------------------------------------
 # NORMALISE AI-FACING DATA (HIDE TECHNICAL LABELS)
 # -------------------------------------------------

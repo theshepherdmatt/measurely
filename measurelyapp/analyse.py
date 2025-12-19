@@ -133,6 +133,40 @@ def compute_signal_integrity(ir: np.ndarray) -> dict:
     }
 
 
+def score_clarity(refs, smoothness_std):
+    score = 10.0
+
+    # First reflection penalty
+    if refs:
+        first = refs[0]
+        if first < 0.5:
+            score -= 3
+        elif first < 1.5:
+            score -= 2
+        elif first < 3.0:
+            score -= 1
+
+    # Reflection density penalty (first 5 ms)
+    early = [r for r in refs if r <= 5.0]
+    n = len(early)
+    if n > 12:
+        score -= 3
+    elif n > 8:
+        score -= 2
+    elif n > 4:
+        score -= 1
+
+    # Smoothness penalty
+    if smoothness_std > 4.0:
+        score -= 3
+    elif smoothness_std > 3.0:
+        score -= 2
+    elif smoothness_std > 2.0:
+        score -= 1
+
+    return round(max(0.0, min(10.0, score)), 1)
+
+
 # ---------------------------------------------------------------------
 # Main analysis
 # ---------------------------------------------------------------------
@@ -212,6 +246,8 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     mode_list = [m for m in modes(freq_raw, mag_raw) if m["freq_hz"] <= 1000]
     sm = smoothness(freq_raw, mag_raw)
     refs = early_reflections(ir, fs)
+    clarity = score_clarity(refs, sm)
+
 
     target_curve = load_target_curve(speaker_key)
 
@@ -221,7 +257,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "peaks_dips": score_modes(mode_list),
         "smoothness": score_smooth(sm),
         "reflections": score_ref(refs),
-        "signal_integrity": signal_integrity["score"],
+        "clarity": clarity,
     }
 
     base_scores = [
@@ -230,6 +266,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         scores["peaks_dips"],
         scores["smoothness"],
         scores["reflections"],
+        scores["clarity"],
     ]
 
     base_overall = np.nanmean(base_scores)
@@ -303,7 +340,6 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     log.info(f"Analysis complete → {session_dir}")
 
     return export
-    
 
 
 # ---------------------------------------------------------------------

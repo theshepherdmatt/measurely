@@ -76,6 +76,12 @@
 
         </aside>
 
+        <div id="sidebar-toggle"
+            aria-label="Toggle sidebar"
+            title="Toggle sidebar">
+        ‹
+        </div>
+
         <!-- MAIN CONTENT -->
         <main class="main-content">
 
@@ -363,28 +369,28 @@
                     <span id="smoothnessRaw" class="hidden"></span>
                 </div>
 
-                <!-- Signal Integrity -->
+                <!-- Clarity -->
                 <div class="card glass-panel"
                     role="region"
-                    aria-labelledby="signalIntegrityLabel"
+                    aria-labelledby="clarityLabel"
                     aria-label="">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <h2 id="signalIntegrityLabel" class="card-title" style="margin:0;">
-                            Signal Integrity
+                        <h2 id="clarityLabel" class="card-title" style="margin:0;">
+                            Clarity
                         </h2>
                         <img src="icons/clock.svg" style="width: 20px;"
-                            data-color-icon="signalIntegrity" alt="">
+                            data-color-icon="clarity" alt="">
                     </div>
 
                     <div class="score-display" style="margin-bottom: 1rem;">
-                        <span id="signalIntegrityScore"
+                        <span id="clarityScore"
                             class="score-value"
                             style="font-size: 2.5rem;"
-                            data-color-target="signalIntegrity">--</span>
+                            data-color-target="clarity">--</span>
                     </div>
 
                     <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">
-                        Reliability of the sweep signal itself.
+                        How clearly the direct sound reaches you before reflections interfere.
                     </p>
 
                     <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
@@ -392,13 +398,13 @@
                         <span style="font-size: 0.75rem;">Report</span>
                     </div>
 
-                    <span id="signalIntegrityDave" class="dave-quote"
+                    <span id="clarityDave" class="dave-quote"
                         style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
 
                     <!-- Hidden spans for JS compatibility -->
-                    <span id="signalIntegrityStatus" class="hidden"></span>
-                    <span id="signalIntegrityStatusText" class="hidden"></span>
-                    <span id="signalIntegrityRaw" class="hidden"></span>
+                    <span id="clarityStatus" class="hidden"></span>
+                    <span id="clarityStatusText" class="hidden"></span>
+                    <span id="clarityRaw" class="hidden"></span>
                 </div>
 
 
@@ -451,7 +457,7 @@
 
 
                 <!-- SWEEP HISTORY -->
-                <section class="sweep-history-wrapper" style="margin-top: 2rem;">
+                <section class="sweep-history-wrapper">
 
                     <h2 style="margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;">
                         <img src="icons/dave.svg" style="width:22px; opacity:0.9;">
@@ -475,12 +481,15 @@
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
-                                <div><span>Signal</span><span class="m-signal-integrity">--</span></div>
+                                <div><span>Clarity</span><span class="m-clarity">--</span></div>
                             </div>
 
                             <div class="sweep-footer">
                                 <button class="notes-btn" data-sweep-note>Notes</button>
-                                <div class="note-preview" data-note-preview>—</div>
+                                <div class="note-preview empty" data-note-preview>
+                                    <span class="note-placeholder">Add notes for this sweep</span>
+                                </div>
+
                             </div>
                         </div>
 
@@ -495,12 +504,14 @@
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
-                                <div><span>Signal</span><span class="m-signal-integrity">--</span></div>
+                                <div><span>Clarity</span><span class="m-clarity">--</span></div>
                             </div>
 
                             <div class="sweep-footer">
                                 <button class="notes-btn" data-sweep-note>Notes</button>
-                                <div class="note-preview" data-note-preview>—</div>
+                                <div class="note-preview empty" data-note-preview>
+                                    <span class="note-placeholder">Add notes for this sweep</span>
+                                </div>
                             </div>
                         </div>
 
@@ -515,12 +526,14 @@
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
-                                <div><span>Signal</span><span class="m-signal-integrity">--</span></div>
+                                <div><span>Clarity</span><span class="m-clarity">--</span></div>
                             </div>
 
                             <div class="sweep-footer">
                                 <button class="notes-btn" data-sweep-note>Notes</button>
-                                <div class="note-preview" data-note-preview>—</div>
+                                <div class="note-preview empty" data-note-preview>
+                                    <span class="note-placeholder">Add notes for this sweep</span>
+                                </div>
                             </div>
                         </div>
 
@@ -535,12 +548,14 @@
                                 <div><span>Bandwidth</span><span class="m-bandwidth">--</span></div>
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
-                                <div><span>Signal</span><span class="m-signal-integrity">--</span></div>
+                                <div><span>Clarity</span><span class="m-clarity">--</span></div>
                             </div>
 
                             <div class="sweep-footer">
                                 <button class="notes-btn" data-sweep-note>Notes</button>
-                                <div class="note-preview" data-note-preview>—</div>
+                                <div class="note-preview empty" data-note-preview>
+                                    <span class="note-placeholder">Add notes for this sweep</span>
+                                </div>
                             </div>
                         </div>
 
@@ -556,6 +571,46 @@
     window.initSpeakers = initSpeakers;
     initSpeakers();
     </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sidebar = document.getElementById('sidebar');
+        const main = document.querySelector('.main-content');
+        const toggle = document.getElementById('sidebar-toggle');
+        const chart = document.getElementById('frequencyChart');
+
+        if (!sidebar || !main || !toggle) {
+            console.warn('Sidebar toggle: missing element(s)', { sidebar, main, toggle });
+            return;
+        }
+
+        const applyState = (isCollapsed) => {
+            sidebar.classList.toggle('collapsed', isCollapsed);
+            main.classList.toggle('sidebar-collapsed', isCollapsed);
+            toggle.classList.toggle('collapsed', isCollapsed);
+            toggle.textContent = isCollapsed ? '›' : '‹';
+            localStorage.setItem('measurelySidebarCollapsed', String(isCollapsed));
+
+            // Resize Plotly after layout settles
+            setTimeout(() => {
+                if (window.Plotly && chart) Plotly.Plots.resize(chart);
+            }, 300);
+        };
+
+        // Restore saved state (desktop only)
+        if (window.innerWidth >= 1025) {
+            const collapsed = localStorage.getItem('measurelySidebarCollapsed') === 'true';
+            applyState(collapsed);
+        }
+
+        toggle.addEventListener('click', () => {
+            if (window.innerWidth < 1025) return; // desktop only
+            const isCollapsed = !sidebar.classList.contains('collapsed');
+            applyState(isCollapsed);
+        });
+    });
+    </script>
+
 
     <script src="js/dashboard.js"></script>
 

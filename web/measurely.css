@@ -150,6 +150,19 @@ body {
     max-width: 1600px;
 }
 
+/* Desktop sidebar collapse (Measurely) */
+@media (min-width: 1025px) {
+
+    .sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+
+    .main-content.sidebar-collapsed {
+        margin-left: 0;
+    }
+
+}
+
 /* Header */
 .header {
     display: flex;
@@ -371,6 +384,10 @@ img[src*="dave.svg"] {
   min-height: 260px;
 }
 
+.sweep-history-wrapper .card.glass-panel {
+  min-height: unset;
+}
+
 /* Form Elements */
 input[type='text'],
 input[type='number'],
@@ -560,6 +577,10 @@ input[type='checkbox'] {
     align-items: stretch;
 }
 
+.sweep-history-wrapper .grid-3 {
+    align-items: start;
+}
+
 .grid-2 {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -642,24 +663,26 @@ input[type='checkbox'] {
 .bg-poor { background-color: var(--c-poor) !important; }
 
 /* ------------------------------------------------------------
-   SWEEP HISTORY
+   SWEEP HISTORY — CONTAINER (Mobile-first)
 ------------------------------------------------------------ */
 .sweep-history-wrapper {
     margin-top: 4rem;
-    padding-top: 3rem;
+    padding: 3rem 2rem; /* ← horizontal breathing room */
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .sweep-history-header {
-    margin-bottom: 2rem;
+    margin-bottom: 4rem; /* clear visual break before cards */
 }
 
 .sweep-selector {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1.25rem;
+    margin-top: 2rem;
     margin-bottom: 3rem;
 }
+
 
 .sweep-card:hover {
     transform: translateY(-4px) scale(1.02);
@@ -756,6 +779,43 @@ input[type='checkbox'] {
     border-color: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
 }
+
+/* Sweep notes preview box */
+.note-preview {
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.7rem;
+    min-height: 2.2rem;
+
+    font-size: 0.85rem;
+    line-height: 1.4;
+
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Empty state */
+.note-preview {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.note-preview.empty {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+
+@media (max-width: 768px) {
+    .sweep-history-wrapper {
+        padding: 2rem 1rem;
+    }
+
+    .sweep-history-header p {
+        margin-bottom: 2.5rem;
+    }
+}
+
 
 /* Score Timelines */
 .score-timelines-container {
@@ -1393,11 +1453,6 @@ input[type='checkbox'] {
         flex: 1;
     }
 
-    .sweep-history-wrapper {
-        margin-top: 2rem;
-        padding-top: 2rem;
-    }
-
 }
 
 
@@ -1496,6 +1551,7 @@ input[type='checkbox'] {
 @media (max-width: 768px) {
     #sweepHistoryGrid {
         grid-template-columns: 1fr;
+        margin-top: 2rem;
     }
 }
 
@@ -1512,7 +1568,6 @@ input[type='checkbox'] {
         grid-template-columns: repeat(4, 1fr);
     }
 }
-
 
 
 /* ------------------------------------------------------------
@@ -1532,12 +1587,24 @@ input[type='checkbox'] {
         box-shadow: none !important;
     }
 
-    /* Remove spacing on the header row */
     .card[aria-labelledby="nerdsCornerLabel"] > div:first-child {
-        margin: 0 !important;
+        margin-bottom: 1.5rem !important; /* ← THIS IS THE GAP */
         padding: 0.5rem 0.75rem !important;
         gap: 0.5rem !important;
     }
+
+
+    /* NERDS CORNER — FLATTEN CARD */
+    .card[aria-labelledby="nerdsCornerLabel"] {
+        background: transparent;
+        box-shadow: none;
+        border: none;
+    }
+
+    .card[aria-labelledby="nerdsCornerLabel"] {
+        padding: 0;
+    }
+
 
     /* Shrink icon box */
     .card[aria-labelledby="nerdsCornerLabel"] img[src*="dave"] {
@@ -2067,4 +2134,73 @@ select:focus,
     }
 
 }
+
+@media (min-width: 1025px) {
+
+    #sidebar-toggle {
+        position: fixed;
+        top: 50%;
+        left: 280px;
+        transform: translateY(-50%);
+        width: 22px;
+        height: 48px;
+
+        background: rgba(255,255,255,0.08);
+        backdrop-filter: blur(8px);
+        border-radius: 0 8px 8px 0;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        color: var(--c-text-muted);
+        font-size: 18px;
+        cursor: pointer;
+
+        z-index: 60;
+        transition: left 0.25s ease, background 0.2s ease;
+    }
+
+    #sidebar-toggle:hover {
+        background: rgba(255,255,255,0.15);
+        color: white;
+    }
+
+    #sidebar-toggle.collapsed {
+        left: 0;
+    }
+}
+
+@media (max-width: 600px) {
+
+  /* Keep the outer card FULL WIDTH (do not pad the card) */
+  .card.glass-panel[aria-labelledby="nerdsCornerLabel"]{
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;                /* <-- changed */
+  }
+
+  /* Add INNER breathing room so text doesn't touch edges */
+  .card.glass-panel[aria-labelledby="nerdsCornerLabel"] > *{
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  /* But keep the chart truly full-bleed */
+  .card.glass-panel[aria-labelledby="nerdsCornerLabel"] .chart-container{
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+}
+
+@media (max-width: 768px) {
+  .card[aria-labelledby="nerdsCornerLabel"] > div:first-child {
+    margin-bottom: 2rem !important;
+  }
+}
+
 

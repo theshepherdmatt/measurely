@@ -8,6 +8,7 @@ window.usedDaveTips = {
     balance: new Set(),
     smoothness: new Set(),
     signal_integrity: new Set(),
+    clarity: new Set(),
     
 
     // score buckets
@@ -293,7 +294,7 @@ class MeasurelyDashboard {
                     card.dataset.sweepid = "";
                     card.querySelector(".sweep-score").textContent = "--";
                     card.querySelectorAll(
-                        ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-signal-integrity"
+                        ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-clarity"
                     ).forEach(e => e.textContent = "--");
                     const preview = card.querySelector("[data-note-preview]");
                     preview.textContent = "—";
@@ -324,7 +325,7 @@ class MeasurelyDashboard {
                     card.dataset.sweepid = "";
                     card.querySelector(".sweep-score").textContent = "--";
                     card.querySelectorAll(
-                        ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-signal-integrity"
+                        ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-clarity"
                     ).forEach(e => e.textContent = "--");
                     const preview = card.querySelector("[data-note-preview]");
                     preview.textContent = "—";
@@ -360,7 +361,7 @@ class MeasurelyDashboard {
                 setMetric(".m-bandwidth",   data.bandwidth);
                 setMetric(".m-balance",     data.balance);
                 setMetric(".m-smoothness",  data.smoothness);
-                setMetric(".m-signal-integrity", data.signal_integrity);
+                setMetric(".m-clarity",     data.clarity);
 
                 // 📝 Load note preview correctly from saved sweep
                 const note =
@@ -765,7 +766,6 @@ class MeasurelyDashboard {
             }
         );
 
-
         /* ----------------- HELPER FOR DOT COLOURS ----------------- */
         const setDotColour = (el, score) => {
             if (!el) return;
@@ -881,10 +881,9 @@ class MeasurelyDashboard {
             smoothnessScore: data.smoothness ?? 0,
             peaksDipsScore: data.scores?.peaks_dips ?? data.peaks_dips ?? 0,
             reflectionsScore: data.reflections ?? 0,
-            signalIntegrityScore:
-                data.scores?.signal_integrity ??
-                data.signal_integrity ??
-                0
+            clarityScore: data.clarity ?? 0,
+            signalIntegrityScore: data.signal_integrity ?? 0
+
         };
 
         for (const [id, val] of Object.entries(scores)) {
@@ -1019,6 +1018,7 @@ class MeasurelyDashboard {
         const smoothness  = data.smoothness  ?? 3;
         const peaksDips   = data.peaks_dips  ?? 3;
         const reflections = data.reflections ?? 3;
+        const clarity = data.scores?.clarity ?? 3;
 
 
         /* Convert scores to buckets */
@@ -1090,6 +1090,25 @@ class MeasurelyDashboard {
 
 
         /* ============================================================
+        6. CLARITY
+        ============================================================ */
+
+        const clarityStatusEl = document.getElementById('clarityStatusText');
+        if (clarityStatusEl) {
+            clarityStatusEl.textContent =
+                clarity > 6 ? "Clear presentation" :
+                clarity > 3 ? "Some smearing" :
+                            "Room dominates";
+        }
+
+        const clRaw = document.getElementById("clarityRaw");
+        if (clRaw) {
+            clRaw.textContent = this.pickRawMetric("clarity", this.toBucket(clarity));
+
+        }
+
+
+        /* ============================================================
         Dave PHRASES (new system - no buckets)
         ============================================================ */
         const spk = (data.room?.speaker_key && window.SPEAKERS?.[data.room.speaker_key])
@@ -1116,6 +1135,7 @@ class MeasurelyDashboard {
             smoothness: "smoothnessDave",
             peaks_dips: "peaksDipsDave",
             reflections: "reflectionsDave",
+            clarity: "clarityDave",
             signal_integrity: "signalIntegrityDave"
         };
 

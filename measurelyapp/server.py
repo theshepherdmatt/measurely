@@ -35,6 +35,17 @@ from scipy.ndimage import gaussian_filter1d
 from measurelyapp.network.api import network_api
 from measurelyapp.network import controller
 
+
+import os
+
+env_file = Path.home() / "measurely" / ".env"
+if env_file.exists():
+    for line in env_file.read_text().splitlines():
+        if line.strip() and not line.startswith("#"):
+            k, _, v = line.partition("=")
+            os.environ.setdefault(k.strip(), v.strip())
+
+
 # ------------------------------------------------------------------
 #  Flask init
 # ------------------------------------------------------------------
@@ -272,7 +283,12 @@ def load_session_data(session_dir):
             "smoothness":    ana_data.get("scores", {}).get("smoothness", 7.3),
             "peaks_dips":    ana_data.get("scores", {}).get("peaks_dips", 3.3),
             "reflections":   ana_data.get("scores", {}).get("reflections", 4.0),
-            "signal_integrity": ana_data.get("scores", {}).get("signal_integrity", 0.0),
+            "clarity":       ana_data.get("scores", {}).get("clarity", 3.0),
+            "scores":        {**ana_data.get("scores", {}), "clarity": ana_data.get("scores", {}).get("clarity", 3.0)},
+
+
+            "signal_integrity": ana_data.get("signal_integrity", {}).get("score", 0.0),
+            "signal_integrity_raw": ana_data.get("signal_integrity", {}),
 
             "session_dir": str(path),
             "analysis_notes": ana_data.get("notes", []),
@@ -612,11 +628,20 @@ def run_sweep():
             # 4. Analyse AFTER restoring room data
             # -----------------------------------------------------
             subprocess.run(
-                [sys.executable, ANALYSE, session_path],
+                [VENV_PY, ANALYSE, session_path],
                 cwd=BASEDIR,
                 check=False
             )
 
+            # -----------------------------------------------------
+            # 5. Run AI analysis AFTER analysis completes
+            # -----------------------------------------------------
+            subprocess.run(
+                [VENV_PY, f"{SERVICE_ROOT}/measurelyapp/ai_analysis.py"],
+                cwd=BASEDIR,
+                check=False
+            )
+    
             sweep_progress['progress'] = 100
             sweep_progress['message'] = "Sweep complete"
             sweep_progress['running'] = False
