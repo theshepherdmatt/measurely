@@ -790,11 +790,15 @@ input[type='checkbox'] {
     line-height: 1.4;
 
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px dashed rgba(255, 255, 255, 0.12);
 
-    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.035);
+
+    border: 1px dashed rgba(180, 120, 255, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(180, 120, 255, 0.12);
+
+    color: rgba(255, 255, 255, 0.95);
 }
+
 
 /* Empty state */
 .note-preview {
@@ -802,7 +806,7 @@ input[type='checkbox'] {
 }
 
 .note-preview.empty {
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.75);
 }
 
 
