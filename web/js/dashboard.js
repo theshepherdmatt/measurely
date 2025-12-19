@@ -1258,45 +1258,48 @@ class MeasurelyDashboard {
 
 
     /* ============================================================
-    FREQUENCY RESPONSE CHART  (REPORT-CURVE SOURCE OF TRUTH)
+    FREQUENCY RESPONSE CHART
+    Uses report_curve as the single source of truth
     ============================================================ */
     updateFrequencyChart() {
 
-        const chart = document.getElementById('frequencyChart');
-        if (!chart) return;
+        const chartEl = document.getElementById('frequencyChart');
+        if (!chartEl) return;
 
-        const data = this.currentData;
-        if (!data || !data.id) return;
+        const { currentData } = this;
+        if (!currentData?.id) return;
 
-        fetch(`/api/session/${data.id}/report_curve`)
-            .then(res => {
-                if (!res.ok) throw new Error("report_curve fetch failed");
-                return res.json();
+        fetch(`/api/session/${currentData.id}/report_curve`)
+            .then(r => {
+                if (!r.ok) throw new Error('Failed to fetch report_curve');
+                return r.json();
             })
             .then(curve => {
 
-                const mobile = window.innerWidth < 640;
+                const isMobile = window.innerWidth < 640;
 
-                Plotly.newPlot('frequencyChart', [{
+                const trace = {
                     x: curve.freqs,
                     y: curve.mag,
                     mode: 'lines',
                     line: {
-                        color: '#a855f7',   // Measurely purple
-                        width: mobile ? 3 : 2.5
+                        color: '#a855f7', // Measurely purple
+                        width: isMobile ? 3 : 2.5
                     }
-                }], {
+                };
+
+                const layout = {
                     xaxis: {
                         type: 'log',
                         range: [Math.log10(20), Math.log10(20000)],
-                        tickvals: [20,50,100,200,500,1000,2000,5000,10000,20000],
-                        ticktext: ['20','50','100','200','500','1k','2k','5k','10k','20k'],
+                        tickvals: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000],
+                        ticktext: ['20', '50', '100', '200', '500', '1k', '2k', '5k', '10k', '20k'],
                         showline: true,
                         linewidth: 1,
                         linecolor: '#9ca3af',
                         tickfont: {
                             color: '#e5e7eb',
-                            size: mobile ? 10 : 11
+                            size: isMobile ? 10 : 11
                         },
                         showgrid: true,
                         gridcolor: 'rgba(255,255,255,0.08)',
@@ -1304,15 +1307,15 @@ class MeasurelyDashboard {
                     },
 
                     yaxis: {
-                        range: [-10, 15],
+                        //range: [-30, 30],
+                        tickvals: [-10, -5, 0, 5, 10, 15],
                         showline: true,
                         linewidth: 1,
                         linecolor: '#9ca3af',
                         tickfont: {
                             color: '#e5e7eb',
-                            size: mobile ? 10 : 11
+                            size: isMobile ? 10 : 11
                         },
-                        tickvals: [-10, -5, 0, 5, 10, 15],
                         showgrid: true,
                         gridcolor: 'rgba(255,255,255,0.08)',
                         zeroline: true,
@@ -1321,25 +1324,30 @@ class MeasurelyDashboard {
                     },
 
                     showlegend: false,
-                    margin: mobile
+                    margin: isMobile
                         ? { t: 5, r: 5, b: 25, l: 30 }
                         : { t: 20, r: 20, b: 50, l: 55 },
-                    plot_bgcolor: '#1f2937',      // dark grey graph area
-                    paper_bgcolor: 'transparent',
-                }, {
-                    staticPlot: true,
-                    displayModeBar: false,
-                    responsive: true
-                });
 
-                updateChartAria(
-                    'both',
-                    'Showing frequency response.'
+                    plot_bgcolor: '#1f2937',
+                    paper_bgcolor: 'transparent'
+                };
+
+                Plotly.newPlot(
+                    'frequencyChart',
+                    [trace],
+                    layout,
+                    {
+                        staticPlot: true,
+                        displayModeBar: false,
+                        responsive: true
+                    }
                 );
+
+                updateChartAria('both', 'Showing frequency response.');
 
             })
             .catch(err => {
-                console.error("❌ Frequency chart error:", err);
+                console.error('❌ Frequency chart error:', err);
             });
     }
 
@@ -1906,7 +1914,7 @@ class MeasurelyDashboard {
             }
 
             this.currentData = data; // required for notes save
-            this.updateFrequencyChartStandalone(data);
+            this.updateFrequencyChart();
             this.updateCompareSessionMetricsStandalone(data);
 
             // Restore saved note to modal
