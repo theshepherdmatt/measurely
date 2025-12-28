@@ -14,6 +14,7 @@ let currentRoom = {
   speaker_key: null,
   toe_in_deg: null,
   echo_pct: null,
+  subwoofer: "unknown",
   opt_hardfloor: null,
   opt_barewalls: null,
   opt_rug: null,
@@ -49,6 +50,7 @@ export async function loadRoom() {
         speaker_key: data.speaker_key ?? currentRoom.speaker_key,
         toe_in_deg: data.toe_in_deg ?? currentRoom.toe_in_deg,
         echo_pct: data.echo_pct ?? currentRoom.echo_pct,
+        subwoofer: data.subwoofer ?? currentRoom.subwoofer,
         opt_hardfloor: data.opt_hardfloor ?? currentRoom.opt_hardfloor,
         opt_barewalls: data.opt_barewalls ?? currentRoom.opt_barewalls,
         opt_rug: data.opt_area_rug ?? currentRoom.opt_rug,
@@ -99,6 +101,8 @@ export async function saveRoom() {
 
     echo_pct: parseInt(document.getElementById('room-echo').value),
     floor_material: document.getElementById('floor-material').value,
+
+    subwoofer: document.getElementById('subwoofer-present')?.value || "unknown",
 
     opt_area_rug: document.getElementById('opt-area-rug').checked,
     opt_barewalls: document.getElementById('opt-barewalls').checked,
@@ -171,6 +175,7 @@ export async function loadRoomSetup() {
     assign('echo_pct', 'room-echo');
     assign('floor_material', 'floor-material');
     assign('speaker_key', 'speakerSel');
+    assign('subwoofer', 'subwoofer-present');
 
     document.getElementById('opt-area-rug').checked = !!j.opt_area_rug;
     document.getElementById('opt-barewalls').checked = !!j.opt_barewalls;
@@ -284,15 +289,16 @@ function updateRoomSummary() {
     const toe = parseFloat(document.getElementById("toe-angle")?.value) || 0;
 
     // 🔊 SPEAKER NAME FROM SPEAKERS INDEX
-    const spkKey = currentRoom.speaker_key;
-    const spkProf = window.SPEAKERS?.[spkKey];
-    const model =
-        spkProf?.friendly_name ||
-        spkProf?.name ||
-        spkKey ||
-        "Unknown";
+    //const spkKey = currentRoom.speaker_key;
+    //const spkProf = window.SPEAKERS?.[spkKey];
+    //const model =
+        //spkProf?.friendly_name ||
+        //spkProf?.name ||
+        //spkKey ||
+        //"Unknown";
 
-    console.log("🔈 Using speaker profile:", spkKey, spkProf);
+    //console.log("🔈 Using speaker profile:", spkKey, spkProf);
+    
 
     // Room volume + shape calc
     const volume = (w * l * h).toFixed(1);
@@ -325,7 +331,7 @@ function updateRoomSummary() {
     document.getElementById("sum-room-volume").textContent = volume;
     document.getElementById("sum-room-shape").textContent = shape;
 
-    document.getElementById("sum-speaker-model").textContent = model;
+    //document.getElementById("sum-speaker-model").textContent = model;
     document.getElementById("sum-speaker-spacing").textContent =
         `${spacing.toFixed(2)}m`;
     document.getElementById("sum-speaker-distance").textContent =
@@ -367,7 +373,14 @@ function updateRoomForm() {
       if (v) v.textContent = currentRoom[key];
     }
   });
+
+  // ✅ SUBWOOFER SELECT SYNC (state → UI)
+  const subSel = document.getElementById('subwoofer-present');
+  if (subSel && currentRoom.subwoofer) {
+    subSel.value = currentRoom.subwoofer;
+  }
 }
+
 
 // -----------------------------------------------------
 // FORM & UI EVENT HANDLERS

@@ -34,7 +34,7 @@ from scipy.ndimage import gaussian_filter1d
 
 from measurelyapp.network.api import network_api
 from measurelyapp.network import controller
-
+from history import build_sweephistory
 
 import os
 
@@ -598,6 +598,7 @@ def run_sweep():
                 f"{BASEDIR}/measurements/latest"
             ])
 
+
             # -----------------------------------------------------
             # 3. RESTORE ROOM SETTINGS BEFORE ANALYSIS
             # -----------------------------------------------------
@@ -632,6 +633,16 @@ def run_sweep():
                 cwd=BASEDIR,
                 check=False
             )
+
+            # -----------------------------------------------------
+            # 4.5 Build sweep history for AI context
+            # -----------------------------------------------------
+            try:
+                build_sweephistory(limit=4)
+                print("✓ sweephistory.json updated")
+            except Exception as e:
+                print("⚠️ sweephistory.json build failed:", e)
+
 
             # -----------------------------------------------------
             # 5. Run AI analysis AFTER analysis completes
@@ -711,6 +722,15 @@ def get_status():
         "reason": "" if ready else "Missing audio devices",
         "measurely_available": True
     })
+
+@app.route("/api/sweephistory", methods=["GET", "POST"])
+def api_build_sweephistory():
+    history = build_sweephistory(limit=4)
+    return jsonify({
+        "status": "ok",
+        "sweep_count": history["sweep_count"]
+    })
+
 
 # ----------------------------------------------------------
 #  Chart stuff
@@ -1100,6 +1120,16 @@ def serve_index():
     if is_first_time_user():
         return send_from_directory(WEB_DIR, 'onboarding.html')
     return send_from_directory(WEB_DIR, 'index.html')
+
+# ----------------------------------------------------------
+#  Serve AI comparison + other latest measurement artifacts
+# ----------------------------------------------------------
+@app.route("/measurements/latest/<path:filename>")
+def serve_latest_measurements(filename):
+    return send_from_directory(
+        MEAS_ROOT / "latest",
+        filename
+    )
 
 # ------------------------------------------------------------------
 #  static files (CSS, JS, icons, images, HTML)

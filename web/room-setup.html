@@ -62,6 +62,85 @@
 
           </header>
 
+            <!-- ===================================================== -->
+            <!-- CARD 2 — SYSTEM & SPEAKERS -->
+            <!-- ===================================================== -->
+            <section class="card glass-panel animate-enter delay-2 speaker-profile-card">
+
+                <!-- Header -->
+                <div class="card-header">
+                    <div class="card-step step-orange">1</div>
+                    <h2>System & Speakers</h2>
+                </div>
+
+                <p class="card-intro">
+                    This helps Measurely understand the context your speakers are working in.
+                    You don’t need to be exact — practical descriptions are perfect.
+                </p>
+
+                <div class="speaker-controls">
+
+                    <!-- Speaker model -->
+                    <div class="ctrl-block">
+                        <label for="speakerSel">Speaker model</label>
+                        <select id="speakerSel"></select>
+
+                        <p class="form-hint">
+                            Used to understand your speaker’s natural behaviour and limits.
+                        </p>
+                    </div>
+
+                    <!-- Speaker design -->
+                    <div class="ctrl-block">
+                        <label for="speaker-type">Speaker design</label>
+                        <select id="speaker-type">
+                            <option value="sealed">Sealed / Infinite baffle</option>
+                            <option value="port_front">Ported (front)</option>
+                            <option value="port_rear">Ported (rear)</option>
+                            <option value="dipole">Dipole / open baffle</option>
+                        </select>
+
+                        <p class="form-hint">
+                            Helps interpret how your speakers interact with the room.
+                        </p>
+                    </div>
+
+                    <!-- Subwoofer -->
+                    <div class="ctrl-block">
+                        <label for="subwoofer-present">Subwoofer in use</label>
+                        <select id="subwoofer-present">
+                            <option value="unknown">Not sure / prefer not to say</option>
+                            <option value="no">No subwoofer</option>
+                            <option value="yes">Yes, I use a subwoofer</option>
+                        </select>
+
+                        <p class="form-hint">
+                            This doesn’t affect scoring — it only shapes suggestions.
+                        </p>
+                    </div>
+
+                    <!-- System description -->
+                    <div class="ctrl-block ctrl-block-full">
+                        <label for="system-notes">
+                            System description <span class="label-muted">(optional)</span>
+                        </label>
+
+                        <textarea
+                            id="system-notes"
+                            placeholder="Amp, sources, streamer, DAC, turntable — anything you’d like to note about your system."
+                        ></textarea>
+
+                        <p class="form-hint">
+                            This won’t change the measurements.
+                            It helps Measurely phrase insights in a way that fits your setup —
+                            and gives you a useful record over time.
+                        </p>
+                    </div>
+
+                </div>
+
+            </section>
+
 
             <section class="card glass-panel animate-enter delay-1 room-layout-section">
 
@@ -70,17 +149,17 @@
                     border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
                     <div style="width:32px; height:32px; background:rgba(59,130,246,0.2); color:#93c5fd;
                         border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-                        1
+                        2
                     </div>
                     <h2 style="margin:0; font-size:1.25rem;">Measure Your Listening Room</h2>
                 </div>
 
-
+                <!-- ===================================================== -->
+                <!-- CARD 2 — Measurements -->
+                <!-- ===================================================== -->
 
                 <div class="room-layout-grid-new">
 
-                    <!-- 🎛 CONTROLS GRID (Sliders + Spin Boxes for Mobile) -->
-                    <!-- 🎛 CONTROLS GRID (Sliders + Spin Boxes for Mobile) -->
                     <div class="controls-grid">
 
                         <!-- Inline intro (not a card) -->
@@ -141,16 +220,6 @@
                             <input type="number" id="toe-angle" step="0.1">
                         </div>
 
-                        <div class="ctrl-block">
-                            <label>Design Type</label>
-                            <select id="speaker-type">
-                                <option value="sealed">Sealed / Infinite Baffle</option>
-                                <option value="port_front">Ported (Front)</option>
-                                <option value="port_rear">Ported (Rear)</option>
-                                <option value="dipole">Dipole / Open Baffle</option>
-                            </select>
-                        </div>
-
                         <div class="ctrl-block"></div>
 
                     </div>
@@ -158,76 +227,6 @@
 
             </section>
 
-            <!-- ===================================================== -->
-            <!-- CARD 2 — SPEAKER PROFILE -->
-            <!-- ===================================================== -->
-            <section class="card glass-panel animate-enter delay-2" style="margin-bottom:2rem;">
-
-                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
-                  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
-                    <div style="width:32px; height:32px; background:rgba(249,115,22,0.2); color:#fdba74;
-                    border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-                        2
-                    </div>
-                    <h2 style="margin:0; font-size:1.25rem;">Speaker Profile</h2>
-                </div>
-
-                <label for="speakerSel">Select Speaker Model</label>
-                <select id="speakerSel" style="font-size:1.1rem; padding:1rem;"></select>
-
-                <p id="speakerHint" style="font-size:0.9rem; color:var(--c-text-muted); margin-top:0.75rem;">
-                    Select your model to load frequency limits and target behaviour.
-                </p>
-            </section>
-
-            <!-- ===================================================== -->
-            <!-- CARD 3 — DAVE OVERVIEW (Dashboard-style consistency) -->
-            <!-- ===================================================== -->
-            <!-- ===================================================== -->
-            <!-- CARD 3 — ROOM SUMMARY -->
-            <!-- ===================================================== -->
-            <section id="room-summary-card" class="card glass-panel animate-enter delay-3" style="margin-bottom:2rem;">
-
-                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
-                    border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
-                    <div style="width:32px; height:32px; background:rgba(52,211,153,0.25); color:#6ee7b7;
-                        border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-                        3
-                    </div>
-                    <h2 style="margin:0; font-size:1.25rem;">Room Summary</h2>
-                </div>
-
-                <div id="room-summary-content" style="display:grid; gap:0.75rem;">
-
-                    <!-- 🏠 ROOM -->
-                    <div>
-                        <strong>Room:</strong>
-                        <span id="sum-room-size">—</span> (approx <span id="sum-room-volume">—</span> m³)
-                        <br>
-                        <span id="sum-room-shape" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
-                    </div>
-
-                    <!-- 🔊 SPEAKERS -->
-                    <div>
-                        <strong>Speakers:</strong>
-                        <span id="sum-speaker-model">—</span>
-                        <br>
-                        <span id="sum-speaker-spacing">—</span> apart, <span id="sum-speaker-distance">—</span> from wall
-                        <br>
-                        <span id="sum-triangle" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
-                    </div>
-
-                    <!-- 🎯 TOE-IN -->
-                    <div>
-                        <strong>Toe-in:</strong>
-                        <span id="sum-toe-angle">—</span>
-                        <br>
-                        <span id="sum-toe-comment" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
-                    </div>
-
-                </div>
-
-            </section>
 
             <!-- ===================================================== -->
             <!-- CARD 4 — MATERIALS & FURNISHINGS -->
@@ -237,7 +236,7 @@
                 <div class="card-title" style="display:flex; align-items:center; gap:1rem;">
                     <div style="width:32px; height:32px; background:rgba(168,85,247,0.2); color:#c084fc;
                     border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-                        4
+                        3
                     </div>
                     <h2 style="margin:0;">Materials & Furnishings</h2>
                 </div>
@@ -294,6 +293,53 @@
                     </div>
 
                 </div>
+            </section>
+
+
+            <!-- ===================================================== -->
+            <!-- CARD 3 — ROOM SUMMARY -->
+            <!-- ===================================================== -->
+            <section id="room-summary-card" class="card glass-panel animate-enter delay-3" style="margin-bottom:2rem;">
+
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
+                    border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+                    <div style="width:32px; height:32px; background:rgba(52,211,153,0.25); color:#6ee7b7;
+                        border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
+                        4
+                    </div>
+                    <h2 style="margin:0; font-size:1.25rem;">Room Summary</h2>
+                </div>
+
+                <div id="room-summary-content" style="display:grid; gap:0.75rem;">
+
+                    <!-- 🏠 ROOM -->
+                    <div>
+                        <strong>Room:</strong>
+                        <span id="sum-room-size">—</span> (approx <span id="sum-room-volume">—</span> m³)
+                        <br>
+                        <span id="sum-room-shape" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
+                    </div>
+
+                    <!-- 🔊 SPEAKERS -->
+                    <div>
+                        <strong>Speakers:</strong>
+                        <span id="sum-speaker-model">—</span>
+                        <br>
+                        <span id="sum-speaker-spacing">—</span> apart, <span id="sum-speaker-distance">—</span> from wall
+                        <br>
+                        <span id="sum-triangle" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
+                    </div>
+
+                    <!-- 🎯 TOE-IN -->
+                    <div>
+                        <strong>Toe-in:</strong>
+                        <span id="sum-toe-angle">—</span>
+                        <br>
+                        <span id="sum-toe-comment" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
+                    </div>
+
+                </div>
+
             </section>
 
             <!-- ===================================================== -->

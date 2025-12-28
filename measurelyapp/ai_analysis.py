@@ -1,239 +1,218 @@
+#!/usr/bin/env python3
+
 import json
 import os
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
+from dotenv import load_dotenv
 from openai import OpenAI
 
-from dotenv import load_dotenv
-from pathlib import Path
 
-load_dotenv(Path.home() / "measurely" / ".env")
+def load_meta_for_analysis(analysis_path: Path):
+    meta = analysis_path.parent / "meta.json"
+    if not meta.exists():
+        return {}
+    try:
+        return json.loads(meta.read_text())
+    except Exception:
+        return {}
 
-
-# -------------------------------------------------
-# NORMALISE AI-FACING DATA (HIDE TECHNICAL LABELS)
-# -------------------------------------------------
-def normalise_for_ai(data: dict) -> dict:
-    clean = dict(data)
-
-    # --- Rename score concepts to human terms ---
-    scores = clean.get("scores", {})
-    clean["scores"] = {
-        "weight": scores.get("bandwidth"),
-        "evenness": scores.get("balance"),
-        "control": scores.get("peaks_dips"),
-        "flow": scores.get("smoothness"),
-        "focus": scores.get("reflections"),
-        "confidence": scores.get("signal_integrity"),
-        "overall": scores.get("overall"),
-    }
-
-    # --- Strip technical room internals ---
-    room = clean.get("room_context", {})
-    clean["room_context"] = {
-        "speaker_distance": room.get("sbir", {}).get("distance_m"),
-        "triangle_quality": room.get("triangle", {}).get("penalty"),
-        "room_feel": (
-            "tight" if room.get("room_factor", 1.0) > 1.0
-            else "forgiving" if room.get("room_factor", 1.0) < 0.95
-            else "neutral"
-        ),
-    }
-
-    return clean
 
 # -------------------------------------------------
-# CONFIG
+# PATHS
 # -------------------------------------------------
-OPENAI_API_KEY = os.environ.get("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")
-
 BASE_DIR = Path("/home/matt/measurely")
-
 MEASUREMENTS_DIR = BASE_DIR / "measurements"
 LATEST_DIR = MEASUREMENTS_DIR / "latest"
+
+MEASUREMENTS_DIR.mkdir(parents=True, exist_ok=True)
+LATEST_DIR.mkdir(parents=True, exist_ok=True)
 
 ANALYSIS_AI_FILE = LATEST_DIR / "analysis_ai.json"
 ROOM_FILE = BASE_DIR / "room.json"
 SPEAKERS_FILE = BASE_DIR / "speakers" / "speakers.json"
 
-AI_OUTPUT_FILE = LATEST_DIR / "ai.json"
+AI_OVERALL_FILE = LATEST_DIR / "ai.json"
+AI_COMPARE_FILE = LATEST_DIR / "ai_compare.json"
+
+# -------------------------------------------------
+# ENV + OPENAI
+# -------------------------------------------------
+load_dotenv(BASE_DIR / ".env")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 MODEL = "gpt-4o-mini"
 TEMPERATURE = 0.3
 
-# -------------------------------------------------
-# LOAD INPUT DATA
-# -------------------------------------------------
-for path in (ANALYSIS_AI_FILE, ROOM_FILE, SPEAKERS_FILE):
-    if not path.exists():
-        raise FileNotFoundError(f"Missing required file: {path}")
-
-with ANALYSIS_AI_FILE.open("r") as f:
-    analysis_ai_data = normalise_for_ai(json.load(f))
-
-with ROOM_FILE.open("r") as f:
-    room_data = json.load(f)
-
-with SPEAKERS_FILE.open("r") as f:
-    speakers_db = json.load(f)
-
-print(f"Using AI analysis: {ANALYSIS_AI_FILE.name}")
-print(f"Using room data: {ROOM_FILE.name}")
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # -------------------------------------------------
-# RESOLVE SPEAKER & FRIENDLY NAME
+# LOAD REQUIRED FILES
+# -------------------------------------------------
+for p in (ANALYSIS_AI_FILE, ROOM_FILE, SPEAKERS_FILE):
+    if not p.exists():
+        raise FileNotFoundError(f"Missing required file: {p}")
+
+analysis_data = json.loads(ANALYSIS_AI_FILE.read_text())
+room_data = json.loads(ROOM_FILE.read_text())
+speakers_db = json.loads(SPEAKERS_FILE.read_text())
+
+# -------------------------------------------------
+# SPEAKER CONTEXT
 # -------------------------------------------------
 speaker_key = room_data.get("speaker_key")
 speaker = speakers_db.get(speaker_key, {}) if speaker_key else {}
 
 friendly_name = speaker.get("friendly_name") or "your speakers"
 brand = speaker.get("brand", "")
-notes = speaker.get("notes", [])[:2]
 
-# Decide how confident we are about praising the speakers
-is_known_speaker = bool(speaker.get("friendly_name")) and brand.lower() not in ("generic", "")
-is_generic_speaker = brand.lower() == "generic" or not speaker_key
-
-# -------------------------------------------------
-# BUILD SYSTEM STROKE (PRE-WRITTEN)
-# -------------------------------------------------
-if not speaker_key:
-    system_stroke = (
-        "Nothing here points to a problem with the speakers themselves."
-    )
-elif is_generic_speaker:
-    system_stroke = (
-        "This is a perfectly sensible setup, and there’s nothing obviously wrong with the speakers themselves."
-    )
+if speaker_key and brand.lower() not in ("generic", ""):
+    system_stroke = f"You’ve got a cracking set of {friendly_name} there — nothing wrong with the kit at all."
 else:
-    system_stroke = (
-        f"You’ve got a cracking set of {friendly_name} there — nothing wrong with the kit at all."
-    )
+    system_stroke = "There’s nothing here that points to a problem with the speakers themselves."
 
 # -------------------------------------------------
-# OPTIONAL SPEAKER CONTEXT (NON-FLOWERY)
+# OVERALL SUMMARY
 # -------------------------------------------------
-speaker_text = f"""
-SYSTEM / SPEAKER CONTEXT
+overall_prompt = f"""
+You are writing a short listening summary for a hi-fi system based on acoustic measurement data.
 
-Speaker type: {friendly_name}
-Known traits:
-- {notes[0] if notes else ""}
-- {notes[1] if len(notes) > 1 else ""}
-""".strip()
+CONTEXT
+- Speaker model: {friendly_name}
+- The summary may be regenerated multiple times as the system or room changes
 
+LISTENING DATA
+{json.dumps(analysis_data, indent=2)}
 
-# -------------------------------------------------
-# BUILD PROMPT
-# -------------------------------------------------
-prompt = f"""
-You are writing a short listening summary for a hi-fi room measurement.
-
-START WITH THIS SENTENCE:
-"{system_stroke}"
-
-{speaker_text}
-
---------------------------------------------------
-MEASURED ACOUSTIC ANALYSIS
-This describes what it sounds like in this room.
---------------------------------------------------
-{json.dumps(analysis_ai_data, indent=2)}
-
---------------------------------------------------
-ROOM SETUP & PHYSICAL CONTEXT
-This describes the room size, layout, surfaces, and speaker placement.
---------------------------------------------------
+ROOM CONTEXT
 {json.dumps(room_data, indent=2)}
 
---------------------------------------------------
+OPENING GUIDANCE
+- Begin with a single observational sentence describing how the system is currently presenting
+- Reference the speakers naturally, without praise or fixed phrasing
+- Do not reuse phrasing from previous summaries
+- The opening should change if the measurements change
 
-Write ONE short paragraph (4–6 sentences) that will appear in an
-"Overall Score" card.
+CONTENT RULES
+- One paragraph only
+- No numbers
+- No frequencies
+- Do NOT mention bass, treble, midrange, highs, or lows
+- Do NOT mention treatments or furnishings
+- Do NOT explain causes or speculate why something sounds the way it does
+- Describe how it sounds, not why
 
-Tone and voice:
-- Write like a knowledgeable mate down the pub
-- Relaxed, confident, straight-talking
-- Short sentences
-- Friendly and encouraging
-- No sales talk, no therapy language, no technical fluff
-- It’s OK to sound opinionated
+RECOMMENDATION RULE
+- Include exactly one suggestion
+- The suggestion must relate only to speaker placement or positioning
+- Phrase it as a subtle optimisation, not a correction
 
-Use this structure:
-1) System stroke (already provided)
-2) What it sounds like right now
-3) What’s holding it back, described only by how it sounds, not why
-4) One thing I’d fix first
-
-Rules:
-- Do not mention numbers or measurements
-- Do not mention frequencies or milliseconds
-- Do not suggest buying new equipment
-- Plain English only
-- No hedging or qualifiers
-- Use room context only to guide judgement, not explanation
-- Do NOT explain why something sounds the way it does
-- Never mention the room directly; describe its effect instead
-
-
-Room options are authoritative:
-- If opt_area_rug is true, do NOT recommend adding a rug
-- If opt_curtains is true, do NOT recommend adding curtains
-- If opt_sofa is true, do NOT recommend adding a sofa
-- If opt_barewalls is true, assume bare wall reflections are present
-
-Only recommend ONE improvement that is NOT already present.
-If the obvious improvements are already present, recommend refining placement instead.
-
-Do NOT use:
-- "the listener"
-- "probably"
-- "likely"
-- "may"
-- "could"
-- "overall enjoyment"
-- "sound environment"
-- "wall treatments"
-- "acoustic panels"
-- vague positives like "better overall"
-
-Always describe a specific audible change
-(e.g. tighter bass, clearer vocals, better focus).
-
-This should feel supportive, specific, and human.
+STYLE
+- Neutral, confident, technically literate
+- Written for an informed audiophile
+- Observational, not promotional
 """.strip()
 
-# -------------------------------------------------
-# REQUEST AI SUMMARY
-# -------------------------------------------------
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-response = client.chat.completions.create(
+overall_response = client.chat.completions.create(
     model=MODEL,
     temperature=TEMPERATURE,
     messages=[
-        {"role": "system", "content": "You are an audio acoustics assistant."},
-        {"role": "user", "content": prompt},
+        {
+            "role": "system",
+            "content": "You are an experienced hi-fi listener writing concise, measurement-informed summaries."
+        },
+        {
+            "role": "user",
+            "content": overall_prompt
+        },
     ],
 )
 
-summary_text = response.choices[0].message.content.strip()
+overall_summary = overall_response.choices[0].message.content.strip()
 
-# -------------------------------------------------
-# SAVE AI OUTPUT
-# -------------------------------------------------
-ai_payload = {
+AI_OVERALL_FILE.write_text(json.dumps({
     "model": MODEL,
-    "generated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-    "summary": summary_text,
-}
+    "generated_at": datetime.now(timezone.utc).isoformat(),
+    "summary": overall_summary
+}, indent=2))
 
-with AI_OUTPUT_FILE.open("w") as f:
-    json.dump(ai_payload, f, indent=2)
+print("\n--- OVERALL SUMMARY ---\n")
+print(overall_summary)
+
 
 # -------------------------------------------------
-# CONSOLE OUTPUT
+# SWEEP COMPARISON (REAL SESSIONS + NOTES)
 # -------------------------------------------------
-print("\n--- AI SUMMARY ---\n")
-print(summary_text)
-print(f"\nSaved to {AI_OUTPUT_FILE}")
+sweep_files = sorted(
+    MEASUREMENTS_DIR.glob("Sweep*/analysis.json"),
+    key=lambda p: p.stat().st_mtime,
+    reverse=True
+)
+
+if len(sweep_files) >= 2:
+    latest_analysis = json.loads(sweep_files[0].read_text())
+    previous_analysis = json.loads(sweep_files[1].read_text())
+
+    latest_meta = load_meta_for_analysis(sweep_files[0])
+    previous_meta = load_meta_for_analysis(sweep_files[1])
+
+    latest = {
+        "analysis": latest_analysis,
+        "user_notes": latest_meta.get("notes") or "No user notes recorded for this sweep."
+    }
+
+    previous = {
+        "analysis": previous_analysis,
+        "user_notes": previous_meta.get("notes") or "No user notes recorded for this sweep."
+    }
+
+    compare_prompt = f"""
+DEBUG — USER NOTES
+LATEST: {latest["user_notes"]}
+PREVIOUS: {previous["user_notes"]}
+
+You are comparing two listening measurements taken in the same room.
+
+LATEST SWEEP (MEASUREMENT + USER NOTES)
+{json.dumps(latest, indent=2)}
+
+PREVIOUS SWEEP (MEASUREMENT + USER NOTES)
+{json.dumps(previous, indent=2)}
+
+STRICT RULES:
+- Begin with "Compared to the previous sweep," unless no meaningful change is detected, in which case state that explicitly.
+- Do not use numbers.
+- Do not mention frequencies.
+- Do NOT mention bass, treble, midrange, highs, or lows.
+- Describe only audible differences between the two sweeps, not overall sound quality.
+- Use listening language such as focus, clarity, control, openness, weight, coherence, image stability.
+- Keep it to 2–4 sentences maximum.
+- Do not explain causes or speculate why changes occurred.
+- If the sweeps are effectively the same, say so plainly.
+- You may reference system or room changes mentioned in user notes, but only if they align with the measured result.
+- Use audiophile language, but keep it plain, technical, and observational.
+- Avoid hype, praise, or marketing-style wording.
+
+""".strip()
+
+    compare_response = client.chat.completions.create(
+        model=MODEL,
+        temperature=TEMPERATURE,
+        messages=[
+            {"role": "system", "content": "You are an experienced acoustic measurement engineer writing for an informed audiophile."},
+            {"role": "user", "content": compare_prompt},
+        ],
+    )
+
+    compare_summary = compare_response.choices[0].message.content.strip()
+
+    AI_COMPARE_FILE.write_text(json.dumps({
+        "model": MODEL,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "summary": compare_summary
+    }, indent=2))
+
+    print("\n--- SWEEP COMPARISON ---\n")
+    print(compare_summary)
+
+print(f"\nSaved overall summary to {AI_OVERALL_FILE}")

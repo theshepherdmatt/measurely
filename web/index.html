@@ -459,20 +459,42 @@
                 <!-- SWEEP HISTORY -->
                 <section class="sweep-history-wrapper">
 
+                    <!-- SECTION HEADER -->
                     <h2 style="margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;">
                         <img src="icons/dave.svg" style="width:22px; opacity:0.9;">
                         Sweep History
                     </h2>
 
-                    <p style="opacity: 0.7; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+                    <p style="opacity:0.7; margin-top:-0.5rem; margin-bottom:1.25rem;">
                         Compare your last four sweeps at a glance
                     </p>
 
+                    <!-- AI SWEEP COMPARISON (FULL WIDTH, ABOVE GRID) -->
+                    <div id="aiSweepCompareCard" class="ai-compare-card" hidden>
+
+                        <div class="ai-compare-header">
+                            <img src="icons/dave.svg" style="width:20px; opacity:0.9;">
+                            <h3>Sweep-to-sweep comparison</h3>
+                        </div>
+
+                        <p class="ai-compare-text" id="aiSweepCompareText">
+                            <!-- AI comparison text injected here -->
+                        </p>
+
+                        <div class="ai-compare-meta" id="aiSweepCompareMeta">
+                            <!-- e.g. Sweep24 → Sweep23 · Same room, same system -->
+                        </div>
+
+                    </div>
+
+
+                    <!-- SWEEP GRID -->
                     <div id="sweepHistoryGrid" class="grid-4-mobile grid-2 tablet-grid-4">
 
                         <!-- SWEEP 1 -->
                         <div class="sweep-card sweep-item" data-index="0">
                             <h3 class="sweep-title">Latest</h3>
+                            <div class="sweep-time" style="opacity:0.6;font-size:0.75rem;">—</div>
                             <div class="sweep-score">--</div>
 
                             <div class="sweep-metrics">
@@ -489,13 +511,13 @@
                                 <div class="note-preview empty" data-note-preview>
                                     <span class="note-placeholder">Add notes for this sweep</span>
                                 </div>
-
                             </div>
                         </div>
 
                         <!-- SWEEP 2 -->
                         <div class="sweep-card sweep-item" data-index="1">
                             <h3 class="sweep-title">Previous</h3>
+                            <div class="sweep-time" style="opacity:0.6;font-size:0.75rem;">—</div>
                             <div class="sweep-score">--</div>
 
                             <div class="sweep-metrics">
@@ -518,6 +540,7 @@
                         <!-- SWEEP 3 -->
                         <div class="sweep-card sweep-item" data-index="2">
                             <h3 class="sweep-title">Earlier</h3>
+                            <div class="sweep-time" style="opacity:0.6;font-size:0.75rem;">—</div>
                             <div class="sweep-score">--</div>
 
                             <div class="sweep-metrics">
@@ -540,6 +563,7 @@
                         <!-- SWEEP 4 -->
                         <div class="sweep-card sweep-item" data-index="3">
                             <h3 class="sweep-title">Oldest</h3>
+                            <div class="sweep-time" style="opacity:0.6;font-size:0.75rem;">—</div>
                             <div class="sweep-score">--</div>
 
                             <div class="sweep-metrics">

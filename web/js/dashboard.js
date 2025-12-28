@@ -296,6 +296,7 @@ class MeasurelyDashboard {
                     card.querySelectorAll(
                         ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-clarity"
                     ).forEach(e => e.textContent = "--");
+
                     const preview = card.querySelector("[data-note-preview]");
                     preview.textContent = "—";
                     preview.style.opacity = "0.3";
@@ -308,13 +309,13 @@ class MeasurelyDashboard {
                 return m ? parseInt(m[1], 10) : -1;
             };
 
-            // Sort newest → oldest and filter Sweep0 if others exist
-            const filtered = all
+            // Sort newest → oldest, drop Sweep0 if others exist
+            const recent = all
                 .slice()
                 .sort((a, b) => extractNum(b.id) - extractNum(a.id))
-                .filter(s => !(extractNum(s.id) === 0 && all.length > 1));
+                .filter(s => !(extractNum(s.id) === 0 && all.length > 1))
+                .slice(0, 4);
 
-            const recent = filtered.slice(0, 4);
             console.warn("🟪 SWEEP MAP:", recent.map(s => s.id));
 
             for (let i = 0; i < cards.length; i++) {
@@ -327,6 +328,7 @@ class MeasurelyDashboard {
                     card.querySelectorAll(
                         ".m-peaks,.m-reflections,.m-bandwidth,.m-balance,.m-smoothness,.m-clarity"
                     ).forEach(e => e.textContent = "--");
+
                     const preview = card.querySelector("[data-note-preview]");
                     preview.textContent = "—";
                     preview.style.opacity = "0.3";
@@ -336,24 +338,40 @@ class MeasurelyDashboard {
                 const sweepId = meta.id;
                 card.dataset.sweepid = sweepId;
 
+                // 🔑 FETCH DATA FIRST
                 let data;
                 try {
                     data = await fetch(`/api/session/${sweepId}`).then(r => r.json());
                 } catch (err) {
-                    console.error("Failed to load sweep for card:", sweepId, err);
+                    console.error("Failed to load sweep:", sweepId, err);
                     continue;
                 }
 
-                // Scores
-                const scoreEl = card.querySelector(".sweep-score");
-                scoreEl.textContent = (data.overall_score ?? "--");
+                // ✅ NOW timestamp is safe
+                const timeEl = card.querySelector(".sweep-time");
+                if (timeEl) {
+                    const ts =
+                        data.timestamp ||
+                        data.created_at ||
+                        data.time ||
+                        meta.timestamp ||
+                        meta.created_at ||
+                        null;
+
+                    timeEl.textContent = ts
+                        ? new Date(ts).toLocaleString()
+                        : "—";
+                }
+
+                // Score
+                card.querySelector(".sweep-score").textContent =
+                    data.overall_score ?? "--";
 
                 const setMetric = (cls, val) => {
                     const el = card.querySelector(cls);
                     if (!el) return;
-                    el.textContent = (val !== undefined && val !== null)
-                        ? val.toFixed(1)
-                        : "--";
+                    el.textContent =
+                        typeof val === "number" ? val.toFixed(1) : "--";
                 };
 
                 setMetric(".m-peaks",       data.peaks_dips);
@@ -363,26 +381,61 @@ class MeasurelyDashboard {
                 setMetric(".m-smoothness",  data.smoothness);
                 setMetric(".m-clarity",     data.clarity);
 
-                // 📝 Load note preview correctly from saved sweep
+                // Notes
                 const note =
-                    (Array.isArray(data.analysis_notes) && data.analysis_notes.length > 0 && data.analysis_notes[0]) ||
+                    (Array.isArray(data.analysis_notes) && data.analysis_notes[0]) ||
                     data.notes ||
                     data.note ||
                     "";
 
-                const tidiedNote = note.trim();
-
-
                 const previewEl = card.querySelector("[data-note-preview]");
-                previewEl.textContent = tidiedNote !== "" ? tidiedNote : "—";
-                previewEl.style.opacity = tidiedNote !== "" ? "1" : "0.3";
+                previewEl.textContent = note.trim() || "—";
+                previewEl.style.opacity = note.trim() ? "1" : "0.3";
 
-                console.log(`📝 Note restored into card(${i}): ${sweepId} → "${tidiedNote}"`);
-
+                console.log(`📝 Restored ${sweepId} → "${note.trim()}"`);
             }
 
         } catch (err) {
             console.error("❌ loadSweepHistory failed:", err);
+        }
+    }
+
+
+    /* ============================================================
+    AI SWEEP COMPARISON (LATEST vs PREVIOUS)
+    ============================================================ */
+    async loadAISweepComparison() {
+        try {
+            const res = await fetch('/measurements/latest/ai_compare.json', {
+                cache: 'no-store'
+            });
+            if (!res.ok) return;
+
+            const data = await res.json();
+            if (!data || !data.summary) return;
+
+            const card = document.getElementById('aiSweepCompareCard');
+            const text = document.getElementById('aiSweepCompareText');
+            const meta = document.getElementById('aiSweepCompareMeta');
+
+            if (!card || !text) return;
+
+            // Main AI text
+            text.textContent = data.summary;
+
+            // 👇 NEW: meta line
+            if (meta) {
+                const latest = data.latest || 'Latest';
+                const previous = data.previous || 'Previous';
+                meta.textContent = `${latest} → ${previous} · Same room, same system`;
+            }
+
+            card.removeAttribute('hidden');
+
+            console.log('🧠 AI sweep comparison loaded');
+
+        } catch (err) {
+            console.warn('AI sweep comparison unavailable', err);
         }
     }
 
@@ -661,6 +714,8 @@ class MeasurelyDashboard {
         }, checkInterval);
     }
 
+    
+
     /* ============================================================
     SIMULATED ANALYSIS LOGS — makes the process feel alive
     ============================================================ */
@@ -738,6 +793,8 @@ class MeasurelyDashboard {
 
         // 🔥 ADD THIS — loads the 4 sweep cards into the dashboard
         this.loadSweepHistory();
+
+        this.loadAISweepComparison();
 
         // Tips/tweaks updater
         this.updateTipsAndTweaksCards(this.currentData);
@@ -905,6 +962,7 @@ class MeasurelyDashboard {
         this.updateDescriptions(data);
 
     }
+    
 
     /* ============================================================
     UPDATE TIPS AND TWEAKS CARDS (NEW CORE LOGIC FOR tipsandtweaks.html)
