@@ -456,6 +456,34 @@ def api_get_session(session_id):
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    
+
+# ------------------------------------------------------------------
+#  FETCH AI COMPARISON FOR A SESSION
+# ------------------------------------------------------------------
+@app.route("/api/session/<session_id>/ai_compare", methods=["GET"])
+def api_session_ai_compare(session_id):
+    """
+    Return ai_compare.json for a given sweep session if it exists.
+    """
+    try:
+        session_dir = MEAS_ROOT / ("latest" if session_id == "latest" else session_id)
+        ai_file = session_dir / "ai_compare.json"
+
+        if not ai_file.exists():
+            return jsonify({}), 404
+
+        return send_from_directory(
+            session_dir,
+            "ai_compare.json",
+            mimetype="application/json"
+        )
+
+    except Exception as e:
+        print("❌ AI compare load failed:", e)
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 
 
 # ------------------------------------------------------------------
@@ -755,30 +783,30 @@ def api_report_curve(session_id):
 @app.route("/api/report/latest", methods=["GET"])
 def api_report_latest():
     try:
-        # Path to latest sweep folder
         latest = MEAS_ROOT / "latest"
         if not latest.exists():
-            return jsonify({"error": "No latest session"}), 404
+            return {"error": "No latest session"}, 404
 
-        # Where the PNG will be written
         output_png = SERVICE_ROOT / "web" / "report.png"
 
-        # Call your EXISTING Node script
         cmd = [
             "node",
             str(SERVICE_ROOT / "web" / "js" / "share-report.js"),
             str(latest.resolve())
         ]
 
-        subprocess.run(
+        # 🔧 FIX: do NOT crash the API if Node fails
+        result = subprocess.run(
             cmd,
-            check=True,
             capture_output=True,
             text=True
         )
 
+        print("REPORT STDOUT:", result.stdout)
+        print("REPORT STDERR:", result.stderr)
+
         if not output_png.exists():
-            return jsonify({"error": "Report not generated"}), 500
+            return {"error": "Report not generated"}, 500
 
         return send_file(
             output_png,
@@ -787,12 +815,9 @@ def api_report_latest():
             download_name="measurely-room-report.png"
         )
 
-    except subprocess.CalledProcessError as e:
-        print("❌ Report generation failed")
-        print(e.stdout)
-        print(e.stderr)
-        return jsonify({"error": "Report generation failed"}), 500
-
+    except Exception:
+        traceback.print_exc()
+        return {"error": "Report failed"}, 500
 
 
 # ----------------------------------------------------------
@@ -1130,6 +1155,15 @@ def serve_latest_measurements(filename):
         MEAS_ROOT / "latest",
         filename
     )
+
+@app.route("/measurements/<session_id>/<path:filename>")
+def serve_session_measurements(session_id, filename):
+    session_dir = MEAS_ROOT / session_id
+    if not session_dir.exists():
+        return jsonify({"error": "session not found"}), 404
+
+    return send_from_directory(session_dir, filename)
+
 
 # ------------------------------------------------------------------
 #  static files (CSS, JS, icons, images, HTML)

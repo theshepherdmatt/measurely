@@ -33,7 +33,6 @@ ROOM_FILE = BASE_DIR / "room.json"
 SPEAKERS_FILE = BASE_DIR / "speakers" / "speakers.json"
 
 AI_OVERALL_FILE = LATEST_DIR / "ai.json"
-AI_COMPARE_FILE = LATEST_DIR / "ai_compare.json"
 
 # -------------------------------------------------
 # ENV + OPENAI
@@ -150,6 +149,7 @@ sweep_files = sorted(
 )
 
 if len(sweep_files) >= 2:
+    AI_COMPARE_FILE = sweep_files[0].parent / "ai_compare.json"
     latest_analysis = json.loads(sweep_files[0].read_text())
     previous_analysis = json.loads(sweep_files[1].read_text())
 
@@ -180,18 +180,19 @@ PREVIOUS SWEEP (MEASUREMENT + USER NOTES)
 {json.dumps(previous, indent=2)}
 
 STRICT RULES:
-- Begin with "Compared to the previous sweep," unless no meaningful change is detected, in which case state that explicitly.
+- Write exactly ONE sentence.
+- Begin with "Compared to the previous sweep," unless no meaningful change is detected.
+- If no meaningful change is detected, state that explicitly in one sentence.
+- Do not repeat the opening phrase.
 - Do not use numbers.
 - Do not mention frequencies.
 - Do NOT mention bass, treble, midrange, highs, or lows.
-- Describe only audible differences between the two sweeps, not overall sound quality.
-- Use listening language such as focus, clarity, control, openness, weight, coherence, image stability.
-- Keep it to 2–4 sentences maximum.
-- Do not explain causes or speculate why changes occurred.
-- If the sweeps are effectively the same, say so plainly.
-- You may reference system or room changes mentioned in user notes, but only if they align with the measured result.
-- Use audiophile language, but keep it plain, technical, and observational.
-- Avoid hype, praise, or marketing-style wording.
+- Describe only audible differences between the two sweeps.
+- Use listening language such as focus, clarity, coherence, control, or image stability.
+- Do not explain causes.
+- Do not speculate.
+- Do not mention specific equipment or room changes.
+- Keep the sentence concise and factual.
 
 """.strip()
 

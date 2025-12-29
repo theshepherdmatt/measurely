@@ -111,25 +111,26 @@
                 <div class="header-actions">
 
                     <button id="runSweepBtn" class="btn btn-primary">
-                        <img src="icons/sweep.svg" style="width: 16px; filter: brightness(100);" alt="">
+                        <img src="icons/sweep.svg" alt="">
                         Run Sweep
                     </button>
 
-                    <button id="refreshDashboardBtn" class="btn btn-secondary" aria-label="Refresh Dashboard">
-                        <img src="icons/refresh.svg" style="width: 16px;" alt="">
+                    <button id="refreshDashboardBtn" class="btn btn-utility">
+                        <img src="icons/refresh.svg" alt="">
+                        Refresh
                     </button>
 
-                    <!-- NEW: Cancel Sweep button (hidden until sweeping) -->
-                    <button id="cancelSweepBtn" class="btn btn-poor hidden" aria-label="Cancel Sweep">
-                        <img src="icons/save.svg" style="width: 16px;" alt="">
+                    <!-- Cancel Sweep (hidden until active) -->
+                    <button id="cancelSweepBtn" class="btn btn-secondary hidden">
+                        <img src="icons/cancel.svg" alt="">
                         Cancel Sweep
                     </button>
+
                 </div>
 
 
+
             </header>
-
-
 
             <!-- TOP ROW: SCORE & ACTIONS -->
             <div class="grid-3 animate-enter delay-1">
@@ -164,14 +165,7 @@
                     </div>
 
                     <!-- SUMMARY -->
-                    <p id="overallDavePhrase"
-                    class="dave-quote"
-                    style="margin:0;
-                            max-width: 720px;
-                            font-style: italic;
-                            font-size: 1rem;
-                            line-height: 1.55;
-                            color: var(--c-text-main);">
+                    <p id="overallDavePhrase" class="dave-quote">
                         “Run a sweep to get started.”
                     </p>
 
@@ -190,6 +184,7 @@
                         <span style="opacity:0.7;">Based on 6 key acoustic metrics</span>
 
                         <button id="downloadReportBtn"
+                                type="button"
                                 class="btn btn-secondary"
                                 aria-label="Download report">
                             <img src="icons/arrow-down.svg" style="width:14px;" alt="">
@@ -204,18 +199,8 @@
                 <!-- LIVE LOGS CARD -->
                 <div class="card glass-panel" aria-hidden="true">
 
-                    <!-- DAVE LOG BADGE -->
-                    <div class="dave-badge"
-                        style="display:inline-flex; align-items:center; gap:0.4rem;
-                            background:rgba(99,102,241,0.15);
-                            padding:0.35rem 0.65rem;
-                            border-radius:8px;
-                            width:fit-content;
-                            font-size:0.78rem;
-                            margin-bottom:0.75rem;">
-                        <img src="icons/dave.svg" style="width:14px;" alt="">
-                        Live Logs
-                    </div>
+                    <!-- LIVE LOGS HEADER -->
+                    <h3 class="card-subtitle">Live Logs</h3>
 
                     <!-- LOG AREA -->
                     <div id="sessionLog"
@@ -230,14 +215,15 @@
                 </div>
 
             </div>
+            <div class="section-divider"></div>
 
             <!-- METRICS GRID -->
             <div class="grid-3 animate-enter delay-2">
 
                 <!-- Peaks & Dips -->
                 <div class="card glass-panel" role="region" aria-labelledby="peaksDipsLabel" aria-label="">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <h2 id="peaksDipsLabel" class="card-title" style="margin:0;">Peaks & Dips</h2>
+                    <div class="card-header">
+                        <h2 class="card-title">Peaks & Dips</h2>
                         <img src="icons/mountain.svg" style="width: 20px;" data-color-icon="peaksDips" alt="">
                     </div>
                     <div class="score-display" style="margin-bottom: 1rem;">
@@ -247,12 +233,7 @@
                     <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">Smoothness of bass
                         and lower
                         mids.</p>
-                    <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
-                        <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">Report</span>
-                    </div>
-                    <span id="peaksDipsDave" class="dave-quote"
-                        style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
+                    <span id="peaksDipsDave" class="dave-quote">--</span>
                     <!-- Hidden spans for JS compatibility -->
                     <span id="peaksDipsStatus" class="hidden"></span>
                     <span id="peaksDipsStatusText" class="hidden"></span>
@@ -265,8 +246,8 @@
                      role="region" 
                      aria-labelledby="reflectionsLabel" 
                      aria-label="">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <h2 id="reflectionsLabel" class="card-title" style="margin:0;">Reflections</h2>
+                    <div class="card-header">
+                        <h2 class="card-title">Reflections</h2>
                         <img src="icons/square-caret-left.svg" style="width: 20px;" data-color-icon="reflections"
                             alt="">
                     </div>
@@ -277,12 +258,7 @@
                     <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">Early wall/floor
                         bounce
                         coloring sound.</p>
-                    <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
-                        <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">Report</span>
-                    </div>
-                    <span id="reflectionsDave" class="dave-quote"
-                        style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
+                    <span id="reflectionsDave" class="dave-quote">--</span>
                     <span id="reflectionsStatus" class="hidden"></span>
                     <span id="reflectionsStatusText" class="hidden"></span>
                     <span id="reflectionsRaw" class="hidden"></span>
@@ -293,8 +269,8 @@
                      role="region"
                      aria-labelledby="bandwidthLabel"
                      aria-label="">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <h2 id="bandwidthLabel" class="card-title" style="margin:0;">Bandwidth</h2>
+                    <div class="card-header">
+                        <h2 class="card-title">Bandwidth</h2>
                         <img src="icons/signal.svg" style="width: 20px;" data-color-icon="bandwidth" alt="">
                     </div>
                     <div class="score-display" style="margin-bottom: 1rem;">
@@ -304,12 +280,7 @@
                     <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">How wide your
                         system plays
                         (Bass to Air).</p>
-                    <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
-                        <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">Report</span>
-                    </div>
-                    <span id="bandwidthDave" class="dave-quote"
-                        style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
+                    <span id="bandwidthDave" class="dave-quote">--</span>
                     <span id="bandwidthStatus" class="hidden"></span>
                     <span id="bandwidthStatusText" class="hidden"></span>
                     <span id="bandwidthRaw" class="hidden"></span>
@@ -321,8 +292,8 @@
                      role="region"
                      aria-labelledby="balanceLabel"
                      aria-label="">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <h2 id="balanceLabel" class="card-title" style="margin:0;">Balance</h2>
+                    <div class="card-header">
+                        <h2 class="card-title">Balance</h2>
                         <img src="icons/balance-scale.svg" style="width: 20px;" data-color-icon="balance" alt="">
                     </div>
                     <div class="score-display" style="margin-bottom: 1rem;">
@@ -331,12 +302,7 @@
                     </div>
                     <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">Tonal tilt (Warm vs
                         Bright).</p>
-                    <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
-                        <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">Report</span>
-                    </div>
-                    <span id="balanceDave" class="dave-quote"
-                        style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
+                    <span id="balanceDave" class="dave-quote">--</span>
                     <span id="balanceStatus" class="hidden"></span>
                     <span id="balanceStatusText" class="hidden"></span>
                     <span id="balanceRaw" class="hidden"></span>
@@ -347,8 +313,8 @@
                      role="region"
                      aria-labelledby="smoothnessLabel"
                      aria-label="">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <h2 id="smoothnessLabel" class="card-title" style="margin:0;">Smoothness</h2>
+                    <div class="card-header">
+                        <h2 class="card-title">Smoothness</h2>
                         <img src="icons/wave-square.svg" style="width: 20px;" data-color-icon="smoothness" alt="">
                     </div>
                     <div class="score-display" style="margin-bottom: 1rem;">
@@ -358,12 +324,7 @@
                     <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">Fine-grain
                         consistency across
                         spectrum.</p>
-                    <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
-                        <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">Report</span>
-                    </div>
-                    <span id="smoothnessDave" class="dave-quote"
-                        style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
+                    <span id="smoothnessDave" class="dave-quote">--</span>
                     <span id="smoothnessStatus" class="hidden"></span>
                     <span id="smoothnessStatusText" class="hidden"></span>
                     <span id="smoothnessRaw" class="hidden"></span>
@@ -374,10 +335,8 @@
                     role="region"
                     aria-labelledby="clarityLabel"
                     aria-label="">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                        <h2 id="clarityLabel" class="card-title" style="margin:0;">
-                            Clarity
-                        </h2>
+                    <div class="card-header">
+                        <h2 class="card-title" style="margin:0;">Clarity</h2>
                         <img src="icons/clock.svg" style="width: 20px;"
                             data-color-icon="clarity" alt="">
                     </div>
@@ -392,15 +351,7 @@
                     <p style="font-size: 0.9rem; color: var(--c-text-muted); margin-bottom: 1.5rem;">
                         How clearly the direct sound reaches you before reflections interfere.
                     </p>
-
-                    <div class="dave-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
-                        <img src="icons/dave.svg" style="width: 16px;" alt="">
-                        <span style="font-size: 0.75rem;">Report</span>
-                    </div>
-
-                    <span id="clarityDave" class="dave-quote"
-                        style="display: block; margin-top: 0; font-size: 0.85rem;">--</span>
-
+                    <span id="clarityDave" class="dave-quote">--</span>
                     <!-- Hidden spans for JS compatibility -->
                     <span id="clarityStatus" class="hidden"></span>
                     <span id="clarityStatusText" class="hidden"></span>
@@ -410,91 +361,75 @@
 
             </div>
 
+            <div class="section-divider"></div>
+
             <!-- NERDS CORNER -->
-            <div class="card glass-panel animate-enter delay-3" 
-                role="region" 
-                aria-labelledby="nerdsCornerLabel" 
-                aria-label="">
-                
+            <div class="card glass-panel animate-enter delay-3"
+                role="region"
+                aria-labelledby="nerdsCornerLabel">
+
                 <!-- HEADER -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px;">
-                            <img src="icons/dave.svg" style="width: 24px;" alt="">
-                        </div>
-                        <div>
-                            <h2 id="nerdsCornerLabel" style="margin: 0; font-size: 1.25rem; font-weight: 700;">Nerds Corner</h2>
-                            <p style="margin: 0; color: var(--c-text-muted); font-size: 0.9rem;">Deep dive analysis and raw curves.</p>
-                        </div>
+                <h2 id="nerdsCornerLabel" class="card-title">
+                    Nerds Corner
+                </h2>
+
+                <p class="card-description">
+                    Deep dive analysis and raw curves.
+                </p>
+
+                <!-- SWEEP NAV (DO NOT MOVE / DO NOT RENAME) -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+
+                    <div id="sweepNav" class="header-actions" style="opacity:0.9;">
+                        <button class="btn btn-utility session-btn session-active" data-sweep="0">Latest</button>
+                        <button class="btn btn-utility session-btn" data-sweep="1">Previous</button>
+                        <button class="btn btn-utility session-btn" data-sweep="2">Earlier</button>
+                        <button class="btn btn-utility session-btn" data-sweep="3">Oldest</button>
                     </div>
+
+                    <div class="band-levels">
+                        <div class="band-pill"><span>Bass</span><span id="bandBass">— dB</span></div>
+                        <div class="band-pill"><span>Mid</span><span id="bandMid">— dB</span></div>
+                        <div class="band-pill"><span>Treble</span><span id="bandTreble">— dB</span></div>
+                        <div class="band-pill"><span>Air</span><span id="bandAir">— dB</span></div>
+                    </div>
+
                 </div>
 
                 <!-- CHART -->
                 <div class="chart-container">
-                    <div id="frequencyChart" 
-                        class="chart-responsive" 
-                        style="width: 100%; height: 400px;" 
+                    <div id="frequencyChart"
+                        class="chart-responsive"
+                        style="width: 100%; height: 320px;"
                         role="img"
                         aria-live="polite"
-                        aria-label=""
-                        aria-describedby="frequencyChartDescription"></div>
+                        aria-describedby="frequencyChartDescription">
+                    </div>
 
-                    <p id="frequencyChartDescription" class="hidden" aria-hidden="true"></p>
+                    <p id="frequencyChartDescription"
+                    class="hidden"
+                    aria-hidden="true"></p>
                 </div>
-
-                <!-- SWEEP NAV -->
-                <h3 class="card-title" style="display:flex; align-items:center; gap:0.5rem; margin-top:2rem;">
-                    <img src="icons/dave.svg" style="width:18px; opacity:0.9;">
-                    Sweeps
-                </h3>
-
-                <div id="sweepNav" style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
-                    <button class="session-btn session-active" data-sweep="0">Latest</button>
-                    <button class="session-btn" data-sweep="1">Previous</button>
-                    <button class="session-btn" data-sweep="2">Earlier</button>
-                    <button class="session-btn" data-sweep="3">Oldest</button>
-                </div>
-
 
                 <!-- SWEEP HISTORY -->
                 <section class="sweep-history-wrapper">
 
                     <!-- SECTION HEADER -->
-                    <h2 style="margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;">
-                        <img src="icons/dave.svg" style="width:22px; opacity:0.9;">
+                    <h2 class="card-title" style="margin-bottom:0.75rem;">
                         Sweep History
                     </h2>
 
-                    <p style="opacity:0.7; margin-top:-0.5rem; margin-bottom:1.25rem;">
+                    <p class="card-description">
                         Compare your last four sweeps at a glance
                     </p>
 
-                    <!-- AI SWEEP COMPARISON (FULL WIDTH, ABOVE GRID) -->
-                    <div id="aiSweepCompareCard" class="ai-compare-card" hidden>
-
-                        <div class="ai-compare-header">
-                            <img src="icons/dave.svg" style="width:20px; opacity:0.9;">
-                            <h3>Sweep-to-sweep comparison</h3>
-                        </div>
-
-                        <p class="ai-compare-text" id="aiSweepCompareText">
-                            <!-- AI comparison text injected here -->
-                        </p>
-
-                        <div class="ai-compare-meta" id="aiSweepCompareMeta">
-                            <!-- e.g. Sweep24 → Sweep23 · Same room, same system -->
-                        </div>
-
-                    </div>
-
-
                     <!-- SWEEP GRID -->
-                    <div id="sweepHistoryGrid" class="grid-4-mobile grid-2 tablet-grid-4">
+                    <div id="sweepHistoryGrid">
 
                         <!-- SWEEP 1 -->
                         <div class="sweep-card sweep-item" data-index="0">
-                            <h3 class="sweep-title">Latest</h3>
-                            <div class="sweep-time" style="opacity:0.6;font-size:0.75rem;">—</div>
+                            <h3 class="sweep-title"><span class="sweep-tag">Latest</span></h3>
+                            <div class="sweep-time">—</div>
                             <div class="sweep-score">--</div>
 
                             <div class="sweep-metrics">
@@ -504,6 +439,12 @@
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
                                 <div><span>Clarity</span><span class="m-clarity">--</span></div>
+                            </div>
+
+
+                            <!-- AI COMPARISON -->
+                            <div class="sweep-ai-summary hidden">
+                                <p class="ai-text" data-ai-compare></p>
                             </div>
 
                             <div class="sweep-footer">
@@ -516,8 +457,8 @@
 
                         <!-- SWEEP 2 -->
                         <div class="sweep-card sweep-item" data-index="1">
-                            <h3 class="sweep-title">Previous</h3>
-                            <div class="sweep-time" style="opacity:0.6;font-size:0.75rem;">—</div>
+                            <h3 class="sweep-title"><span class="sweep-tag">Previous</span></h3>
+                            <div class="sweep-time">—</div>
                             <div class="sweep-score">--</div>
 
                             <div class="sweep-metrics">
@@ -527,6 +468,12 @@
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
                                 <div><span>Clarity</span><span class="m-clarity">--</span></div>
+                            </div>
+
+                            <!-- AI COMPARISON -->
+                            <div class="sweep-ai-summary hidden">
+                                <span class="ai-label">Compared to previous</span>
+                                <p class="ai-text" data-ai-compare></p>
                             </div>
 
                             <div class="sweep-footer">
@@ -539,8 +486,8 @@
 
                         <!-- SWEEP 3 -->
                         <div class="sweep-card sweep-item" data-index="2">
-                            <h3 class="sweep-title">Earlier</h3>
-                            <div class="sweep-time" style="opacity:0.6;font-size:0.75rem;">—</div>
+                            <h3 class="sweep-title"><span class="sweep-tag">Earlier</span></h3>
+                            <div class="sweep-time">—</div>
                             <div class="sweep-score">--</div>
 
                             <div class="sweep-metrics">
@@ -550,6 +497,12 @@
                                 <div><span>Balance</span><span class="m-balance">--</span></div>
                                 <div><span>Smoothness</span><span class="m-smoothness">--</span></div>
                                 <div><span>Clarity</span><span class="m-clarity">--</span></div>
+                            </div>
+
+                            <!-- AI COMPARISON -->
+                            <div class="sweep-ai-summary hidden">
+                                <span class="ai-label">Compared to previous</span>
+                                <p class="ai-text" data-ai-compare></p>
                             </div>
 
                             <div class="sweep-footer">
@@ -562,8 +515,8 @@
 
                         <!-- SWEEP 4 -->
                         <div class="sweep-card sweep-item" data-index="3">
-                            <h3 class="sweep-title">Oldest</h3>
-                            <div class="sweep-time" style="opacity:0.6;font-size:0.75rem;">—</div>
+                            <h3 class="sweep-title"><span class="sweep-tag">Oldest</span></h3>
+                            <div class="sweep-time">—</div>
                             <div class="sweep-score">--</div>
 
                             <div class="sweep-metrics">
@@ -575,6 +528,12 @@
                                 <div><span>Clarity</span><span class="m-clarity">--</span></div>
                             </div>
 
+                            <!-- AI COMPARISON (will remain hidden – no previous sweep) -->
+                            <div class="sweep-ai-summary hidden">
+                                <span class="ai-label">Compared to previous</span>
+                                <p class="ai-text" data-ai-compare></p>
+                            </div>
+
                             <div class="sweep-footer">
                                 <button class="notes-btn" data-sweep-note>Notes</button>
                                 <div class="note-preview empty" data-note-preview>
@@ -583,8 +542,8 @@
                             </div>
                         </div>
 
-                    </div>
-                </section>
+                     </div>
+                    </section>
 
             </div>
 
@@ -594,6 +553,34 @@
     import { initSpeakers } from './js/speakers.js';
     window.initSpeakers = initSpeakers;
     initSpeakers();
+    </script>
+
+    <script>
+        function toast(msg, type = 'info') {
+            const box = document.createElement('div');
+            box.style.cssText = `
+                position:fixed;
+                top:1rem;
+                right:1rem;
+                padding:0.75rem 1rem;
+                border-radius:8px;
+                color:white;
+                font-size:0.9rem;
+                z-index:9999;
+                transition:opacity 0.3s;
+                background:${type === 'error'
+                    ? '#ef4444'
+                    : type === 'success'
+                        ? '#10b981'
+                        : '#3b82f6'};
+            `;
+            box.textContent = msg;
+            document.body.appendChild(box);
+
+            setTimeout(() => { box.style.opacity = '0'; }, 6000);
+            setTimeout(() => { box.remove(); }, 8300);
+
+        }
     </script>
 
     <script>
@@ -736,7 +723,7 @@
     </script>
 
 <!-- NOTES MODAL (GLOBAL POPUP) -->
-<div id="notesModal" class="notes-modal hidden" aria-hidden="true">
+<div id="notesModal" class="notes-modal" aria-hidden="true">
     <div class="notes-modal-backdrop"></div>
 
     <div class="notes-modal-content">
@@ -758,11 +745,20 @@
 </div>
 
 <script>
+
 // ========================
 // NOTES MODAL LOGIC
 // ========================
 
 let currentSweepIndex = null;
+
+// FORCE modal closed on page load
+document.addEventListener("DOMContentLoaded", () => {
+    const modal = document.getElementById("notesModal");
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+});
+
 
 // OPEN modal
 function openNotesModal(index) {
@@ -771,7 +767,6 @@ function openNotesModal(index) {
     const modal = document.getElementById("notesModal");
     const textarea = document.getElementById("notesTextarea");
 
-    // Load previous notes
     textarea.value = localStorage.getItem(`sweepNote_${index}`) || "";
 
     modal.classList.remove("hidden");
@@ -785,19 +780,17 @@ function closeNotesModal() {
     modal.setAttribute("aria-hidden", "true");
 }
 
-// OPEN BUTTONS (Notes buttons on each sweep card)
+// OPEN BUTTONS
 document.querySelectorAll("[data-sweep-note]").forEach((btn, i) => {
     btn.addEventListener("click", () => openNotesModal(i));
 });
 
-// SAVE button
+// SAVE
 document.getElementById("saveNotesBtn").addEventListener("click", () => {
     const textarea = document.getElementById("notesTextarea");
 
-    // Save to localStorage
     localStorage.setItem(`sweepNote_${currentSweepIndex}`, textarea.value);
 
-    // Update preview text in the card
     const preview = document.querySelector(
         `.sweep-card[data-index="${currentSweepIndex}"] [data-note-preview]`
     );
@@ -806,11 +799,11 @@ document.getElementById("saveNotesBtn").addEventListener("click", () => {
     closeNotesModal();
 });
 
-// CLOSE button (the X)
+// CLOSE (X)
 document.querySelector(".notes-modal-close")
     .addEventListener("click", closeNotesModal);
 
-// Backdrop click closes the modal
+// BACKDROP
 document.querySelector(".notes-modal-backdrop")
     .addEventListener("click", closeNotesModal);
 </script>

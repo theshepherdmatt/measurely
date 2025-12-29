@@ -38,6 +38,12 @@
             </nav>
         </aside>
 
+        <div id="sidebar-toggle"
+            aria-label="Toggle sidebar"
+            title="Toggle sidebar">
+        ‹
+        </div>
+
           <!-- MAIN CONTENT -->
           <main id="main-content" class="main-content">
 
@@ -62,285 +68,233 @@
 
           </header>
 
-            <!-- ===================================================== -->
-            <!-- CARD 2 — SYSTEM & SPEAKERS -->
-            <!-- ===================================================== -->
-            <section class="card glass-panel animate-enter delay-2 speaker-profile-card">
+        <!-- ===================================================== -->
+        <!-- CARD — SYSTEM & SPEAKERS -->
+        <!-- ===================================================== -->
+        <section class="card glass-panel animate-enter delay-2 speaker-profile-card">
 
-                <!-- Header -->
-                <div class="card-header">
-                    <div class="card-step step-orange">1</div>
-                    <h2>System & Speakers</h2>
+            <h2 class="card-title">System & Speakers</h2>
+
+            <p class="card-description">
+                Tell Measurely what you’re listening with. Approximate details are fine.
+            </p>
+
+            <div class="speaker-controls">
+
+                <!-- Speaker model -->
+                <div class="ctrl-block">
+                    <label for="speakerSel">Speaker model</label>
+                    <select id="speakerSel"></select>
                 </div>
 
-                <p class="card-intro">
-                    This helps Measurely understand the context your speakers are working in.
-                    You don’t need to be exact — practical descriptions are perfect.
-                </p>
+                <!-- Speaker design -->
+                <div class="ctrl-block">
+                    <label for="speaker-type">Speaker design</label>
+                    <select id="speaker-type">
+                        <option value="sealed">Sealed / infinite baffle</option>
+                        <option value="port_front">Ported (front)</option>
+                        <option value="port_rear">Ported (rear)</option>
+                        <option value="dipole">Dipole / open baffle</option>
+                    </select>
+                </div>
 
-                <div class="speaker-controls">
+                <!-- Subwoofer -->
+                <div class="ctrl-block">
+                    <label for="subwoofer-present">Subwoofer</label>
+                    <select id="subwoofer-present">
+                        <option value="unknown">Not sure / prefer not to say</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                    </select>
+                </div>
 
-                    <!-- Speaker model -->
+                <!-- System notes -->
+                <div class="ctrl-block ctrl-block-full">
+                    <label for="system-notes">System notes (optional)</label>
+
+                    <textarea
+                        id="system-notes"
+                        placeholder="Amp, sources, streamer, DAC, turntable — anything you’d like to note."
+                    ></textarea>
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ===================================================== -->
+        <!-- CARD — ROOM MEASUREMENTS -->
+        <!-- ===================================================== -->
+        <section class="card glass-panel animate-enter delay-1 room-layout-section">
+
+            <h2 class="card-title">Room Measurements</h2>
+
+            <p class="card-description">
+                Approximate dimensions and placement help Measurely understand your room.
+                You can adjust these later.
+            </p>
+
+            <div class="room-layout-grid-new">
+
+                <div class="controls-grid">
+
+                    <!-- Room size -->
                     <div class="ctrl-block">
-                        <label for="speakerSel">Speaker model</label>
-                        <select id="speakerSel"></select>
-
-                        <p class="form-hint">
-                            Used to understand your speaker’s natural behaviour and limits.
-                        </p>
+                        <label for="room-width-num">Room width (wall to wall)</label>
+                        <input type="number" id="room-width-num" min="2" max="10" step="0.05">
                     </div>
 
-                    <!-- Speaker design -->
                     <div class="ctrl-block">
-                        <label for="speaker-type">Speaker design</label>
-                        <select id="speaker-type">
-                            <option value="sealed">Sealed / Infinite baffle</option>
-                            <option value="port_front">Ported (front)</option>
-                            <option value="port_rear">Ported (rear)</option>
-                            <option value="dipole">Dipole / open baffle</option>
-                        </select>
-
-                        <p class="form-hint">
-                            Helps interpret how your speakers interact with the room.
-                        </p>
+                        <label for="room-length-num">Room length (front to back)</label>
+                        <input type="number" id="room-length-num" min="2" max="10" step="0.05">
                     </div>
 
-                    <!-- Subwoofer -->
                     <div class="ctrl-block">
-                        <label for="subwoofer-present">Subwoofer in use</label>
-                        <select id="subwoofer-present">
-                            <option value="unknown">Not sure / prefer not to say</option>
-                            <option value="no">No subwoofer</option>
-                            <option value="yes">Yes, I use a subwoofer</option>
-                        </select>
-
-                        <p class="form-hint">
-                            This doesn’t affect scoring — it only shapes suggestions.
-                        </p>
+                        <label for="room-height-num">Ceiling height</label>
+                        <input type="number" id="room-height-num" min="2" max="3.5" step="0.01">
                     </div>
 
-                    <!-- System description -->
-                    <div class="ctrl-block ctrl-block-full">
-                        <label for="system-notes">
-                            System description <span class="label-muted">(optional)</span>
+                    <!-- Speaker placement -->
+                    <div class="ctrl-block">
+                        <label for="speaker-distance-num">Speaker distance from front wall</label>
+                        <input type="number" id="speaker-distance-num" min="0" max="3" step="0.05">
+                    </div>
+
+                    <div class="ctrl-block">
+                        <label for="speaker-width-num">Speaker spacing (left to right)</label>
+                        <input type="number" id="speaker-width-num" min="0.5" max="4" step="0.05">
+                    </div>
+
+                    <div class="ctrl-block">
+                        <label for="listening-distance-num">Listening distance (speaker to seat)</label>
+                        <input type="number" id="listening-distance-num" min="0.5" max="5" step="0.05">
+                    </div>
+
+                    <!-- Toe-in -->
+                    <div class="ctrl-block">
+                        <label for="toe-angle">Toe-in angle (degrees)</label>
+                        <input type="number" id="toe-angle" step="0.1">
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ===================================================== -->
+        <!-- CARD — MATERIALS & FURNISHINGS -->
+        <!-- ===================================================== -->
+        <section class="card glass-panel animate-enter delay-3">
+
+            <h2 class="card-title">Materials & Furnishings</h2>
+
+            <p class="card-description">
+                A quick sense of how absorbent or reflective the room is overall.
+            </p>
+
+            <div class="materials-stack">
+
+                <!-- Floor -->
+                <div class="ctrl-block">
+                    <label for="floor-material">Floor surface</label>
+                    <select id="floor-material">
+                        <option value="hard">Hardwood / tile / laminate</option>
+                        <option value="carpet">Wall-to-wall carpet</option>
+                    </select>
+                </div>
+
+                <!-- Room liveliness -->
+                <div class="ctrl-block">
+                    <label for="room-echo">Room feel</label>
+                    <select id="room-echo">
+                        <option value="10">Very damped</option>
+                        <option value="25">Slightly damped</option>
+                        <option value="50" selected>Balanced</option>
+                        <option value="75">Live</option>
+                        <option value="90">Very live</option>
+                    </select>
+                </div>
+
+                <!-- Contents -->
+                <div class="ctrl-block">
+                    <label>Room contents</label>
+
+                    <div class="grid-2 room-contents">
+                        <label class="checkbox-group">
+                            <input type="checkbox" id="opt-area-rug">
+                            <span>Area rug</span>
                         </label>
 
-                        <textarea
-                            id="system-notes"
-                            placeholder="Amp, sources, streamer, DAC, turntable — anything you’d like to note about your system."
-                        ></textarea>
+                        <label class="checkbox-group">
+                            <input type="checkbox" id="opt-curtains">
+                            <span>Curtains or blinds</span>
+                        </label>
 
-                        <p class="form-hint">
-                            This won’t change the measurements.
-                            It helps Measurely phrase insights in a way that fits your setup —
-                            and gives you a useful record over time.
-                        </p>
+                        <label class="checkbox-group">
+                            <input type="checkbox" id="opt-sofa">
+                            <span>Large sofa</span>
+                        </label>
+
+                        <label class="checkbox-group">
+                            <input type="checkbox" id="opt-wallart">
+                            <span>Wall art or shelving</span>
+                        </label>
+
+                        <label class="checkbox-group">
+                            <input type="checkbox" id="opt-barewalls">
+                            <span>Mostly bare walls</span>
+                        </label>
                     </div>
-
                 </div>
 
-            </section>
+            </div>
 
+        </section>
 
-            <section class="card glass-panel animate-enter delay-1 room-layout-section">
+        <!-- ===================================================== -->
+        <!-- CARD — ROOM SUMMARY -->
+        <!-- ===================================================== -->
+        <section id="room-summary-card" class="card glass-panel animate-enter delay-3">
 
+            <h2 class="card-title">Room Summary</h2>
 
-                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
-                    border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
-                    <div style="width:32px; height:32px; background:rgba(59,130,246,0.2); color:#93c5fd;
-                        border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-                        2
-                    </div>
-                    <h2 style="margin:0; font-size:1.25rem;">Measure Your Listening Room</h2>
+            <p class="card-description">
+                A quick snapshot of how Measurely currently understands your room and setup.
+            </p>
+
+            <div id="room-summary-content" style="display:grid; gap:0.75rem;">
+
+                <!-- Room -->
+                <div>
+                    <strong>Room</strong><br>
+                    <span id="sum-room-size">—</span>
+                    (approx <span id="sum-room-volume">—</span> m³)<br>
+                    <span id="sum-room-shape" class="text-muted">—</span>
                 </div>
 
-                <!-- ===================================================== -->
-                <!-- CARD 2 — Measurements -->
-                <!-- ===================================================== -->
-
-                <div class="room-layout-grid-new">
-
-                    <div class="controls-grid">
-
-                        <!-- Inline intro (not a card) -->
-                        <div class="room-setup-intro"
-                            style="grid-column: 1 / -1; margin-bottom: 0.75rem;">
-
-                            <p style="margin:0 0 0.25rem 0; font-size:1rem;">
-                                This step helps Measurely understand the <strong>physical space</strong> your system is in.
-                            </p>
-
-                            <p style="margin:0; color:var(--c-text-muted); font-size:0.9rem;">
-                                Approximate measurements are absolutely fine — you can tweak these later.
-                            </p>
-
-                        </div>
-
-                        <!-- Row 1 -->
-                        <div class="ctrl-block">
-                            <label>Room width (wall to wall): <span id="room-width-val">—</span></label>
-                            <input type="range" id="room-width" min="2" max="10" step="0.05">
-                            <input type="number" id="room-width-num" min="2" max="10" step="0.05">
-                        </div>
-
-                        <div class="ctrl-block">
-                            <label>Room length (front to back): <span id="room-length-val">—</span></label>
-                            <input type="range" id="room-length" min="2" max="10" step="0.05">
-                            <input type="number" id="room-length-num" min="2" max="10" step="0.05">
-                        </div>
-
-                        <div class="ctrl-block">
-                            <label>Ceiling height (floor to ceiling): <span id="room-height-val">—</span></label>
-                            <input type="range" id="room-height" min="2" max="3.5" step="0.01">
-                            <input type="number" id="room-height-num" min="2" max="3.5" step="0.01">
-                        </div>
-
-                        <!-- Row 2 -->
-                        <div class="ctrl-block">
-                            <label>Speaker distance from front wall: <span id="speaker-distance-val">—</span></label>
-                            <input type="range" id="speaker-distance" min="0" max="3" step="0.05">
-                            <input type="number" id="speaker-distance-num" min="0" max="3" step="0.05">
-                        </div>
-
-                        <div class="ctrl-block">
-                            <label>Speaker spacing (left to right): <span id="speaker-width-val">—</span></label>
-                            <input type="range" id="speaker-width" min="0.5" max="4" step="0.05">
-                            <input type="number" id="speaker-width-num" min="0.5" max="4" step="0.05">
-                        </div>
-
-                        <div class="ctrl-block">
-                            <label>Listening distance (speaker to seat): <span id="listening-distance-val">—</span></label>
-                            <input type="range" id="listening-distance" min="0.5" max="5" step="0.05">
-                            <input type="number" id="listening-distance-num" min="0.5" max="5" step="0.05">
-                        </div>
-
-                        <!-- Row 3 -->
-                        <div class="ctrl-block">
-                            <label>Toe-In Angle (°): <span id="toe-angle-val">—</span></label>
-                            <input type="number" id="toe-angle" step="0.1">
-                        </div>
-
-                        <div class="ctrl-block"></div>
-
-                    </div>
-
-
-            </section>
-
-
-            <!-- ===================================================== -->
-            <!-- CARD 4 — MATERIALS & FURNISHINGS -->
-            <!-- ===================================================== -->
-            <section class="card glass-panel animate-enter delay-3" style="margin-bottom:2rem;">
-
-                <div class="card-title" style="display:flex; align-items:center; gap:1rem;">
-                    <div style="width:32px; height:32px; background:rgba(168,85,247,0.2); color:#c084fc;
-                    border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-                        3
-                    </div>
-                    <h2 style="margin:0;">Materials & Furnishings</h2>
+                <!-- Speakers -->
+                <div>
+                    <strong>Speakers</strong><br>
+                    <span id="sum-speaker-model">—</span><br>
+                    <span id="sum-speaker-spacing">—</span> apart,
+                    <span id="sum-speaker-distance">—</span> from wall<br>
+                    <span id="sum-triangle" class="text-muted">—</span>
                 </div>
 
-                <div class="materials-stack" style="display:flex; flex-direction:column; gap:1.5rem;">
-
-                    <!-- Floor -->
-                    <div>
-                        <label for="floor-material">Base Floor Surface</label>
-                        <select id="floor-material">
-                            <option value="hard">Hardwood / Tile / Laminate</option>
-                            <option value="carpet">Wall-to-Wall Carpet</option>
-                        </select>
-                    </div>
-
-                    <!-- Room Liveliness -->
-                    <div>
-                        <label for="room-echo">Room Liveliness</label>
-                        <select id="room-echo">
-                            <option value="10">Dry / Dead</option>
-                            <option value="25">Slightly Live</option>
-                            <option value="50" selected>Normal</option>
-                            <option value="75">Live</option>
-                            <option value="90">Very Echoey</option>
-                        </select>
-                    </div>
-
-                    <!-- Contents -->
-                    <div>
-                        <label>Room Contents</label>
-                        <div class="grid-2 room-contents" style="gap:1rem;">
-                            <label class="checkbox-group">
-                                <input type="checkbox" id="opt-area-rug">
-                                <span>Area Rug</span>
-                            </label>
-                            <label class="checkbox-group">
-                                <input type="checkbox" id="opt-curtains">
-                                <span>Curtains / Blinds</span>
-                            </label>
-                            <label class="checkbox-group">
-                                <input type="checkbox" id="opt-sofa">
-                                <span>Large Sofa</span>
-                            </label>
-                            <label class="checkbox-group">
-                                <input type="checkbox" id="opt-wallart">
-                                <span>Wall Art / Shelves</span>
-                            </label>
-                            <label class="checkbox-group">
-                                <input type="checkbox" id="opt-barewalls">
-                                <span>Mostly Bare Walls</span>
-                            </label>
-
-                        </div>
-                    </div>
-
-                </div>
-            </section>
-
-
-            <!-- ===================================================== -->
-            <!-- CARD 3 — ROOM SUMMARY -->
-            <!-- ===================================================== -->
-            <section id="room-summary-card" class="card glass-panel animate-enter delay-3" style="margin-bottom:2rem;">
-
-                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;
-                    border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
-                    <div style="width:32px; height:32px; background:rgba(52,211,153,0.25); color:#6ee7b7;
-                        border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700;">
-                        4
-                    </div>
-                    <h2 style="margin:0; font-size:1.25rem;">Room Summary</h2>
+                <!-- Toe-in -->
+                <div>
+                    <strong>Toe-in</strong><br>
+                    <span id="sum-toe-angle">—</span><br>
+                    <span id="sum-toe-comment" class="text-muted">—</span>
                 </div>
 
-                <div id="room-summary-content" style="display:grid; gap:0.75rem;">
+            </div>
 
-                    <!-- 🏠 ROOM -->
-                    <div>
-                        <strong>Room:</strong>
-                        <span id="sum-room-size">—</span> (approx <span id="sum-room-volume">—</span> m³)
-                        <br>
-                        <span id="sum-room-shape" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
-                    </div>
-
-                    <!-- 🔊 SPEAKERS -->
-                    <div>
-                        <strong>Speakers:</strong>
-                        <span id="sum-speaker-model">—</span>
-                        <br>
-                        <span id="sum-speaker-spacing">—</span> apart, <span id="sum-speaker-distance">—</span> from wall
-                        <br>
-                        <span id="sum-triangle" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
-                    </div>
-
-                    <!-- 🎯 TOE-IN -->
-                    <div>
-                        <strong>Toe-in:</strong>
-                        <span id="sum-toe-angle">—</span>
-                        <br>
-                        <span id="sum-toe-comment" style="color:var(--c-text-muted); font-size:0.85rem;">—</span>
-                    </div>
-
-                </div>
-
-            </section>
+        </section>
 
             <!-- ===================================================== -->
             <!-- SAVE BUTTON -->
@@ -450,6 +404,7 @@
         ============================================================ */
         const btn = document.getElementById('mobile-menu-btn');
         const side = document.getElementById('sidebar');
+        const toggle = document.getElementById('sidebar-toggle');
         const over = document.getElementById('sidebar-overlay');
 
         function toggleMenu() {
