@@ -341,20 +341,22 @@ chmod -R u+rwX "$REPO_DIR"
 msg "✔ Permissions applied."
 
 # ------------------------------------------------------------
-# Defer Access Point installation until next boot
+# Optional legacy AP setup (deprecated)
 # ------------------------------------------------------------
 AP_SCRIPT="$REPO_DIR/measurely-ap.sh"
 
-msg "Preparing Measurely AP setup for first boot…"
+msg "Checking for legacy AP setup…"
 
 if [[ -f "$AP_SCRIPT" ]]; then
+    warn "Legacy AP script detected — this path is deprecated."
+    warn "Flask-based onboarding is preferred."
+
     chmod +x "$AP_SCRIPT"
     install -m 755 "$AP_SCRIPT" /usr/local/sbin/measurely-ap.sh
 
-    # Create a one-shot service that runs ONCE after reboot
     cat >/etc/systemd/system/measurely-ap.service <<EOF
 [Unit]
-Description=Run Measurely AP setup on first boot
+Description=Legacy Measurely AP setup (deprecated)
 After=multi-user.target
 
 [Service]
@@ -367,12 +369,10 @@ WantedBy=multi-user.target
 EOF
 
     systemctl enable measurely-ap.service
-
-    msg "✔ AP setup scheduled. It will run automatically on next boot."
-
 else
-    die "measurely-ap.sh NOT FOUND — cannot schedule AP setup."
+    msg "No legacy AP script present — using web-based onboarding."
 fi
+
 
 # ------------------------------------------------------------
 # 8. Start service
