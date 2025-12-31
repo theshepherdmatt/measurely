@@ -14,15 +14,28 @@ __pycache__/
 .vscode/
 .idea/
 
-# Ignore all measurements by default
-measurements/
+# -------------------------------
+# Measurely measurements handling
+# -------------------------------
 
-# --- Allow Measurely seed measurement ---
+# Ignore all measurements by default
+measurements/**
+
+# Allow seed measurement only
 !measurements/
 !measurements/Sweep0/
 !measurements/Sweep0/**
 !measurements/sweephistory.json
 !measurements/debug.txt
+
+# Ignore runtime / local state
+Sweep*/
+measurements/latest
+measurements/measurements
+measurements/next_sweep.txt
+
+
+
 
 *.wav
 *.png
@@ -36,42 +49,4 @@ debug.txt
 debug_stats.json
 meta.json
 install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-#docs/
-# Allow PNGs inside docs folder
 !docs/*.png
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
-install.log
