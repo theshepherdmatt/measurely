@@ -1,0 +1,90 @@
+{
+  "generated_at": "2025-12-28T14:25:52.076117Z",
+  "sweep_count": 4,
+  "sweeps": [
+    {
+      "id": "Sweep24",
+      "timestamp": "2025-12-27T12:54:54.477448",
+      "overall_score": 4.6,
+      "metrics": {
+        "bandwidth": 7.3,
+        "balance": 4.0,
+        "smoothness": 5.2,
+        "peaks_dips": 5.0,
+        "reflections": 4.0,
+        "clarity": 2.0,
+        "signal_integrity": 10.0
+      },
+      "bands_db": {
+        "bass_20_200": 32.11409066767591,
+        "mid_200_2k": 36.28027121806339,
+        "treble_2k_10k": 38.5302491503704,
+        "air_10k_20k": 25.02062684979509
+      },
+      "note": ""
+    },
+    {
+      "id": "Sweep23",
+      "timestamp": "2025-12-27T12:54:04.773126",
+      "overall_score": 4.6,
+      "metrics": {
+        "bandwidth": 7.3,
+        "balance": 4.0,
+        "smoothness": 5.2,
+        "peaks_dips": 5.0,
+        "reflections": 4.0,
+        "clarity": 2.0,
+        "signal_integrity": 10.0
+      },
+      "bands_db": {
+        "bass_20_200": 32.25088586044252,
+        "mid_200_2k": 36.246504760380695,
+        "treble_2k_10k": 38.52161983645733,
+        "air_10k_20k": 24.994278787126774
+      },
+      "note": ""
+    },
+    {
+      "id": "Sweep22",
+      "timestamp": "2025-12-27T12:52:31.790329",
+      "overall_score": 5.1,
+      "metrics": {
+        "bandwidth": 9.4,
+        "balance": 4.0,
+        "smoothness": 5.3,
+        "peaks_dips": 6.0,
+        "reflections": 4.0,
+        "clarity": 2.0,
+        "signal_integrity": 10.0
+      },
+      "bands_db": {
+        "bass_20_200": 31.8239953717858,
+        "mid_200_2k": 36.399191224594105,
+        "treble_2k_10k": 38.319492917154605,
+        "air_10k_20k": 25.39759166043537
+      },
+      "note": ""
+    },
+    {
+      "id": "Sweep21",
+      "timestamp": "2025-12-27T12:51:01.544433",
+      "overall_score": 4.6,
+      "metrics": {
+        "bandwidth": 9.4,
+        "balance": 4.0,
+        "smoothness": 5.2,
+        "peaks_dips": 3.0,
+        "reflections": 4.0,
+        "clarity": 2.0,
+        "signal_integrity": 10.0
+      },
+      "bands_db": {
+        "bass_20_200": 32.33854855736358,
+        "mid_200_2k": 36.34770162836571,
+        "treble_2k_10k": 38.284193647974966,
+        "air_10k_20k": 25.362623164897215
+      },
+      "note": ""
+    }
+  ]
+}

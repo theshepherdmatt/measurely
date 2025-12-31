@@ -14,13 +14,24 @@ __pycache__/
 .vscode/
 .idea/
 
-# Measurely artefacts (never commit runs)
-Measurely/measurements/
-**/measurements/
+# Ignore all measurements by default
+measurements/
+
+# --- Allow Measurely seed measurement ---
+!measurements/
+!measurements/Sweep0/
+!measurements/Sweep0/**
+!measurements/sweephistory.json
+!measurements/debug.txt
+
 *.wav
 *.png
 *.csv
+
+# Ignore generated JSON everywhere EXCEPT measurements seed
 *.json
+!measurements/**/*.json
+
 debug.txt
 debug_stats.json
 meta.json
