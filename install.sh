@@ -153,7 +153,7 @@ systemctl disable --now measurely.service 2>/dev/null || true
 msg "Ensuring 'latest' measurement link exists…"
 
 MEAS_DIR="$REPO_DIR/measurements"
-STARTER="DEMO_DO_NOT_DELETE"
+STARTER="Sweep0"
 
 # Ensure starter folder exists
 if [[ ! -d "$MEAS_DIR/$STARTER" ]]; then
