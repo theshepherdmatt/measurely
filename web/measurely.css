@@ -43,6 +43,18 @@ body {
     overflow-x: hidden;
 }
 
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+
+    margin-left: 280px;
+    padding: 1.75rem 3rem;
+    max-width: 1600px;
+}
+
 /* ------------------------------------------------------------
    LAYOUT (Sidebar, Main Content)
 ------------------------------------------------------------ */
@@ -133,14 +145,6 @@ body {
     filter: brightness(1.5) drop-shadow(0 0 8px rgba(129, 140, 248, 0.6));
 }
 
-/* Main Content */
-.main-content {
-    flex: 1;
-    margin-left: 280px;
-    padding: 2.5rem 3rem;
-    max-width: 1600px;
-}
-
 /* Desktop sidebar collapse (Measurely) */
 @media (min-width: 1025px) {
 
@@ -156,10 +160,31 @@ body {
 
 /* Header */
 
-.header-actions {
+.header > .header-actions {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    margin-right: 3rem;
+}
+
+@media (max-width: 768px) {
+  .header-actions {
+    margin-right: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    position: relative;
+    z-index: 100;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-actions .btn {
+    pointer-events: auto;
+    touch-action: manipulation;
+  }
 }
 
 .header-actions .btn {
@@ -179,7 +204,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    margin-bottom: 3rem;
+    margin-bottom: 1.75rem; /* was 3rem */
 }
 
 .header-title {
@@ -393,7 +418,7 @@ img[src*="dave.svg"] {
     letter-spacing: 0.06em;
     font-weight: 700;
     color: var(--c-text-muted);
-    margin-bottom: 1rem;
+    margin-bottom: 0.35rem;
 
     display: flex;
     align-items: center;
@@ -415,9 +440,126 @@ img[src*="dave.svg"] {
     margin-bottom: 1rem;
 }
 
+.card-description {
+    margin-top: 0;
+    margin-bottom: 1.5rem; /* creates separation from controls */
+}
+
 .card.glass-panel {
   min-height: 260px;
 }
+
+/* Materials & Furnishings */
+
+.materials-card {
+    padding: 2rem;
+}
+
+.materials-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.materials-contents {
+    margin-top: 0.5rem;
+}
+
+.materials-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--c-text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.room-contents {
+    gap: 1rem;
+}
+
+
+/* ===============================
+   ROOM SUMMARY – hierarchy fix
+=============================== */
+
+.room-summary-desc {
+    margin-bottom: 1.25rem; /* pulls subtitle closer to title */
+}
+
+.room-summary-grid {
+    display: grid;
+    gap: 1.25rem; /* tighter than before */
+}
+
+.room-summary-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.room-summary-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    font-weight: 700;
+}
+
+.room-summary-main {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--c-text-main);
+}
+
+.room-summary-main .muted {
+    font-weight: 400;
+    font-size: 0.85rem;
+    color: var(--c-text-muted);
+    margin-left: 0.25rem;
+}
+
+.room-summary-sub {
+    font-size: 0.85rem;
+    color: var(--c-text-muted);
+    line-height: 1.35;
+}
+
+/* =========================================
+   Form actions (Save / Back buttons)
+   ========================================= */
+
+.form-actions {
+    display: flex;
+    justify-content: flex-start;
+    gap: 1rem;
+    margin: 2.5rem 0 3rem;
+}
+
+.form-actions .btn {
+    padding: 0.9rem 1.25rem;
+    font-size: 1rem;
+    min-width: 180px;
+}
+
+/* Mobile: stack buttons */
+@media (max-width: 768px) {
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+
+
+/* Mobile */
+@media (max-width: 768px) {
+    .materials-row {
+        grid-template-columns: 1fr;
+    }
+}
+
 
 .sweep-history-wrapper .card.glass-panel {
   min-height: unset;
@@ -585,19 +727,6 @@ input[type='checkbox'] {
     border: none;
 }
 
-/* Active state */
-.session-btn.session-active {
-    background: rgba(99, 102, 241, 0.15);
-    border-color: rgba(99, 102, 241, 0.4);
-    color: #818cf8;
-}
-
-/* Disabled */
-.session-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
 
 #sessionLog {
     height: 150px;
@@ -738,6 +867,13 @@ input[type='checkbox'] {
     border-color: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
 }
+
+.sweep-nav {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
 
 /* Sweep notes preview box */
 .note-preview {
@@ -1192,6 +1328,7 @@ input[type='checkbox'] {
 }
 
 /* Mobile Devices (Max 768px) */
+
 @media (max-width: 768px) {
     .grid-3 {
         grid-template-columns: 1fr !important;
@@ -1214,12 +1351,6 @@ input[type='checkbox'] {
     .card span {
         word-wrap: break-word;
         overflow-wrap: break-word;
-    }
-
-    .header {
-        flex-wrap: wrap !important;
-        align-items: flex-start !important;
-        gap: 1rem !important;
     }
 
     .header-title {
@@ -1842,6 +1973,19 @@ select:focus,
     margin-bottom: 0.25rem;
 }
 
+/* Speaker System & Speakers — inline first row */
+.speaker-profile-card .speaker-controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+/* Force notes to full width */
+.speaker-profile-card .ctrl-block-full {
+    grid-column: 1 / -1;
+}
+
+
 .ctrl-block-full {
     grid-column: 1 / -1;
 }
@@ -1856,20 +2000,6 @@ select:focus,
 
 .card:has(button):hover {
     transform: none;
-}
-
-/* Standard section divider */
-.section-divider {
-    height: 1px;
-    width: 100%;
-    margin: 2.5rem 0;
-
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255,255,255,0.08),
-        transparent
-    );
 }
 
 .band-levels {
@@ -1948,3 +2078,12 @@ select:focus,
   #sweepNav { margin-top: 0.8rem !important; }
 }
 
+.ctrl-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .header-title { outline: 2px solid red; }
+}

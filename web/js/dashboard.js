@@ -1,56 +1,3 @@
-/* ============================================================
-    GLOBAL TIP MEMORY + UNIQUE PICKING
-    ============================================================ */
-window.usedDaveTips = {
-    peaks_dips: new Set(),
-    reflections: new Set(),
-    bandwidth: new Set(),
-    balance: new Set(),
-    smoothness: new Set(),
-    signal_integrity: new Set(),
-    clarity: new Set(),
-    
-
-    // score buckets
-    excellent: new Set(),
-    good: new Set(),
-    okay: new Set(),
-    needs_work: new Set(),
-
-    // overall buckets
-    overall_excellent: new Set(),
-    overall_good: new Set(),
-    overall_fair: new Set(),
-    overall_poor: new Set()
-};
-
-// Helper function to replace **markdown** with <span class="font-bold">html</span>
-const replaceBold = (text) => text.replace(/\*\*(.*?)\*\*/g, '<span class="font-bold">$1</span>');
-
-
-window.pickUniqueTip = function(bucket, allTips) {
-    if (!allTips || allTips.length === 0) return '';
-
-    const used = window.usedDaveTips[bucket];
-
-    // Reset if we've used all
-    if (used.size >= allTips.length) used.clear();
-
-    let tip = null;
-    for (let i = 0; i < 20; i++) {
-        const c = allTips[Math.floor(Math.random() * allTips.length)];
-        if (!used.has(c)) {
-            tip = c;
-            break;
-        }
-    }
-
-    if (!tip) tip = allTips[0];
-
-    used.add(tip);
-    return tip;
-};
-
 window.addLog = function (msg) {
     const logBox = document.getElementById("sessionLog");
     if (!logBox) return;
@@ -69,75 +16,6 @@ window.addLog = function (msg) {
 };
 
 
-function applyDynamicColor(el, score) {
-    if (!el || score === null || score === undefined) return;
-
-    el.classList.remove(
-        "score-excellent", "score-good", "score-okay", "score-poor"
-    );
-
-    if (score >= 8) el.classList.add("score-excellent");
-    else if (score >= 6) el.classList.add("score-good");
-    else if (score >= 4) el.classList.add("score-okay");
-    else el.classList.add("score-poor");
-}
-
-function applyMainBand(elLevel, elBar, value) {
-    if (!elLevel || !elBar) return;
-
-    // Remove old classes
-    elLevel.classList.remove("mainband-excellent", "mainband-good", "mainband-okay", "mainband-poor");
-    elBar.classList.remove("mainbar-excellent", "mainbar-good", "mainbar-okay", "mainbar-poor");
-
-    // Apply thresholds
-    let c = "";
-    if (value > -0.5)       c = "excellent";
-    else if (value > -3)    c = "good";
-    else if (value > -6)    c = "okay";
-    else                    c = "poor";
-
-    elLevel.classList.add(`mainband-${c}`);
-    elBar.classList.add(`mainbar-${c}`);
-}
-
-function updateMetricAria(labelId, scoreId, statusId, daveId) {
-    const score = document.getElementById(scoreId)?.textContent.trim() || "--";
-    const status = document.getElementById(statusId)?.textContent.trim() || "";
-    const dave = document.getElementById(daveId)?.textContent.trim() || "";
-
-    const card = document.querySelector(`[aria-labelledby="${labelId}"]`);
-    if (card) {
-        card.setAttribute(
-            "aria-label",
-            `${document.getElementById(labelId).textContent}. Score ${score} out of 10. ${status}. Dave says: ${dave}`
-        );
-    }
-}
-
-function updateAllMetricAria() {
-    updateMetricAria("peaksDipsLabel", "peaksDipsScore", "peaksDipsStatusText", "peaksDipsDave");
-    updateMetricAria("reflectionsLabel", "reflectionsScore", "reflectionsStatusText", "reflectionsDave");
-    updateMetricAria("bandwidthLabel", "bandwidthScore", "bandwidthStatusText", "bandwidthDave");
-    updateMetricAria("balanceLabel", "balanceScore", "balanceStatusText", "balanceDave");
-    updateMetricAria("smoothnessLabel", "smoothnessScore", "smoothnessStatusText", "smoothnessDave");
-    updateMetricAria("signalIntegrityLabel", "signalIntegrityScore", "signalIntegrityStatusText", "signalIntegrityDave");
-}
-
-function updateChartAria(channel, summaryText) {
-    const chart = document.getElementById("frequencyChart");
-    const desc = document.getElementById("frequencyChartDescription");
-
-    if (!chart || !desc) return;
-
-    chart.setAttribute(
-        "aria-label",
-        `Frequency response chart showing the ${channel} channel. ${summaryText}`
-    );
-
-    desc.textContent = summaryText;
-}
-
-
 
 /* ============================================================
     DASHBOARD CLASS
@@ -151,8 +29,6 @@ class MeasurelyDashboard {
         this.updateInterval = null;
         this.sweepCheckInterval = null;
         this.analysisCheckInterval = null;
-
-        this.loadDavePhrases();
         this.init();
     }
 
@@ -199,31 +75,6 @@ class MeasurelyDashboard {
             console.warn("Failed to load dave_cards");
         }
     }
-
-    async loadDaveOverall() {
-        try {
-            const res = await fetch('/overall_phrases.json');
-            if (!res.ok) throw new Error(res.status);
-            window.daveOverall = await res.json();
-            console.log("dave_overall loaded");
-        } catch {
-            window.daveOverall = {};
-            console.warn("Failed to load dave_overall");
-        }
-    }
-
-    async loadDaveFixes() {
-        try {
-            const res = await fetch('/tipstweaks_phrases.json');
-            if (!res.ok) throw new Error(res.status);
-            window.daveFixes = await res.json();
-            console.log("dave_fixes loaded");
-        } catch {
-            window.daveFixes = {};
-            console.warn("Failed to load dave_fixes");
-        }
-    }
-
 
     /* ============================================================
     PEAK / DIP MODE LIST PARSER (from analysis.json)
@@ -482,12 +333,9 @@ class MeasurelyDashboard {
         }
 
         this.setupEventListeners();
-        this.resetSessionButtonLabels();  
 
         // 🔑 Load Dave's phrase bank first
         await this.loadDavePhrases();
-        await this.loadDaveOverall();
-        await this.loadDaveFixes();
         await this.loadSpeakerProfiles(); 
         await this.loadData();
 
@@ -524,7 +372,6 @@ class MeasurelyDashboard {
             }
 
             this.updateDashboard();
-            this.updateCompareSessionMetrics();
 
             console.log('Data loaded OK:', this.currentData);
 
@@ -532,7 +379,6 @@ class MeasurelyDashboard {
             console.error('Error loading data:', error);
             this.showError('Failed to load measurement data.');
 
-            this.currentData = this.generateSampleData();
             this.updateDashboard();
         }
     }
@@ -552,7 +398,6 @@ class MeasurelyDashboard {
         addLog("Starting new sweep…");
 
         this.isSweepRunning = true;
-        this.showProgressBar();
 
         const runBtn = document.getElementById('runSweepBtn');
         const cancelBtn = document.getElementById("cancelSweepBtn");
@@ -669,8 +514,6 @@ class MeasurelyDashboard {
 
         if (cancelBtn) cancelBtn.classList.add("hidden");
         if (refreshBtn) refreshBtn.disabled = false;
-
-        this.hideProgressBar();
 
         if (this.sweepCheckInterval) {
             clearInterval(this.sweepCheckInterval);
@@ -800,7 +643,6 @@ class MeasurelyDashboard {
 
         this.updateScores();
         this.updateFrequencyChart();
-        this.updateRoomAnalysis();
         this.updateDetailedAnalysis();
         this.updateModes();
 
@@ -808,9 +650,6 @@ class MeasurelyDashboard {
         this.loadSweepHistory();
 
         //this.loadAISweepComparison();
-
-        // Tips/tweaks updater
-        this.updateTipsAndTweaksCards(this.currentData);
 
         if (window.updateRoomCanvas && this.currentData.room) {
             window.updateRoomCanvas(this.currentData.room);
@@ -836,19 +675,6 @@ class MeasurelyDashboard {
             }
         );
 
-        /* ----------------- HELPER FOR DOT COLOURS ----------------- */
-        const setDotColour = (el, score) => {
-            if (!el) return;
-            if (score >= 8) {
-                el.className = "w-3 h-3 rounded-full mr-2 bg-green-500";
-            } else if (score >= 6) {
-                el.className = "w-3 h-3 rounded-full mr-2 bg-blue-400";
-            } else if (score >= 4) {
-                el.className = "w-3 h-3 rounded-full mr-2 bg-yellow-400";
-            } else {
-                el.className = "w-3 h-3 rounded-full mr-2 bg-red-500";
-            }
-        };
 
         /* ---------------- OVERALL SCORE ---------------- */
         let overall = Number(data.scores?.overall ?? data.overall_score ?? data.overall);
@@ -858,13 +684,6 @@ class MeasurelyDashboard {
         // Main score number
         const overallEl = document.getElementById('overallScore');
         if (overallEl) overallEl.textContent = overall.toFixed(1);
-
-        // Dynamic score colour (text)
-        this.applySixCardColor("overallScore", overall);
-
-        // Overall dot colour (fixed bug)
-        const overallDot = document.getElementById('overallStatus');
-        setDotColour(overallDot, overall);
 
         // Verdict text
         const statusTextEl = document.getElementById('overallStatusText');
@@ -885,24 +704,10 @@ class MeasurelyDashboard {
             if (!Number.isFinite(overallScore)) overallScore = 5;
 
             // Restore correct active speaker based on key
-            const speakerKey = room.speaker_key;
-            let spkSource = null;
 
-            if (speakerKey) {
-                spkSource =
-                    (window.speaker_profiles && window.speaker_profiles[speakerKey]) ||
-                    (window.speakerProfiles && window.speakerProfiles[speakerKey]) ||
-                    null;
-            }
+            const spk = this.SPEAKERS_BY_KEY[room.speaker_key]
+                    || { name: "speakers", friendly_name: "speakers" };
 
-            // Use the already set and correct active speaker
-            const spk = window.activeSpeaker || {
-                name: "speakers",
-                friendly_name: "speakers"
-            };
-
-            // IMPORTANT for ALL phrases
-            window.activeSpeaker = spk;
 
             // Tag values for replacements
             const tagMap = {
@@ -918,28 +723,13 @@ class MeasurelyDashboard {
                 speaker_name: spk.name
             };
 
-            const expandTags = (str) => {
-                if (!str) return str;
-                let out = str;
-                for (const [key, value] of Object.entries(tagMap)) {
-                    const re = new RegExp(`{{${key}}}`, "g");
-                    out = out.replace(re, value ?? "");
-                }
-                return out;
-            };
-
-            const template = await this.pickOverallPhrase(overallScore);
-            const phrase = expandTags(template);
-
             const phraseEl = document.getElementById("overallDavePhrase");
             if (phraseEl) {
-                if (this.aiSummary) {
-                    phraseEl.textContent = `“${this.aiSummary}”`;
-                    phraseEl.classList.add("ai-voice"); // optional hook for styling
-                } else {
-                    phraseEl.textContent = `“${phrase}”`;
-                }
+                phraseEl.textContent = this.aiSummary
+                    ? `“${this.aiSummary}”`
+                    : "Run a sweep to get started.";
             }
+
 
         })();
 
@@ -962,13 +752,7 @@ class MeasurelyDashboard {
             const el = document.getElementById(id);
             if (el) el.textContent = val.toFixed(1);
 
-            // Dot element
-            const dotEl = document.getElementById(id.replace('Score', 'Status'));
-            setDotColour(dotEl, val);
 
-            // Number colour (text)
-            const baseId = id.replace('Score', '').replace(/([A-Z])/g, m => m);
-            this.applySixCardColor(baseId, val);
         }
 
         /* ---------------- SUMMARIES + Dave TIPS ---------------- */
@@ -976,105 +760,6 @@ class MeasurelyDashboard {
 
     }
     
-
-    /* ============================================================
-    UPDATE TIPS AND TWEAKS CARDS (NEW CORE LOGIC FOR tipsandtweaks.html)
-    ============================================================ */
-    updateTipsAndTweaksCards(data) {
-        // Only run this logic if we are on the tips page and the elements exist
-        if (!document.getElementById('peaksDipsRawMetric')) {
-            return; 
-        }
-
-        const metrics = [
-            { id: 'peaksDips', score: data.peaks_dips ?? 3, 
-              rawFunc: (s) => `Low Frequency Std Dev: ${(10 - s).toFixed(1)} dB` },
-            { id: 'reflections', score: data.reflections ?? 3, 
-              rawFunc: (s) => (s > 6 ? 'Low Early Reflection Energy' : 'High Early Reflection Energy') },
-            { id: 'bandwidth', score: data.bandwidth ?? 3, 
-              rawFunc: (s) => (s > 6 ? 'Wide ±3dB Range' : 'Limited ±3dB Range') },
-            { id: 'balance', score: data.balance ?? 3, 
-              rawFunc: (s) => (s > 4 && s < 7 ? 'Low L/R Skew' : 'High L/R Skew') },
-            { id: 'smoothness', score: data.smoothness ?? 3, 
-              rawFunc: (s) => `Mid/High Variance: ${(10 - s).toFixed(1)} dB` },
-            { id: 'signal_integrity', score: data.scores?.signal_integrity ?? 3,
-                rawFunc: (s) => s >= 7
-                    ? 'Clean sweep signal'
-                    : 'Weak or unreliable sweep signal'
-                }
-
-        ];
-        
-        metrics.forEach(metric => {
-            const bucket = this.toBucket(metric.score);
-            
-            // --- BOX 1: RAW DATA (Technical Metric) ---
-            const rawEl = document.getElementById(metric.id + 'RawMetric');
-            if (rawEl) {
-                rawEl.textContent = metric.rawFunc(metric.score);
-            }
-
-            // --- BOX 2: DAVE'S TRANSLATION (Uses the simple descriptive phrase) ---
-            const transEl = document.getElementById(metric.id + 'Translation');
-            if (transEl) {
-                const choices = window.daveFixes[metric.id]?.[bucket] || ['Dave cannot compute.'];
-                const translatedPhrase = window.pickUniqueTip(metric.id, choices); 
-                transEl.textContent = `“${translatedPhrase}”`; // Apply quotes for Dave's voice
-            }
-
-            // --- BOX 3: SOLUTIONS (The list of specific fixes) ---
-            const solutionsEl = document.getElementById(metric.id + 'Solutions');
-            if (solutionsEl) {
-                const solutionChoices = window.daveFixes[metric.id + '_solutions']?.[bucket] || ['<li>No fixes available.</li>'];
-                
-                // Format the specific solutions into an HTML list
-                const htmlList = solutionChoices.map(solution => {
-                    // Apply the bold replacement helper
-                    const text = replaceBold(solution);
-                    return `<li>${text}</li>`;
-                }).join('');
-
-                solutionsEl.innerHTML = htmlList;
-            }
-        });
-    }
-
-    /* ============================================================
-    Dave TIP PICKER — OVERALL
-    ============================================================ */
-    async pickOverallPhrase(score) {
-
-        let bucket =
-            score >= 8 ? 'overall_excellent' :
-            score >= 6 ? 'overall_good' :
-            score >= 4 ? 'overall_fair' :
-                        'overall_poor';
-
-        const bank = window.daveOverall || {};
-        const choices = bank[bucket] || [];
-
-        if (choices.length === 0) {
-            if (bucket === 'overall_excellent') return 'Superb acoustics — nothing fighting the music.';
-            if (bucket === 'overall_good') return 'Strong performance — just a few tiny tweaks.';
-            if (bucket === 'overall_fair') return 'Decent start — room interactions still audible.';
-            return 'Room needs some love, loads of easy wins ahead.';
-        }
-
-        return window.pickUniqueTip(bucket, choices);
-    }
-
-    /* ============================================================
-    RAW METRIC PICKER HELPERS
-    ============================================================ */
-
-    pickRawMetric(card, bucket) {
-        const rm = window.rawMetrics?.[card]?.[bucket] || [];
-        if (!rm.length) return "--";
-        // Pick a random line from the fake metrics
-        return rm[Math.floor(Math.random() * rm.length)];
-    }
-
-
     /* ============================================================
     CARD SUMMARIES + Dave TIPS + RAW METRICS
     ============================================================ */
@@ -1100,6 +785,9 @@ class MeasurelyDashboard {
         const refBucket  = this.toBucket(reflections);
 
 
+        const spk = this.SPEAKERS_BY_KEY[data.room?.speaker_key]
+                || { friendly_name: "your speakers" };
+
 
         /* ============================================================
         1. BANDWIDTH
@@ -1109,39 +797,23 @@ class MeasurelyDashboard {
             bandwidth > 3 ? "OK" :
                             "Needs extension";
 
-        const bwRaw = document.getElementById("bandwidthRaw");
-        if (bwRaw) bwRaw.textContent = this.pickRawMetric("bandwidth", bwBucket);
-
-
         /* ============================================================
         2. BALANCE
         ============================================================ */
         document.getElementById('balanceStatusText').textContent =
             (balance > 3 && balance < 7) ? "Well balanced" : "Needs adjustment";
 
-        const balRaw = document.getElementById("balanceRaw");
-        if (balRaw) balRaw.textContent = this.pickRawMetric("balance", balBucket);
-
-
         /* ============================================================
         3. SMOOTHNESS
         ============================================================ */
-        const smoothDev = (10 - smoothness).toFixed(1);
 
         document.getElementById('smoothnessStatusText').textContent =
             smoothness > 6 ? "Good consistency" : "Some variation";
 
-        const smRaw = document.getElementById("smoothnessRaw");
-        if (smRaw) smRaw.textContent = this.pickRawMetric("smoothness", smBucket);
-
-
         /* ============================================================
         4. PEAKS & DIPS
         ============================================================ */
-        const lfStdDev = (10 - peaksDips).toFixed(1);
 
-        document.getElementById("peaksDipsRaw").textContent =
-            this.pickRawMetric("peaks_dips", pdBucket);
 
         document.getElementById('peaksDipsStatusText').textContent =
             peaksDips > 5 ? "OK" : "Treat";
@@ -1156,10 +828,6 @@ class MeasurelyDashboard {
             reflections > 3 ? "OK" :
                             "Needs treatment";
 
-        const refRaw = document.getElementById("reflectionsRaw");
-        if (refRaw) refRaw.textContent = this.pickRawMetric("reflections", refBucket);
-
-
         /* ============================================================
         6. CLARITY
         ============================================================ */
@@ -1172,20 +840,9 @@ class MeasurelyDashboard {
                             "Room dominates";
         }
 
-        const clRaw = document.getElementById("clarityRaw");
-        if (clRaw) {
-            clRaw.textContent = this.pickRawMetric("clarity", this.toBucket(clarity));
-
-        }
-
-
         /* ============================================================
         Dave PHRASES (new system - no buckets)
         ============================================================ */
-        const spk = (data.room?.speaker_key && window.SPEAKERS?.[data.room.speaker_key])
-            ? window.SPEAKERS[data.room.speaker_key]
-            : { friendly_name: "your speakers" };
-
         const tagMap = {
             room_width: data.room?.width_m ?? "--",
             room_length: data.room?.length_m ?? "--",
@@ -1207,7 +864,7 @@ class MeasurelyDashboard {
             peaks_dips: "peaksDipsDave",
             reflections: "reflectionsDave",
             clarity: "clarityDave",
-            signal_integrity: "signalIntegrityDave"
+
         };
 
         for (const [metric, elId] of Object.entries(metricMap)) {
@@ -1224,126 +881,6 @@ class MeasurelyDashboard {
             el.textContent = phrase;
         }
 
-    }
-
-    /* ============================================================
-    Dave TIP INJECTION (PER CARD)
-    ============================================================ */
-    async injectDavePhrase(elId, cardName, bucket) {
-        const el = document.getElementById(elId);
-        if (!el) return;
-
-        const bank = window.daveCards || {};
-
-        const cardBucket = bank[cardName];
-        if (!cardBucket) {
-            console.warn("No card bucket for", cardName);
-            el.textContent = "--";
-            return;
-        }
-
-        const choices = cardBucket[bucket] || [];
-        if (choices.length === 0) {
-            console.warn("No tips for", cardName, bucket);
-            el.textContent = "--";
-            return;
-        }
-
-        const tip = window.pickUniqueTip(bucket, choices);
-        el.textContent = tip;
-    }
-
-
-    /* ============================================================
-    VERDICT TEXT (OVERALL)
-    ============================================================ */
-    getScoreStatusText(score) {
-        let verdict;
-
-        if (score >= 8) verdict = 'Excellent acoustics';
-        else if (score >= 6) verdict = 'Good room response';
-        else if (score >= 4) verdict = 'Room for improvement';
-        else verdict = 'Needs significant treatment';
-
-        return `<strong>Verdict:</strong> ${verdict}`;
-    }
-
-    /* ============================================================
-    FIXED — UNIFIED COLOUR SYSTEM (GREEN / BLUE / YELLOW / RED)
-    ============================================================ */
-
-    statusClasses = {
-        green:   { text: "text-green-500",  dot: "bg-green-500",  icon: "text-green-500" },
-        yellow:  { text: "text-yellow-500", dot: "bg-yellow-500", icon: "text-yellow-500" },
-        orange:  { text: "text-blue-400",   dot: "bg-blue-400",   icon: "text-blue-400" },
-        red:     { text: "text-red-500",    dot: "bg-red-500",    icon: "text-red-500" }
-    };
-
-
-    /* ============================================================
-    FIXED — APPLY CARD COLOUR (correct removal lists)
-    ============================================================ */
-    applySixCardColor(cardId, value) {
-        let bucket;
-        if (value >= 8) bucket = "green";
-        else if (value >= 6) bucket = "yellow";
-        else if (value >= 4) bucket = "orange";
-        else bucket = "red";
-
-        const palette = this.statusClasses[bucket];
-        if (!palette) return;
-
-        /* ---------------- MAIN SCORE ---------------- */
-        const scoreEl = document.querySelector(`[data-color-target="${cardId}"]`);
-        if (scoreEl) {
-            scoreEl.classList.remove(
-                "text-green-500","text-yellow-500","text-red-500",
-                "text-blue-400","text-purple-600",
-                "text-orange-500","text-orange-600","text-orange-400"
-            );
-            scoreEl.classList.add(palette.text);
-        }
-
-        /* ---------------- SUMMARY TEXT ---------------- */
-        document.querySelectorAll(`[data-color-summary="${cardId}"]`).forEach(el => {
-            el.classList.remove(
-                "text-green-500","text-yellow-500","text-red-500",
-                "text-blue-400","text-purple-600",
-                "text-orange-500","text-orange-600","text-orange-400"
-            );
-            el.classList.add(palette.text);
-        });
-
-        /* ---------------- TITLE (FIXED) ---------------- */
-        const titleEl = document.querySelector(`[data-color-title="${cardId}"]`);
-        if (titleEl) {
-            titleEl.classList.remove(
-                "text-green-500","text-yellow-500","text-red-500",
-                "text-blue-400","text-purple-600"
-            );
-            titleEl.classList.add(palette.text);
-        }
-
-        /* ---------------- DOT ---------------- */
-        const dotEl = document.getElementById(`${cardId}Status`);
-        if (dotEl) {
-            dotEl.classList.remove(
-                "bg-green-500","bg-yellow-500","bg-red-500",
-                "bg-blue-400","bg-purple-600",
-                "bg-orange-500","bg-orange-600","bg-orange-400"
-            );
-            dotEl.classList.add(palette.dot);
-        }
-
-        /* ---------------- ICON (FIXED) ---------------- */
-        const iconEl = document.querySelector(`[data-color-icon="${cardId}"]`);
-        if (iconEl) {
-            iconEl.classList.remove(
-                "text-green-500","text-yellow-500","text-red-500",
-                "text-blue-400","text-purple-600"
-            );
-            iconEl.classList.add(palette.icon);
-        }
     }
 
 
@@ -1460,8 +997,6 @@ class MeasurelyDashboard {
                     }
                 );
 
-                updateChartAria('both', 'Showing frequency response.');
-
             })
             .catch(err => {
                 console.error('❌ Frequency chart error:', err);
@@ -1540,32 +1075,6 @@ class MeasurelyDashboard {
         updateBand('sessAir',    'air');
 
         
-    }
-
-
-    /* ============================================================
-    ROOM MODE ANALYSIS (L × W × H)
-    ============================================================ */
-    updateRoomAnalysis() {
-        // NOTE: This function's target IDs (roomDimensions, lengthMode, etc.) are not present in index.html
-        if (!document.getElementById('roomDimensions')) return;
-
-        const data = this.currentData || {};
-        const length = Number(data.length) || 4.0;
-        const width = Number(data.width) || 4.0;
-        const height = Number(data.height) || 3.0;
-
-        document.getElementById('roomDimensions').textContent =
-            `${length} × ${width} × ${height} m`;
-
-        const c = 343; // speed of sound in m/s
-
-        document.getElementById('lengthMode').textContent =
-            `${(c / (2 * length)).toFixed(1)} Hz`;
-        document.getElementById('widthMode').textContent =
-            `${(c / (2 * width)).toFixed(1)} Hz`;
-        document.getElementById('heightMode').textContent =
-            `${(c / (2 * height)).toFixed(1)} Hz`;
     }
 
     /* ============================================================
@@ -1669,108 +1178,6 @@ class MeasurelyDashboard {
     }
 
     /* ============================================================
-    SHOW CHANNEL (Left / Right / Both)
-    ============================================================ */
-        showChannel(channel) {
-
-            const chart = document.getElementById('frequencyChart');
-            if (!chart) return;
-
-            const data = this.currentData;
-            if (!data) return;
-
-        /* ---------------------------------------------------------
-        BUILD TRACES
-        --------------------------------------------------------- */
-        const mobile = window.innerWidth < 640;
-        const leftTrace = {
-            x: data.left_freq_hz || [],
-            y: data.left_mag_db || [],
-            type: 'scatter',
-            mode: 'lines',
-            name: 'Left',
-            line: { color: '#6D28D9', width: mobile ? 3 : 2.5 }
-        };
-
-        const rightTrace = {
-            x: data.right_freq_hz || [],
-            y: data.right_mag_db || [],
-            type: 'scatter',
-            mode: 'lines',
-            name: 'Right',
-            line: { color: '#3B82F6', width: mobile ? 3 : 2.5 }
-        };
-
-        let traces = [];
-        if (channel === 'left') traces = [leftTrace];
-        if (channel === 'right') traces = [rightTrace];
-        if (channel === 'both') traces = [leftTrace, rightTrace];
-
-        /* ---------------------------------------------------------
-        UPDATE ACTIVE BUTTON
-        --------------------------------------------------------- */
-        document.querySelectorAll('.channel-btn')
-            .forEach(btn => {
-                btn.classList.remove('channel-active', 'bg-gray-200');
-                if (btn.dataset.channel === channel) {
-                    btn.classList.add('channel-active', 'bg-gray-200');
-                } else {
-                    btn.classList.add('bg-gray-200'); 
-                }
-            });
-
-
-        /* ---------------------------------------------------------
-        RESPONSIVE LAYOUT FIXES (MOBILE SAFE)
-        --------------------------------------------------------- */
-        const isMobile = window.innerWidth < 640;
-
-        const layout = {
-            xaxis: { 
-                type: 'log',
-                showline: true,
-                linewidth: 1,
-                linecolor: '#d1d5db',
-                tickfont: { size: isMobile ? 10 : 11 },
-                title: isMobile ? '' : 'Frequency (Hz)'
-            },
-            yaxis: { 
-                showline: true,
-                linewidth: 1,
-                linecolor: '#d1d5db',
-                tickfont: { size: isMobile ? 10 : 11 },
-                title: isMobile ? '' : 'Magnitude (dB)'
-            },
-
-            /* Mobile margins tighter */
-            margin: { 
-                t: 20, 
-                r: isMobile ? 10 : 20,
-                b: isMobile ? 40 : 60,
-                l: isMobile ? 40 : 60
-            },
-
-            /* Background + font */
-            plot_bgcolor: '#fff',
-            paper_bgcolor: '#fff',
-            font: { color: '#111', size: isMobile ? 10 : 12 },
-
-            /* UI control disabled */
-            displayModeBar: false,
-            staticPlot: true
-        };
-
-        /* ---------------------------------------------------------
-        RENDER
-        --------------------------------------------------------- */
-        Plotly.newPlot('frequencyChart', traces, layout, { responsive: true, displayModeBar: false, showLegend: false });
-        this.updateCompareSessionMetrics(); // Redraw metrics after chart update
-
-    }
-    
-
-
-    /* ============================================================
     SAVE RESULTS (JSON Download)
     ============================================================ */
     saveResults() {
@@ -1829,27 +1236,6 @@ class MeasurelyDashboard {
             });
     }
 
-
-    /* ============================================================
-    PROGRESS BAR CONTROL
-    ============================================================ */
-    showProgressBar() {
-        const container = document.getElementById('progressContainer');
-        if (container) container.classList.add('active');
-    }
-
-    hideProgressBar() {
-        const container = document.getElementById('progressContainer');
-        if (container) container.classList.remove('active');
-
-        const bar = document.getElementById('progressBar');
-        if (bar) bar.style.width = '0%';
-    }
-
-    updateProgress(pct) {
-        const bar = document.getElementById('progressBar');
-        if (bar) bar.style.width = `${pct}%`;
-    }
 
     /* ============================================================
     LOADING STATE FOR SCORE CARDS
@@ -1940,123 +1326,6 @@ class MeasurelyDashboard {
 
 
     /* ============================================================
-     SAMPLE DATA (used when API is missing / errors)
-     ============================================================ */
-    generateSampleData() {
-        const freq = [];
-        const mag = [];
-        const phase = [];
-
-        let f = 20;
-        while (f <= 20000) {
-            freq.push(f);
-
-            let m = -8;
-            if (f >= 40 && f <= 60) m += 6 * Math.exp(-Math.pow(f - 50, 2)/50);
-            if (f >= 80 && f <= 120) m += 4 * Math.exp(-Math.pow(f - 100,2)/200);
-            if (f > 8000) m -= (f - 8000)/2000;
-
-            m += Math.sin(f/100) * 2 + (Math.random() - 0.5);
-            mag.push(m);
-            phase.push(Math.sin(f/500) * 180);
-
-            f *= 1.1;
-        }
-
-        return {
-            timestamp: new Date().toISOString(),
-            room: { length_m: 4.0, width_m: 4.0, height_m: 3.0 },
-            length: 4.0,
-            width: 4.0,
-            height: 3.0,
-            freq_hz: freq,
-            mag_db: mag,
-            phase_deg: phase,
-            overall_score: 6.8,
-            bandwidth: 5.2,
-            balance: 4.1,
-            smoothness: 7.3,
-            peaks_dips: 3.9,
-            reflections: 5.0,
-            signal_integrity: 9.5,
-            has_analysis: true,
-            band_levels_db: { bass: 5.5, mid: 0.5, treble: -3.0, air: -8.0 }
-        };
-    }
-
-    updateFrequencyChartStandalone(data) {
-        const chart = document.getElementById('frequencyChart');
-        if (!chart) return;
-
-        const mobile = window.innerWidth < 640;
-
-        const traces = [
-            {
-                x: data.left_freq_hz || [],
-                y: data.left_mag_db || [],
-                type: 'scatter',
-                mode: 'lines',
-                name: 'Left',
-                line: { color: '#6D28D9', width: mobile ? 3 : 2.5 }
-            },
-            {
-                x: data.right_freq_hz || [],
-                y: data.right_mag_db || [],
-                type: 'scatter',
-                mode: 'lines',
-                name: 'Right',
-                line: { color: '#3B82F6', width: mobile ? 3 : 2.5 }
-            }
-        ];
-
-        const layout = {
-            xaxis: {
-                type: 'log',
-                showline: true,
-                linewidth: 1,
-                linecolor: '#d1d5db',
-                tickfont: { size: mobile ? 10 : 11 },
-                title: mobile ? '' : 'Frequency (Hz)'
-            },
-            yaxis: {
-                showline: true,
-                linewidth: 1,
-                linecolor: '#d1d5db',
-                tickfont: { size: mobile ? 10 : 11 },
-                title: mobile ? '' : 'Magnitude (dB)'
-            },
-            showlegend: false,
-            margin: mobile
-                ? { t: 5, r: 5, b: 25, l: 30 }
-                : { t: 20, r: 20, b: 50, l: 55 },
-            plot_bgcolor: '#fff',
-            paper_bgcolor: '#fff',
-            font: { color: '#111', size: mobile ? 9 : 11 },
-            displayModeBar: false,
-            staticPlot: true
-        };
-
-        Plotly.newPlot('frequencyChart', traces, layout, {
-            responsive: true,
-            displayModeBar: false,
-            showLegend: false
-        });
-    }
-
-
-    updateCompareSessionMetricsStandalone(data) {
-        // temporarily use this.currentData ONLY for Nerds Corner
-        const prev = this.currentData;
-        this.currentData = data;
-
-        this.updateCompareSessionMetrics();
-
-        // restore original dashboard data afterwards
-        this.currentData = prev;
-    }
-
-
-    /* ============================================================
     LOAD SESSION BY INDEX (NEWEST → OLDEST, EXACT MATCH)
     ============================================================ */
     async loadNthSession(n) {
@@ -2095,9 +1364,6 @@ class MeasurelyDashboard {
 
             this.currentData = data; // required for notes save
             this.updateFrequencyChart();
-            this.updateCompareSessionMetricsStandalone(data);
-            this.updateDetailedAnalysisStandalone(data);
-
 
             // Restore saved note to modal
             const note = (data.analysis_notes?.[0] || data.notes || "").trim();
@@ -2124,46 +1390,6 @@ class MeasurelyDashboard {
         }
     }
 
-
-    /* ============================================================
-    SESSION BUTTON HIGHLIGHTING
-    ============================================================ */
-
-    highlightSessionButton(n) {
-        const map = {
-            0: 'sessionLatestBtn',
-            1: 'sessionPreviousBtn',
-            2: 'sessionLastBtn'
-        };
-
-        ['sessionLatestBtn','sessionPreviousBtn','sessionLastBtn'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.classList.remove('bg-indigo-50','text-indigo-700');
-            }
-        });
-
-        const active = document.getElementById(map[n]);
-        if (active) {
-            active.classList.add('bg-indigo-50','text-indigo-700');
-        }
-    }
-
-    /* ============================================================
-    FORCE STATIC SESSION BUTTON LABELS
-    ============================================================ */
-    resetSessionButtonLabels() {
-        const map = {
-            sessionLatestBtn:   'Latest',
-            sessionPreviousBtn: 'Previous',
-            sessionLastBtn:     'Last'
-        };
-
-        Object.entries(map).forEach(([id, label]) => {
-            const btn = document.getElementById(id);
-            if (btn) btn.textContent = label;
-        });
-    }
 
     /* ============================================================
     EVENT LISTENERS — SAFE ON ALL PAGES
@@ -2198,19 +1424,7 @@ class MeasurelyDashboard {
         safe('runSweepBtn',      () => this.runSweep());
         safe('cancelSweepBtn', () => this.cancelSweep());
         safe('downloadReportBtn', () => this.exportReport());
-        //safe('saveResultsBtn',   () => this.saveResults());
-        //safe('exportReportBtn',  () => this.exportReport());
 
-        // Channel buttons — toggle frequency chart
-        //safe('leftChannelBtn',   () => this.showChannel('left'));
-        //safe('rightChannelBtn',  () => this.showChannel('right'));
-        //safe('bothChannelsBtn',  () => this.showChannel('both'));
-
-        // Sweep Navigation – handled exclusively via index.html listener
-        // (see bottom of index.html for sweepNav click handler)
-        // ❌ No direct sessionLatestBtn or legacy event bindings here
-
-        // Refresh dashboard
         safe('refreshDashboardBtn', async () => {
             console.log("Manual dashboard refresh triggered");
             await this.loadData();
@@ -2248,7 +1462,6 @@ class MeasurelyDashboard {
             this.showSuccess("Note saved!");
         });
     }
-
 
     /* ============================================================
      TOAST MESSAGES

@@ -29,12 +29,16 @@
 
             <nav aria-label="Main">
                 <a href="index.html" class="nav-item active">
-                    <img src="icons/dashboard.svg" alt="" aria-hidden="true">
-                    Dashboard
+                    <img src="icons/home.svg" alt="" aria-hidden="true">
+                    Home
                 </a>
                 <a href="room-setup.html" class="nav-item">
-                    <img src="icons/home.svg" alt="" aria-hidden="true">
+                    <img src="icons/dashboard.svg" alt="" aria-hidden="true">
                     Room Setup
+                </a>
+                <a href="room-character.html" class="nav-item">
+                    <img src="icons/curtains.svg" alt="" aria-hidden="true">
+                    Room Behaviour
                 </a>
             </nav>
 
@@ -88,13 +92,15 @@
             <!-- HEADER -->
             <header class="header animate-enter">
 
-                <div class="header-title" 
-                    style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+                <div class="header-title"
+                    style="display: flex; align-items: center; gap: 1rem;">
+
 
                     <!-- LEFT: Title -->
                     <div>
                         <h1>Your Room Results</h1>
-                        <p>Acoustic analysis and optimization insights.</p>
+                        <p><p>What your room is doing to the sound, measured, not guessed.</p>
+.</p>
                     </div>
 
                     <!-- RIGHT: Hamburger (forced to far right) -->
@@ -215,7 +221,6 @@
                 </div>
 
             </div>
-            <div class="section-divider"></div>
 
             <!-- METRICS GRID -->
             <div class="grid-3 animate-enter delay-2">
@@ -361,8 +366,6 @@
 
             </div>
 
-            <div class="section-divider"></div>
-
             <!-- NERDS CORNER -->
             <div class="card glass-panel animate-enter delay-3"
                 role="region"
@@ -380,7 +383,7 @@
                 <!-- SWEEP NAV (DO NOT MOVE / DO NOT RENAME) -->
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
 
-                    <div id="sweepNav" class="header-actions" style="opacity:0.9;">
+                    <div id="sweepNav" class="sweep-nav">
                         <button class="btn btn-utility session-btn session-active" data-sweep="0">Latest</button>
                         <button class="btn btn-utility session-btn" data-sweep="1">Previous</button>
                         <button class="btn btn-utility session-btn" data-sweep="2">Earlier</button>
@@ -648,9 +651,6 @@
                 // 3. Update nerd metrics
                 window.dashboard.updateCompareSessionMetrics();
 
-                // 4. Reset chart to both channels
-                window.dashboard.showChannel('both');
-
                 // 5. Optional toast
                 window.dashboard.showSuccess("Dashboard refreshed");
 
@@ -683,16 +683,9 @@
 
         let firstDrawDone = false;
         document.addEventListener('DOMContentLoaded', () => {
-            if (typeof MeasurelyDashboard !== 'undefined') window.dashboard = new MeasurelyDashboard();
-            //loadSessionExplorer();
-            const draw = () => {
-                if (firstDrawDone) return;
-                const box = document.getElementById('frequencyChart');
-                if (!box || box.clientHeight === 0) { requestAnimationFrame(draw); return; }
-                firstDrawDone = true;
-                if (window.dashboard) window.dashboard.showChannel('both');
-            };
-            requestAnimationFrame(draw);
+            if (typeof MeasurelyDashboard !== 'undefined') {
+                window.dashboard = new MeasurelyDashboard();
+            }
         });
 
         const btn = document.getElementById('mobile-menu-btn');

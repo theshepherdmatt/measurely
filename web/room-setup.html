@@ -34,6 +34,10 @@
                 <a href="room-setup.html" class="nav-item active">
                     <img src="icons/home.svg" alt="">Room Setup
                 </a>
+                <a href="room-character.html" class="nav-item">
+                    <img src="icons/curtains.svg" alt="" aria-hidden="true">
+                    Room Behaviour
+                </a>
 
             </nav>
         </aside>
@@ -62,9 +66,6 @@
                       <img src="icons/bars.svg" style="width:24px;">
                   </button>
               </div>
-
-              <!-- SECOND ROW (EMPTY) — this is the missing piece -->
-              <div style="height:1px;"></div>
 
           </header>
 
@@ -110,11 +111,11 @@
 
                 <!-- System notes -->
                 <div class="ctrl-block ctrl-block-full">
-                    <label for="system-notes">System notes (optional)</label>
+                    <label for="system-notes">System context (optional)</label>
 
                     <textarea
                         id="system-notes"
-                        placeholder="Amp, sources, streamer, DAC, turntable — anything you’d like to note."
+                        placeholder="Anything that might explain results later. Amp changes, room changes, new sub, furniture moved, etc."
                     ></textarea>
                 </div>
 
@@ -158,7 +159,7 @@
 
                     <!-- Speaker placement -->
                     <div class="ctrl-block">
-                        <label for="speaker-distance-num">Speaker distance from front wall</label>
+                        <label for="speaker-distance-num">Distance from wall (cm)</label>
                         <input type="number" id="speaker-distance-num" min="0" max="3" step="0.05">
                     </div>
 
@@ -188,7 +189,7 @@
         <!-- ===================================================== -->
         <!-- CARD — MATERIALS & FURNISHINGS -->
         <!-- ===================================================== -->
-        <section class="card glass-panel animate-enter delay-3">
+        <section class="card glass-panel animate-enter delay-3 materials-card">
 
             <h2 class="card-title">Materials & Furnishings</h2>
 
@@ -196,9 +197,9 @@
                 A quick sense of how absorbent or reflective the room is overall.
             </p>
 
-            <div class="materials-stack">
+            <!-- TOP ROW: DROPDOWNS -->
+            <div class="materials-row">
 
-                <!-- Floor -->
                 <div class="ctrl-block">
                     <label for="floor-material">Floor surface</label>
                     <select id="floor-material">
@@ -207,7 +208,6 @@
                     </select>
                 </div>
 
-                <!-- Room liveliness -->
                 <div class="ctrl-block">
                     <label for="room-echo">Room feel</label>
                     <select id="room-echo">
@@ -219,36 +219,38 @@
                     </select>
                 </div>
 
-                <!-- Contents -->
-                <div class="ctrl-block">
-                    <label>Room contents</label>
+            </div>
 
-                    <div class="grid-2 room-contents">
-                        <label class="checkbox-group">
-                            <input type="checkbox" id="opt-area-rug">
-                            <span>Area rug</span>
-                        </label>
+            <!-- CONTENTS -->
+            <div class="materials-contents">
 
-                        <label class="checkbox-group">
-                            <input type="checkbox" id="opt-curtains">
-                            <span>Curtains or blinds</span>
-                        </label>
+                <label class="materials-label">Room contents</label>
 
-                        <label class="checkbox-group">
-                            <input type="checkbox" id="opt-sofa">
-                            <span>Large sofa</span>
-                        </label>
+                <div class="grid-2 room-contents">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="opt-area-rug">
+                        <span>Area rug</span>
+                    </label>
 
-                        <label class="checkbox-group">
-                            <input type="checkbox" id="opt-wallart">
-                            <span>Wall art or shelving</span>
-                        </label>
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="opt-curtains">
+                        <span>Curtains or blinds</span>
+                    </label>
 
-                        <label class="checkbox-group">
-                            <input type="checkbox" id="opt-barewalls">
-                            <span>Mostly bare walls</span>
-                        </label>
-                    </div>
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="opt-sofa">
+                        <span>Large sofa</span>
+                    </label>
+
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="opt-wallart">
+                        <span>Wall art or shelving</span>
+                    </label>
+
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="opt-barewalls">
+                        <span>Mostly bare walls</span>
+                    </label>
                 </div>
 
             </div>
@@ -258,55 +260,62 @@
         <!-- ===================================================== -->
         <!-- CARD — ROOM SUMMARY -->
         <!-- ===================================================== -->
-        <section id="room-summary-card" class="card glass-panel animate-enter delay-3">
+        <section id="room-summary-card" class="card glass-panel animate-enter delay-3 room-summary-card">
 
             <h2 class="card-title">Room Summary</h2>
 
-            <p class="card-description">
+            <p class="card-description room-summary-desc">
                 A quick snapshot of how Measurely currently understands your room and setup.
             </p>
 
-            <div id="room-summary-content" style="display:grid; gap:0.75rem;">
+            <div id="room-summary-content" class="room-summary-grid">
 
-                <!-- Room -->
-                <div>
-                    <strong>Room</strong><br>
-                    <span id="sum-room-size">—</span>
-                    (approx <span id="sum-room-volume">—</span> m³)<br>
-                    <span id="sum-room-shape" class="text-muted">—</span>
+                <div class="room-summary-block">
+                    <div class="room-summary-label">Room</div>
+                    <div class="room-summary-main">
+                        <span id="sum-room-size">—</span>
+                        <span class="muted">
+                            (approx <span id="sum-room-volume">—</span> m³)
+                        </span>
+                    </div>
+                    <div id="sum-room-shape" class="room-summary-sub">—</div>
                 </div>
 
-                <!-- Speakers -->
-                <div>
-                    <strong>Speakers</strong><br>
-                    <span id="sum-speaker-model">—</span><br>
-                    <span id="sum-speaker-spacing">—</span> apart,
-                    <span id="sum-speaker-distance">—</span> from wall<br>
-                    <span id="sum-triangle" class="text-muted">—</span>
+                <div class="room-summary-block">
+                    <div class="room-summary-label">Speakers</div>
+                    <div class="room-summary-main" id="sum-speaker-model">—</div>
+                    <div class="room-summary-sub">
+                        <span id="sum-speaker-spacing">—</span> apart,
+                        <span id="sum-speaker-distance">—</span> from wall
+                    </div>
+                    <div id="sum-triangle" class="room-summary-sub">—</div>
                 </div>
 
-                <!-- Toe-in -->
-                <div>
-                    <strong>Toe-in</strong><br>
-                    <span id="sum-toe-angle">—</span><br>
-                    <span id="sum-toe-comment" class="text-muted">—</span>
+                <div class="room-summary-block">
+                    <div class="room-summary-label">Toe-in</div>
+                    <div class="room-summary-main">
+                        <span id="sum-toe-angle">—</span>
+                    </div>
+                    <div id="sum-toe-comment" class="room-summary-sub">—</div>
                 </div>
 
             </div>
 
         </section>
 
-            <!-- ===================================================== -->
-            <!-- SAVE BUTTON -->
-            <!-- ===================================================== -->
-            <section style="margin-bottom:3rem;">
-                <button id="save-all-btn" class="btn btn-primary" style="width:100%; padding:1rem; font-size:1.1rem;">
-                    Save Setup
-                </button>
-            </section>
 
-        </main>
-    </div>
+        <!-- ===================================================== -->
+        <!-- SAVE BUTTON -->
+        <!-- ===================================================== -->
+        <div class="form-actions">
+            <button id="save-all-btn" class="btn btn-primary">
+                Save setup
+            </button>
+
+            <a href="index.html" class="btn btn-secondary">
+                Back to dashboard
+            </a>
+        </div>
 
     <!-- ====================================================================== -->
     <!-- SCRIPTS -->
@@ -315,6 +324,24 @@
     <script src="/js/dashboard.js"></script>
     <script type="module" src="/js/devices.js"></script>
     <script type="module" src="js/room.js"></script>
+
+    <script>
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    function toggleSidebar() {
+        const isCollapsed = sidebar.classList.toggle('collapsed');
+
+        // ✅ THIS is what your dashboard does that this page doesn't
+        sidebarToggle.classList.toggle('collapsed', isCollapsed);
+        sidebarToggle.textContent = isCollapsed ? '›' : '‹';
+
+        overlay.style.display = isCollapsed ? 'none' : '';
+    }
+
+    if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
+    </script>
 
     <script>
     document.getElementById('save-all-btn').addEventListener('click', () => {

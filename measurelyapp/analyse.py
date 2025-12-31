@@ -244,8 +244,11 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
 
     lo3, hi3 = bandwidth_3db(freq_raw, mag_raw)
     mode_list = [m for m in modes(freq_raw, mag_raw) if m["freq_hz"] <= 1000]
-    sm = smoothness(freq_raw, mag_raw)
-    refs = early_reflections(ir, fs)
+    sm = smoothness(freq_raw, mag_raw)       
+    # Get all reflections
+    raw_refs = early_reflections(ir, fs)
+    refs = [r for r in raw_refs if r > 0.5] 
+
     clarity = score_clarity(refs, sm)
 
 

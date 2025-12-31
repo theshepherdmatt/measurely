@@ -88,29 +88,48 @@ export async function loadRoom() {
 export async function saveRoom() {
   console.log("💾 saveRoom() called");
 
+  const num = (id) => {
+    const el = document.getElementById(id);
+    return el ? parseFloat(el.value) : null;
+  };
+
+  const val = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value : null;
+  };
+
+  const chk = (id) => {
+    const el = document.getElementById(id);
+    return !!(el && el.checked);
+  };
+
   const payload = {
-    length_m: parseFloat(document.getElementById('room-length').value),
-    width_m: parseFloat(document.getElementById('room-width').value),
-    height_m: parseFloat(document.getElementById('room-height').value),
+    // Room geometry
+    length_m: num('room-length-num'),
+    width_m:  num('room-width-num'),
+    height_m: num('room-height-num'),
 
-    spk_front_m: parseFloat(document.getElementById('speaker-distance').value),
-    spk_spacing_m: parseFloat(document.getElementById('speaker-width').value),
-    listener_front_m: parseFloat(document.getElementById('listening-distance').value),
+    // Placement
+    spk_front_m:     num('speaker-distance-num'),
+    spk_spacing_m:  num('speaker-width-num'),
+    listener_front_m: num('listening-distance-num'),
+    toe_in_deg:     num('toe-angle'),
 
-    toe_in_deg: parseFloat(document.getElementById('toe-angle').value),
+    // Acoustics
+    echo_pct: parseInt(val('room-echo')),
+    floor_material: val('floor-material'),
 
-    echo_pct: parseInt(document.getElementById('room-echo').value),
-    floor_material: document.getElementById('floor-material').value,
+    // System
+    speaker_key: val('speakerSel'),
+    subwoofer: val('subwoofer-present') || "unknown",
+    layout: "stereo",
 
-    subwoofer: document.getElementById('subwoofer-present')?.value || "unknown",
-
-    opt_area_rug: document.getElementById('opt-area-rug').checked,
-    opt_barewalls: document.getElementById('opt-barewalls').checked,
-    opt_curtains: document.getElementById('opt-curtains').checked,
-    opt_sofa: document.getElementById('opt-sofa').checked,
-
-    speaker_key: document.getElementById('speakerSel').value,
-    layout: "stereo"
+    // Furnishings
+    opt_area_rug:  chk('opt-area-rug'),
+    opt_barewalls: chk('opt-barewalls'),
+    opt_curtains:  chk('opt-curtains'),
+    opt_sofa:      chk('opt-sofa'),
+    opt_wallart:   chk('opt-wallart')
   };
 
   console.log("💾 Sending payload:", payload);
@@ -122,25 +141,19 @@ export async function saveRoom() {
       body: JSON.stringify(payload)
     });
 
-    console.log("📩 Save response:", res.status);
-    if (!res.ok) throw new Error("Save failed");
+    if (!res.ok) throw new Error(`Save failed (${res.status})`);
 
-    if (window.toast) toast("Room setup saved", "success");
+    showToast?.("Room setup saved", "success");
 
-    // Refresh UI & state
+    // Reload canonical state
     await loadRoom();
-
-    // 🔥🔥🔥 DAVE TRIGGER ADDED HERE 🔥🔥🔥
-    if (window.showDaveSummary) {
-      console.log("🤖 Updating Dave summary...");
-      showDaveSummary();
-    }
 
   } catch (err) {
     console.error("❌ Save error:", err);
-    if (window.toast) toast("Save error", "error");
+    showToast?.("Save failed", "error");
   }
 }
+
 
 // -----------------------------------------------------
 // LOAD ROOM DATA & APPLY TO FORM
@@ -278,15 +291,16 @@ async function updateSpeakerNameInSummary() {
 }
 
 function updateRoomSummary() {
-    const w = parseFloat(document.getElementById("room-width")?.value) || 0;
-    const l = parseFloat(document.getElementById("room-length")?.value) || 0;
-    const h = parseFloat(document.getElementById("room-height")?.value) || 0;
+    const w = parseFloat(document.getElementById("room-width-num")?.value) || 0;
+    const l = parseFloat(document.getElementById("room-length-num")?.value) || 0;
+    const h = parseFloat(document.getElementById("room-height-num")?.value) || 0;
 
-    const spacing = parseFloat(document.getElementById("speaker-width")?.value) || 0;
-    const dist = parseFloat(document.getElementById("speaker-distance")?.value) || 0;
-    const listen = parseFloat(document.getElementById("listening-distance")?.value) || 0;
+    const spacing = parseFloat(document.getElementById("speaker-width-num")?.value) || 0;
+    const dist = parseFloat(document.getElementById("speaker-distance-num")?.value) || 0;
+    const listen = parseFloat(document.getElementById("listening-distance-num")?.value) || 0;
 
     const toe = parseFloat(document.getElementById("toe-angle")?.value) || 0;
+
 
     // 🔊 SPEAKER NAME FROM SPEAKERS INDEX
     //const spkKey = currentRoom.speaker_key;
