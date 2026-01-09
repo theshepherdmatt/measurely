@@ -384,7 +384,7 @@ STATE_FILE="$STATE_DIR/onboarding.json"
 mkdir -p "$STATE_DIR"
 
 if [[ ! -f "$STATE_FILE" ]]; then
-    echo '{"onboarded": true}' > "$STATE_FILE"
+    echo '{"onboarded": false}' > "$STATE_FILE"
     chown "$APP_USER:$APP_USER" "$STATE_FILE"
     chmod 644 "$STATE_FILE"
     msg "✔ onboarding.json created (onboarded=true)"
