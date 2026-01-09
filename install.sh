@@ -429,4 +429,3 @@ systemctl restart systemd-networkd >/dev/null 2>&1
 systemctl restart NetworkManager >/dev/null 2>&1
 
 msg "✔ eth0 is now PERMANENTLY static (10.10.10.2) and NetworkManager-proof."
-
