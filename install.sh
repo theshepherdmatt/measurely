@@ -373,6 +373,24 @@ else
     msg "No legacy AP script present — using web-based onboarding."
 fi
 
+# ------------------------------------------------------------
+# 7.9 Seed onboarding state (prevent AP mode)
+# ------------------------------------------------------------
+msg "Seeding onboarding state…"
+
+STATE_DIR="$REPO_DIR/state"
+STATE_FILE="$STATE_DIR/onboarding.json"
+
+mkdir -p "$STATE_DIR"
+
+if [[ ! -f "$STATE_FILE" ]]; then
+    echo '{"onboarded": true}' > "$STATE_FILE"
+    chown "$APP_USER:$APP_USER" "$STATE_FILE"
+    chmod 644 "$STATE_FILE"
+    msg "✔ onboarding.json created (onboarded=true)"
+else
+    msg "✔ onboarding.json already exists"
+fi
 
 # ------------------------------------------------------------
 # 8. Start service
