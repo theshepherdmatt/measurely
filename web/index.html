@@ -13,7 +13,6 @@
     <script src="js/vendor/three/three.min.js"></script>
     <script src="js/vendor/three/OrbitControls.js"></script>
 
-    <script> window.MEASURELY_MODE = "local"; // or "web" </script>
 
 </head>
 
@@ -65,11 +64,11 @@
 
                 <!-- PRIMARY ACTION -->
                 <div class="engine-actions">
-                    <button id="uploadWavBtn" class="btn btn-primary engine-action is-cta">
+                    <button id="runSweepBtn" class="btn btn-primary engine-action is-cta">
                         <img src="icons/arrow-down.svg" alt="">
                         <div class="engine-action-text">
-                            <strong>Quick upload</strong>
-                            <span>Analyse a sweep now</span>
+                            <strong>Run Sweep</strong>
+                            <span>Measure your room now</span>
                         </div>
                     </button>
                 </div>
@@ -134,11 +133,7 @@
 
                     <div class="engine-footer-actions">
                         <button id="viewHistoryBtn" class="btn btn-utility">
-                            View upload history
-                        </button>
-
-                        <button id="downloadReportBtn" class="btn btn-utility">
-                            Download report
+                            View sweep history
                         </button>
                     </div>
                 </div>
@@ -651,11 +646,6 @@
 
         </main>
     </div>
-    <script type="module">
-    import { initSpeakers } from './js/speakers.js';
-    window.initSpeakers = initSpeakers;
-    initSpeakers();
-    </script>
 
     <script>
         function toast(msg, type = 'info') {
@@ -685,54 +675,43 @@
         }
     </script>
 
+    <script src="js/davePhraseEngine.js"></script>
+
     <script src="js/dashboard.js"></script>
+
+    <script>
+    /* REQUIRED GLOBAL CAPS (LOCAL MODE ONLY) */
+    window.CAPS = {
+        history: true,
+        sweep: true,
+        uploads: true
+    };
+    </script>
 
 
     <script>
     document.addEventListener("DOMContentLoaded", () => {
-        const btn = document.getElementById("uploadWavBtn");
-        const uploadModal = document.getElementById("uploadModal");
-        if (!btn) return;
-
-        const strong = btn.querySelector("strong");
-        const span   = btn.querySelector("span");
-        const img    = btn.querySelector("img");
-
-        if (window.MEASURELY_MODE === "local") {
-            // LOCAL = SWEEP
-            if (strong) strong.textContent = "Quick sweep";
-            if (span)   span.textContent   = "Run a sweep now";
-            if (img)    img.src            = "icons/sweep.svg";
-
-            // 🔥 ADD THESE LINES — NOTHING ELSE
-            btn.addEventListener("click", () => {
-                console.log("🟢 CLICK: uploadWavBtn");
-                console.log("🟢 MODE:", window.MEASURELY_MODE);
-                console.log("🟢 dashboard object:", window.dashboard);
-
-                if (window.dashboard?.runSweep) {
-                    console.log("🟢 CALLING dashboard.runSweep()");
-                    window.dashboard.runSweep();
-                } else {
-                    console.error("🔴 runSweep NOT FOUND on dashboard");
-                }
-            });
-
-        } else {
-            // WEB = UPLOAD
-            if (strong) strong.textContent = "Quick upload";
-            if (span)   span.textContent   = "Analyse a sweep now";
-            if (img)    img.src            = "icons/arrow-down.svg";
-
-            btn.addEventListener("click", () => {
-                console.log("🟢 CLICK: uploadWavBtn (WEB)");
-                uploadModal.classList.remove("hidden");
-                uploadModal.setAttribute("aria-hidden", "false");
-            });
-        }
+        window.dashboard = new MeasurelyDashboard();
     });
     </script>
 
+
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const btn = document.getElementById("runSweepBtn");
+        if (!btn) return;
+
+        btn.addEventListener("click", () => {
+            console.log("🟢 CLICK: runSweepBtn");
+
+            if (window.dashboard?.runSweep) {
+                window.dashboard.runSweep();
+            } else {
+                console.error("🔴 dashboard.runSweep not available");
+            }
+        });
+    });
+    </script>
 
 
     <script>
@@ -745,25 +724,7 @@
                 return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             } catch { return isoString; }
         }
-
-
-        // Fully replace uploadsNav click logic
-        document.querySelectorAll("#uploadsNav .session-btn").forEach((btn, index) => {
-            btn.addEventListener("click", () => {
-                console.log(`👉 uploadsNav clicked - index ${index}`);
-                // Use the correct function in dashboard.js
-                window.dashboard.loadNthSession(index);
-            });
-        });
-       
-        
-
-        let firstDrawDone = false;
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof MeasurelyDashboard !== 'undefined') {
-                window.dashboard = new MeasurelyDashboard();
-            }
-        });
+    
 
         document.querySelectorAll('.nav-item').forEach(link => {
             link.addEventListener('click', () => {
@@ -802,54 +763,6 @@
         </div>
     </div>
 </div>
-
-<!-- UPLOAD WAV MODAL -->
-<div id="uploadModal" class="notes-modal hidden" aria-hidden="true">
-    <div class="notes-modal-backdrop"></div>
-
-    <div class="notes-modal-content">
-        <div class="notes-modal-header">
-            <h3>Upload Measurement</h3>
-            <button class="notes-modal-close" aria-label="Close upload">&times;</button>
-        </div>
-
-        <div class="notes-modal-body upload-split">
-
-            <!-- LEFT: DRAG & DROP -->
-            <div id="uploadDropzone" class="upload-dropzone primary">
-                <strong>Drop measurement</strong>
-                <span>Release to start analysis</span>
-
-                <input
-                    type="file"
-                    id="wavFileInput"
-                    accept=".wav,audio/wav"
-                />
-            </div>
-
-            <!-- RIGHT: MANUAL -->
-            <div class="upload-manual">
-                <div class="manual-copy">Prefer clicking?</div>
-
-                <button id="browseBtn" class="btn btn-secondary">
-                    Browse for file
-                </button>
-
-                <div id="selectedFileName" class="file-hint">
-                    No file selected
-                </div>
-
-                <button id="runAnalysisBtn"
-                        class="btn btn-primary"
-                        disabled>
-                    Run Analysis
-                </button>
-            </div>
-
-        </div>
-    </div>
-</div>
-
 
 
 <script>
@@ -938,6 +851,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </script>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const historyBtn = document.getElementById("viewHistoryBtn");
+    if (!historyBtn) return;
+
+    historyBtn.addEventListener("click", () => {
+        window.location.href = "uploads.html";
+    });
+});
+</script>
+
+
 <script type="module">
   import { initRoom3D } from "./js/room3d.js";
 
@@ -969,7 +894,38 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("DOMContentLoaded", initDashboardRoom);
 </script>
 
-<!-- SWEEP PROGRESS OVERLAY -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const cancelBtn = document.getElementById("cancelSweepBtn");
+  if (!cancelBtn) return;
+
+  cancelBtn.addEventListener("click", async () => {
+    console.warn("🟥 Sweep cancelled by user");
+
+    // 1. Tell backend to stop (safe even if nothing running)
+    try {
+      await fetch("/api/cancel-sweep", { method: "POST" });
+    } catch (e) {
+      console.warn("Cancel request failed (ignored)", e);
+    }
+
+    // 2. Close modal immediately
+    const modal = document.getElementById("sweepProgressModal");
+    modal?.classList.add("hidden");
+    modal?.setAttribute("aria-hidden", "true");
+
+    // 3. Reset dashboard sweep state
+    if (window.dashboard) {
+      window.dashboard.isSweepRunning = false;
+    }
+
+    // 4. HARD IGNORE any partial upload
+    window.__IGNORE_LATEST_SWEEP__ = true;
+  });
+});
+</script>
+
+
 <div id="sweepProgressModal" class="sweep-modal hidden" aria-hidden="true">
   <div class="sweep-modal-backdrop"></div>
 
@@ -989,6 +945,17 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="sweep-loader">
       <div class="sweep-line"></div>
     </div>
+
+    <!-- CANCEL BUTTON -->
+    <div style="margin-top:1.25rem; text-align:center;">
+      <button
+        id="cancelSweepBtn"
+        class="btn btn-secondary"
+        style="min-width:140px;">
+        Cancel sweep
+      </button>
+    </div>
+
   </div>
 </div>
 

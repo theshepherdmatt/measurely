@@ -576,6 +576,7 @@ def run_sweep():
             VENV_PY, SWEEP,
             "--mode", "both",
             "--playback", "aplay",
+            "--alsa-device", "plughw:CARD=sndrpihifiberry,DEV=0",
             "--verbose",
             "--in", "1",
             "--out", "0"
@@ -594,7 +595,8 @@ def run_sweep():
             sweep_progress['session_id'] = None
 
             def tick_progress():
-                while sweep_progress['running']:
+                while sweep_progress['running'] and not sweep_cancel_event.is_set():
+
                     sweep_progress['progress'] = min(sweep_progress['progress'] + 5, 95)
                     sweep_progress['message'] = "Sweep running…"
                     time.sleep(1)
@@ -604,9 +606,25 @@ def run_sweep():
             # -----------------------------------------------------
             # 1. Run sweep
             # -----------------------------------------------------
-            completed = subprocess.run(
-                cmd, cwd=BASEDIR, capture_output=True, text=True
+            global sweep_process
+            sweep_cancel_event.clear()
+
+            sweep_process = subprocess.Popen(
+                cmd,
+                cwd=BASEDIR,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
             )
+
+            stdout, stderr = sweep_process.communicate()
+
+            if sweep_cancel_event.is_set():
+                print("🟥 Sweep cancelled mid-run")
+                return
+
+            out_lines = stdout.strip().splitlines()
+
 
             out_lines = completed.stdout.strip().splitlines()
             session_path = None
@@ -680,16 +698,9 @@ def run_sweep():
             # -----------------------------------------------------
             # 5. Run AI analysis AFTER analysis completes
             # -----------------------------------------------------
-            subprocess.run(
-                [VENV_PY, f"{SERVICE_ROOT}/measurelyapp/ai_analysis.py"],
-                cwd=BASEDIR,
-                check=False
-            )
-    
             sweep_progress['progress'] = 100
             sweep_progress['message'] = "Sweep complete"
             sweep_progress['running'] = False
-
             update_led_state("sweep_complete")
 
         threading.Thread(target=run, daemon=True).start()
@@ -700,7 +711,11 @@ def run_sweep():
         print("[/api/run-sweep] ERROR:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
-
+# ------------------------------------------------------------------
+#  sweep control (for cancellation)
+# ------------------------------------------------------------------
+sweep_process = None
+sweep_cancel_event = threading.Event()
 
 @app.route('/api/sweep-progress', methods=['GET'])
 def api_sweep_progress():
@@ -761,6 +776,34 @@ def get_status():
 def api_build_sweephistory():
     history = build_sweephistory(limit=4)
     return jsonify(history)
+
+
+@app.route("/api/cancel-sweep", methods=["POST"])
+def cancel_sweep():
+    global sweep_process
+
+    if not sweep_progress["running"]:
+        return jsonify({"status": "no sweep running"}), 200
+
+    print("🟥 Cancel sweep requested")
+
+    sweep_cancel_event.set()
+
+    if sweep_process and sweep_process.poll() is None:
+        try:
+            sweep_process.terminate()
+            sweep_process.wait(timeout=2)
+        except Exception:
+            sweep_process.kill()
+
+    sweep_progress["running"] = False
+    sweep_progress["progress"] = 0
+    sweep_progress["message"] = "Cancelled"
+    sweep_progress["session_id"] = None
+
+    update_led_state("idle")
+
+    return jsonify({"status": "cancelled"})
 
 
 # ----------------------------------------------------------
@@ -1078,22 +1121,32 @@ def save_room():
 
 @app.route('/api/room/latest', methods=['GET'])
 def load_room():
-    """return room settings from latest/meta.json"""
+    """Return room settings from latest/meta.json, fallback to global room.json."""
     try:
+        # 1) Try session-scoped room first
         ses = MEAS_ROOT / "latest"
         meta_file = ses / "meta.json"
 
-        if not meta_file.exists():
-            return jsonify({}), 200
+        room = {}
 
-        meta = json.loads(meta_file.read_text(encoding='utf-8'))
-        room = meta.get("settings", {}).get("room", {})
-        return jsonify(room)
+        if meta_file.exists():
+            meta = json.loads(meta_file.read_text(encoding='utf-8'))
+            room = meta.get("settings", {}).get("room", {}) or {}
+
+        # 2) Fallback to persistent global room.json
+        if not room:
+            room_file = SERVICE_ROOT / "room.json"
+            if room_file.exists():
+                room = json.loads(room_file.read_text(encoding='utf-8')) or {}
+
+        # Always return an object (never None)
+        return jsonify(room if isinstance(room, dict) else {}), 200
 
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
     
 @app.route('/api/latest', methods=['GET'])
 def api_latest():

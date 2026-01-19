@@ -5,23 +5,28 @@ console.log("📌 room.js loaded");
 import { $, fetchJSON, showToast } from './api.js';
 
 let currentRoom = {
-  length: 4.0,
-  width: 4.0,
-  height: 3.0,
-  seatingDistance: 3.0,
-  speakerDistance: 0.2,
-  speakerSpacing: 2.0,
+  length_m: 4.0,
+  width_m: 4.0,
+  height_m: 2.5,
+
+  spk_front_m: 0.3,
+  spk_spacing_m: 2.0,
+  listener_front_m: 2.5,
+  toe_in_deg: 15,
+
   speaker_key: null,
-  toe_in_deg: null,
-  echo_pct: null,
   subwoofer: "unknown",
-  opt_hardfloor: null,
-  opt_barewalls: null,
-  opt_rug: null,
-  opt_curtains: null,
-  opt_sofa: null,
-  opt_wallart: null
+
+  floor_material: "hard",
+  wall_treatment: "bare",
+
+  opt_area_rug: false,
+  opt_sofa: false,
+  opt_coffee_table: false,
+
+  tweeter_height_m: null
 };
+
 
 // 🔍 Diagnostic log
 function logState(msg) {
@@ -52,14 +57,16 @@ export async function loadRoom() {
         echo_pct: data.echo_pct ?? currentRoom.echo_pct,
         subwoofer: data.subwoofer ?? currentRoom.subwoofer,
         opt_hardfloor: data.opt_hardfloor ?? currentRoom.opt_hardfloor,
-        opt_barewalls: data.opt_barewalls ?? currentRoom.opt_barewalls,
         opt_rug: data.opt_area_rug ?? currentRoom.opt_rug,
-        opt_curtains: data.opt_curtains ?? currentRoom.opt_curtains,
         opt_sofa: data.opt_sofa ?? currentRoom.opt_sofa,
-        opt_wallart: data.opt_wallart ?? currentRoom.opt_wallart
+        wall_treatment: data.wall_treatment ?? currentRoom.wall_treatment,
+        opt_coffee_table: data.opt_coffee_table ?? currentRoom.opt_coffee_table,
+        tweeter_height_m: data.tweeter_height_m ?? currentRoom.tweeter_height_m
+
       };
 
       logState("After API load");
+      window.currentRoom = currentRoom;
       console.log("[ROOM] Loaded API data:", currentRoom);
 
       updateRoomForm();          // 1st sync
@@ -114,10 +121,12 @@ export async function saveRoom() {
     spk_spacing_m:  num('speaker-width-num'),
     listener_front_m: num('listening-distance-num'),
     toe_in_deg:     num('toe-angle'),
+    tweeter_height_m: num('tweeter-height-num'),
 
     // Acoustics
     echo_pct: parseInt(val('room-echo')),
     floor_material: val('floor-material'),
+    wall_treatment: val('wall_treatment'),
 
     // System
     speaker_key: val('speakerSel'),
@@ -126,10 +135,8 @@ export async function saveRoom() {
 
     // Furnishings
     opt_area_rug:  chk('opt-area-rug'),
-    opt_barewalls: chk('opt-barewalls'),
-    opt_curtains:  chk('opt-curtains'),
     opt_sofa:      chk('opt-sofa'),
-    opt_wallart:   chk('opt-wallart')
+    opt_coffee_table: chk('opt-coffee-table')
   };
 
   console.log("💾 Sending payload:", payload);
@@ -188,12 +195,14 @@ export async function loadRoomSetup() {
     assign('echo_pct', 'room-echo');
     assign('floor_material', 'floor-material');
     assign('speaker_key', 'speakerSel');
+    assign('wall_treatment', 'wall_treatment');
     assign('subwoofer', 'subwoofer-present');
+    assign('tweeter_height_m', 'tweeter-height-num');
 
     document.getElementById('opt-area-rug').checked = !!j.opt_area_rug;
-    document.getElementById('opt-barewalls').checked = !!j.opt_barewalls;
-    document.getElementById('opt-curtains').checked = !!j.opt_curtains;
+    document.getElementById('wall_treatment').value = j.wall_treatment ?? "bare";
     document.getElementById('opt-sofa').checked = !!j.opt_sofa;
+    document.getElementById('opt-coffee-table').checked = !!j.opt_coffee_table;
 
     updateRoomForm(); // sync sliders + nums
 
@@ -237,19 +246,28 @@ function showDaveSummary() {
     const l = room.length_m;
     const h = room.height_m;
     const spkDist = room.listener_front_m;
-    const spacing = room.speaker_spacing_m;
+    const spacing = room.speakerSpacing;
     const toe = room.toe_in_deg;
 
     const sofa = room.opt_sofa;
     const rug = room.opt_area_rug;
-    const curtains = room.opt_curtains;
-    const bare = room.opt_barewalls;
+    const wall_treatment = room.wall_treatment;
+    const coffee = room.opt_coffee_table;
+    const tweeterH = room.tweeter_height_m;
+
 
     let furnText = "";
     if (rug) furnText += "A rug helps calm reflections. ";
     if (sofa) furnText += "A large sofa is friendly to bass. ";
-    if (curtains) furnText += "Curtains help soften upper-mid glare. ";
-    if (bare) furnText += "Bare walls will keep the room a little lively. ";
+    if (wall_treatment === "treated") { furnText += "Wall treatment helps tame reflections and smooth the top end. ";
+    }
+    if (wall_treatment === "bare") { furnText += "Bare walls will keep the room more lively and reflective. ";
+    }
+    if (coffee) furnText += "A coffee table between the speakers and seat can add early mid-range reflections. ";
+    if (tweeterH && tweeterH < 0.8) { furnText += "Tweeters are relatively low, which may be reinforcing floor reflections. ";
+}
+
+
 
     const summary = `
         Cool. You’re working with a room around <strong>${w} × ${l}m</strong>
@@ -259,6 +277,7 @@ function showDaveSummary() {
         and toe-in is around <strong>${toe}°</strong> —
         nice baseline for a focused soundstage.<br><br>
         ${furnText || "Room is pretty neutral so far — easy to shape later."}
+        
     `;
 
     const el = document.getElementById("dave-summary-text");
@@ -393,6 +412,30 @@ function updateRoomForm() {
   if (subSel && currentRoom.subwoofer) {
     subSel.value = currentRoom.subwoofer;
   }
+
+  // 🪑 Furnishings → UI sync
+  const setChk = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val !== null) el.checked = !!val;
+  };
+
+  setChk('opt-area-rug', currentRoom.opt_rug);
+  setChk('opt-sofa', currentRoom.opt_sofa);
+
+  const wt = document.getElementById('wall_treatment');
+  if (wt && currentRoom.wall_treatment) {
+    wt.value = currentRoom.wall_treatment;
+  }
+
+  setChk('opt-coffee-table', currentRoom.opt_coffee_table);
+
+  // 🎯 Tweeter height → UI sync
+  const th = document.getElementById('tweeter-height-num');
+  if (th && currentRoom.tweeter_height_m != null) {
+    th.value = currentRoom.tweeter_height_m;
+  }
+
+
 }
 
 
@@ -447,5 +490,3 @@ function updateRoomVisualization() {
 
 window.saveRoom = saveRoom;
 window.loadRoomSetup = loadRoomSetup;
-
-

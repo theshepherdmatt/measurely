@@ -49,30 +49,6 @@
   </div>
 </div>
 
-<!-- UPLOAD WAV OVERLAY -->
-<div id="uploadOverlay" class="upload-overlay hidden">
-  <div class="upload-card">
-    <h2>Ready to analyse your room</h2>
-    <p>Drop your measurement to see how sound moves through it.</p>
-
-    <div class="upload-dropzone" id="uploadDropzone">
-      <span>Drop measurement to begin</span>
-      <small>or click to choose a file</small>
-      <input type="file" id="wavInput" accept=".wav,audio/wav">
-    </div>
-
-    <div class="upload-hint">
-      You can tweak the room later, this won’t affect your results.
-    </div>
-  </div>
-</div>
-
-<div id="handoffOverlay" class="handoff-overlay hidden">
-  <div class="handoff-card">
-    <h3 id="handoffTitle">Room loaded</h3>
-  </div>
-</div>
-
 
 <script type="module">
 import { initRoom3D } from "./js/room3d.js";
@@ -410,6 +386,7 @@ backBtn.addEventListener("click", () => {
   }
 });
 
+
 /* ------------------------------------------
    FINISH ONBOARDING
 ------------------------------------------ */
@@ -418,139 +395,24 @@ async function finish() {
   panel.classList.remove("active");
 
   try {
-    await fetch("/api/room/latest", {
+    const res = await fetch("/api/room/latest", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(roomState)
     });
+
+    if (!res.ok) {
+      throw new Error("Failed to save room");
+    }
   } catch (err) {
     console.error("Failed to save room", err);
+    return;
   }
 
-  showUploadOverlay();
+  // Go straight to dashboard
+  window.location.href = "/index.html";
 }
 
-const uploadOverlay = document.getElementById("uploadOverlay");
-
-function showUploadOverlay() {
-  uploadOverlay.classList.remove("hidden");
-}
-
-function hideUploadOverlay() {
-  uploadOverlay.classList.add("hidden");
-}
-
-const dropzone = document.getElementById("uploadDropzone");
-const wavInput = document.getElementById("wavInput");
-
-["dragenter", "dragover"].forEach(evt => {
-  dropzone.addEventListener(evt, e => {
-    e.preventDefault();
-    dropzone.classList.add("dragover");
-  });
-});
-
-["dragleave", "drop"].forEach(evt => {
-  dropzone.addEventListener(evt, e => {
-    e.preventDefault();
-    dropzone.classList.remove("dragover");
-  });
-});
-
-dropzone.addEventListener("drop", e => {
-  const file = e.dataTransfer.files[0];
-  if (file) handleWav(file);
-});
-
-wavInput.addEventListener("change", () => {
-  const file = wavInput.files[0];
-  if (file) handleWav(file);
-});
-
-
-/* ------------------------------------------
-   HANDOFF OVERLAY
------------------------------------------- */
-const handoffOverlay = document.getElementById("handoffOverlay");
-const handoffTitle   = document.getElementById("handoffTitle");
-
-function showHandoff(text) {
-  console.log("[Handoff] show:", text);
-  handoffTitle.textContent = text;
-  handoffOverlay.classList.remove("hidden");
-}
-
-function hideHandoff() {
-  console.log("[Handoff] hide");
-  handoffOverlay.classList.add("hidden");
-}
-
-
-function handleWav(file) {
-  hideUploadOverlay();
-
-  // ------------------------------------------
-  // START ANALYSIS VISUALS
-  // ------------------------------------------
-  room3D.setMode("analysing");
-
-  const volume = (
-    roomState.length_m *
-    roomState.width_m *
-    roomState.height_m
-  ).toFixed(1);
-
-  // ------------------------------------------
-  // HANDOFF MESSAGES (LINEAR TIMELINE)
-  // ------------------------------------------
-  showHandoff(`Analysing ${volume}m³ enclosure...`);
-
-  setTimeout(() => {
-    showHandoff("Locating early reflections...");
-  }, 3000);
-
-  setTimeout(() => {
-    showHandoff("Decoding modal interactions...");
-  }, 6000);
-
-  setTimeout(() => {
-    showHandoff("Diagnosis complete");
-    room3D.setMode("final"); // green room moment
-  }, 9000);
-
-  // ⏸ give completion a moment to land
-  setTimeout(() => {
-    showHandoff("Loading dashboard");
-  }, 11500);
-
-  setTimeout(() => {
-    showHandoff("Please wait");
-  }, 13500);
-
-  // ------------------------------------------
-  // TRANSITION TO DASHBOARD
-  // ------------------------------------------
-  setTimeout(() => {
-    window.location.href = "/index.html";
-  }, 15500);
-}
-
-function startAnalysisSequence(file) {
-  // This is where real upload will go later
-  console.log("Analysing:", file.name);
-
-  // Keep analysing visuals on screen for ~5 seconds
-  setTimeout(() => {
-    finishAnalysis();
-  }, 5000);
-}
-
-function finishAnalysis() {
-  console.log("Analysis complete");
-
-  // Transition to dashboard
-  window.location.href = "index.html";
-}
 
 await loadSavedRoom();
 /* ------------------------------------------

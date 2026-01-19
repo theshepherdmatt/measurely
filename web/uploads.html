@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Measurely – Uploads</title>
+
+  <link rel="icon" type="image/svg+xml" href="icons/dave.svg">
+  <link rel="stylesheet" href="css/dashboard/index.css">
+</head>
+
+<body>
+<div class="page">
+  <main class="main-content">
+
+    <header class="header animate-enter">
+    <div class="header-title">
+        <h1>
+        <img
+            src="icons/largedave.svg"
+            alt=""
+            class="measurely-mark"
+            aria-hidden="true"
+        />
+        Uploads
+        </h1>
+        <p>Your measurement history. Click one to load it.</p>
+    </div>
+
+    <a href="index.html" class="btn btn-secondary btn-back-dashboard">
+        ← Back to Dashboard
+    </a>
+    </header>
+
+
+    <!-- EMPTY STATE -->
+    <div id="emptyState" class="card glass-panel animate-enter">
+      <h2 class="card-title">
+        <img src="icons/uploads.svg" class="icon-accent" alt="">
+        No uploads yet
+      </h2>
+      <p class="card-description">
+        Upload your first WAV file from the Dashboard to see it here.
+      </p>
+      <a href="index.html" class="btn btn-primary">Go to Dashboard</a>
+    </div>
+
+    <!-- UPLOADS GRID -->
+    <section id="uploadsGrid" class="grid-3 hidden animate-enter delay-1">
+
+      <!-- TEMPLATE CARD -->
+      <div class="card glass-panel uploads-card hidden" id="uploadTemplate">
+        <h3 class="uploads-title">
+          <span class="uploads-tag">Upload</span>
+        </h3>
+
+        <div class="uploads-time">—</div>
+
+        <div class="uploads-score">
+          <span class="score-value">--</span>
+          <span class="score-max">/10</span>
+        </div>
+
+        <div class="uploads-metrics">
+          <div><span>Peaks</span><span data-metric="peaks">--</span></div>
+          <div><span>Reflections</span><span data-metric="reflections">--</span></div>
+          <div><span>Bandwidth</span><span data-metric="bandwidth">--</span></div>
+          <div><span>Balance</span><span data-metric="balance">--</span></div>
+          <div><span>Smoothness</span><span data-metric="smoothness">--</span></div>
+          <div><span>Clarity</span><span data-metric="clarity">--</span></div>
+        </div>
+
+        <div class="uploads-footer">
+          <button class="btn btn-secondary btn-load">Load</button>
+          <button class="btn btn-utility btn-delete">Delete</button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   uploads.html — unified with /api/sweephistory
+   ============================================================ */
+
+function formatTime(ts) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  return (
+    d.toLocaleDateString() + " " +
+    d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  );
+}
+
+async function loadUploads() {
+  const empty = document.getElementById("emptyState");
+  const grid  = document.getElementById("uploadsGrid");
+  const tpl   = document.getElementById("uploadTemplate");
+
+  let sweeps = [];
+
+  try {
+    const res = await fetch("/api/sweephistory");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const json = await res.json();
+    sweeps = Array.isArray(json?.sweeps) ? json.sweeps : [];
+
+  } catch (err) {
+    console.error("Failed to load uploads:", err);
+    empty.classList.remove("hidden");
+    grid.classList.add("hidden");
+    return;
+  }
+
+  // Filter to analysed sweeps only (robust)
+  const uploads = sweeps.filter(s =>
+    s.has_analysis === true ||
+    Number.isFinite(s.overall_score) ||
+    s.scores ||
+    s.analysis
+  );
+
+  if (uploads.length === 0) {
+    empty.classList.remove("hidden");
+    grid.classList.add("hidden");
+    return;
+  }
+
+  // Sort newest → oldest
+  const extractNum = (id) => {
+    const m = String(id).match(/(\d+)(?!.*\d)/);
+    return m ? parseInt(m[1], 10) : -1;
+  };
+
+  uploads.sort((a, b) => extractNum(b.id) - extractNum(a.id));
+
+  empty.classList.add("hidden");
+  grid.classList.remove("hidden");
+  grid.innerHTML = "";
+
+  uploads.forEach((u, index) => {
+    const card = tpl.cloneNode(true);
+    card.id = "";
+    card.classList.remove("hidden");
+
+    // Tag
+    card.querySelector(".uploads-tag").textContent =
+      index === 0 ? "Latest" : u.id;
+
+    // Time
+    card.querySelector(".uploads-time").textContent =
+      formatTime(u.timestamp);
+
+    // Overall score
+    card.querySelector(".score-value").textContent =
+      Number.isFinite(u.overall_score) ? u.overall_score.toFixed(1) : "--";
+
+    // Metrics
+    const metricMap = {
+      peaks:       u.metrics?.peaks_dips ?? u.peaks_dips,
+      reflections: u.metrics?.reflections ?? u.reflections,
+      bandwidth:   u.metrics?.bandwidth ?? u.bandwidth,
+      balance:     u.metrics?.balance ?? u.balance,
+      smoothness:  u.metrics?.smoothness ?? u.smoothness,
+      clarity:     u.metrics?.clarity ?? u.clarity
+    };
+
+    for (const [k, v] of Object.entries(metricMap)) {
+      const el = card.querySelector(`[data-metric="${k}"]`);
+      if (el) el.textContent = Number.isFinite(v) ? v.toFixed(1) : "--";
+    }
+
+    // LOAD
+    card.querySelector(".btn-load").addEventListener("click", async () => {
+      await fetch(`/api/session/${encodeURIComponent(u.id)}/load`, {
+        method: "POST"
+      });
+      window.location.href = "index.html";
+    });
+
+    // DELETE
+    card.querySelector(".btn-delete").addEventListener("click", async () => {
+      if (!confirm(`Delete ${u.id}? This cannot be undone.`)) return;
+
+      try {
+        const res = await fetch(`/api/uploads/${encodeURIComponent(u.id)}`, {
+          method: "DELETE"
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          alert(err || "Delete failed");
+          return;
+        }
+
+        card.remove();
+
+        if (!grid.querySelector(".uploads-card:not(.hidden)")) {
+          grid.classList.add("hidden");
+          empty.classList.remove("hidden");
+        }
+
+      } catch (e) {
+        console.error(e);
+        alert("Delete failed");
+      }
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", loadUploads);
+</script>
+
+</body>
+</html>

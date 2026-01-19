@@ -124,7 +124,7 @@ systemctl disable --now measurely.service 2>/dev/null || true
 msg "Ensuring 'latest' measurement link exists…"
 
 MEAS_DIR="$REPO_DIR/measurements"
-STARTER="Sweep0"
+STARTER="uploads0"
 
 # Ensure starter folder exists
 if [[ ! -d "$MEAS_DIR/$STARTER" ]]; then
@@ -146,7 +146,7 @@ msg "✔ 'latest' → $STARTER (fresh initialisation)"
 # 7.5. Audio Hardware Setup: HiFiBerry DAC + USB Microphone
 # ------------------------------------------------------------
 
-msg "Configuring audio hardware (HiFiBerry DAC + USB microphone)…"
+msg "Configuring audio hardware (I2S DAC + USB microphone)…"
 
 CONFIG="/boot/firmware/config.txt"
 
@@ -158,29 +158,39 @@ else
     msg "  - I2S already enabled"
 fi
 
-# --- Enable correct HiFiBerry DAC overlay (PCM5102A-based) ---
-if ! grep -q "^dtoverlay=hifiberry-dac" "$CONFIG"; then
-    echo "dtoverlay=hifiberry-dac" | tee -a "$CONFIG" >/dev/null
-    msg "  - Added HiFiBerry DAC overlay (hifiberry-dac)"
+
+# --- Enable I2S DAC overlay (NanoSound / PCM512x) ---
+if ! grep -q "^dtoverlay=pcm512x" "$CONFIG"; then
+    echo "dtoverlay=pcm512x" | tee -a "$CONFIG" >/dev/null
+    msg "  - Added I2S DAC overlay (pcm512x)"
 else
-    msg "  - HiFiBerry DAC overlay already present"
+    msg "  - I2S DAC overlay already present"
 fi
+
 
 # --- Stabilise ALSA card ordering ---
 msg "Writing /etc/asound.conf to stabilise audio card order…"
 
 cat >/etc/asound.conf <<'EOF'
-# Force HiFiBerry DAC as default playback (card 0)
-defaults.pcm.card 0
-defaults.ctl.card 0
+# Default playback device (I2S DAC – NanoSound / PCM512x)
+pcm.!default {
+    type plug
+    slave.pcm "hw:0,0"
+}
 
-# USB microphone alias (usually card 1)
+ctl.!default {
+    type hw
+    card 0
+}
+
+# USB microphone alias
 pcm.usb_mic {
     type hw
     card 1
     device 0
 }
 EOF
+
 
 msg "  - ALSA device order locked (DAC=card0, USB mic=card1)"
 msg "  - ALSA alias 'usb_mic' created for recording"
@@ -249,48 +259,141 @@ msg "   \\\\MEASURELY\\measurely   (Windows)"
 msg "   smb://MEASURELY/measurely (Mac)"
 msg "   or smb://10.10.10.2/measurely"
 
+
 # ------------------------------------------------------------
-# LED STATUS SERVICE (Raspberry Pi 4/5 compatible)
+# Force wlan0 up BEFORE starting AP services
 # ------------------------------------------------------------
-msg "Installing GPIO support for Pi 5…"
-apt-get install -y python3-rpi-lgpio
 
-LED_SCRIPT="$REPO_DIR/measurelyapp/led_status.py"
+ip link set wlan0 up
 
-if [[ ! -f "$LED_SCRIPT" ]]; then
-    die "LED script not found at $LED_SCRIPT"
-fi
+# Wait for systemd-networkd to assign static IP
+for i in {1..20}; do
+    if ip addr show wlan0 | grep -q "192.168.4.1"; then
+        break
+    fi
+    sleep 0.25
+done
 
-msg "Making LED script executable…"
-chmod +x "$LED_SCRIPT"
 
-msg "Creating initial LED state JSON…"
-rm -f /tmp/measurely_status.json
-echo "{\"state\":\"boot\"}" | tee /tmp/measurely_status.json >/dev/null || true
-chmod 666 /tmp/measurely_status.json
+# ------------------------------------------------------------
+# HARD stop wlan0 client mode (AP requires exclusive control)
+# ------------------------------------------------------------
 
-msg "Writing LED systemd service…"
+# Stop and permanently disable wpa_supplicant on wlan0
+systemctl stop wpa_supplicant || true
+systemctl disable wpa_supplicant || true
+systemctl mask wpa_supplicant || true
 
-cat >/etc/systemd/system/measurely-led.service <<EOF
-[Unit]
-Description=Measurely LED Status
-After=multi-user.target
+# Flush any client IPs that may already exist
+ip addr flush dev wlan0
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/python3 $LED_SCRIPT
-Restart=on-failure
-RestartSec=3
+# Bring interface back up cleanly
+ip link set wlan0 down
+sleep 1
+ip link set wlan0 up
 
-[Install]
-WantedBy=multi-user.target
+
+# ------------------------------------------------------------
+# Access Point setup (Pi 4 – wlan0 ONLY)
+# ------------------------------------------------------------
+msg "Configuring Access Point on wlan0…"
+
+apt-get install -y hostapd dnsmasq
+
+systemctl stop hostapd dnsmasq || true
+systemctl unmask hostapd
+
+# NetworkManager must NOT manage wlan0
+mkdir -p /etc/NetworkManager/conf.d
+cat >/etc/NetworkManager/conf.d/99-unmanaged-wlan0.conf <<EOF
+[keyfile]
+unmanaged-devices=interface-name:wlan0
 EOF
 
-msg "Enabling Measurely LED service…"
-systemctl daemon-reload
-systemctl enable --now measurely-led.service
+pkill -f "wpa_supplicant.*wlan0" || true
+sleep 1
+systemctl restart NetworkManager
 
-msg "✔ LED status service installed and active."
+# Static IP for AP
+cat >/etc/systemd/network/20-wlan0-ap.network <<'EOF'
+[Match]
+Name=wlan0
+
+[Network]
+Address=192.168.4.1/24
+DHCP=no
+ConfigureWithoutCarrier=yes
+EOF
+
+systemctl enable systemd-networkd
+systemctl restart systemd-networkd
+
+# dnsmasq
+cat >/etc/dnsmasq.d/measurely-ap.conf <<EOF
+interface=wlan0
+dhcp-range=192.168.4.20,192.168.4.80,12h
+domain-needed
+bogus-priv
+EOF
+
+# hostapd
+cat >/etc/hostapd/hostapd.conf <<EOF
+interface=wlan0
+driver=nl80211
+country_code=GB
+ssid=MEASURELY
+hw_mode=g
+channel=6
+ieee80211n=1
+wmm_enabled=1
+auth_algs=1
+ignore_broadcast_ssid=0
+wpa=2
+wpa_passphrase=MeasurelyConnect
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+
+EOF
+
+sed -i 's|^#DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
+
+systemctl enable hostapd dnsmasq
+systemctl restart dnsmasq
+systemctl restart hostapd
+
+msg "✔ Access Point MEASURELY active on wlan0 (192.168.4.1)"
+
+# ------------------------------------------------------------
+# 9. Configure eth0 as static 10.10.10.2 (SSH / dev link)
+# ------------------------------------------------------------
+msg "Configuring eth0 static IP (10.10.10.2)…"
+
+# Ensure NetworkManager does NOT manage eth0
+mkdir -p /etc/NetworkManager/conf.d
+
+cat >/etc/NetworkManager/conf.d/99-unmanaged-eth0.conf <<EOF
+[keyfile]
+unmanaged-devices=interface-name:eth0
+EOF
+
+systemctl restart NetworkManager
+
+# Static IP via systemd-networkd
+mkdir -p /etc/systemd/network
+
+cat >/etc/systemd/network/10-eth0-static.network <<EOF
+[Match]
+Name=eth0
+
+[Network]
+Address=10.10.10.2/24
+ConfigureWithoutCarrier=yes
+EOF
+
+systemctl enable systemd-networkd
+systemctl restart systemd-networkd
+
+msg "✔ eth0 locked to 10.10.10.2"
 
 
 # ------------------------------------------------------------
@@ -327,42 +430,4 @@ else
   warn "   journalctl -u measurely.service -e"
 fi
 
-# ------------------------------------------------------------
-# 9. Configure eth0 as static 10.10.10.2 and PERMANENTLY stop NM
-# ------------------------------------------------------------
-msg "Locking eth0 to 10.10.10.2 and disabling NetworkManager control…"
 
-# --- 1. Full NM ignore rules (TWO LAYERS) ---
-mkdir -p /etc/NetworkManager/conf.d
-
-cat >/etc/NetworkManager/conf.d/99-eth0-unmanaged.conf <<EOF
-[keyfile]
-unmanaged-devices=interface-name:eth0
-EOF
-
-cat >/etc/NetworkManager/conf.d/99-eth0-device.conf <<EOF
-[device]
-match-device=interface-name:eth0
-managed=false
-EOF
-
-# --- 2. Static IP via systemd-networkd (with carrier protection) ---
-mkdir -p /etc/systemd/network
-
-cat >/etc/systemd/network/10-eth0-static.network <<EOF
-[Match]
-Name=eth0
-
-[Network]
-Address=10.10.10.2/24
-ConfigureWithoutCarrier=yes
-EOF
-
-# --- 3. Enable + restart networkd ---
-systemctl enable systemd-networkd >/dev/null 2>&1
-systemctl restart systemd-networkd >/dev/null 2>&1
-
-# --- 4. Restart NetworkManager (safe now) ---
-systemctl restart NetworkManager >/dev/null 2>&1
-
-msg "✔ eth0 is now PERMANENTLY static (10.10.10.2) and NetworkManager-proof."

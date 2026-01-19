@@ -50,3 +50,7 @@ debug_stats.json
 meta.json
 install.log
 !docs/*.png
+
+# Allow root room state
+!room.json
+install.log

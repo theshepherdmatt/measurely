@@ -1,14 +1,3 @@
-/* ============================================================
-   MODE CONFIG (web | local)
-   ============================================================ */
-const MEASURELY_MODE = (window.MEASURELY_MODE === "local") ? "local" : "web";
-
-const CAPS = {
-  history: true,          // ✅ ALWAYS ENABLE HISTORY
-  notes: (MEASURELY_MODE === "web"),
-  uploadFlow: (MEASURELY_MODE === "web")
-};
-
 const UI = {
   historyCardSelector: ".uploads-card",
   historyIdDatasetKey: "uploadId",        // ALWAYS uploads
@@ -53,16 +42,33 @@ window.addLog = function (msg) {
 function buildRoomGeometryAnalysis(room, room_context) {
     if (!room) return null;
 
-    const measuredSBIR =
-        room_context?.sbir ??
-        null;
+    // 🔧 NORMALISE ROOM SHAPE (onboarding vs analysis)
+    const r = {
+        length_m: room.length_m ?? room.length ?? null,
+        width_m:  room.width_m  ?? room.width  ?? null,
+        height_m: room.height_m ?? room.height ?? null,
+
+        spk_spacing_m:    room.spk_spacing_m    ?? room.speakerSpacing   ?? null,
+        spk_front_m:      room.spk_front_m      ?? room.speakerDistance  ?? null,
+        listener_front_m: room.listener_front_m ?? room.seatingDistance  ?? null,
+
+        toe_in_deg: room.toe_in_deg ?? null,
+        tweeter_height_m: room.tweeter_height_m ?? null,
+
+        speaker_type: room.speaker_type ?? null,
+        subwoofer: room.subwoofer ?? null,
+
+        opt_area_rug: room.opt_area_rug ?? null,
+        opt_sofa: room.opt_sofa ?? null,
+        opt_coffee_table: room.opt_coffee_table ?? null,
+        wall_treatment: room.wall_treatment ?? null
+    };
 
     const {
         length_m,
         width_m,
         height_m,
         spk_spacing_m,
-        spk_front_m,
         listener_front_m,
         toe_in_deg,
         tweeter_height_m,
@@ -72,61 +78,37 @@ function buildRoomGeometryAnalysis(room, room_context) {
         opt_sofa,
         opt_coffee_table,
         wall_treatment
-    } = room;
+    } = r;
 
-    const volume_m3 = length_m * width_m * height_m;
+    const measuredSBIR = room_context?.sbir ?? null;
 
-    // Schroeder frequency (small-room approximation)
-    const schroeder_hz = 2000 * Math.sqrt(0.161 / volume_m3);
+    const hasGeometry =
+        typeof length_m === "number" &&
+        typeof width_m === "number" &&
+        typeof height_m === "number";
 
-    // Triangle geometry
-    const triangle_ratio =
-        spk_spacing_m && listener_front_m
-            ? spk_spacing_m / listener_front_m
-            : null;
+    const volume_m3 = hasGeometry
+        ? length_m * width_m * height_m
+        : null;
 
-    const ideal_toe_deg =
-        spk_spacing_m && listener_front_m
-            ? Math.atan((spk_spacing_m / 2) / listener_front_m) * (180 / Math.PI)
-            : null;
-
-    let toe_comment = "—";
-    if (ideal_toe_deg != null) {
-        const diff = toe_in_deg - ideal_toe_deg;
-        toe_comment =
-            Math.abs(diff) < 3 ? "Near ideal" :
-            diff > 0 ? "Over-toed" :
-            "Under-toed";
-    }
-
-    // Side-wall first reflection (ms)
-    const side_wall_dist_m =
-        width_m && spk_spacing_m
-            ? (width_m - spk_spacing_m) / 2
-            : null;
-
-    const side_reflection_ms =
-        side_wall_dist_m != null
-            ? Math.round((2 * side_wall_dist_m / 343) * 1000)
-            : null;
+    const schroeder_hz = volume_m3
+        ? 2000 * Math.sqrt(0.161 / volume_m3)
+        : null;
 
     return {
-        room_geometry: {
-            dimensions: `${length_m.toFixed(2)} × ${width_m.toFixed(2)} × ${height_m.toFixed(2)} m`,
-            volume_m3: volume_m3.toFixed(1),
-            schroeder_hz: Math.round(schroeder_hz)
-        },
+        room_geometry: hasGeometry
+            ? {
+                dimensions: `${length_m.toFixed(2)} × ${width_m.toFixed(2)} × ${height_m.toFixed(2)} m`,
+                volume_m3: volume_m3.toFixed(1),
+                schroeder_hz: Math.round(schroeder_hz)
+            }
+            : null,
 
         listening_geometry: {
-            speaker_spacing_m: spk_spacing_m?.toFixed(2),
-            listener_distance_m: listener_front_m?.toFixed(2),
-            tweeter_height_m: tweeter_height_m?.toFixed(2),
-            toe_in_deg: toe_in_deg?.toFixed(1),
-            toe_comment
-        },
-
-        reflections: {
-            side_wall_ms: side_reflection_ms
+            speaker_spacing_m: spk_spacing_m?.toFixed?.(2) ?? null,
+            listener_distance_m: listener_front_m?.toFixed?.(2) ?? null,
+            tweeter_height_m: tweeter_height_m?.toFixed?.(2) ?? null,
+            toe_in_deg: toe_in_deg?.toFixed?.(1) ?? null
         },
 
         sbir: measuredSBIR
@@ -147,6 +129,7 @@ function buildRoomGeometryAnalysis(room, room_context) {
         }
     };
 }
+
 
 /* ============================================================
    RENDER: ROOM ANALYSIS CARDS
@@ -288,6 +271,9 @@ class MeasurelyDashboard {
         this.activeChartSessions = new Set([0]);
         this.isSweepRunning = false;
         this.sweepCheckInterval = null;
+        this.sessions = [];
+        this.sessionOrder = [];
+
         this.init();
         
     }
@@ -320,39 +306,7 @@ class MeasurelyDashboard {
         });
     }
 
-    async loadSpeakerProfiles() {
-        try {
-            const res = await fetch('/api/speakers');
-            if (!res.ok) throw new Error(res.status);
-            const json = await res.json();
 
-            // Build lookup table
-            this.SPEAKERS_BY_KEY = {};
-            if (json.list && Array.isArray(json.list)) {
-                json.list.forEach(s => {
-                    this.SPEAKERS_BY_KEY[s.key] = s;
-                });
-            }
-
-            console.log('[SPK] Loaded speaker profiles:', this.SPEAKERS_BY_KEY);
-
-        } catch (err) {
-            console.warn("Failed to load speakers:", err);
-        }
-    }
-
-
-    async loadDavePhrases() {
-        try {
-            const res = await fetch('/dave_phrases.json');
-            if (!res.ok) throw new Error(res.status);
-            window.daveCards = await res.json();
-            console.log("dave_cards loaded");
-        } catch {
-            window.daveCards = {};
-            console.warn("Failed to load dave_cards");
-        }
-    }
 
     /* ============================================================
     PEAK / DIP MODE LIST PARSER (from analysis.json)
@@ -379,36 +333,6 @@ class MeasurelyDashboard {
     }
 
 
-    updateSpeakerSummary(room, retryCount = 0) {
-        const el = document.getElementById("sum-speaker-model");
-        if (!el || !room) return;
-
-        const key = room.speaker_key;
-        if (!key) {
-            el.textContent = "Unknown speakers";
-            return;
-        }
-
-        const spk = this.SPEAKERS_BY_KEY[key];
-
-        if (spk) {
-            el.textContent = spk.friendly_name || spk.name || key;
-            return;
-        }
-
-        // 🔁 Speaker list might not be loaded yet — retry up to 10 times over 2 seconds
-        if (retryCount < 10) {
-            setTimeout(() => {
-                this.updateSpeakerSummary(room, retryCount + 1);
-            }, 200);
-            return;
-        }
-
-        // Fallback if still unknown after retries
-        el.textContent = key;
-        console.warn(`[SPK] Speaker key unresolved after retries: ${key}`);
-    }
-
     /* ============================================================
     HISTORY (uploads in web, sweeps in local)
     ============================================================ */
@@ -416,7 +340,6 @@ class MeasurelyDashboard {
 
         console.group("📜 loadHistory()");
         console.log("CAPS.history =", CAPS.history);
-        console.log("MEASURELY_MODE =", MEASURELY_MODE);
 
         if (!CAPS.history) return;
 
@@ -430,10 +353,49 @@ class MeasurelyDashboard {
 
             console.log("Found history cards =", cards.length);
 
-            // -------------------------
+            // =====================================================
+            // 🔗 HYDRATE SESSION MODEL (SINGLE SOURCE OF TRUTH)
+            // =====================================================
+            const extractNum = (id) => {
+                const m = String(id).match(/(\d+)(?!.*\d)/);
+                return m ? parseInt(m[1], 10) : -1;
+            };
+
+            this.sessions = all
+                
+                .filter(s =>
+                    s.has_analysis === true ||
+                    Number.isFinite(s.overall_score) ||
+                    s.scores ||
+                    s.analysis
+                )
+
+
+                .map(s => ({
+                    id: s.id,
+                    timestamp: s.timestamp,
+                    overall: s.overall_score,
+                    metrics: s.metrics || {
+                        peaks_dips: s.peaks_dips,
+                        reflections: s.reflections,
+                        bandwidth: s.bandwidth,
+                        balance: s.balance,
+                        smoothness: s.smoothness,
+                        clarity: s.clarity
+                    },
+                    note: s.note || ""
+                }));
+
+            this.sessionOrder = this.sessions
+                .map(s => s.id)
+                .sort((a, b) => extractNum(b) - extractNum(a));
+
+            console.log("📦 Sessions hydrated:", this.sessionOrder);
+
+            // =====================================================
             // EMPTY / RESET STATE
-            // -------------------------
-            if (all.length === 0) {
+            // =====================================================
+            if (this.sessions.length === 0) {
                 console.warn("⚠️ HISTORY EMPTY — CLEARING UI");
 
                 cards.forEach(card => {
@@ -461,23 +423,14 @@ class MeasurelyDashboard {
                 return;
             }
 
-            // -------------------------
-            // SORT NEWEST → OLDEST
-            // -------------------------
-            const extractNum = (id) => {
-                const m = String(id).match(/(\d+)(?!.*\d)/);
-                return m ? parseInt(m[1], 10) : -1;
-            };
-
-            const recent = all
+            // =====================================================
+            // POPULATE HISTORY CARDS (NEWEST → OLDEST)
+            // =====================================================
+            const recent = this.sessions
                 .slice()
                 .sort((a, b) => extractNum(b.id) - extractNum(a.id))
-                .filter(s => !(extractNum(s.id) === 0 && all.length > 1))
                 .slice(0, cards.length);
 
-            // -------------------------
-            // POPULATE CARDS
-            // -------------------------
             for (let i = 0; i < cards.length; i++) {
                 const card = cards[i];
                 const meta = recent[i];
@@ -525,8 +478,8 @@ class MeasurelyDashboard {
                 const scoreEl = card.querySelector(UI.historyScoreSelector);
                 if (scoreEl) {
                     scoreEl.textContent =
-                        typeof meta.overall_score === "number"
-                            ? meta.overall_score.toFixed(1)
+                        typeof meta.overall === "number"
+                            ? meta.overall.toFixed(1)
                             : "--";
                 }
 
@@ -546,11 +499,10 @@ class MeasurelyDashboard {
                 setMetric(".m-clarity",     m.clarity);
 
                 // ---- note preview ----
-                const note = meta.note || "";
                 const previewEl = card.querySelector("[data-note-preview]");
                 if (previewEl) {
-                    previewEl.textContent = note.trim() || "—";
-                    previewEl.style.opacity = note.trim() ? "1" : "0.3";
+                    previewEl.textContent = meta.note?.trim() || "—";
+                    previewEl.style.opacity = meta.note?.trim() ? "1" : "0.3";
                 }
             }
 
@@ -593,9 +545,12 @@ class MeasurelyDashboard {
 
         this.setupEventListeners();
 
+        // 🧠 Dave Phrase Engine
+        this.dave = new window.DavePhraseEngine();
+        await this.dave.load();
+
+
         // Load phrase bank + speaker metadata
-        await this.loadDavePhrases();
-        await this.loadSpeakerProfiles();
         await this.loadData();
 
         this.startPolling();
@@ -661,14 +616,24 @@ class MeasurelyDashboard {
 
         // If no history endpoint (or empty), fall back to /api/latest
         if (!Array.isArray(all) || all.length === 0) {
-        const latest = await safeJson("/api/latest");
-        this.currentData = (latest && latest.freq_hz && latest.mag_db) ? latest : null;
-        this.aiSummary = this.currentData?.ai_summary || null;
 
-        if (this.currentData?.room) {
-            this.updateSpeakerSummary(this.currentData.room);
-            setTimeout(() => this.updateSpeakerSummary(this.currentData.room), 300);
+        const latest = await safeJson("/api/latest");
+
+        // 🔒 HARD GUARD — ignore cancelled / incomplete sweeps
+        if (
+            window.__IGNORE_LATEST_SWEEP__ ||
+            !latest ||
+            latest.has_analysis !== true
+        ) {
+            console.warn("⚠️ Ignoring incomplete / cancelled latest sweep");
+            window.__IGNORE_LATEST_SWEEP__ = false;
+            this.currentData = null;
+            this.updateDashboard();
+            return;
         }
+
+        this.currentData = latest;
+        this.aiSummary = latest.ai_summary || null;
 
         this.updateDashboard();
         return;
@@ -684,11 +649,6 @@ class MeasurelyDashboard {
 
         this.currentData = data;
         this.aiSummary = data.ai_summary || null;
-
-        if (data.room) {
-        this.updateSpeakerSummary(data.room);
-        setTimeout(() => this.updateSpeakerSummary(data.room), 300);
-        }
 
         this.updateDashboard();
     } catch (err) {
@@ -750,7 +710,6 @@ class MeasurelyDashboard {
 
     async runSweep() {
         console.log("[Sweep] runSweep() called");
-        this.startSweepProgressModal();
 
         if (this.isSweepRunning) {
             console.warn("[Sweep] already running");
@@ -760,12 +719,13 @@ class MeasurelyDashboard {
 
         this.isSweepRunning = true;
 
-        // ---- UI: open progress modal (safe) ----
-        let closeProgress = null;
+        // ---- UI: open progress modal ----
+        this._closeSweepProgress = null;
+
         try {
             if (window.showSweepProgress) {
                 console.log("[SweepUI] Opening progress modal");
-                closeProgress = showSweepProgress();
+                this._closeSweepProgress = showSweepProgress();
             } else {
                 console.warn("[SweepUI] showSweepProgress() not found");
             }
@@ -784,10 +744,8 @@ class MeasurelyDashboard {
 
             console.log("[Sweep] HTTP status:", response.status);
 
-            // IMPORTANT: backend runs async — 500 does NOT mean failure
-            let result = {};
             try {
-                result = await response.json();
+                const result = await response.json();
                 console.log("[Sweep] response JSON:", result);
             } catch {
                 console.warn("[Sweep] No JSON body (expected)");
@@ -795,20 +753,16 @@ class MeasurelyDashboard {
 
             console.log("[Sweep] Assuming sweep started");
 
-            // ---- Start polling ----
-            this.monitorSweepProgress(() => {
-                console.log("[Sweep] sweep complete");
-
-                if (closeProgress) closeProgress();
-
-                this.isSweepRunning = false;
-                this.updateDashboard?.();
-            });
+            // ---- Start polling (modal will close from poller) ----
+            this.monitorSweepProgress();
 
         } catch (err) {
             console.error("[Sweep] HARD FAILURE", err);
 
-            if (closeProgress) closeProgress();
+            if (this._closeSweepProgress) {
+                this._closeSweepProgress();
+                this._closeSweepProgress = null;
+            }
 
             this.isSweepRunning = false;
             this.showError("Sweep failed to start");
@@ -867,50 +821,6 @@ class MeasurelyDashboard {
         }
     }
 
-    startSweepProgressModal() {
-    const modal   = document.getElementById("sweepProgressModal");
-    const fill    = document.getElementById("sweepProgressFill");
-    const percent = document.getElementById("sweepPercent");
-    const stage   = document.getElementById("sweepStageText");
-
-    modal.classList.remove("hidden");
-    modal.setAttribute("aria-hidden", "false");
-
-    fill.style.width = "0%";
-    percent.textContent = "0%";
-    stage.textContent = "Starting sweep…";
-
-    if (this._sweepPollTimer) {
-        clearInterval(this._sweepPollTimer);
-    }
-
-    this._sweepPollTimer = setInterval(async () => {
-        try {
-        const res = await fetch("/api/sweep-progress");
-        if (!res.ok) return;
-
-        const data = await res.json();
-
-        fill.style.width = `${data.progress}%`;
-        percent.textContent = `${data.progress}%`;
-        stage.textContent = data.message || "Running sweep…";
-
-        if (!data.running && data.progress >= 100) {
-            clearInterval(this._sweepPollTimer);
-            this._sweepPollTimer = null;
-
-            modal.classList.add("hidden");
-            modal.setAttribute("aria-hidden", "true");
-
-            // refresh dashboard after sweep
-            this.refreshLatest?.();
-        }
-        } catch (e) {
-        console.warn("Sweep progress polling failed", e);
-        }
-    }, 1000);
-    }
-
 
     /* ============================================================
     ANALYSIS PROGRESS MONITOR — TEMPORARILY DISABLED
@@ -963,12 +873,11 @@ class MeasurelyDashboard {
 
                 await this.loadData();
                 this.updateDashboard();
-                this.resetUploadState();
+                this.resetSweepState();
             }
 
         }, checkInterval);
     }
-
     
 
     /* ============================================================
@@ -986,7 +895,7 @@ class MeasurelyDashboard {
 
         let i = 0;
         const interval = setInterval(() => {
-            if (!this.isUploadRunning && i < steps.length) {
+            if (!this.isSweepRunning && i < steps.length) {
                 // If analysis already finished unexpectedly, stop logging
                 clearInterval(interval);
                 return;
@@ -1080,12 +989,13 @@ class MeasurelyDashboard {
 
         /* ---------------- 2. OVERALL DAVE PHRASE ---------------- */
         (() => {
-            const phraseEl = document.getElementById("overallDavePhrase");
-            if (phraseEl) {
-                phraseEl.textContent = this.aiSummary
-                    ? `“${this.aiSummary}”`
-                    : "Analysis complete. Review the measured metrics below.";
-            }
+            const el = document.getElementById("overallDavePhrase");
+            if (!el) return;
+
+            const score = Number(s.overall ?? data.overall_score ?? 5);
+            const phrase = this.dave.overall(score);
+
+            el.textContent = phrase || "Analysis complete. Review the measured metrics below.";
         })();
 
         /* ---------------- 3. SIX SMALL CARD SCORES ---------------- */
@@ -1232,9 +1142,11 @@ class MeasurelyDashboard {
         /* ------------------------------------------------------------
         Resolve speaker (optional tag use)
         ------------------------------------------------------------ */
-        const spk =
-            this.SPEAKERS_BY_KEY[data.room?.speaker_key] ||
-            { friendly_name: "your speakers" };
+        const speakerType =
+            data.room?.speaker_type === "standmount"     ? "standmount speakers" :
+            data.room?.speaker_type === "floorstander"   ? "floorstanding speakers" :
+            data.room?.speaker_type === "electrostatic"  ? "electrostatic speakers" :
+            "your speakers";
 
         /* ------------------------------------------------------------
         Tag values for Dave phrase expansion
@@ -1243,8 +1155,8 @@ class MeasurelyDashboard {
             room_width: data.room?.width_m ?? "--",
             room_length: data.room?.length_m ?? "--",
             listener_distance: data.room?.listener_front_m ?? "--",
-            spk_distance: data.room?.spk_distance ?? "--",
-            speaker_friendly_name: spk.friendly_name
+            spk_distance: data.room?.spk_front_m ?? "--",
+            speaker_friendly_name: speakerType
         };
 
         const expandTags = (str) => {
@@ -1275,16 +1187,10 @@ class MeasurelyDashboard {
             const el = document.getElementById(elId);
             if (!el) continue;
 
-            const phrases = window.daveCards?.[metric];
-            if (!Array.isArray(phrases) || phrases.length === 0) {
-                el.textContent = "";
-                continue;
-            }
-
-            const phrase =
-                phrases[Math.floor(Math.random() * phrases.length)];
-
+            const score = Number(data.scores?.[metric] ?? 5);
+            const phrase = this.dave.category(metric, score);
             el.textContent = expandTags(phrase);
+
         }
     }
 
@@ -1410,19 +1316,13 @@ class MeasurelyDashboard {
 
     async updateFrequencyChartMulti() {
 
-        if (MEASURELY_MODE !== "web") {
-            this.updateFrequencyChart();
-            return;
-        }
-
-        const chartEl = document.getElementById('frequencyChart');
+        const chartEl = document.getElementById("frequencyChart");
         if (!chartEl) return;
 
-        // Fetch session list
+        // Fetch sessions (newest → oldest)
         const all = CAPS.history
-            ? await fetch('/api/sessions/all').then(r => r.json())
+            ? await fetch("/api/sessions/all").then(r => r.json())
             : [];
-
 
         const extractNum = (id) => {
             const m = String(id).match(/(\d+)(?!.*\d)/);
@@ -1435,10 +1335,17 @@ class MeasurelyDashboard {
             .filter(s => !(extractNum(s.id) === 0 && all.length > 1))
             .slice(0, 4);
 
+        const LABELS  = ["Latest", "Previous", "Earlier", "Oldest"];
+        const COLOURS = ["#3b82f6", "#a855f7", "#22c55e", "#f59e0b"];
+
         const traces = [];
 
-        for (const index of this.activeChartSessions) {
-            const meta = sessions[index];
+        // Build traces in fixed order, Set only controls visibility
+        for (let i = 0; i < sessions.length; i++) {
+
+            if (!this.activeChartSessions.has(i)) continue;
+
+            const meta = sessions[i];
             if (!meta) continue;
 
             try {
@@ -1449,41 +1356,84 @@ class MeasurelyDashboard {
                 traces.push({
                     x: curve.freqs,
                     y: curve.mag,
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: meta.id,
+                    type: "scatter",
+                    mode: "lines",
+                    name: LABELS[i],
                     line: {
-                        width: 2.5
-                    }
+                        width: 2.5,
+                        color: COLOURS[i],
+                        shape: "spline",
+                        smoothing: 0.6
+                    },
+                    hoverinfo: "skip"
                 });
 
-            } catch (err) {
+            } catch {
                 console.warn("Curve load failed:", meta.id);
             }
         }
 
         const layout = {
             xaxis: {
-                title: 'Level (dB)',
-                type: 'log',
+                title: "Frequency (Hz)",
+                type: "log",
                 range: [Math.log10(20), Math.log10(20000)],
                 tickvals: [20,50,100,200,500,1000,2000,5000,10000,20000],
-                ticktext: ['20','50','100','200','500','1k','2k','5k','10k','20k'],
-                gridcolor: 'rgba(255,255,255,0.04)',
-                linecolor: '#9ca3af'
+                ticktext: ["20","50","100","200","500","1k","2k","5k","10k","20k"],
+                ticks: "outside",
+                showline: true,
+                linewidth: 1,
+                linecolor: "#9ca3af",
+                showgrid: true,
+                gridcolor: "rgba(255,255,255,0.025)",
+                zeroline: false,
+                tickfont: {
+                    size: 11,
+                    color: "rgba(255,255,255,0.6)"
+                }
             },
+
             yaxis: {
-                title: 'Frequency (Hz)',
-                gridcolor: 'rgba(255,255,255,0.06)',
-                zerolinecolor: 'rgba(255,255,255,0.25)'
+                title: "Level (dB)",
+                ticks: "outside",
+                showline: true,
+                linewidth: 1,
+                linecolor: "#9ca3af",
+                showgrid: true,
+                gridcolor: "rgba(255,255,255,0.03)",
+                zeroline: false,
+                tickfont: {
+                    size: 11,
+                    color: "rgba(255,255,255,0.6)"
+                }
             },
+
             showlegend: true,
-            plot_bgcolor: '#1f2937',
-            paper_bgcolor: 'transparent',
-            margin: { t: 16, r: 20, b: 45, l: 56 }
+
+            legend: {
+                orientation: "h",
+                x: 0.5,
+                xanchor: "center",
+                y: -0.24,
+                yanchor: "top",
+                font: {
+                    size: 10,
+                    color: "rgba(255,255,255,0.55)"
+                }
+            },
+
+            plot_bgcolor: "#1f2937",
+            paper_bgcolor: "transparent",
+
+            margin: {
+                t: 16,
+                r: 20,
+                b: 90,
+                l: 56
+            }
         };
 
-        Plotly.react('frequencyChart', traces, layout, {
+        Plotly.react("frequencyChart", traces, layout, {
             staticPlot: true,
             displayModeBar: false,
             responsive: true
@@ -1816,8 +1766,8 @@ class MeasurelyDashboard {
     LOAD SESSION BY INDEX (NEWEST → OLDEST, EXACT MATCH)
     ============================================================ */
     async loadNthSession(n) {
-        if (MEASURELY_MODE !== "web") return; 
-
+        // always allow loading sessions
+ 
         try {
             console.log(`📦 Loading session index: ${n}`);
 
@@ -1892,20 +1842,6 @@ class MeasurelyDashboard {
             document.querySelectorAll('[data-sweep-note]').forEach(b => b.remove());
         }
 
-        const btn = document.getElementById('downloadReportBtn');
-        if (btn) {
-            console.log('🟢 downloadReportBtn FOUND');
-            btn.onclick = (e) => {
-                console.log('🟡 BUTTON CLICKED');
-                e.preventDefault();
-                e.stopPropagation();
-                this.exportReport(e);
-            };
-        } else {
-            console.error('🔴 downloadReportBtn NOT FOUND');
-        }
-
-
         const safe = (id, handler) => {
             const el = document.getElementById(id);
             if (!el) {
@@ -1914,9 +1850,6 @@ class MeasurelyDashboard {
             }
             el.addEventListener('click', handler);
         };
-
-
-        safe('downloadReportBtn', () => this.exportReport());
 
 
         safe('saveNotesBtn', async () => {

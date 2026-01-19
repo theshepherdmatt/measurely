@@ -1,65 +1,7 @@
 {
-  "generated_at": "2026-01-15T16:10:49.491197Z",
-  "sweep_count": 4,
+  "generated_at": "2026-01-19T13:48:47.858102Z",
+  "sweep_count": 1,
   "sweeps": [
-    {
-      "id": "uploads3",
-      "timestamp": "2026-01-15T14:34:23.799775",
-      "overall_score": 5.4,
-      "metrics": {
-        "bandwidth": 5.5,
-        "balance": 4.0,
-        "smoothness": 7.9,
-        "peaks_dips": 5.0,
-        "reflections": 4.0,
-        "clarity": 6.0,
-        "signal_integrity": 10.0
-      },
-      "bands_db": {
-        "bass_20_200": 22.688602099258173,
-        "mid_200_2k": 13.731405650479122,
-        "treble_2k_10k": 6.444949243947484,
-        "air_10k_20k": 6.109561094187936
-      },
-      "note": ""
-    },
-    {
-      "id": "uploads2",
-      "timestamp": "2026-01-15T13:36:50.595000",
-      "overall_score": 5.4,
-      "metrics": {
-        "bandwidth": 6.9,
-        "balance": 4.0,
-        "smoothness": 7.7,
-        "peaks_dips": 5.0,
-        "reflections": 4.0,
-        "clarity": 5.0,
-        "signal_integrity": 8.2
-      },
-      "bands_db": {
-        "bass_20_200": 19.97415940452934,
-        "mid_200_2k": 16.953277142838694,
-        "treble_2k_10k": 19.79865970380472,
-        "air_10k_20k": 9.805153690858425
-      },
-      "note": ""
-    },
-    {
-      "id": "uploads1",
-      "timestamp": "2026-01-15T13:22:27.183203",
-      "overall_score": null,
-      "metrics": {
-        "bandwidth": null,
-        "balance": null,
-        "smoothness": null,
-        "peaks_dips": null,
-        "reflections": null,
-        "clarity": null,
-        "signal_integrity": null
-      },
-      "bands_db": {},
-      "note": ""
-    },
     {
       "id": "uploads0",
       "timestamp": "2026-01-15T13:22:45.500884",

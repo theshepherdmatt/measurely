@@ -7,8 +7,11 @@ measurely.egg-info/dependency_links.txt
 measurely.egg-info/requires.txt
 measurely.egg-info/top_level.txt
 measurelyapp/__init__.py
+measurelyapp/acoustics.py
+measurelyapp/ai_analysis.py
 measurelyapp/analyse.py
 measurelyapp/gui_tk.py
+measurelyapp/history.py
 measurelyapp/io.py
 measurelyapp/led_status.py
 measurelyapp/main.py
@@ -20,7 +23,10 @@ measurelyapp/sweep.py
 measurelyapp/update_led_state.py
 measurelyapp/util_io.py
 measurelyapp/writer.py
-measurelyapp/buddy/__init__.py
-measurelyapp/buddy/client.py
-measurelyapp/buddy/fallback.py
-measurelyapp/buddy/init.py
+measurelyapp/dave/__init__.py
+measurelyapp/dave/client.py
+measurelyapp/network/ap.py
+measurelyapp/network/api.py
+measurelyapp/network/controller.py
+measurelyapp/network/sta.py
+measurelyapp/network/util.py

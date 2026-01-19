@@ -29,6 +29,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+SWEEP_OK = True
+SWEEP_CANCELLED = False
+
 
 def get_next_upload_dir(measurements_dir: Path) -> Path:
     """
@@ -264,13 +267,17 @@ def write_temp_wav(stereo, fs):
 def play_via_aplay(stereo, fs, alsa_device=None):
     td, path = write_temp_wav(stereo, fs)
     try:
-        device = alsa_device if alsa_device else "hw:0,0"
-        cmd = ["aplay", "-q", "-D", device, path]
+        # NO FALLBACKS. If you didn't pass an ALSA device, fail loudly.
+        if not alsa_device:
+            raise RuntimeError("play_via_aplay requires --alsa-device (e.g. plughw:CARD=sndrpihifiberry,DEV=0)")
+
+        cmd = ["aplay", "-q", "-D", alsa_device, path]
         print(f"[SWEEP] running: {' '.join(cmd)}")
         subprocess.run(cmd, check=True, capture_output=True)
-        time.sleep(1.0)          # <-- let ALSA finish
+        time.sleep(1.0)  # let ALSA flush
     finally:
         td.cleanup()
+
 
 def play_via_portaudio(stereo, fs, out_dev=None):
     print(f"[SWEEP] playing on device {out_dev}  name={sd.query_devices(out_dev)['name']}")
@@ -345,6 +352,9 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
         print(f"[DEBUG] Stereo sweep routing shape for {channel_label}: {stereo_sweep.shape}")
         print(f"[DEBUG] First 10 samples (L,R): {stereo_sweep[:10]}")
 
+        if SWEEP_CANCELLED:
+            raise RuntimeError("Sweep cancelled by user")
+
         # --- 2. playback ------------------------------------------------------
         update_status(f"Playing {channel_label} test sweep…", 18 if channel_label=="left" else 45)
 
@@ -354,6 +364,9 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
             play_via_portaudio(stereo_sweep, fs, args.out_dev)
 
         sd.wait()   # wait for record to finish
+
+        if SWEEP_CANCELLED:
+            raise RuntimeError("Sweep cancelled by user")
 
         # --- 3. process recording -------------------------------------------
         update_status(f"Processing {channel_label} recording…", 25 if channel_label=="left" else 55)
@@ -406,9 +419,15 @@ def run_sweep(session_root, sweep, inv, fs, args, channel_label, stereo_sweep):
             update_status("Right sweep finished", 60)
 
     except Exception as e:
-        update_status(f"ERROR during {channel_label} sweep",
-                      0 if channel_label=="left" else 35,
-                      running=False)
+        global SWEEP_OK
+        SWEEP_OK = False
+
+        update_status(
+            f"ERROR during {channel_label} sweep",
+            0 if channel_label=="left" else 35,
+            running=False
+        )
+
         fail(log_base, e, where=f"sweep_{channel_label}")
 
 
@@ -580,6 +599,9 @@ def main():
         "OUT_DEV_INFO:", dev_info(args.out_dev, 'output')
     ])
 
+    global SWEEP_CANCELLED
+    SWEEP_CANCELLED = False
+
     # ------------------------------------------------------------------
     # Run sweeps
     # ------------------------------------------------------------------
@@ -641,8 +663,12 @@ def main():
     }, Path(outdir) / "meta.json")
 
     # ------------------------------------------------------------------
-    # Update latest/ symlink
+    # Update latest/ symlink (ONLY IF SWEEP OK)
     # ------------------------------------------------------------------
+    if not SWEEP_OK:
+        print("[SWEEP] Sweep failed or was aborted — latest NOT updated")
+        sys.exit(1)
+
     measurements_dir = Path.home() / "measurely" / "measurements"
     latest = measurements_dir / "latest"
 
@@ -657,6 +683,7 @@ def main():
         print(f"[SWEEP] Updated latest -> {outdir}")
     except Exception as e:
         print(f"[SWEEP] Couldn't create latest symlink: {e}")
+
 
 
 if __name__ == "__main__":
