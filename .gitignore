@@ -1,56 +1,53 @@
+# ===============================
+# Node / JS
+# ===============================
+node_modules/
+
+# ===============================
 # Python
+# ===============================
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.so
 .venv/
 .env
 
-# OS
+# ===============================
+# OS / IDE
+# ===============================
 .DS_Store
-
-# IDE
 .vscode/
 .idea/
 
-# -------------------------------
-# Measurely measurements handling
-# -------------------------------
-
-# Ignore all measurements by default
-measurements/**
-
-# Allow seed measurement only
-!measurements/
-!measurements/Sweep0/
-!measurements/Sweep0/**
-!measurements/sweephistory.json
-!measurements/debug.txt
-
-# Ignore runtime / local state
-Sweep*/
-measurements/latest
-measurements/measurements
-measurements/next_sweep.txt
-
-
-
-
+# ===============================
+# Media / generated assets
+# ===============================
 *.wav
 *.png
 *.csv
 
-# Ignore generated JSON everywhere EXCEPT measurements seed
-*.json
-!measurements/**/*.json
+# ===============================
+# Measurements
+# ===============================
 
-debug.txt
-debug_stats.json
-meta.json
-install.log
-!docs/*.png
+# Ignore everything by default
+measurements/*
 
-# Allow root room state
+# Allow uploads seed (dummy data)
+!measurements/uploads/
+!measurements/uploads/0/
+!measurements/uploads/0/**
+
+# Allow history / debug if you want them
+!measurements/sweephistory.json
+!measurements/debug.txt
+
+# ===============================
+# JSON (IMPORTANT)
+# ===============================
+
+# Allow JSON by default
+!*.json
+
+# Explicitly keep important config
 !room.json
-install.log
+!measurelyapp/dave/phrases/**/*.json

@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.venv/
+.env
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# -------------------------------
+# Measurely measurements handling
+# -------------------------------
+
+# Ignore all measurements by default
+measurements/**
+
+# Allow seed measurement only
+!measurements/
+!measurements/Sweep0/
+!measurements/Sweep0/**
+!measurements/sweephistory.json
+!measurements/debug.txt
+
+# Ignore runtime / local state
+Sweep*/
+measurements/latest
+measurements/measurements
+measurements/next_sweep.txt
+
+
+
+
+*.wav
+*.png
+*.csv
+
+# Ignore generated JSON everywhere EXCEPT measurements seed
+*.json
+!measurements/**/*.json
+
+debug.txt
+debug_stats.json
+meta.json
+install.log
+!docs/*.png
+
+# Allow root room state
+!room.json
+install.log

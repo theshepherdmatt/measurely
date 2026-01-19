@@ -1,0 +1,135 @@
+{
+  "meta": {
+    "bands": [
+      { "id": "excellent", "min": 8.5, "max": 10 },
+      { "id": "good",      "min": 7.0, "max": 8.49 },
+      { "id": "okay",      "min": 5.5, "max": 6.99 },
+      { "id": "needs_work","min": 0.0, "max": 5.49 }
+    ]
+  },
+
+  "overall": {
+    "excellent": [
+      "This room is working with your system, not against it. What you’re hearing is largely the equipment doing its job, with the room staying out of the way."
+    ],
+    "good": [
+      "The fundamentals are solid. There are a few room influences creeping in, but nothing here is fundamentally broken or limiting enjoyment."
+    ],
+    "okay": [
+      "There’s a good system trying to shine, but the room is getting involved more than it should. Addressing a couple of key areas would lift everything noticeably."
+    ],
+    "needs_work": [
+      "Right now the room is in control. Most of what you’re hearing is room behaviour rather than the true character of the system."
+    ]
+  },
+
+  "categories": {
+    "peaks_dips": {
+      "label": "Peaks & Dips",
+      "phrases": {
+        "excellent": [
+          "Low-frequency behaviour is well controlled, with room modes kept largely in check. Bass should feel tight and predictable."
+        ],
+        "good": [
+          "Some modal behaviour is present, but it’s not overwhelming. Bass notes may vary slightly, but remain mostly usable."
+        ],
+        "okay": [
+          "Room modes are starting to dictate which bass notes stand out and which disappear, shaping the sound more than the music intends."
+        ],
+        "needs_work": [
+          "Room modes are dominating the bass response, causing large swings in level and masking musical detail."
+        ]
+      }
+    },
+
+    "reflections": {
+      "label": "Reflections",
+      "phrases": {
+        "excellent": [
+          "Early reflections are well controlled, allowing stereo images to lock in place and remain stable."
+        ],
+        "good": [
+          "Some early reflections are present, but they’re not seriously disrupting imaging or focus."
+        ],
+        "okay": [
+          "Reflections are arriving early enough to blur imaging and soften positional cues."
+        ],
+        "needs_work": [
+          "Strong early reflections are smearing detail and collapsing the stereo image."
+        ]
+      }
+    },
+
+    "bandwidth": {
+      "label": "Bandwidth",
+      "phrases": {
+        "excellent": [
+          "The room supports a wide and usable frequency range, allowing the system to breathe at both ends."
+        ],
+        "good": [
+          "Most of the usable bandwidth is intact, with mild roll-off or instability at the extremes."
+        ],
+        "okay": [
+          "Room interaction is limiting how much of the system’s full range you can actually hear."
+        ],
+        "needs_work": [
+          "The room is severely restricting low-frequency support, cutting off depth and scale."
+        ]
+      }
+    },
+
+    "balance": {
+      "label": "Balance",
+      "phrases": {
+        "excellent": [
+          "Tonal balance is even, with no part of the spectrum drawing undue attention to itself."
+        ],
+        "good": [
+          "Overall balance is respectable, though the room introduces a slight tonal bias."
+        ],
+        "okay": [
+          "The room is clearly tilting the tonal balance, emphasising some frequencies while suppressing others."
+        ],
+        "needs_work": [
+          "A pronounced tonal imbalance is present, making the system sound coloured or unnatural."
+        ]
+      }
+    },
+
+    "smoothness": {
+      "label": "Smoothness",
+      "phrases": {
+        "excellent": [
+          "The frequency response is smooth and consistent, helping music flow naturally."
+        ],
+        "good": [
+          "Some unevenness is present, but it’s subtle and unlikely to distract."
+        ],
+        "okay": [
+          "Noticeable response irregularities are breaking continuity and drawing attention to the room."
+        ],
+        "needs_work": [
+          "Severe unevenness across frequencies is fragmenting the sound and masking musical intent."
+        ]
+      }
+    },
+
+    "clarity": {
+      "label": "Clarity",
+      "phrases": {
+        "excellent": [
+          "Direct sound clearly dominates, allowing fine detail and texture to come through cleanly."
+        ],
+        "good": [
+          "Clarity is generally strong, with only minor masking from reflected energy."
+        ],
+        "okay": [
+          "Reflections and room energy are beginning to mask detail and soften transients."
+        ],
+        "needs_work": [
+          "Clarity is heavily compromised, with reflections overwhelming the direct sound."
+        ]
+      }
+    }
+  }
+}
