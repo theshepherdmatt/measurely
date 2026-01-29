@@ -1,89 +1,84 @@
 {
-  "generated_at": "2026-01-28T16:59:05.213190Z",
+  "generated_at": "2026-01-29T12:00:36.145743Z",
   "sweep_count": 4,
   "sweeps": [
     {
-      "id": "uploads6",
-      "timestamp": "2026-01-28T16:52:46.903744",
-      "overall_score": 6.1,
-      "metrics": {
-        "bandwidth": 10.0,
-        "balance": 4.2,
-        "smoothness": 7.7,
-        "peaks_dips": 6.0,
-        "reflections": 4.0,
-        "clarity": 5.0,
-        "signal_integrity": 6.0
-      },
-      "bands_db": {
-        "bass_20_200": 21.77389083197486,
-        "mid_200_2k": 20.470822504508153,
-        "treble_2k_10k": 28.214483358509987,
-        "air_10k_20k": 24.81990002451977
-      },
-      "note": ""
-    },
-    {
-      "id": "uploads5",
-      "timestamp": "2026-01-28T16:35:42.345330",
-      "overall_score": 5.0,
-      "metrics": {
-        "bandwidth": 5.5,
-        "balance": 4.0,
-        "smoothness": 7.3,
-        "peaks_dips": 5.0,
-        "reflections": 4.0,
-        "clarity": 4.0,
-        "signal_integrity": 7.0
-      },
-      "bands_db": {
-        "bass_20_200": 22.13426592491679,
-        "mid_200_2k": 13.810234625919282,
-        "treble_2k_10k": 5.907739406016423,
-        "air_10k_20k": 5.021117338825379
-      },
-      "note": ""
-    },
-    {
-      "id": "uploads4",
-      "timestamp": "2026-01-28T16:29:24.891131",
+      "id": "uploads10",
+      "timestamp": "2026-01-29T12:00:32.252547",
       "overall_score": 5.6,
       "metrics": {
-        "bandwidth": 5.5,
-        "balance": 4.0,
-        "smoothness": 7.8,
-        "peaks_dips": 7.0,
+        "bandwidth": 6.7,
+        "balance": 5.2,
+        "smoothness": 7.5,
+        "peaks_dips": 5.0,
         "reflections": 4.0,
         "clarity": 5.0,
-        "signal_integrity": 7.1
+        "signal_integrity": 10.0
       },
       "bands_db": {
-        "bass_20_200": 20.681123923481852,
-        "mid_200_2k": 12.576160725175825,
-        "treble_2k_10k": 3.0721228114246615,
-        "air_10k_20k": 0.39376632125823524
+        "bass_20_200": 37.29831681643824,
+        "mid_200_2k": 33.46005710063089,
+        "treble_2k_10k": 36.69206085779405,
+        "air_10k_20k": 30.77354213673148
       },
       "note": ""
     },
     {
-      "id": "uploads3",
-      "timestamp": "2026-01-28T16:12:25.604711",
-      "overall_score": 5.4,
+      "id": "uploads9",
+      "timestamp": "2026-01-29T11:56:00.811358",
+      "overall_score": 5.8,
       "metrics": {
-        "bandwidth": 5.5,
-        "balance": 4.0,
-        "smoothness": 7.6,
+        "bandwidth": 6.7,
+        "balance": 5.3,
+        "smoothness": 7.5,
         "peaks_dips": 6.0,
         "reflections": 4.0,
         "clarity": 5.0,
         "signal_integrity": 10.0
       },
       "bands_db": {
-        "bass_20_200": 23.80911625794723,
-        "mid_200_2k": 16.518248831618106,
-        "treble_2k_10k": 5.423874202506302,
-        "air_10k_20k": 1.4162960059855019
+        "bass_20_200": 37.24891692781578,
+        "mid_200_2k": 33.46820685733932,
+        "treble_2k_10k": 36.70665496820475,
+        "air_10k_20k": 30.777938253338586
       },
+      "note": ""
+    },
+    {
+      "id": "uploads8",
+      "timestamp": "2026-01-29T11:47:34.979566",
+      "overall_score": 6.4,
+      "metrics": {
+        "bandwidth": 6.7,
+        "balance": 5.4,
+        "smoothness": 7.6,
+        "peaks_dips": 10.0,
+        "reflections": 4.0,
+        "clarity": 5.0,
+        "signal_integrity": 10.0
+      },
+      "bands_db": {
+        "bass_20_200": 37.19213985637541,
+        "mid_200_2k": 33.417901371572434,
+        "treble_2k_10k": 36.68462830457765,
+        "air_10k_20k": 30.8194793175619
+      },
+      "note": ""
+    },
+    {
+      "id": "uploads7",
+      "timestamp": "2026-01-29T11:44:54.980763",
+      "overall_score": null,
+      "metrics": {
+        "bandwidth": null,
+        "balance": null,
+        "smoothness": null,
+        "peaks_dips": null,
+        "reflections": null,
+        "clarity": null,
+        "signal_integrity": null
+      },
+      "bands_db": {},
       "note": ""
     }
   ]

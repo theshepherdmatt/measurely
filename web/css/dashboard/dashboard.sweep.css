@@ -13,6 +13,8 @@
     border-radius: 6px;
     line-height: 1.4;
     border: 1px solid rgba(255,255,255,0.05);
+    text-align: left;          /* ← ADD THIS */
+    white-space: pre-wrap;     /* optional: keeps spacing nice */
 }
 
 /* Mini “lab console” metrics */

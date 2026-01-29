@@ -880,7 +880,6 @@ class MeasurelyDashboard {
 
                     if (this._sweepUI) {
                         this._sweepUI.complete();
-                        this._sweepUI = null;
                     }
 
                     this.waitForAnalysisFile();
@@ -964,6 +963,14 @@ class MeasurelyDashboard {
 
                     this.currentData = data;
                     this.updateDashboard();
+
+                    // 🔥 Switch UI to dashboard view
+                    if (typeof window.showDashboard === "function") {
+                        window.showDashboard();
+                    } else {
+                        // Fallback if you're using page anchors or sections
+                        window.location.hash = "#dashboard";
+                    }
 
                     setTimeout(() => {
                         if (this._sweepUI) {
