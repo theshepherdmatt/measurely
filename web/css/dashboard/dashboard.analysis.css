@@ -11,26 +11,9 @@
   height: 540px;
 }
 
-/* ---------------------------------------------------------
-   WORLD CARD (3D STAGE)
---------------------------------------------------------- */
-
 .room-diagram-card {
-  position: relative;
-  height: 100%;
-  border-radius: 22px;
+  padding: 0;
   overflow: hidden;
-
-  background:
-    radial-gradient(
-      900px 600px at 55% 40%,
-      rgba(99,102,241,0.16),
-      rgba(2,6,23,0.96)
-    );
-
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,0.04),
-    0 40px 120px rgba(0,0,0,0.85);
 }
 
 /* ---------------------------------------------------------
@@ -39,11 +22,16 @@
 
 .room-diagram-canvas {
   position: absolute;
-  inset: 1rem auto 1rem 1rem;
-  width: 640px;
 
+  top: 1rem;
+  bottom: 1rem;
+
+  /* Anchor from the left instead of stretching both sides */
+  left: 2.5rem;              /* 👈 pushes room RIGHT */
+  right: 1rem;
+
+  max-width: 1000px;
   pointer-events: auto;
-
   z-index: 1;
 }
 
@@ -59,18 +47,14 @@
   display: flex;
   flex-direction: column;
 
-  background:
-    linear-gradient(
-      180deg,
-      rgba(30,41,59,0.55),
-      rgba(15,23,42,0.35)
-    );
+  background: var(--c-surface-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  border-left: 1px solid var(--c-border);
 
   box-shadow:
-    inset 1px 0 0 rgba(255,255,255,0.06);
+    inset 0 1px 0 rgba(255,255,255,0.04);
 
   z-index: 5;
 }
@@ -92,8 +76,8 @@
 }
 
 .analysis-scroll::-webkit-scrollbar-thumb {
-  background: rgba(124,92,255,0.35);
-  border-radius: 999px;
+  background: var(--c-accent);
+  opacity: 0.4;
 }
 
 /* =========================================================
@@ -208,8 +192,9 @@
 }
 
 .analysis-item.active-diagnostic {
-  background: rgba(34, 211, 238, 0.08);
-  border-left: 4px solid var(--c-accent);
+  background: rgba(99, 102, 241, 0.12);
+  border-left: 3px solid var(--c-accent);
+  box-shadow: inset 0 0 0 1px rgba(99,102,241,0.15);
   padding-left: 1rem;
   transform: translateX(4px);
 }
@@ -219,6 +204,116 @@
 }
 
 .analysis-item:hover:not(.active-diagnostic) {
-  background: rgba(255,255,255,0.025);
+  background: rgba(255,255,255,0.04);
 }
 
+.analysis-engine-container {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.5rem;
+    height: 550px; /* Fixed height for consistent layout */
+    align-items: stretch;
+}
+
+.analysis-sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+/* Sidebar Scrollbar */
+.analysis-sidebar-menu::-webkit-scrollbar { width: 4px; }
+.analysis-sidebar-menu::-webkit-scrollbar-thumb { 
+    background: rgba(255,255,255,0.1); 
+    border-radius: 10px; 
+}
+
+/* Interaction styles */
+.analysis-card-trigger {
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+/* Hover = slight movement only */
+.analysis-card-trigger:hover {
+    transform: translateX(4px);
+}
+
+/* Active = selection indicator only */
+.analysis-card-trigger.active-diagnostic {
+    border-left: 3px solid var(--c-accent);
+    transform: translateX(6px);
+}
+
+/* Inner score alignment */
+.score-readout { display: flex; align-items: baseline; gap: 8px; margin: 0.5rem 0; }
+.score-value { font-size: 2rem; font-weight: 600; color: var(--c-text-main); }
+.score-unit { font-size: 0.7rem; opacity: 0.4; text-transform: uppercase; }
+
+.dave-quote-mini {
+    font-size: 0.75rem;
+    color: var(--c-text-muted);
+    border-left: 2px solid var(--c-accent);
+    padding-left: 0.75rem;
+}
+
+@media (max-width: 1024px) {
+    .analysis-engine-container { grid-template-columns: 1fr; height: auto; }
+    .analysis-sidebar-menu { flex-direction: row; overflow-x: auto; }
+    .analysis-card-trigger { min-width: 280px; }
+}
+
+
+/* =========================================================
+   ROOM INSIGHT TEXT OVERLAY (MEASURELY EXPLANATION LAYER)
+   ========================================================= */
+
+.room-diagram-card {
+  position: relative; /* Needed so text sits over canvas */
+}
+
+.room-insight-text {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    max-width: 420px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.insight-block {
+    color: rgba(230,235,255,0.78);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.insight-block h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+    color: rgba(255,255,255,0.92);
+}
+
+.insight-block p {
+    margin: 0 0 0.65rem 0;
+}
+
+.insight-block .math {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: rgba(255,255,255,0.04);
+    padding: 0.5rem 0.65rem;
+    border-radius: 6px;
+    color: rgba(255,255,255,0.85);
+}
+
+/* Mobile — full width */
+@media (max-width: 900px) {
+  .room-insight-text {
+    right: 22px;
+    top: 16px;
+  }
+}

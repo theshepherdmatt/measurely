@@ -1044,6 +1044,19 @@ def get_sessions():
         print(f"Error in get_sessions: {e}")
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/api/session/<session_id>/analysis_ai")
+def api_session_analysis_ai(session_id):
+    import os
+    from flask import jsonify
+
+    path = os.path.join("measurements", session_id, "analysis_ai.json")
+
+    if not os.path.exists(path):
+        return jsonify({"error": "analysis_ai not found"}), 404
+
+    with open(path) as f:
+        return jsonify(json.load(f))
     
 # ----------------------------------------------------------
 #  serve dave_phrases.json from project root

@@ -52,3 +52,4 @@ measurements/*
 !room.json
 !measurelyapp/dave/phrases/**/*.json
 install.log
+install.log

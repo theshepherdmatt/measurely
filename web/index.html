@@ -190,105 +190,126 @@
 
             </div>
 
-            <div class="grid-3 animate-enter delay-2">
 
-                <div class="card glass-panel" role="region">
-                    <div class="card-header" style="margin-bottom: 0.75rem;">
-                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Peaks & Dips</h2>
-                        <img src="icons/mountain.svg" class="card-icon" alt="">
-                    </div>
-                    <div style="display: flex; align-items: baseline; gap: 8px;">
-                        <span id="peaksDipsScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
-                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">RTX Index</span>
-                    </div>
-                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
-                        <div id="peaksDipsTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
-                    </div>
-                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Smoothing of bass and lower mids.</p>
-                    <span id="peaksDipsDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
-                </div>
+            <section class="analysis-section animate-enter delay-2">
+                <header class="section-header">
+                    <h2 class="section-title">
+                        <img src="icons/chart-line.svg" class="section-icon" alt="">
+                        Room Analysis
+                    </h2>
+                    <p class="section-subtitle">Select a metric to investigate physical causes in your room.</p>
+                </header>
 
-                <div class="card glass-panel" role="region">
-                    <div class="card-header" style="margin-bottom: 0.75rem;">
-                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Reflections</h2>
-                        <img src="icons/square-caret-left.svg" class="card-icon" alt="">
-                    </div>
-                    <div style="display: flex; align-items: baseline; gap: 8px;">
-                        <span id="reflectionsScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
-                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">ms Delay</span>
-                    </div>
-                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
-                        <div id="reflectionsTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
-                    </div>
-                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Early bounce interference patterns.</p>
-                    <span id="reflectionsDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
-                </div>
+                <div class="analysis-engine-container">
+                    
+                    <aside class="analysis-sidebar-menu">
+                        
+                        <button class="card glass-panel analysis-card-trigger"
+                                data-overlay="sbir">
 
-                <div class="card glass-panel" role="region">
-                    <div class="card-header" style="margin-bottom: 0.75rem;">
-                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Bandwidth</h2>
-                        <img src="icons/signal.svg" class="card-icon" alt="">
-                    </div>
-                    <div style="display: flex; align-items: baseline; gap: 8px;">
-                        <span id="bandwidthScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
-                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">Hz Range</span>
-                    </div>
-                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
-                        <div id="bandwidthTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
-                    </div>
-                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Frequency extension from Bass to Air.</p>
-                    <span id="bandwidthDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
-                </div>
+                            <div class="card-header">
+                                <h2 class="card-title">Peaks & Dips</h2>
+                                <img src="icons/mountain.svg" class="card-icon" alt="">
+                            </div>
 
-                <div class="card glass-panel" role="region">
-                    <div class="card-header" style="margin-bottom: 0.75rem;">
-                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Balance</h2>
-                        <img src="icons/balance-scale.svg" class="card-icon" alt="">
-                    </div>
-                    <div style="display: flex; align-items: baseline; gap: 8px;">
-                        <span id="balanceScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
-                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">Tilt Slope</span>
-                    </div>
-                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
-                        <div id="balanceTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
-                    </div>
-                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Tonal tilt and Warm vs Bright bias.</p>
-                    <span id="balanceDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
-                </div>
+                            <div class="score-readout">
+                                <span id="peaksDipsScore" class="score-value">--</span>
+                                <span class="score-unit">RTX Index</span>
+                            </div>
 
-                <div class="card glass-panel" role="region">
-                    <div class="card-header" style="margin-bottom: 0.75rem;">
-                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Smoothness</h2>
-                        <img src="icons/wave-square.svg" class="card-icon" alt="">
-                    </div>
-                    <div style="display: flex; align-items: baseline; gap: 8px;">
-                        <span id="smoothnessScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
-                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">± dB Dev</span>
-                    </div>
-                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
-                        <div id="smoothnessTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
-                    </div>
-                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Fine-grain spectrum consistency.</p>
-                    <span id="smoothnessDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
-                </div>
+                            <div class="perf-track">
+                                <div id="peaksDipsTrack" class="perf-fill"></div>
+                            </div>
 
-                <div class="card glass-panel" role="region">
-                    <div class="card-header" style="margin-bottom: 0.75rem;">
-                        <h2 class="card-title" style="font-size: 0.75rem; letter-spacing: 1px;">Clarity</h2>
-                        <img src="icons/clock.svg" class="card-icon" alt="">
-                    </div>
-                    <div style="display: flex; align-items: baseline; gap: 8px;">
-                        <span id="clarityScore" class="score-value" style="font-size: 2rem; font-weight: 600;">--</span>
-                        <span style="font-size: 0.7rem; opacity: 0.3; font-weight: 700;">C50 Value</span>
-                    </div>
-                    <div class="perf-track" style="height: 2px; background: rgba(255,255,255,0.05); margin: 1rem 0;">
-                        <div id="clarityTrack" class="perf-fill" style="height: 100%; width: 0%; background: var(--c-accent); opacity: 0.8;"></div>
-                    </div>
-                    <p style="font-size: 0.8rem; color: var(--c-text-muted); line-height: 1.5; margin-bottom: 1rem;">Direct sound versus reverberant decay.</p>
-                    <span id="clarityDave" class="dave-quote" style="font-size: 0.8rem; border-left-color: rgba(99, 102, 241, 0.2);">--</span>
-                </div>
+                            <div id="peaksDipsDave" class="dave-quote-mini">--</div>
 
-            </div>
+                        </button>
+
+                        <button class="card glass-panel analysis-card-trigger" data-overlay="side_reflections">
+                            <div class="card-header">
+                                <h2 class="card-title">Reflections</h2>
+                                <img src="icons/square-caret-left.svg" class="card-icon" alt="">
+                            </div>
+                            <div class="score-readout">
+                                <span id="reflectionsScore" class="score-value">--</span>
+                                <span class="score-unit">ms Delay</span>
+                            </div>
+                            <div class="perf-track">
+                                <div id="reflectionsTrack" class="perf-fill"></div>
+                            </div>
+                            <div id="reflectionsDave" class="dave-quote-mini">--</div>
+                        </button>
+
+                        <button class="card glass-panel analysis-card-trigger" data-overlay="bandwidth">
+                            <div class="card-header">
+                                <h2 class="card-title">Bandwidth</h2>
+                                <img src="icons/signal.svg" class="card-icon" alt="">
+                            </div>
+                            <div class="score-readout">
+                                <span id="bandwidthScore" class="score-value">--</span>
+                                <span class="score-unit">Hz Range</span>
+                            </div>
+                            <div class="perf-track">
+                                <div id="bandwidthTrack" class="perf-fill"></div>
+                            </div>
+                            <div id="bandwidthDave" class="dave-quote-mini">--</div>
+                        </button>
+
+                        <button class="card glass-panel analysis-card-trigger" data-overlay="balance">
+                            <div class="card-header">
+                                <h2 class="card-title">Balance</h2>
+                                <img src="icons/balance-scale.svg" class="card-icon" alt="">
+                            </div>
+                            <div class="score-readout">
+                                <span id="balanceScore" class="score-value">--</span>
+                                <span class="score-unit">Tilt Slope</span>
+                            </div>
+                            <div class="perf-track">
+                                <div id="balanceTrack" class="perf-fill"></div>
+                            </div>
+                            <div id="balanceDave" class="dave-quote-mini">--</div>
+                        </button>
+
+                        <button class="card glass-panel analysis-card-trigger" data-overlay="smoothness">
+                            <div class="card-header">
+                                <h2 class="card-title">Smoothness</h2>
+                                <img src="icons/wave-square.svg" class="card-icon" alt="">
+                            </div>
+                            <div class="score-readout">
+                                <span id="smoothnessScore" class="score-value">--</span>
+                                <span class="score-unit">± dB Dev</span>
+                            </div>
+                            <div class="perf-track">
+                                <div id="smoothnessTrack" class="perf-fill"></div>
+                            </div>
+                            <div id="smoothnessDave" class="dave-quote-mini">--</div>
+                        </button>
+
+                        <button class="card glass-panel analysis-card-trigger" data-overlay="clarity">
+                            <div class="card-header">
+                                <h2 class="card-title">Clarity</h2>
+                                <img src="icons/clock.svg" class="card-icon" alt="">
+                            </div>
+                            <div class="score-readout">
+                                <span id="clarityScore" class="score-value">--</span>
+                                <span class="score-unit">C50 Value</span>
+                            </div>
+                            <div class="perf-track">
+                                <div id="clarityTrack" class="perf-fill"></div>
+                            </div>
+                            <div id="clarityDave" class="dave-quote-mini">--</div>
+                        </button>
+
+                    </aside>
+
+                    <div class="card glass-panel room-diagram-card">
+                        <div id="roomInsightText" class="room-insight-text"></div>
+                        <div id="dashboardRoomCanvas" class="room-diagram-canvas"></div>
+                    </div>
+
+                    </div>
+                    </section>
+
 
             <!-- NERDS CORNER -->
             <div class="card glass-panel animate-enter delay-3"
@@ -453,206 +474,6 @@
                     </section>
 
             </div>
-
-            <!-- ANALYSIS: ROOM EXPLANATION -->
-            <section class="analysis-section animate-enter delay-2">
-
-            <header class="section-header">
-                <h2 class="section-title">
-                <img src="icons/chart-line.svg" class="section-icon" alt="" aria-hidden="true">
-                Room Analysis
-                </h2>
-                <p class="section-subtitle">
-                How your room geometry and layout produced the scores above.
-                </p>
-            </header>
-
-            <div class="analysis-room-layout">
-
-                <!-- WORLD CARD -->
-                <div class="card glass-panel room-diagram-card"
-                    role="region"
-                    aria-label="3D room visualisation and analysis">
-
-                <!-- 3D CANVAS -->
-                <div id="dashboardRoomCanvas" class="room-diagram-canvas"></div>
-
-                <!-- FLOATING EXPLANATION PANEL -->
-                <div class="room-analysis-panel">
-                    <div class="analysis-scroll">
-
-                    <!-- CONTEXT PROMPTS -->
-                    <div class="analysis-prompts">
-                        <p>What physically happened in my room?</p>
-                        <p>Which surfaces and distances caused this score?</p>
-                        <p>How does this connect to the measurements above?</p>
-                    </div>
-
-                    <!-- PEAKS & DIPS / SBIR -->
-                    <div class="analysis-item"
-                        data-overlay="sbir"
-                        role="button"
-                        aria-expanded="false"
-                        aria-controls="sbirDetail">
-
-                        <div class="analysis-header">
-                        <h3 class="analysis-title">Peaks & Dips → Front Wall Interaction (SBIR)</h3>
-                        <div class="analysis-metric">
-                            <span id="sbirFreq">429</span>
-                            <span class="metric-unit">Hz</span>
-                        </div>
-                        </div>
-
-                        <p class="analysis-description">
-                        Bass cancellation caused by reflections from the wall behind the speakers
-                        interfering with the direct sound.
-                        </p>
-
-                        <div class="analysis-detail hidden" id="sbirDetail">
-                        <p>
-                            The reflected wave from the front wall arrives out of phase with the direct
-                            sound, cancelling energy at a predictable frequency.
-                        </p>
-                        <p><code>f = 343 / (2 × d)</code></p>
-                        <p class="analysis-note">
-                            <strong>d</strong> = distance between the speaker and the front wall.
-                        </p>
-                        </div>
-                    </div>
-
-                    <!-- SIDE WALL REFLECTIONS -->
-                    <div class="analysis-item"
-                        data-overlay="side_reflections"
-                        role="button"
-                        aria-expanded="false"
-                        aria-controls="sideRefDetail">
-
-                        <div class="analysis-header">
-                        <h3 class="analysis-title">Reflections → Side-Wall Paths</h3>
-                        <div class="analysis-metric">
-                            <span id="sideRefMs">3.1</span>
-                            <span class="metric-unit">ms</span>
-                        </div>
-                        </div>
-
-                        <p class="analysis-description">
-                        Early reflections from the side walls arrive shortly after the direct sound,
-                        reducing stereo focus and image stability.
-                        </p>
-
-                        <div class="analysis-detail hidden" id="sideRefDetail">
-                        <p>
-                            Calculated from the extra distance travelled by the reflected sound
-                            compared with the direct path.
-                        </p>
-                        <p><code>t = Δdistance / 343</code></p>
-                        <p class="analysis-note">
-                            Reflections arriving within ~5 ms strongly affect imaging.
-                        </p>
-                        </div>
-                    </div>
-
-                    <!-- BANDWIDTH -->
-                    <div class="analysis-item"
-                        data-overlay="bandwidth"
-                        role="button"
-                        aria-expanded="false"
-                        aria-controls="bandwidthDetail">
-
-                        <div class="analysis-header">
-                        <h3 class="analysis-title">Bandwidth → Room Support</h3>
-                        <div class="analysis-metric">
-                            <span id="bandwidthRange">38–18k</span>
-                            <span class="metric-unit">Hz</span>
-                        </div>
-                        </div>
-
-                        <p class="analysis-description">
-                        Your room dimensions determine how well low frequencies are supported
-                        and how evenly bass energy is distributed.
-                        </p>
-
-                        <div class="analysis-detail hidden" id="bandwidthDetail">
-                        <p>
-                            Below the Schroeder frequency, individual room modes dominate bass behaviour.
-                        </p>
-                        <p>
-                            <strong>Schroeder frequency:</strong>
-                            <span id="bandwidthSchroeder">292 Hz</span>
-                        </p>
-                        </div>
-                    </div>
-
-                    <!-- BALANCE -->
-                    <div class="analysis-item"
-                        data-overlay="balance"
-                        role="button"
-                        aria-expanded="false"
-                        aria-controls="balanceDetail">
-
-                        <div class="analysis-header">
-                        <h3 class="analysis-title">Balance → Left / Right Asymmetry</h3>
-                        <div class="analysis-metric">
-                            <span id="balanceOffset">0.18</span>
-                            <span class="metric-unit">m</span>
-                        </div>
-                        </div>
-
-                        <p class="analysis-description">
-                        Differences between the left and right sides of the room or listening position
-                        shift tonal balance and stereo weight.
-                        </p>
-
-                        <div class="analysis-detail hidden" id="balanceDetail">
-                        <p>
-                            Calculated from the horizontal offset of the listening position relative
-                            to the room centreline.
-                        </p>
-                        <p>
-                            Even small offsets can bias bass and image placement.
-                        </p>
-                        </div>
-                    </div>
-
-                    <!-- CLARITY -->
-                    <div class="analysis-item"
-                        data-overlay="clarity"
-                        role="button"
-                        aria-expanded="false"
-                        aria-controls="clarityDetail">
-
-                        <div class="analysis-header">
-                        <h3 class="analysis-title">Clarity → Direct vs Reflected Energy</h3>
-                        <div class="analysis-metric">
-                            <span id="clarityWindow">18</span>
-                            <span class="metric-unit">ms</span>
-                        </div>
-                        </div>
-
-                        <p class="analysis-description">
-                        Clarity is determined by how much reflected sound arrives shortly after
-                        the direct signal at the listening position.
-                        </p>
-
-                        <div class="analysis-detail hidden" id="clarityDetail">
-                        <p>
-                            Reflections arriving within the early time window compete with the direct
-                            sound and reduce intelligibility.
-                        </p>
-                        <p>
-                            Later reflections contribute to spaciousness instead of smearing detail.
-                        </p>
-                        </div>
-                    </div>
-
-                    </div>
-                </div>
-
-                </div>
-            </div>
-
-            </section>
-
 
         </main>
     </div>
@@ -905,6 +726,90 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 <script>
+function wireAnalysisCards() {
+    const cards = document.querySelectorAll('.analysis-card-trigger');
+    if (!cards.length) return;
+
+    function activateCard(card) {
+        const overlay = card.dataset.overlay;
+        if (!overlay || !window.room3D) return;
+
+        cards.forEach(c => c.classList.remove('active-diagnostic'));
+        card.classList.add('active-diagnostic');
+
+        let score = 10;
+        const scoreEl = card.querySelector('.score-value');
+        if (scoreEl && !isNaN(parseFloat(scoreEl.textContent))) {
+            score = parseFloat(scoreEl.textContent);
+        }
+
+        console.log("🎯 Focusing issue:", overlay, "score:", score);
+        window.room3D.focusIssue(overlay, score);
+
+        updateRoomInsightText(overlay, window.dashboard?.currentData);
+    }
+
+    cards.forEach(card => {
+        card.addEventListener('click', () => activateCard(card));
+    });
+
+    // Auto-select first card AFTER wiring
+    const first = document.querySelector('[data-overlay="sbir"]');
+    if (first) activateCard(first);
+}
+
+/* Wait until the module has created room3D */
+const roomReadyInterval = setInterval(() => {
+    if (window.room3D && typeof window.room3D.focusIssue === "function") {
+        clearInterval(roomReadyInterval);
+        console.log("✅ room3D ready — wiring analysis UI");
+        wireAnalysisCards();
+    }
+}, 100);
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const cards = document.querySelectorAll('.analysis-card-trigger');
+
+    function activateCard(card) {
+        const overlay = card.dataset.overlay;
+        if (!overlay) return;
+
+        console.log("🟢 Room analysis card clicked:", overlay);
+
+        cards.forEach(c => c.classList.remove('active-diagnostic'));
+        card.classList.add('active-diagnostic');
+
+        if (!window.room3D) {
+            console.warn("room3D not ready yet, retrying…");
+            setTimeout(() => activateCard(card), 200);
+            return;
+        }
+
+        let score = 10;
+        const scoreEl = card.querySelector('.score-value');
+        if (scoreEl && !isNaN(parseFloat(scoreEl.textContent))) {
+            score = parseFloat(scoreEl.textContent);
+        }
+
+        room3D.focusIssue(overlay, score);
+    }
+
+    cards.forEach(card => {
+        card.addEventListener('click', () => activateCard(card));
+    });
+
+    const first = document.querySelector('[data-overlay="sbir"]');
+    if (first) {
+        setTimeout(() => activateCard(first), 600);
+    }
+
+});
+</script>
+
+<script>
 document.addEventListener("DOMContentLoaded", () => {
   const cancelBtn = document.getElementById("cancelSweepBtn");
   if (!cancelBtn) return;
@@ -982,6 +887,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   </div>
 </div>
+
 
 </body>
 

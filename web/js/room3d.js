@@ -60,7 +60,7 @@ export function initRoom3D({
   const ROOM_COLOURS = {
     idle: {
       room: 0x6366f1,     // Measurely purple
-      accent: 0x22d3ee,   // Cyan accent
+      accent: 0x818cf8,   // Cyan accent
       furniture: 0x4338ca // Deeper purple for grounding
     },
     active: {
@@ -169,6 +169,7 @@ export function initRoom3D({
     colourState = "idle";
 
     const room = getRoomData();
+    window.__MEASURELY_ROOM__ = room;
     if (!room) {
       console.warn("[Room3D] ⚠️ getRoomData() returned null");
       return;
@@ -602,7 +603,7 @@ export function initRoom3D({
   }
 
 
-  function drawReflectionPath(start, bounce, end, color = 0x22d3ee) {
+  function drawReflectionPath(start, bounce, end, color = 0x818cf8) {
     const points = [start, bounce, end];
 
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -639,7 +640,7 @@ export function initRoom3D({
           room.length_m * 0.6
         ),
         new THREE.MeshBasicMaterial({
-          color: 0x00f2ff,
+          color: 0x6366f1,
           transparent: true,
           opacity: 0.08,
           side: THREE.DoubleSide,
@@ -714,6 +715,7 @@ export function initRoom3D({
 
     // ---- SIDE WALL REFLECTIONS ----
     if (overlayEnabled(OVERLAYS.SIDE_REFLECTIONS)) {
+
       const sideGap = (room.width_m - room.spk_spacing_m) / 2;
       const isTooClose = sideGap < 0.6;
 
@@ -721,31 +723,20 @@ export function initRoom3D({
       const panelWidth = room.length_m * 0.45;
       const panelHeight = room.height_m * 0.6;
 
-      ["L", "R"].forEach(side => {
+      const speakerY = -room.height_m / 2 + room.tweeter_height_m;
+      const listenerPos = new THREE.Vector3(
+        0,
+        speakerY,
+        -room.length_m / 2 + room.listener_front_m
+      );
 
-        if (isFocused(OVERLAYS.SIDE_REFLECTIONS)) {
+      const wallX = room.width_m / 2;
 
-          const speakerY = -room.height_m / 2 + room.tweeter_height_m;
-          const listenerZ = -room.length_m / 2 + room.listener_front_m;
-          const wallX = room.width_m / 2;
+      for (const side of [-1, 1]) {
 
-          // LEFT speaker → left wall → listener
-          drawReflectionPath(
-            new THREE.Vector3(-room.spk_spacing_m / 2, speakerY, -room.length_m / 2 + room.spk_front_m),
-            new THREE.Vector3(-wallX, speakerY, 0),
-            new THREE.Vector3(0, speakerY, listenerZ),
-            0x22d3ee
-          );
-
-          // RIGHT speaker → right wall → listener
-          drawReflectionPath(
-            new THREE.Vector3(room.spk_spacing_m / 2, speakerY, -room.length_m / 2 + room.spk_front_m),
-            new THREE.Vector3(wallX, speakerY, 0),
-            new THREE.Vector3(0, speakerY, listenerZ),
-            0x22d3ee
-          );
-        }
-        
+        // -----------------------------
+        // VISUAL WALL PANEL
+        // -----------------------------
         const panel = new THREE.Mesh(
           new THREE.PlaneGeometry(panelWidth, panelHeight),
           new THREE.MeshStandardMaterial({
@@ -770,13 +761,52 @@ export function initRoom3D({
 
         panel.rotation.y = Math.PI / 2;
         panel.position.set(
-          (side === "L" ? -1 : 1) * sideOffset,
+          side * sideOffset,
           -room.height_m / 2 + panelHeight / 2,
           -room.length_m * 0.05
         );
 
         roomGroup.add(panel);
-      });
+
+        // -----------------------------
+        // REFLECTION RAY (only when focused)
+        // -----------------------------
+        if (isFocused(OVERLAYS.SIDE_REFLECTIONS)) {
+
+          const speakerPos = new THREE.Vector3(
+            side * room.spk_spacing_m / 2,
+            speakerY,
+            -room.length_m / 2 + room.spk_front_m
+          );
+
+          // Mirror speaker across side wall
+          const mirrorSpeaker = speakerPos.clone();
+          mirrorSpeaker.x = side * wallX + (side * wallX - speakerPos.x);
+
+          // Ray from listener to mirrored speaker
+          const dir = new THREE.Vector3().subVectors(mirrorSpeaker, listenerPos);
+
+          // Intersection with wall plane (x = ±wallX)
+          const t = (side * wallX - listenerPos.x) / dir.x;
+          const bouncePoint = listenerPos.clone().add(dir.multiplyScalar(t));
+
+          // Draw reflection path
+          drawReflectionPath(
+            speakerPos,
+            bouncePoint,
+            listenerPos,
+            activeScore < 5 ? 0xff3b3b : 0x22d3ee
+          );
+
+          // Glow dot at reflection point (optional but nice)
+          const dot = new THREE.Mesh(
+            new THREE.SphereGeometry(0.06, 12, 12),
+            new THREE.MeshBasicMaterial({ color: 0x22d3ee })
+          );
+          dot.position.copy(bouncePoint);
+          roomGroup.add(dot);
+        }
+      }
     }
 
     // ---- REAR WALL ENERGY ----

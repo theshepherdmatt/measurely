@@ -1,7 +1,65 @@
 {
-  "generated_at": "2026-01-29T12:00:36.145743Z",
+  "generated_at": "2026-01-29T20:44:27.371235Z",
   "sweep_count": 4,
   "sweeps": [
+    {
+      "id": "uploads13",
+      "timestamp": "2026-01-29T16:27:21.541835",
+      "overall_score": 4.6,
+      "metrics": {
+        "bandwidth": 5.5,
+        "balance": 4.0,
+        "smoothness": 7.2,
+        "peaks_dips": 3.0,
+        "reflections": 4.0,
+        "clarity": 4.0,
+        "signal_integrity": 5.7
+      },
+      "bands_db": {
+        "bass_20_200": 22.14009293033775,
+        "mid_200_2k": 12.569663507242279,
+        "treble_2k_10k": 6.036568269876064,
+        "air_10k_20k": 4.541677788358169
+      },
+      "note": ""
+    },
+    {
+      "id": "uploads12",
+      "timestamp": "2026-01-29T16:25:59.562751",
+      "overall_score": null,
+      "metrics": {
+        "bandwidth": null,
+        "balance": null,
+        "smoothness": null,
+        "peaks_dips": null,
+        "reflections": null,
+        "clarity": null,
+        "signal_integrity": null
+      },
+      "bands_db": {},
+      "note": ""
+    },
+    {
+      "id": "uploads11",
+      "timestamp": "2026-01-29T12:13:45.503025",
+      "overall_score": 5.4,
+      "metrics": {
+        "bandwidth": 6.9,
+        "balance": 4.0,
+        "smoothness": 7.7,
+        "peaks_dips": 5.0,
+        "reflections": 4.0,
+        "clarity": 5.0,
+        "signal_integrity": 10.0
+      },
+      "bands_db": {
+        "bass_20_200": 37.82481751832262,
+        "mid_200_2k": 34.32469439110587,
+        "treble_2k_10k": 36.79581466959962,
+        "air_10k_20k": 29.664207410842227
+      },
+      "note": ""
+    },
     {
       "id": "uploads10",
       "timestamp": "2026-01-29T12:00:32.252547",
@@ -21,64 +79,6 @@
         "treble_2k_10k": 36.69206085779405,
         "air_10k_20k": 30.77354213673148
       },
-      "note": ""
-    },
-    {
-      "id": "uploads9",
-      "timestamp": "2026-01-29T11:56:00.811358",
-      "overall_score": 5.8,
-      "metrics": {
-        "bandwidth": 6.7,
-        "balance": 5.3,
-        "smoothness": 7.5,
-        "peaks_dips": 6.0,
-        "reflections": 4.0,
-        "clarity": 5.0,
-        "signal_integrity": 10.0
-      },
-      "bands_db": {
-        "bass_20_200": 37.24891692781578,
-        "mid_200_2k": 33.46820685733932,
-        "treble_2k_10k": 36.70665496820475,
-        "air_10k_20k": 30.777938253338586
-      },
-      "note": ""
-    },
-    {
-      "id": "uploads8",
-      "timestamp": "2026-01-29T11:47:34.979566",
-      "overall_score": 6.4,
-      "metrics": {
-        "bandwidth": 6.7,
-        "balance": 5.4,
-        "smoothness": 7.6,
-        "peaks_dips": 10.0,
-        "reflections": 4.0,
-        "clarity": 5.0,
-        "signal_integrity": 10.0
-      },
-      "bands_db": {
-        "bass_20_200": 37.19213985637541,
-        "mid_200_2k": 33.417901371572434,
-        "treble_2k_10k": 36.68462830457765,
-        "air_10k_20k": 30.8194793175619
-      },
-      "note": ""
-    },
-    {
-      "id": "uploads7",
-      "timestamp": "2026-01-29T11:44:54.980763",
-      "overall_score": null,
-      "metrics": {
-        "bandwidth": null,
-        "balance": null,
-        "smoothness": null,
-        "peaks_dips": null,
-        "reflections": null,
-        "clarity": null,
-        "signal_integrity": null
-      },
-      "bands_db": {},
       "note": ""
     }
   ]

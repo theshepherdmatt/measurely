@@ -926,3 +926,27 @@ Playback Backend:    aplay
 Input Dev Info:      {'name': 'Usb  Microphone: USB Audio (hw:3,0)', 'index': 1, 'hostapi': 0, 'max_input_channels': 1, 'max_output_channels': 0, 'default_low_input_latency': 0.008684807256235827, 'default_low_output_latency': -1.0, 'default_high_input_latency': 0.034829931972789115, 'default_high_output_latency': -1.0, 'default_samplerate': 44100.0}
 Output Dev Info:     {'name': 'snd_rpi_hifiberry_dacplus: HiFiBerry DAC+ HiFi pcm512x-hifi-0 (hw:2,0)', 'index': 0, 'hostapi': 0, 'max_input_channels': 0, 'max_output_channels': 2, 'default_low_input_latency': -1.0, 'default_low_output_latency': 0.005804988662131519, 'default_high_input_latency': -1.0, 'default_high_output_latency': 0.034829931972789115, 'default_samplerate': 44100.0}
 =================================
+===== MEASURELY SWEEP DEBUG =====
+Speaker Profile Key: None
+Sweep Duration (s):  5.04
+Sweep Range (Hz):    20.0 → 20000.0
+Playback Backend:    aplay
+Input Dev Info:      {'name': 'Usb  Microphone: USB Audio (hw:3,0)', 'index': 1, 'hostapi': 0, 'max_input_channels': 1, 'max_output_channels': 0, 'default_low_input_latency': 0.008684807256235827, 'default_low_output_latency': -1.0, 'default_high_input_latency': 0.034829931972789115, 'default_high_output_latency': -1.0, 'default_samplerate': 44100.0}
+Output Dev Info:     {'name': 'snd_rpi_hifiberry_dacplus: HiFiBerry DAC+ HiFi pcm512x-hifi-0 (hw:2,0)', 'index': 0, 'hostapi': 0, 'max_input_channels': 0, 'max_output_channels': 2, 'default_low_input_latency': -1.0, 'default_low_output_latency': 0.005804988662131519, 'default_high_input_latency': -1.0, 'default_high_output_latency': 0.034829931972789115, 'default_samplerate': 44100.0}
+=================================
+===== MEASURELY SWEEP DEBUG =====
+Speaker Profile Key: None
+Sweep Duration (s):  5.04
+Sweep Range (Hz):    20.0 → 20000.0
+Playback Backend:    aplay
+Input Dev Info:      {'error': 'Error querying device 1', 'index': 1, 'kind': 'input'}
+Output Dev Info:     {'name': 'snd_rpi_hifiberry_dacplus: HiFiBerry DAC+ HiFi pcm512x-hifi-0 (hw:2,0)', 'index': 0, 'hostapi': 0, 'max_input_channels': 0, 'max_output_channels': 2, 'default_low_input_latency': -1.0, 'default_low_output_latency': 0.005804988662131519, 'default_high_input_latency': -1.0, 'default_high_output_latency': 0.034829931972789115, 'default_samplerate': 44100.0}
+=================================
+===== MEASURELY SWEEP DEBUG =====
+Speaker Profile Key: None
+Sweep Duration (s):  5.04
+Sweep Range (Hz):    20.0 → 20000.0
+Playback Backend:    aplay
+Input Dev Info:      {'name': 'Usb  Microphone: USB Audio (hw:3,0)', 'index': 1, 'hostapi': 0, 'max_input_channels': 1, 'max_output_channels': 0, 'default_low_input_latency': 0.008684807256235827, 'default_low_output_latency': -1.0, 'default_high_input_latency': 0.034829931972789115, 'default_high_output_latency': -1.0, 'default_samplerate': 44100.0}
+Output Dev Info:     {'name': 'snd_rpi_hifiberry_dacplus: HiFiBerry DAC+ HiFi pcm512x-hifi-0 (hw:2,0)', 'index': 0, 'hostapi': 0, 'max_input_channels': 0, 'max_output_channels': 2, 'default_low_input_latency': -1.0, 'default_low_output_latency': 0.005804988662131519, 'default_high_input_latency': -1.0, 'default_high_output_latency': 0.034829931972789115, 'default_samplerate': 44100.0}
+=================================

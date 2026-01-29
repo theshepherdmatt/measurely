@@ -225,6 +225,203 @@ function renderRoomAnalysisCards(analysis) {
 
 }
 
+function updateRoomInsightText(metric, data) {
+    console.log("🧠 updateRoomInsightText called with:", metric, data);
+
+  const el = document.getElementById("roomInsightText");
+  if (!el) return;
+
+  // If we don't recognise the metric, don't break anything — just clear.
+  const supported = new Set(["sbir", "peaks_dips", "side_reflections", "bandwidth"]);
+  if (!supported.has(metric)) {
+    el.innerHTML = "";
+    return;
+  }
+
+  // -----------------------------
+  // SBIR (your existing logic)
+  // -----------------------------
+  if (metric === "sbir" || metric === "peaks_dips") {
+    const sbir =
+      data?.geom?.sbir ||
+      data?.room_context?.sbir ||
+      null;
+
+    if (!sbir) {
+      el.innerHTML = `
+        <div class="insight-block">
+          <h3>Peaks & Dips (SBIR)</h3>
+          <p>Speaker boundary interaction analysis not available for this session.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const d = Number(sbir.distance_m);
+    const f = Number(sbir.first_null_hz ?? sbir.nulls_hz?.[0]);
+
+    if (!Number.isFinite(d) || !Number.isFinite(f)) {
+      el.innerHTML = `<div class="insight-block"><p>SBIR data incomplete.</p></div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div class="insight-block">
+        <h3>Peaks & Dips (SBIR)</h3>
+
+        <p><b>What’s happening:</b><br>
+        Sound from your speakers reflects off the wall behind them and interferes with the direct sound.</p>
+
+        <p><b>Measured speaker distance:</b> ${d.toFixed(2)} m</p>
+
+        <p class="math">
+          SBIR null frequency:<br>
+          <code>f = c / (4d)</code><br>
+          <code>f = 343 / (4 × ${d.toFixed(2)}) = ${Math.round(f)} Hz</code>
+        </p>
+
+        <p>This predicted cancellation aligns with the dip visible in your measurement.</p>
+        <p>Moving the speakers changes this frequency — closer raises it, further lowers it.</p>
+      </div>
+    `;
+    return;
+  }
+
+    // -----------------------------
+    // SIDE REFLECTIONS
+    // -----------------------------
+    if (metric === "side_reflections") {
+
+    const room = window.__MEASURELY_ROOM__;
+
+    console.log("🔎 SIDE REFLECTION ROOM DATA:", room);
+
+    if (!room) {
+        el.innerHTML = `
+        <div class="insight-block">
+            <h3>Side Wall Reflections</h3>
+            <p>Room geometry not available yet.</p>
+        </div>
+        `;
+        return;
+    }
+
+    const c = 343;
+
+    const spkSpacing = Number(room.spk_spacing_m);
+    const spkFront   = Number(room.spk_front_m);
+    const listener   = Number(room.listener_front_m);
+    const width      = Number(room.width_m);
+
+    if (![spkSpacing, spkFront, listener, width].every(Number.isFinite)) {
+        el.innerHTML = `
+        <div class="insight-block">
+            <h3>Side Wall Reflections</h3>
+            <p>Room values missing — can’t compute reflection delay.</p>
+        </div>
+        `;
+        return;
+    }
+
+    const speakerX = spkSpacing / 2;
+    const speakerZ = spkFront;
+    const listenerX = 0;
+    const listenerZ = listener;
+
+    const direct = Math.hypot(listenerX - speakerX, listenerZ - speakerZ);
+
+    const wallX = width / 2;
+    const mirrorSpeakerX = wallX + (wallX - speakerX);
+
+    const reflected = Math.hypot(listenerX - mirrorSpeakerX, listenerZ - speakerZ);
+
+    const delta = reflected - direct;
+    const delayMs = (delta / c) * 1000;
+
+    el.innerHTML = `
+        <div class="insight-block">
+        <h3>Side Wall Reflections</h3>
+
+        <p><b>What’s happening:</b><br>
+        Sound reflects off the side walls and reaches you slightly after the direct sound.</p>
+
+        <p class="math">
+            Direct path: <code>${direct.toFixed(2)} m</code><br>
+            Reflected path: <code>${reflected.toFixed(2)} m</code><br>
+            Extra distance: <code>${delta.toFixed(2)} m</code><br>
+            Delay: <code>${delayMs.toFixed(2)} ms</code>
+        </p>
+
+        <p>
+            Reflections under ~5 ms are most likely to blur stereo focus.
+        </p>
+        </div>
+    `;
+    return;
+    }
+
+    // -----------------------------
+    // BANDWIDTH (room LF support)
+    // -----------------------------
+    if (metric === "bandwidth") {
+
+        console.log("🔥 BANDWIDTH BLOCK ENTERED");
+
+        const room = window.__MEASURELY_ROOM__;
+        console.log("🔎 ROOM FOR BANDWIDTH:", room);
+
+        if (!room) {
+            el.innerHTML = `
+            <div class="insight-block">
+                <h3>Low Frequency Bandwidth</h3>
+                <p>Room geometry not available yet.</p>
+            </div>
+            `;
+            return;
+        }
+
+        const L = Number(room.length_m);
+        const W = Number(room.width_m);
+        const H = Number(room.height_m);
+
+        if (![L, W, H].every(Number.isFinite)) {
+            el.innerHTML = `
+            <div class="insight-block">
+                <h3>Low Frequency Bandwidth</h3>
+                <p>Room dimensions incomplete.</p>
+            </div>
+            `;
+            return;
+        }
+
+        const c = 343;
+        const longest = Math.max(L, W, H);
+        const fLowest = c / (2 * longest);
+
+        el.innerHTML = `
+            <div class="insight-block">
+            <h3>Low Frequency Bandwidth</h3>
+
+            <p><b>What’s happening:</b><br>
+            Your room size sets the lowest frequency the space can naturally support before strong modal behaviour dominates.</p>
+
+            <p class="math">
+                Largest dimension: <code>${longest.toFixed(2)} m</code><br>
+                Lowest axial mode: <code>f = c / (2L) = ${Math.round(fLowest)} Hz</code>
+            </p>
+
+            <p>
+                Below this frequency, bass becomes increasingly uneven because full wavelengths cannot properly develop inside the room.
+            </p>
+            </div>
+        `;
+        return;
+    }
+
+
+}
+
+
 function updateMeasurementIntegrity(data) {
     if (!data) return;
 
@@ -612,6 +809,12 @@ class MeasurelyDashboard {
             if (overlay && window.room3D) {
             window.room3D.focusIssue(overlay, score);
             }
+            console.log("Analysis card clicked →", overlay);
+
+            updateRoomInsightText(overlay, {
+                room_context: this.currentData.room_context,
+                geom: this.roomGeomAnalysis   // 🔥 add this
+            });
 
         });
         });
@@ -661,12 +864,21 @@ class MeasurelyDashboard {
         parseInt(String(id).match(/(\d+)(?!.*\d)/)?.[1] || "-1", 10);
 
         const latestMeta = all.slice().sort((a, b) => extractNum(b.id) - extractNum(a.id))[0];
-        const data = await safeJson(`/api/session/${encodeURIComponent(latestMeta.id)}`);
+        const id = encodeURIComponent(latestMeta.id);
+
+        const data = await safeJson(`/api/session/${id}`);
+        const ai   = await safeJson(`/api/session/${id}/analysis_ai`);
 
         if (!data || !data.freq_hz || !data.mag_db) throw new Error("invalid session data");
 
-        this.currentData = data;
+        this.currentData = {
+            ...data,
+            room_context: ai?.room_context || null  // 🔥 flatten here
+        };
+
         this.aiSummary = data.ai_summary || null;
+
+        console.log("ROOM CONTEXT ATTACHED:", this.currentData.room_context);
 
         this.updateDashboard();
     } catch (err) {
@@ -1031,15 +1243,17 @@ class MeasurelyDashboard {
             window.updateRoomCanvas(this.currentData.room);
         }
 
+        console.log("ROOM CONTEXT:", this.currentData.room_context);
+
         // 🧠 NEW: Room geometry analysis (pre-measurement facts)
         if (this.currentData.room) {
-            const geom = buildRoomGeometryAnalysis(
+            this.roomGeomAnalysis = buildRoomGeometryAnalysis(
                 this.currentData.room,
                 this.currentData.room_context
             );
 
-            renderRoomAnalysisCards(geom);
-            console.log("GEOM SBIR:", geom.sbir);
+            renderRoomAnalysisCards(this.roomGeomAnalysis);
+            console.log("GEOM SBIR:", this.roomGeomAnalysis.sbir);
 
         }
 

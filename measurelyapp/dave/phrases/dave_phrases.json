@@ -28,19 +28,20 @@
       "label": "Peaks & Dips",
       "phrases": {
         "excellent": [
-          "Low-frequency behaviour is well controlled, with room modes kept largely in check. Bass should feel tight and predictable."
+          "Speaker boundary effects are minimal, so bass remains even and consistent without obvious cancellations."
         ],
         "good": [
-          "Some modal behaviour is present, but it’s not overwhelming. Bass notes may vary slightly, but remain mostly usable."
+          "Some boundary interference is present, but it only causes mild dips in the bass. Most notes still come through clearly."
         ],
         "okay": [
-          "Room modes are starting to dictate which bass notes stand out and which disappear, shaping the sound more than the music intends."
+          "Reflections behind the speakers are starting to cancel certain bass frequencies, making some notes weaker than others."
         ],
         "needs_work": [
-          "Room modes are dominating the bass response, causing large swings in level and masking musical detail."
+          "Strong boundary interference is causing deep bass cancellations, leading to missing notes and reduced impact in the low end."
         ]
       }
     },
+
 
     "reflections": {
       "label": "Reflections",
