@@ -6,7 +6,6 @@ const UI = {
   navId: "uploadsNav"
 };
 
-
 async function safeJson(url) {
   try {
     const r = await fetch(url);
@@ -16,8 +15,6 @@ async function safeJson(url) {
     return null;
   }
 }
-
-
 
 window.addLog = function (msg) {
     const logBox = document.getElementById("sessionLog");
@@ -128,6 +125,24 @@ function buildRoomGeometryAnalysis(room, room_context) {
             wall_treatment
         }
     };
+}
+
+
+function addSweepLogLine(msg) {
+    const panel = document.getElementById("sweepLogPanel");
+    if (!panel) {
+        console.warn("[SweepLog] sweepLogPanel not found");
+        return;
+    }
+
+    const line = document.createElement("div");
+    line.textContent = msg;
+    panel.appendChild(line);
+
+    // Auto-scroll to bottom
+    panel.scrollTop = panel.scrollHeight;
+
+    console.log("[SweepLog] UI +", msg);
 }
 
 
@@ -273,6 +288,10 @@ class MeasurelyDashboard {
         this.sweepCheckInterval = null;
         this.sessions = [];
         this.sessionOrder = [];
+        this._lastLogCount = 0;
+        this._lastStatusMessage = null;
+
+        this.SPEAKERS_BY_KEY = {};
 
         this.init();
         
@@ -286,7 +305,6 @@ class MeasurelyDashboard {
         return 'needs_work';
     }
 
-    SPEAKERS_BY_KEY = {};
 
     bindSideReflections() {
         const el = document.getElementById("sideRefItem");
@@ -725,7 +743,17 @@ class MeasurelyDashboard {
         try {
             if (window.showSweepProgress) {
                 console.log("[SweepUI] Opening progress modal");
-                this._closeSweepProgress = showSweepProgress();
+                this._sweepUI = showSweepProgress();
+
+                // 🔥 Reset log tracking + clear panel
+                this._lastLogCount = 0;
+
+                const panel = document.getElementById("sweepLogPanel");
+                if (panel) {
+                    panel.innerHTML = "";
+                    console.log("[SweepLog] Cleared previous logs");
+                }
+
             } else {
                 console.warn("[SweepUI] showSweepProgress() not found");
             }
@@ -759,9 +787,9 @@ class MeasurelyDashboard {
         } catch (err) {
             console.error("[Sweep] HARD FAILURE", err);
 
-            if (this._closeSweepProgress) {
-                this._closeSweepProgress();
-                this._closeSweepProgress = null;
+            if (this._sweepUI) {
+                this._sweepUI.error("Sweep failed to start");
+                this._sweepUI = null;
             }
 
             this.isSweepRunning = false;
@@ -769,12 +797,26 @@ class MeasurelyDashboard {
         }
     }
 
+    async fetchSweepLogs() {
+        try {
+            const res = await fetch('/api/sweep-logs');
+            if (!res.ok) return [];
+            return await res.json();
+        } catch {
+            return [];
+        }
+    }
 
     async monitorSweepProgress() {
+        console.log("[SweepPoll] Polling /api/sweep-progress…");
 
         if (this.sweepCheckInterval) {
             clearInterval(this.sweepCheckInterval);
         }
+
+        // 🔥 Reset log tracking for THIS sweep
+        this._lastLogCount = 0;
+        this._lastStatusMessage = null;
 
         this.sweepCheckInterval = setInterval(async () => {
             try {
@@ -783,23 +825,64 @@ class MeasurelyDashboard {
 
                 const prog = await res.json();
 
-                if (prog.message || prog.progress !== undefined) {
-                    addLog(`Sweep: ${prog.message || "…"} (${prog.progress}%)`);
+                // Show basic stage progress
+                if (this._sweepUI) {
+                    this._sweepUI.update(prog.progress, prog.message);
                 }
+
+                if (prog.message && prog.message !== this._lastStatusMessage) {
+                    addSweepLogLine("[STATUS] " + prog.message);
+                    this._lastStatusMessage = prog.message;
+                }
+
+                // 🔥 Pull real sweep logs
+                console.log("[SweepLog] Fetching logs...");
+                const logLines = await this.fetchSweepLogs();
+
+                console.log("[SweepLog] Received", logLines.length, "lines");
+
+                if (!Array.isArray(logLines)) {
+                    console.warn("[SweepLog] Invalid log payload");
+                    return;
+                }
+
+                // Only append new lines
+                const newLines = logLines.slice(this._lastLogCount);
+
+                if (newLines.length) {
+                    console.log("[SweepLog] Writing", newLines.length, "new lines to modal");
+                }
+
+                newLines.forEach(line => addSweepLogLine(line));
+
+                // Update cursor
+                this._lastLogCount = logLines.length;
 
                 if (!prog.running) {
                     clearInterval(this.sweepCheckInterval);
                     this.sweepCheckInterval = null;
 
-                    addLog("Sweep complete — starting analysis…");
+                    // ❌ Detect backend-reported error
+                    if (prog.message && prog.message.toLowerCase().includes("error")) {
+                        addLog("Sweep failed — no analysis will be generated.");
 
-                    // 🔥 CLOSE SWEEP MODAL HERE
-                    if (this._closeSweepProgress) {
-                        this._closeSweepProgress();
-                        this._closeSweepProgress = null;
+                        if (this._sweepUI) {
+                            this._sweepUI.error("Sweep failed");
+                            this._sweepUI = null;
+                        }
+
+                        this.resetSweepState();
+                        return; // 🚨 STOP — do NOT wait for analysis
                     }
 
-                    this.simulateAnalysisSteps();
+                    // ✅ Normal successful sweep
+                    addLog("Sweep complete — starting analysis…");
+
+                    if (this._sweepUI) {
+                        this._sweepUI.complete();
+                        this._sweepUI = null;
+                    }
+
                     this.waitForAnalysisFile();
                 }
 
@@ -839,37 +922,69 @@ class MeasurelyDashboard {
         const maxChecks = 20;
         let checks = 0;
 
+        const extractNum = (id) => {
+            const m = String(id).match(/(\d+)(?!.*\d)/);
+            return m ? parseInt(m[1], 10) : -1;
+        };
+
         const checkLoop = setInterval(async () => {
             checks++;
 
             try {
-                const res = await fetch('/api/latest');
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                // 1️⃣ Get list of sessions
+                const listRes = await fetch('/api/sessions/all');
+                if (!listRes.ok) throw new Error(`HTTP ${listRes.status}`);
 
-                const data = await res.json();
+                const sessions = await listRes.json();
+                if (!Array.isArray(sessions) || sessions.length === 0) return;
+
+                // 2️⃣ Find newest session
+                const latestMeta = sessions
+                    .slice()
+                    .sort((a, b) => extractNum(b.id) - extractNum(a.id))[0];
+
+                if (!latestMeta) return;
+
+                // 3️⃣ Fetch full analysis data for that session
+                const dataRes = await fetch(`/api/session/${encodeURIComponent(latestMeta.id)}`);
+                if (!dataRes.ok) return;
+
+                const data = await dataRes.json();
                 const score = Number(data.overall_score);
 
-                // Analysis considered “real” only when:
+                // 4️⃣ Analysis is considered “ready” only when fully scored
                 if (data.has_analysis && Number.isFinite(score) && score > 0) {
                     clearInterval(checkLoop);
 
-                    addLog("Analysis ready — updating dashboard…");
+                    addLog("Analysis ready — displaying results…");
+
+                    if (this._sweepUI) {
+                        this._sweepUI.showAnalysis(data);
+                    }
 
                     this.currentData = data;
                     this.updateDashboard();
 
-                    addLog("Dashboard synced to new upload.");
+                    setTimeout(() => {
+                        if (this._sweepUI) {
+                            this._sweepUI.close();
+                            this._sweepUI = null;
+                        }
+                        this.resetSweepState();
+                    }, 4000); // keep modal open 4s so user sees data
+
                     return;
                 }
+
             } catch (err) {
-                console.warn("progress poll failed:", err);
+                console.warn("analysis poll failed:", err);
             }
 
-            // Timeout fallback
+            // ⏳ Timeout fallback
             if (checks >= maxChecks) {
                 clearInterval(checkLoop);
 
-                addLog("Analysis timeout — showing latest data.");
+                addLog("Analysis timeout — showing latest available data.");
 
                 await this.loadData();
                 this.updateDashboard();
@@ -879,35 +994,6 @@ class MeasurelyDashboard {
         }, checkInterval);
     }
     
-
-    /* ============================================================
-    SIMULATED ANALYSIS LOGS — makes the process feel alive
-    ============================================================ */
-    simulateAnalysisSteps() {
-        const steps = [
-            "FFT: 16384-point transform",
-            "Band energy weighting",
-            "Modal behaviour scan",
-            "Reflection vectors applied",
-            "Decay profile measured",
-            "Scoring matrix compiled"
-        ];
-
-        let i = 0;
-        const interval = setInterval(() => {
-            if (!this.isSweepRunning && i < steps.length) {
-                // If analysis already finished unexpectedly, stop logging
-                clearInterval(interval);
-                return;
-            }
-
-            addLog(`• ${steps[i]}`);
-            i++;
-
-            if (i >= steps.length) clearInterval(interval);
-
-        }, 500);
-    }
 
     /* ============================================================
     UPDATE DASHBOARD (MAIN REFRESH)
@@ -1960,55 +2046,98 @@ class MeasurelyDashboard {
 }
 
 function showSweepProgress() {
+    console.log("[SweepUI] showSweepProgress() called");
+
     const modal   = document.getElementById("sweepProgressModal");
     const fill    = document.getElementById("sweepProgressFill");
     const percent = document.getElementById("sweepPercent");
     const stage   = document.getElementById("sweepStageText");
 
+    console.log("[SweepUI] Elements found:", {
+        modal: !!modal,
+        fill: !!fill,
+        percent: !!percent,
+        stage: !!stage
+    });
+
     if (!modal || !fill || !percent || !stage) {
-        console.error("[SweepUI] Required progress elements missing");
+        console.error("[SweepUI] ❌ Required progress elements missing");
         return null;
     }
 
     modal.classList.remove("hidden");
     modal.setAttribute("aria-hidden", "false");
+    console.log("[SweepUI] ✅ Modal opened");
 
-    const steps = [
-        { msg: "Preparing measurement system…", pct: 10 },
-        { msg: "Running sweep (left channel)…", pct: 30 },
-        { msg: "Running sweep (right channel)…", pct: 55 },
-        { msg: "Capturing impulse response…", pct: 70 },
-        { msg: "Analysing room response…", pct: 85 },
-        { msg: "Finalising results…", pct: 95 }
-    ];
-
-    let i = 0;
     fill.style.width = "0%";
     percent.textContent = "0%";
-    stage.textContent = steps[0].msg;
+    stage.textContent = "Starting measurement…";
 
-    const interval = setInterval(() => {
-        if (i >= steps.length) {
-            clearInterval(interval);
-            return;
-        }
+    return {
+        update(progress, message) {
+            console.log("[SweepUI] update()", { progress, message });
 
-        stage.textContent = steps[i].msg;
-        fill.style.width = `${steps[i].pct}%`;
-        percent.textContent = `${steps[i].pct}%`;
-        i++;
-    }, 1000);
+            if (typeof progress === "number") {
+                const p = Math.max(0, Math.min(100, progress));
+                fill.style.width = `${p}%`;
+                percent.textContent = `${p}%`;
+            }
 
-    return () => {
-        clearInterval(interval);
-        fill.style.width = "100%";
-        percent.textContent = "100%";
-        stage.textContent = "Complete";
+            if (message) {
+                stage.textContent = message;
+            }
+        },
 
-        setTimeout(() => {
+        complete() {
+            console.log("[SweepUI] Sweep finished — waiting for analysis");
+
+            fill.style.width = "100%";
+            percent.textContent = "100%";
+            stage.textContent = "Finalising analysis…";
+
+        },
+        
+        showAnalysis(data) {
+            console.log("[SweepUI] Showing analysis data in modal", data);
+
+            const logPanel = document.getElementById("sweepLogPanel");
+            if (!logPanel) return;
+
+            const a = data.analysis || data;
+
+            logPanel.innerHTML += `
+        <hr style="opacity:0.2;margin:10px 0;">
+        <b>Analysis Summary</b>
+
+        SNR: ${a.signal?.snr_db?.toFixed(2)} dB  
+        Peak Level: ${a.signal?.peak?.toFixed(4)}
+
+        Bandwidth: ${a.bandwidth?.low_hz?.toFixed(1)} – ${a.bandwidth?.high_hz?.toFixed(1)} Hz  
+        Balance Spread: ${a.balance?.spread_db?.toFixed(2)} dB  
+        Smoothness σ: ${a.smoothness?.std_db?.toFixed(2)}
+
+        Modes Found: ${a.modes?.length || 0}  
+        First Reflection: ${a.reflections?.first_ms?.toFixed(2)} ms  
+
+        Schroeder: ${a.acoustics?.schroeder_hz?.toFixed(1)} Hz  
+        SBIR Nulls: ${a.acoustics?.sbir_nulls?.map(n=>n.toFixed(1)).join(", ")}
+        `;
+
+            stage.textContent = "Analysis complete";
+        },
+
+
+        close() {
+            console.log("[SweepUI] Closing modal after analysis");
             modal.classList.add("hidden");
             modal.setAttribute("aria-hidden", "true");
-        }, 600);
+        },
+
+        error(msg = "Sweep failed") {
+            console.log("[SweepUI] error()", msg);
+            stage.textContent = msg;
+            fill.style.width = "100%";
+            percent.textContent = "!";
+        }
     };
 }
-

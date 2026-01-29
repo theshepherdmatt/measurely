@@ -1,73 +1,67 @@
 #!/bin/bash
-# WiFi ↔ AP toggle for Measurely (NetworkManager + hostapd + dnsmasq)
-# Bookworm-compatible (no dhcpcd)
+# Measurely WiFi ↔ AP hard toggle
+# Purpose:
+#   on  = Use wlan0 as Wi-Fi client (internet for dev)
+#   off = Use wlan0 as Measurely Access Point
 
-IFACE="$(grep ^WIFI_IFACE= /etc/measurely.conf | cut -d= -f2)"
-[ -z "$IFACE" ] && IFACE="wlan0"
-
-NM_IGNORE="/etc/NetworkManager/conf.d/unmanaged-${IFACE}.conf"
+IFACE="wlan0"
+NM_IGNORE="/etc/NetworkManager/conf.d/measurely-unmanaged.conf"
 
 case "$1" in
 
   on)
-    echo "[WiFi] Switching TO normal Wi-Fi client mode..."
+    echo "[MODE] Switching to Wi-Fi CLIENT mode (internet)"
 
-    # Remove unmanaged config
-    if [ -f "$NM_IGNORE" ]; then
-        rm "$NM_IGNORE"
-        echo "[WiFi] NetworkManager will now manage ${IFACE}."
-    fi
+    # Stop AP stack completely
+    systemctl stop hostapd dnsmasq 2>/dev/null
 
-    # Stop AP services
-    systemctl stop hostapd 2>/dev/null
-    systemctl stop dnsmasq 2>/dev/null
-
-    # Clear static AP IP
-    ip addr flush dev ${IFACE}
-
-    # Restart NetworkManager so ${IFACE} comes back
+    # Allow NetworkManager to control wlan0
+    rm -f "$NM_IGNORE"
     systemctl restart NetworkManager
-    sleep 2
+    sleep 3
 
     nmcli radio wifi on
-
-    echo "[WiFi] Wi-Fi ON. Connect using:"
-    echo "       sudo nmcli device wifi connect \"YOURSSID\" password \"YOURPASS\""
+    echo
+    echo "Connect using:"
+    echo "  nmcli device wifi list"
+    echo "  nmcli device wifi connect \"SSID\" password \"PASS\""
     ;;
 
   off)
-    echo "[AP] Switching TO Access Point mode…"
+    echo "[MODE] Switching to MEASURELY ACCESS POINT mode"
 
-    # Disconnect NM from interface
+    # Disconnect from any Wi-Fi network
     nmcli device disconnect ${IFACE} 2>/dev/null
 
-    # Mark unmanaged
+    # Tell NetworkManager to IGNORE wlan0 completely
     echo -e "[keyfile]\nunmanaged-devices=interface-name:${IFACE}" > "$NM_IGNORE"
-    echo "[AP] NetworkManager will now IGNORE ${IFACE}"
-
-    # Restart NetworkManager to release control
     systemctl restart NetworkManager
+    sleep 2
+
+    # Fully reset Wi-Fi interface (important)
+    ip link set ${IFACE} down
+    sleep 1
+    ip link set ${IFACE} up
     sleep 1
 
-    # Assign static AP IP directly
+    # Assign AP IP
     ip addr flush dev ${IFACE}
     ip addr add 192.168.4.1/24 dev ${IFACE}
-    ip link set ${IFACE} up
 
-    # Start AP stack
-    systemctl start dnsmasq
-    systemctl start hostapd
+    # Start AP services
+    systemctl restart dnsmasq
+    systemctl restart hostapd
 
-    echo "[AP] Access Point ENABLED."
-    echo "[AP] SSID: MeasurelyConnect"
-    echo "[AP] IP:   192.168.4.1"
+    echo
+    echo "✔ Measurely AP ACTIVE"
+    echo "SSID: MeasurelyConnect"
+    echo "IP:   192.168.4.1"
     ;;
 
   *)
-    echo "WiFi Toggle for Measurely"
     echo "Usage:"
-    echo "  sudo ./wifi-toggle.sh on"
-    echo "  sudo ./wifi-toggle.sh off"
+    echo "  sudo ./wifi-toggle.sh on    # Internet mode"
+    echo "  sudo ./wifi-toggle.sh off   # Measurely AP mode"
     exit 1
     ;;
 esac

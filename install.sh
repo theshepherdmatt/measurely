@@ -103,7 +103,7 @@ WorkingDirectory=$REPO_DIR
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONPATH=$REPO_DIR
 Environment=MEASURELY_MEAS_ROOT=$REPO_DIR/measurements
-ExecStart=$VENV_DIR/bin/python -m measurelyapp.server
+ExecStart=$VENV_DIR/bin/python -m measurelyapp.server --host 0.0.0.0 --port 5000
 Restart=on-failure
 RestartSec=3
 
@@ -266,72 +266,73 @@ msg "   or smb://10.10.10.2/measurely"
 
 ip link set wlan0 up
 
-# Wait for systemd-networkd to assign static IP
-for i in {1..20}; do
-    if ip addr show wlan0 | grep -q "192.168.4.1"; then
-        break
-    fi
-    sleep 0.25
-done
-
-
-# ------------------------------------------------------------
-# HARD stop wlan0 client mode (AP requires exclusive control)
-# ------------------------------------------------------------
-
-# Stop and permanently disable wpa_supplicant on wlan0
-systemctl stop wpa_supplicant || true
-systemctl disable wpa_supplicant || true
-systemctl mask wpa_supplicant || true
-
-# Flush any client IPs that may already exist
-ip addr flush dev wlan0
-
-# Bring interface back up cleanly
-ip link set wlan0 down
-sleep 1
-ip link set wlan0 up
-
-
 # ------------------------------------------------------------
 # Access Point setup (Pi 4 – wlan0 ONLY)
 # ------------------------------------------------------------
 msg "Configuring Access Point on wlan0…"
 
-apt-get install -y hostapd dnsmasq
+apt-get install -y hostapd dnsmasq avahi-daemon dhcpcd5
+systemctl enable --now avahi-daemon
+
+# Ensure hostname is correct for mDNS
+hostnamectl set-hostname measurely
+
+# Advertise Measurely web service over mDNS
+mkdir -p /etc/avahi/services
+cat >/etc/avahi/services/measurely.service <<'EOF'
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <name replace-wildcards="yes">Measurely</name>
+  <service>
+    <type>_http._tcp</type>
+    <port>5000</port>
+  </service>
+</service-group>
+EOF
+
+systemctl restart avahi-daemon
+
+# Ensure .local name resolution works (required for measurely.local)
+if ! grep -q "mdns4" /etc/nsswitch.conf; then
+    sed -i 's/^hosts:.*/hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4/' /etc/nsswitch.conf
+fi
 
 systemctl stop hostapd dnsmasq || true
 systemctl unmask hostapd
 
-# NetworkManager must NOT manage wlan0
+# Tell NetworkManager to leave wlan0 alone
 mkdir -p /etc/NetworkManager/conf.d
-cat >/etc/NetworkManager/conf.d/99-unmanaged-wlan0.conf <<EOF
+cat >/etc/NetworkManager/conf.d/99-measurely-wlan0.conf <<'EOF'
 [keyfile]
 unmanaged-devices=interface-name:wlan0
 EOF
 
-pkill -f "wpa_supplicant.*wlan0" || true
-sleep 1
-systemctl restart NetworkManager
+systemctl restart NetworkManager 2>/dev/null || true
 
-# Static IP for AP
-cat >/etc/systemd/network/20-wlan0-ap.network <<'EOF'
-[Match]
-Name=wlan0
+# Give wlan0 a static IP using dhcpcd (required for AP)
+# Configure wlan0 static IP for AP
+sed -i '/^interface wlan0$/,/^$/d' /etc/dhcpcd.conf
 
-[Network]
-Address=192.168.4.1/24
-DHCP=no
-ConfigureWithoutCarrier=yes
+cat >>/etc/dhcpcd.conf <<'EOF'
+
+interface wlan0
+static ip_address=192.168.4.1/24
+nohook wpa_supplicant
 EOF
 
-systemctl enable systemd-networkd
-systemctl restart systemd-networkd
+systemctl restart dhcpcd
+
 
 # dnsmasq
-cat >/etc/dnsmasq.d/measurely-ap.conf <<EOF
+cat >/etc/dnsmasq.d/measurely-ap.conf <<'EOF'
 interface=wlan0
-dhcp-range=192.168.4.20,192.168.4.80,12h
+bind-interfaces
+
+dhcp-range=192.168.4.20,192.168.4.80,255.255.255.0,12h
+dhcp-option=option:router,192.168.4.1
+dhcp-option=option:dns-server,192.168.4.1
+
 domain-needed
 bogus-priv
 EOF
@@ -341,18 +342,14 @@ cat >/etc/hostapd/hostapd.conf <<EOF
 interface=wlan0
 driver=nl80211
 country_code=GB
-ssid=MEASURELY
+ssid=MeasurelyConnect
 hw_mode=g
 channel=6
 ieee80211n=1
 wmm_enabled=1
 auth_algs=1
 ignore_broadcast_ssid=0
-wpa=2
-wpa_passphrase=MeasurelyConnect
-wpa_key_mgmt=WPA-PSK
-rsn_pairwise=CCMP
-
+wpa=0
 EOF
 
 sed -i 's|^#DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
@@ -363,37 +360,38 @@ systemctl restart hostapd
 
 msg "✔ Access Point MEASURELY active on wlan0 (192.168.4.1)"
 
+
 # ------------------------------------------------------------
 # 9. Configure eth0 as static 10.10.10.2 (SSH / dev link)
 # ------------------------------------------------------------
 msg "Configuring eth0 static IP (10.10.10.2)…"
 
-# Ensure NetworkManager does NOT manage eth0
-mkdir -p /etc/NetworkManager/conf.d
+# Remove old entries to avoid duplicates
+sed -i '/^interface eth0$/,/^$/d' /etc/dhcpcd.conf
 
-cat >/etc/NetworkManager/conf.d/99-unmanaged-eth0.conf <<EOF
-[keyfile]
-unmanaged-devices=interface-name:eth0
+cat >>/etc/dhcpcd.conf <<'EOF'
+
+interface eth0
+static ip_address=10.10.10.2/24
 EOF
 
-systemctl restart NetworkManager
+systemctl restart dhcpcd
+msg "✔ eth0 locked to 10.10.10.2 via dhcpcd"
 
-# Static IP via systemd-networkd
-mkdir -p /etc/systemd/network
 
-cat >/etc/systemd/network/10-eth0-static.network <<EOF
-[Match]
-Name=eth0
+# ------------------------------------------------------------
+# Fix reverse path filtering (required for dual-network AP + eth0)
+# ------------------------------------------------------------
+msg "Disabling rp_filter for dual-network routing…"
 
-[Network]
-Address=10.10.10.2/24
-ConfigureWithoutCarrier=yes
-EOF
+sed -i '/net.ipv4.conf.all.rp_filter/d' /etc/sysctl.conf
+sed -i '/net.ipv4.conf.wlan0.rp_filter/d' /etc/sysctl.conf
 
-systemctl enable systemd-networkd
-systemctl restart systemd-networkd
+echo "net.ipv4.conf.all.rp_filter=0" >> /etc/sysctl.conf
+echo "net.ipv4.conf.wlan0.rp_filter=0" >> /etc/sysctl.conf
 
-msg "✔ eth0 locked to 10.10.10.2"
+sysctl -p >/dev/null
+msg "✔ rp_filter disabled (AP replies will not be dropped)"
 
 
 # ------------------------------------------------------------

@@ -13,6 +13,16 @@
     <script src="js/vendor/three/three.min.js"></script>
     <script src="js/vendor/three/OrbitControls.js"></script>
 
+    <!-- PWA / App-like behaviour -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Measurely">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1220">
+
 
 </head>
 
@@ -78,15 +88,15 @@
 
                 <!-- CONFIG -->
                 <div class="engine-actions">
-                    <button id="editRoomBtn"
-                            class="btn btn-secondary engine-action"
-                            onclick="location.href='myroom.html'">
-                        <img src="icons/home.svg" alt="">
-                        <div class="engine-action-text">
-                            <strong>Edit My Room</strong>
-                            <span>Dimensions, layout & furnishings</span>
-                        </div>
-                    </button>
+                <a id="editRoomBtn"
+                    class="btn btn-secondary engine-action"
+                    href="myroom.html">
+                    <img src="icons/home.svg" alt="">
+                    <div class="engine-action-text">
+                    <strong>Edit My Room</strong>
+                    <span>Dimensions, layout & furnishings</span>
+                    </div>
+                </a>
                 </div>
 
                 <!-- DIVIDER -->
@@ -932,26 +942,40 @@ document.addEventListener("DOMContentLoaded", () => {
   <div class="sweep-modal-content glass-panel">
     <h3 class="sweep-title">Running Measurement</h3>
 
+    <!-- CURRENT STAGE -->
     <div id="sweepStageText" class="sweep-stage">
       Starting sweep…
     </div>
 
+    <!-- PROGRESS BAR -->
     <div class="sweep-progress">
       <div class="sweep-progress-fill" id="sweepProgressFill"></div>
     </div>
 
     <div class="sweep-percent" id="sweepPercent">0%</div>
 
+    <!-- ANIMATED LOADER LINE -->
     <div class="sweep-loader">
       <div class="sweep-line"></div>
     </div>
 
-    <!-- CANCEL BUTTON -->
-    <div style="margin-top:1.25rem; text-align:center;">
-      <button
-        id="cancelSweepBtn"
-        class="btn btn-secondary"
-        style="min-width:140px;">
+    <!-- LIVE ENGINE LOG (RAW DATA STREAM) -->
+    <div id="sweepLogPanel" class="sweep-log-panel" aria-live="polite"></div>
+
+    <!-- MINI ANALYSIS PANEL (GEEK MODE) -->
+    <div id="sweepMathPanel" class="sweep-math-panel hidden">
+      <div class="sweep-math-title">Live Analysis</div>
+      <div class="sweep-math-grid">
+        <div><span>SNR</span><span id="liveSNR">— dB</span></div>
+        <div><span>IR Peak</span><span id="liveIRPeak">—</span></div>
+        <div><span>Peak Frame</span><span id="livePeakFrame">—</span></div>
+        <div><span>Room Modes</span><span id="liveModes">—</span></div>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="sweep-actions">
+      <button id="cancelSweepBtn" class="btn btn-danger is-critical">
         Cancel sweep
       </button>
     </div>

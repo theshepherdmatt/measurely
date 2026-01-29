@@ -45,11 +45,50 @@ if env_file.exists():
             k, _, v = line.partition("=")
             os.environ.setdefault(k.strip(), v.strip())
 
+
+def play_startup_sound():
+    wav = "/home/matt/measurely/web/startup-sound.wav"
+
+    if not os.path.exists(wav):
+        print("⚠️ Startup sound not found:", wav)
+        return
+
+    try:
+        # Give ALSA/USB a moment to settle
+        time.sleep(2)
+
+        subprocess.Popen(
+            ["aplay", "-q", wav],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        print("🔊 Startup sound played")
+
+    except Exception as e:
+        print("⚠️ Failed to play startup sound:", e)
+
 try:
     sd._initialize()
     print("✓ PortAudio initialised once at startup")
 except Exception as e:
     print("❌ PortAudio init failed at startup:", e)
+
+threading.Thread(target=play_startup_sound, daemon=True).start()
+
+
+def cancel_sweep():
+    global SWEEP_CANCELLED
+    SWEEP_CANCELLED = True
+    try:
+        sd.stop()  # Immediately halt playback/recording
+    except Exception:
+        pass
+
+def force_stop_audio():
+    try:
+        sd.stop()
+    except Exception:
+        pass
 # ------------------------------------------------------------------
 #  Flask init
 # ------------------------------------------------------------------
@@ -137,6 +176,10 @@ sweep_progress = {
     'message': '',
     'session_id': None
 }
+
+# 🔥 LIVE SWEEP LOG BUFFER (for UI streaming)
+sweep_logs = []
+MAX_LOG_LINES = 200
 
 # ------------------------------------------------------------------
 #  helpers
@@ -535,7 +578,7 @@ def update_session_note(session_id):
 @app.route('/api/run-sweep', methods=['POST'])
 def run_sweep():
     import subprocess, traceback, sounddevice as sd
-    import threading, os
+    import threading, os, time, json
 
     try:
         payload = request.get_json(silent=True) or {}
@@ -548,6 +591,10 @@ def run_sweep():
         sweep_progress['message'] = "Starting sweep…"
         sweep_progress['session_id'] = None
 
+        # Clear old status file
+        status_file = "/tmp/measurely_sweep_status.json"
+        if os.path.exists(status_file):
+            os.remove(status_file)
 
         # Detect audio devices
         devices = sd.query_devices()
@@ -567,11 +614,8 @@ def run_sweep():
         SWEEP = f"{SERVICE_ROOT}/measurelyapp/sweep.py"
         ANALYSE = f"{SERVICE_ROOT}/measurelyapp/analyse.py"
         BASEDIR = str(SERVICE_ROOT)
-        # Force sweep to run with venv python (critical fix)
-
         VENV_PY = f"{SERVICE_ROOT}/venv/bin/python"
 
-        # Force explicit audio devices (USB mic = 1, HiFiBerry DAC = 0)
         cmd = [
             VENV_PY, SWEEP,
             "--mode", "both",
@@ -589,118 +633,136 @@ def run_sweep():
         # Background thread
         # -----------------------------------------------------
         def run():
-
-            print("🔥🔥 run() background thread STARTED")
-
-            sweep_progress['session_id'] = None
-
-            def tick_progress():
-                while sweep_progress['running'] and not sweep_cancel_event.is_set():
-
-                    sweep_progress['progress'] = min(sweep_progress['progress'] + 5, 95)
-                    sweep_progress['message'] = "Sweep running…"
-                    time.sleep(1)
-
-            threading.Thread(target=tick_progress, daemon=True).start()
-
-            # -----------------------------------------------------
-            # 1. Run sweep
-            # -----------------------------------------------------
-            global sweep_process
+            print("🔥 Sweep thread started")
             sweep_cancel_event.clear()
 
+            global sweep_process
             sweep_process = subprocess.Popen(
                 cmd,
                 cwd=BASEDIR,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
             )
 
-            stdout, stderr = sweep_process.communicate()
+            # -----------------------------
+            # LIVE LOG STREAMING
+            # -----------------------------
+            def stream_logs(proc):
+                global sweep_logs
+                for line in iter(proc.stdout.readline, ''):
+                    line = line.strip()
+                    if not line:
+                        continue
 
-            if sweep_cancel_event.is_set():
-                print("🟥 Sweep cancelled mid-run")
+                    print("[SWEEP LOG]", line)
+                    sweep_logs.append(line)
+                    print(f"[LOG BUFFER SIZE] {len(sweep_logs)}")
+                    if len(sweep_logs) > MAX_LOG_LINES:
+                        sweep_logs = sweep_logs[-MAX_LOG_LINES:]
+
+            threading.Thread(target=stream_logs, args=(sweep_process,), daemon=True).start()
+
+            time.sleep(0.5)
+            threading.Thread(target=read_real_progress, daemon=True).start()
+
+            # -----------------------------
+            # WAIT FOR SWEEP TO FINISH
+            # -----------------------------
+            while sweep_process.poll() is None:
+                if sweep_cancel_event.is_set():
+                    print("🟥 Sweep cancelled mid-run")
+                    try:
+                        sweep_process.terminate()
+                        sweep_process.wait(timeout=2)
+                    except Exception:
+                        sweep_process.kill()
+
+                    sweep_progress.update({
+                        "running": False,
+                        "progress": 0,
+                        "message": "Cancelled"
+                    })
+                    update_led_state("idle")
+                    return
+                time.sleep(0.2)
+
+            if sweep_process.returncode != 0:
+                print("❌ Sweep process failed")
+                sweep_progress.update({
+                    "running": False,
+                    "progress": 0,
+                    "message": "Sweep failed"
+                })
+                update_led_state("error")
                 return
 
-            out_lines = stdout.strip().splitlines()
+            # -----------------------------
+            # FIND NEW SESSION FOLDER
+            # -----------------------------
+            sessions = [
+                d for d in MEAS_ROOT.iterdir()
+                if d.is_dir() and d.name not in ("latest", "DEMO_DO_NOT_DELETE")
+            ]
 
-
-            out_lines = completed.stdout.strip().splitlines()
-            session_path = None
-
-            for line in reversed(out_lines):
-                if line.startswith("Saved:"):
-                    session_path = line.replace("Saved:", "").strip()
-                    break
-
-            if not session_path:
-                print("[run_sweep] ERROR: No Saved: path found")
-                print(completed.stdout)
-                print(completed.stderr)
+            if not sessions:
+                print("❌ No session folder created")
+                sweep_progress.update({
+                    "running": False,
+                    "progress": 0,
+                    "message": "Sweep failed"
+                })
+                update_led_state("error")
                 return
 
-            # -----------------------------------------------------
-            # 2. Update latest symlink
-            # -----------------------------------------------------
+            latest_session = max(sessions, key=lambda d: d.stat().st_mtime)
+            session_path = str(latest_session)
+            print("✓ New session detected:", session_path)
+
+            # -----------------------------
+            # UPDATE latest symlink
+            # -----------------------------
             subprocess.run([
                 "ln", "-sfn",
                 session_path,
                 f"{BASEDIR}/measurements/latest"
             ])
 
-
-            # -----------------------------------------------------
-            # 3. RESTORE ROOM SETTINGS BEFORE ANALYSIS
-            # -----------------------------------------------------
+            # -----------------------------
+            # RESTORE ROOM DATA
+            # -----------------------------
             try:
                 latest = MEAS_ROOT / "latest"
                 room_file = SERVICE_ROOT / "room.json"
 
                 if room_file.exists():
                     room_data = json.loads(room_file.read_text())
-
                     meta_file = latest / "meta.json"
                     meta = json.loads(meta_file.read_text()) if meta_file.exists() else {}
-
                     meta.setdefault("settings", {})
                     meta["settings"]["room"] = room_data
-
                     write_json_atomic(meta, meta_file)
-
-                    print("✓ Restored room settings into new latest/meta.json")
-
-                else:
-                    print("⚠ No room.json exists — nothing to restore")
-
+                    print("✓ Room data restored")
             except Exception as e:
-                print("Room metadata restore failed:", e)
+                print("Room restore failed:", e)
 
-            # -----------------------------------------------------
-            # 4. Analyse AFTER restoring room data
-            # -----------------------------------------------------
-            subprocess.run(
-                [VENV_PY, ANALYSE, session_path],
-                cwd=BASEDIR,
-                check=False
-            )
+            # -----------------------------
+            # RUN ANALYSIS
+            # -----------------------------
+            subprocess.run([VENV_PY, ANALYSE, session_path], cwd=BASEDIR, check=False)
 
-            # -----------------------------------------------------
-            # 4.5 Build sweep history for AI context
-            # -----------------------------------------------------
             try:
                 build_sweephistory(limit=4)
-                print("✓ sweephistory.json updated")
+                print("✓ sweephistory updated")
             except Exception as e:
-                print("⚠️ sweephistory.json build failed:", e)
+                print("⚠️ sweephistory failed:", e)
 
-
-            # -----------------------------------------------------
-            # 5. Run AI analysis AFTER analysis completes
-            # -----------------------------------------------------
-            sweep_progress['progress'] = 100
-            sweep_progress['message'] = "Sweep complete"
-            sweep_progress['running'] = False
+            sweep_progress.update({
+                "running": False,
+                "progress": 100,
+                "message": "Analysis complete ✔"
+            })
             update_led_state("sweep_complete")
 
         threading.Thread(target=run, daemon=True).start()
@@ -714,6 +776,29 @@ def run_sweep():
 # ------------------------------------------------------------------
 #  sweep control (for cancellation)
 # ------------------------------------------------------------------
+def read_real_progress():
+    status_file = "/tmp/measurely_sweep_status.json"
+
+    while sweep_progress["running"] and not sweep_cancel_event.is_set():
+        try:
+            if os.path.exists(status_file):
+                with open(status_file) as f:
+                    data = json.load(f)
+
+                sweep_progress["progress"] = int(data.get("percent", 0))
+                sweep_progress["message"] = data.get("phase", "Running…")
+
+                # 🔒 DO NOT allow the sweep.py status file to end the sweep in the UI
+                # Only allow it to keep running=True (never set False here)
+                if bool(data.get("running", True)) is True:
+                    sweep_progress["running"] = True
+
+        except Exception:
+            pass
+
+        time.sleep(0.4)
+
+
 sweep_process = None
 sweep_cancel_event = threading.Event()
 
@@ -777,6 +862,9 @@ def api_build_sweephistory():
     history = build_sweephistory(limit=4)
     return jsonify(history)
 
+@app.route('/api/sweep-logs', methods=['GET'])
+def api_sweep_logs():
+    return jsonify(sweep_logs)
 
 @app.route("/api/cancel-sweep", methods=["POST"])
 def cancel_sweep():
@@ -786,9 +874,11 @@ def cancel_sweep():
         return jsonify({"status": "no sweep running"}), 200
 
     print("🟥 Cancel sweep requested")
-
     sweep_cancel_event.set()
 
+    force_stop_audio()
+
+    # Kill Python sweep process
     if sweep_process and sweep_process.poll() is None:
         try:
             sweep_process.terminate()
@@ -796,6 +886,7 @@ def cancel_sweep():
         except Exception:
             sweep_process.kill()
 
+    # Reset progress
     sweep_progress["running"] = False
     sweep_progress["progress"] = 0
     sweep_progress["message"] = "Cancelled"

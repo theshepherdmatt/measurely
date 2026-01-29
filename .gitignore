@@ -51,3 +51,4 @@ measurements/*
 # Explicitly keep important config
 !room.json
 !measurelyapp/dave/phrases/**/*.json
+install.log

@@ -252,3 +252,39 @@
 
     filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.15));
 }
+
+/* =========================================
+   NESTED CARDS: stop "card inside card" bloat
+   ========================================= */
+
+/* Any card inside another card becomes an inset panel (not full glass) */
+.card .card {
+  padding: 1rem;
+  border-radius: 14px;
+
+  /* kill the heavy glass-on-glass look */
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+
+/* If you accidentally put glass-panel inside glass-panel, neuter it */
+.card.glass-panel .card.glass-panel {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.45);
+  border-color: rgba(255,255,255,0.06);
+}
+
+/* Mobile: shrink outer card padding so the layout breathes */
+@media (max-width: 640px) {
+  .card {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  .overall-score-card {
+    padding: 1.25rem;
+  }
+}

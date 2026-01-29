@@ -68,3 +68,21 @@ body {
   gap: 2rem;
 }
 
+@media (max-width: 640px) {
+.main-content {
+padding: 1rem;
+gap: 1rem;
+}
+}
+
+/* ================================
+   iOS / iPad SAFE AREA SUPPORT
+   Prevents content touching screen edges
+   ================================ */
+
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
