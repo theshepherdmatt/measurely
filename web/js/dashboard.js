@@ -225,6 +225,168 @@ function renderRoomAnalysisCards(analysis) {
 
 }
 
+function addSmoothnessOverlay(traces, freqs, mags, smoothMag) {
+    traces.push({
+        x: freqs,
+        y: smoothMag,
+        type: "scatter",
+        mode: "lines",
+        name: "Smoothed",
+        line: { width: 2, dash: "dot", color: "#ffffff" },
+        hoverinfo: "skip"
+    });
+
+    traces.push({
+        x: freqs,
+        y: mags.map(v => v + 3),
+        type: "scatter",
+        mode: "lines",
+        line: { width: 0 },
+        showlegend: false
+    });
+
+    traces.push({
+        x: freqs,
+        y: mags.map(v => v - 3),
+        type: "scatter",
+        mode: "lines",
+        fill: "tonexty",
+        fillcolor: "rgba(239,68,68,0.08)",
+        line: { width: 0 },
+        name: "Roughness Zone",
+        hoverinfo: "skip"
+    });
+}
+
+function addBalanceOverlay(traces, freqs, mags, label) {
+    const lowVals = [], highVals = [];
+
+    for (let i = 0; i < freqs.length; i++) {
+        if (freqs[i] >= 20 && freqs[i] <= 200) lowVals.push(mags[i]);
+        if (freqs[i] >= 2000 && freqs[i] <= 10000) highVals.push(mags[i]);
+    }
+
+    if (!lowVals.length || !highVals.length) return;
+
+    const lowAvg = lowVals.reduce((a,b)=>a+b,0) / lowVals.length;
+    const highAvg = highVals.reduce((a,b)=>a+b,0) / highVals.length;
+    const tilt = highAvg - lowAvg;
+
+    const tiltLine = freqs.map(f => {
+        const ratio = Math.log10(f / 200) / Math.log10(10000 / 200);
+        return lowAvg + (ratio * tilt);
+    });
+
+    traces.push({
+        x: freqs,
+        y: tiltLine,
+        type: "scatter",
+        mode: "lines",
+        name: `${label} Tonal Tilt`,
+        line: { dash: "dot", width: 2, color: "#fbbf24" },
+        hoverinfo: "skip"
+    });
+}
+
+function addPeaksDipsOverlay(traces, freqs, mags, label) {
+    const peakX = [], peakY = [];
+    const dipX = [], dipY = [];
+
+    for (let k = 2; k < mags.length - 2; k++) {
+        const prev = (mags[k - 2] + mags[k - 1]) / 2;
+        const next = (mags[k + 1] + mags[k + 2]) / 2;
+        const curr = mags[k];
+
+        if (curr - prev > 0.6 && curr - next > 0.6) {
+            peakX.push(freqs[k]);
+            peakY.push(curr);
+        }
+        if (prev - curr > 0.6 && next - curr > 0.6) {
+            dipX.push(freqs[k]);
+            dipY.push(curr);
+        }
+    }
+
+    traces.push(
+        {
+            x: peakX,
+            y: peakY,
+            type: "scatter",
+            mode: "markers",
+            name: `${label} Peaks`,
+            marker: { size: 7, symbol: "triangle-up" }
+        },
+        {
+            x: dipX,
+            y: dipY,
+            type: "scatter",
+            mode: "markers",
+            name: `${label} Dips`,
+            marker: { size: 7, symbol: "triangle-down" }
+        }
+    );
+}
+
+function addReflectionsOverlay(traces, freqs, mags, label) {
+
+    if (!freqs.length || !mags.length) return;
+
+    const rippleX = [];
+    const rippleY = [];
+
+    // Detect rapid oscillations (comb filtering)
+    for (let i = 2; i < mags.length - 2; i++) {
+
+        const slope1 = mags[i] - mags[i - 1];
+        const slope2 = mags[i + 1] - mags[i];
+
+        // More sensitive ripple detection
+        if (Math.abs(slope1) > 0.4 && Math.abs(slope2) > 0.4 && Math.sign(slope1) !== Math.sign(slope2)) {
+            rippleX.push(freqs[i]);
+            rippleY.push(mags[i]);
+        }
+    }
+
+    console.log(`🪞 ${label} Reflection points:`, rippleX.length);
+
+    if (!rippleX.length) return;
+
+    traces.push({
+        x: rippleX,
+        y: rippleY,
+        type: "scatter",
+        mode: "markers",
+        name: `${label} Reflection Ripple`,
+        marker: {
+            size: 5,
+            color: "rgba(251,191,36,0.9)", // amber
+            symbol: "circle-open",
+            line: { width: 1.5 }
+        },
+        hoverinfo: "skip"
+    });
+}
+
+
+function addClarityOverlay(traces, freqs) {
+
+    const clarityLow = 2000;
+    const clarityHigh = 5000;
+
+    traces.push({
+        x: [clarityLow, clarityHigh, clarityHigh, clarityLow],
+        y: [-60, -60, 20, 20], // full vertical span
+        type: "scatter",
+        mode: "lines",
+        fill: "toself",
+        fillcolor: "rgba(34,197,94,0.08)",
+        line: { width: 0 },
+        name: "Clarity Region",
+        hoverinfo: "skip"
+    });
+}
+
+
 function updateRoomInsightText(metric, data) {
     console.log("🧠 updateRoomInsightText called with:", metric, data);
 
@@ -643,6 +805,31 @@ function updateMeasurementIntegrity(data) {
 }
 
 
+function findPeaksAndDips(freqs, mags) {
+    const peaks = [];
+    const dips = [];
+
+    for (let i = 2; i < mags.length - 2; i++) {
+        const f = freqs[i];
+        if (f > 300) continue; // focus on room region
+
+        const prev = (mags[i - 1] + mags[i - 2]) / 2;
+        const next = (mags[i + 1] + mags[i + 2]) / 2;
+        const current = mags[i];
+
+        if (current - prev > 3 && current - next > 3) {
+            peaks.push({ f, m: current });
+        }
+
+        if (prev - current > 3 && next - current > 3) {
+            dips.push({ f, m: current });
+        }
+    }
+
+    return { peaks, dips };
+}
+
+
 
 
 /* ============================================================
@@ -661,8 +848,8 @@ class MeasurelyDashboard {
         this.sessionOrder = [];
         this._lastLogCount = 0;
         this._lastStatusMessage = null;
-
         this.SPEAKERS_BY_KEY = {};
+        this.activeMetricOverlay = "none";
 
         this.init();
         
@@ -1686,130 +1873,16 @@ class MeasurelyDashboard {
 
 
     /* ============================================================
-    FREQUENCY RESPONSE CHART
-    Uses report_curve as the single source of truth
+    Chart
     ============================================================ */
-    updateFrequencyChart() {
-
-        const chartEl = document.getElementById('frequencyChart');
-        if (!chartEl) return;
-
-        const { currentData } = this;
-        if (!currentData?.id) return;
-
-        fetch(`/api/session/${currentData.id}/report_curve`)
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch report_curve');
-                return res.json();
-            })
-            .then(curve => {
-
-                const isMobile = window.innerWidth < 640;
-
-                /* ---------------- TRACE ---------------- */
-                const trace = {
-                    x: curve.freqs,
-                    y: curve.mag,
-                    type: 'scatter',
-                    mode: 'lines',
-                    line: {
-                        color: '#a855f7',          // Measurely accent purple
-                        width: isMobile ? 3 : 2.5
-                    }
-                };
-
-                /* ---------------- LAYOUT ---------------- */
-                const layout = {
-                    xaxis: {
-                        title: {
-                            text: 'Level (dB)',
-                            standoff: 10,
-                            font: {
-                                color: '#ffffff',
-                                size: isMobile ? 11 : 12
-                            }
-                        },
-
-                        type: 'log',
-                        range: [Math.log10(20), Math.log10(20000)],
-                        tickvals: [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000],
-                        ticktext: ['20', '50', '100', '200', '500', '1k', '2k', '5k', '10k', '20k'],
-                        ticks: 'outside',
-                        showline: true,
-                        linewidth: 1,
-                        linecolor: '#9ca3af',
-                        tickfont: {
-                            color: 'rgba(255,255,255,0.6)',
-                            size: isMobile ? 10 : 11
-                        },
-                        showgrid: true,
-                        gridcolor: 'rgba(255,255,255,0.04)',
-                        zeroline: false
-                    },
-
-                    yaxis: {
-                        title: {
-                            text: 'Frequency (Hz)',
-                            standoff: 10,
-                            font: {
-                                color: '#ffffff',
-                                size: isMobile ? 11 : 12
-                            }
-                        },
-
-                        tickmode: 'linear',
-                        dtick: 10, 
-                        ticks: 'outside',
-                        showticklabels: true,
-                        tickfont: {
-                            color: 'rgba(255,255,255,0.6)',
-                            size: isMobile ? 10 : 11
-                        },
-                        showgrid: true,
-                        gridcolor: 'rgba(255,255,255,0.06)',
-                        showline: true,
-                        linewidth: 1,
-                        linecolor: '#9ca3af',
-                        zeroline: true,
-                        zerolinecolor: 'rgba(255,255,255,0.25)',
-                        zerolinewidth: 1,
-                        automargin: true
-                    },
-
-                    showlegend: false,
-
-                    margin: isMobile
-                        ? { t: 10, r: 10, b: 35, l: 40 }
-                        : { t: 16, r: 20, b: 45, l: 56 },
-
-                    plot_bgcolor: '#1f2937',
-                    paper_bgcolor: 'transparent'
-                };
-
-                /* ---------------- RENDER ---------------- */
-                Plotly.newPlot(
-                    'frequencyChart',
-                    [trace],
-                    layout,
-                    {
-                        staticPlot: true,
-                        displayModeBar: false,
-                        responsive: true
-                    }
-                );
-
-            })
-            .catch(err => {
-                console.error('❌ Frequency chart error:', err);
-            });
-    }
 
     async updateFrequencyChartMulti() {
 
         const chartEl = document.getElementById("frequencyChart");
         if (!chartEl) return;
 
-        // Fetch sessions (newest → oldest)
+        console.log("📊 Drawing chart with overlay:", this.activeMetricOverlay);
+
         const all = CAPS.history
             ? await fetch("/api/sessions/all").then(r => r.json())
             : [];
@@ -1830,7 +1903,6 @@ class MeasurelyDashboard {
 
         const traces = [];
 
-        // Build traces in fixed order, Set only controls visibility
         for (let i = 0; i < sessions.length; i++) {
 
             if (!this.activeChartSessions.has(i)) continue;
@@ -1839,13 +1911,38 @@ class MeasurelyDashboard {
             if (!meta) continue;
 
             try {
-                const curve = await fetch(
-                    `/api/session/${meta.id}/report_curve`
-                ).then(r => r.json());
+                const curve = await fetch(`/api/session/${meta.id}/report_curve`)
+                    .then(r => r.json());
 
+                const freqs = curve.freqs || [];
+                const mags  = curve.mag   || [];
+
+                function movingAverage(arr, windowSize = 12) {
+                    const result = [];
+                    for (let i = 0; i < arr.length; i++) {
+                        let start = Math.max(0, i - windowSize);
+                        let end   = Math.min(arr.length - 1, i + windowSize);
+
+                        let sum = 0;
+                        let count = 0;
+
+                        for (let j = start; j <= end; j++) {
+                            sum += arr[j];
+                            count++;
+                        }
+                        result.push(sum / count);
+                    }
+                    return result;
+                }
+
+                const smoothMag = movingAverage(mags, 12);
+
+                // ===============================
+                // Base frequency response
+                // ===============================
                 traces.push({
-                    x: curve.freqs,
-                    y: curve.mag,
+                    x: freqs,
+                    y: mags,
                     type: "scatter",
                     mode: "lines",
                     name: LABELS[i],
@@ -1857,6 +1954,30 @@ class MeasurelyDashboard {
                     },
                     hoverinfo: "skip"
                 });
+
+                // ===============================
+                // STEP 4 — Overlay Dispatcher
+                // ===============================
+
+                if (this.activeMetricOverlay === "smoothness") {
+                    addSmoothnessOverlay(traces, freqs, mags, smoothMag);
+                }
+
+                if (this.activeMetricOverlay === "balance") {
+                    addBalanceOverlay(traces, freqs, mags, LABELS[i]);
+                }
+
+                if (this.activeMetricOverlay === "peaks_dips") {
+                    addPeaksDipsOverlay(traces, freqs, mags, LABELS[i]);
+                }
+
+                if (this.activeMetricOverlay === "reflections") {
+                    addReflectionsOverlay(traces, freqs, mags, LABELS[i]);
+                }
+
+                if (this.activeMetricOverlay === "clarity") {
+                    addClarityOverlay(traces, freqs);
+                }
 
             } catch {
                 console.warn("Curve load failed:", meta.id);
@@ -1877,12 +1998,8 @@ class MeasurelyDashboard {
                 showgrid: true,
                 gridcolor: "rgba(255,255,255,0.025)",
                 zeroline: false,
-                tickfont: {
-                    size: 11,
-                    color: "rgba(255,255,255,0.6)"
-                }
+                tickfont: { size: 11, color: "rgba(255,255,255,0.6)" }
             },
-
             yaxis: {
                 title: "Level (dB)",
                 ticks: "outside",
@@ -1892,35 +2009,20 @@ class MeasurelyDashboard {
                 showgrid: true,
                 gridcolor: "rgba(255,255,255,0.03)",
                 zeroline: false,
-                tickfont: {
-                    size: 11,
-                    color: "rgba(255,255,255,0.6)"
-                }
+                tickfont: { size: 11, color: "rgba(255,255,255,0.6)" }
             },
-
             showlegend: true,
-
             legend: {
                 orientation: "h",
                 x: 0.5,
                 xanchor: "center",
                 y: -0.24,
                 yanchor: "top",
-                font: {
-                    size: 10,
-                    color: "rgba(255,255,255,0.55)"
-                }
+                font: { size: 10, color: "rgba(255,255,255,0.55)" }
             },
-
             plot_bgcolor: "#1f2937",
             paper_bgcolor: "transparent",
-
-            margin: {
-                t: 16,
-                r: 20,
-                b: 90,
-                l: 56
-            }
+            margin: { t: 16, r: 20, b: 90, l: 56 }
         };
 
         Plotly.react("frequencyChart", traces, layout, {
@@ -2340,6 +2442,38 @@ class MeasurelyDashboard {
             }
             el.addEventListener('click', handler);
         };
+
+        // Metric buttons (may not exist immediately)
+        setTimeout(() => {
+            const metricButtons = document.querySelectorAll("#metricNav .metric-btn");
+
+            if (!metricButtons.length) {
+                console.warn("⚠️ No metric buttons found");
+                return;
+            }
+
+            metricButtons.forEach(btn => {
+                btn.addEventListener("click", () => {
+
+                    metricButtons.forEach(b => {
+                        b.classList.remove("btn-primary");
+                        b.classList.add("btn-utility");
+                    });
+
+                    btn.classList.remove("btn-utility");
+                    btn.classList.add("btn-primary");
+
+                    this.activeMetricOverlay = btn.dataset.metric;
+
+                    console.log("🎛 Metric selected:", this.activeMetricOverlay);
+
+                    this.updateFrequencyChartMulti();
+                });
+            });
+
+            console.log("✅ Metric buttons wired");
+
+        }, 0);
 
 
         safe('saveNotesBtn', async () => {
