@@ -317,3 +317,22 @@
     top: 16px;
   }
 }
+
+
+/* Specific override for the Dashboard layout only */
+.analysis-engine-container .room-diagram-canvas {
+  /* Pushes the starting point of the 3D view further right */
+  left: 14rem; 
+  
+  /* Pulls the right edge closer to the container boundary */
+  right: -2rem; 
+  
+  /* Optional: Increase width slightly to compensate for the push */
+  max-width: 1100px; 
+}
+
+/* Ensure the text descriptions stay pinned to the far left */
+.analysis-engine-container .room-insight-text {
+  left: 2rem;
+  max-width: 350px;
+}

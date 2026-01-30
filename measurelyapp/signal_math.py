@@ -67,6 +67,25 @@ def modes(f, m, thresh=4, min_sep=10):
 
     return out
 
+def apply_mic_calibration(f, m, mic_type="omnitronic_mm2"):
+    """
+    Applies a compensation curve to flatten the response of value-tier mics.
+    For the MM-2, we counteract the roll-off starting at 10kHz.
+    """
+    f, m = np.asarray(f), np.asarray(m)
+    if mic_type == "omnitronic_mm2":
+        # Create a compensation mask for frequencies above 10kHz
+        comp = np.zeros_like(m)
+        mask = (f > 10000) & (f <= 20000)
+        
+        if np.any(mask):
+            # Apply a linear lift: 0dB at 10kHz to +6dB at 18kHz
+            # This 'pushes' the 11kHz roll-off back to a realistic range
+            comp[mask] = (f[mask] - 10000) / (18000 - 10000) * 6.0
+            
+        return m + comp
+    return m
+
 
 def bandwidth_3db(f, m):
     if f.size < 8:

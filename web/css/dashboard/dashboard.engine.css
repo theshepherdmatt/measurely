@@ -54,6 +54,9 @@
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   border-radius: 12px;
+/* Add these two lines to fix the underline and color */
+  text-decoration: none; 
+  color: inherit;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -253,15 +256,15 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--c-text-muted);
   white-space: nowrap;
 }
 
 /* Status dot (reuse existing element) */
 .engine-status-row .status-indicator {
-  width: 7px !important;
-  height: 7px !important;
+  width: 10px !important;
+  height: 10px !important;
   border-radius: 50%;
   flex-shrink: 0;
 }

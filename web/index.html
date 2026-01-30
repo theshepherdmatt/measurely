@@ -74,7 +74,7 @@
                 <!-- PRIMARY ACTION -->
                 <div class="engine-actions">
                     <button id="runSweepBtn" class="btn btn-primary engine-action is-cta">
-                        <img src="icons/arrow-down.svg" alt="">
+                        <img src="icons/sweep.svg" alt="">
                         <div class="engine-action-text">
                             <strong>Run Sweep</strong>
                             <span>Measure your room now</span>
@@ -107,7 +107,7 @@
                     <div class="engine-status-row">
                         <div id="systemReadyDot"
                             class="status-indicator"
-                            style="width:8px;height:8px;border-radius:50%;background:var(--c-excellent);">
+                            style="width:10px;height:10px;border-radius:50%;background:var(--c-excellent);">
                         </div>
                         <span id="systemReadyText">System Ready</span>
                     </div>
@@ -311,18 +311,19 @@
 
 
             <!-- NERDS CORNER -->
-            <div class="card glass-panel animate-enter delay-3"
-                role="region"
-                aria-labelledby="nerdsCornerLabel">
+            <section class="analysis-section animate-enter delay-3">
+                <header class="section-header">
+                    <h2 class="section-title">
+                        <img src="icons/chart-line.svg" class="section-icon" alt="">
+                        Advanced Acoustic Analysis
+                    </h2>
+                    <p class="section-subtitle">
+                        Detailed frequency response and diagnostic overlays.
+                    </p>
+                </header>
 
-                <!-- HEADER -->
-                <h2 id="nerdsCornerLabel" class="card-title">
-                    Nerds Corner
-                </h2>
+                <div class="card glass-panel nerds-card">
 
-                <p class="card-description">
-                    Deep dive analysis and raw curves.
-                </p>
 
                 <!-- uploads NAV (DO NOT MOVE / DO NOT RENAME) -->
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">

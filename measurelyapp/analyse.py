@@ -17,6 +17,7 @@ from measurelyapp.signal_math import (
     bandwidth_3db,
     smoothness,
     early_reflections,
+    apply_mic_calibration,
 )
 from measurelyapp.score import (
     score_bandwidth,
@@ -133,18 +134,19 @@ def compute_signal_integrity(ir: np.ndarray) -> dict:
     }
 
 
-def score_clarity(refs, smoothness_std):
+def score_clarity(refs, smoothness_std, has_coffee_table=False):
     score = 10.0
 
-    # First reflection penalty
+# First reflection penalty
     if refs:
         first = refs[0]
-        if first < 0.5:
-            score -= 3
+        # Awareness: 0.77ms is typical for a coffee table bounce
+        if 0.6 <= first <= 0.9 and has_coffee_table:
+            score -= 0.5  # A "realistic" minor penalty instead of -2.0
         elif first < 1.5:
-            score -= 2
+            score -= 2.0
         elif first < 3.0:
-            score -= 1
+            score -= 1.0
 
     # Reflection density penalty (first 5 ms)
     early = [r for r in refs if r <= 5.0]
@@ -182,6 +184,9 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     json.loads(room_file.read_text())
     log.info("Loaded room settings")
 
+    room = json.loads(room_file.read_text())
+    has_coffee_table = room.get("settings", {}).get("room", {}).get("opt_coffee_table", False)
+
     sweep_valid, invalid_reason = assess_sweep_validity(ir, fs)
     signal_integrity = compute_signal_integrity(ir)
 
@@ -192,11 +197,23 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
     )
 
     freq_ui, mag_ui = log_bins(freq, mag, ppo=ppo)
+    mag_ui = apply_mic_calibration(freq_ui, mag_ui, mic_type="omnitronic_mm2")
     update_analysis_status("Computing UI frequency bins…", 15)
 
     ppo_raw = min(ppo, 12)
     freq_raw, mag_raw = log_bins(freq, mag, ppo=ppo_raw)
     update_analysis_status("Processing analysis bins…", 25)
+    # Apply calibration to the raw data used for scoring and bandwidth
+    mag_raw = apply_mic_calibration(freq_raw, mag_raw, mic_type="omnitronic_mm2")
+
+    lo3, hi3 = bandwidth_3db(freq_raw, mag_raw)
+    mode_list = [m for m in modes(freq_raw, mag_raw) if m["freq_hz"] <= 1000]
+    sm = smoothness(freq_raw, mag_raw)       
+    # Get all reflections
+    raw_refs = early_reflections(ir, fs)
+    refs = [r for r in raw_refs if r > 0.5] 
+
+    clarity = score_clarity(refs, sm, has_coffee_table=has_coffee_table)
 
     freqs = np.asarray(freq_ui)
     mags = smooth_curve(np.asarray(mag_ui)[freqs <= MAX_F_REPORT])
@@ -241,17 +258,7 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         "treble_2k_10k": band_mean(freq_raw, mag_raw, 2000, 10000),
         "air_10k_20k": band_mean(freq_raw, mag_raw, 10000, 20000),
     }
-
-    lo3, hi3 = bandwidth_3db(freq_raw, mag_raw)
-    mode_list = [m for m in modes(freq_raw, mag_raw) if m["freq_hz"] <= 1000]
-    sm = smoothness(freq_raw, mag_raw)       
-    # Get all reflections
-    raw_refs = early_reflections(ir, fs)
-    refs = [r for r in raw_refs if r > 0.5] 
-
-    clarity = score_clarity(refs, sm)
-
-
+  
     target_curve = load_target_curve(speaker_key)
 
     scores = {
@@ -308,8 +315,6 @@ def analyse(session_dir: Path, ppo: int = 48, speaker_key: str | None = None):
         },
     }
 
-
-    room = json.loads(room_file.read_text())
 
     try:
         acoustics_context = analyse_room(room)
