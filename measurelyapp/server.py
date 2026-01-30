@@ -328,11 +328,14 @@ def load_session_data(session_dir):
             "bandwidth":     ana_data.get("scores", {}).get("bandwidth", 3.6),
             "balance":       ana_data.get("scores", {}).get("balance", 1.6),
             "smoothness":    ana_data.get("scores", {}).get("smoothness", 7.3),
+            "smoothness_std_db": ana_data.get("smoothness_std_db"),
             "peaks_dips":    ana_data.get("scores", {}).get("peaks_dips", 3.3),
             "reflections":   ana_data.get("scores", {}).get("reflections", 4.0),
             "clarity":       ana_data.get("scores", {}).get("clarity", 3.0),
             "scores":        {**ana_data.get("scores", {}), "clarity": ana_data.get("scores", {}).get("clarity", 3.0)},
 
+            "reflections_ms": ana_data.get("reflections_ms", []),
+            "smoothness_std_db": ana_data.get("smoothness_std_db", None),
 
             "signal_integrity": ana_data.get("signal_integrity", {}).get("score", 0.0),
             "signal_integrity_raw": ana_data.get("signal_integrity", {}),

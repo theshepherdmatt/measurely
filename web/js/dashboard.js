@@ -232,7 +232,7 @@ function updateRoomInsightText(metric, data) {
   if (!el) return;
 
   // If we don't recognise the metric, don't break anything — just clear.
-  const supported = new Set(["sbir", "peaks_dips", "side_reflections", "bandwidth"]);
+  const supported = new Set(["sbir", "peaks_dips", "side_reflections", "bandwidth", "balance", "smoothness", "clarity"]);
   if (!supported.has(metric)) {
     el.innerHTML = "";
     return;
@@ -265,6 +265,8 @@ function updateRoomInsightText(metric, data) {
       return;
     }
 
+    const score = Number(data?.scores?.peaks_dips);
+
     el.innerHTML = `
       <div class="insight-block">
         <h3>Peaks & Dips (SBIR)</h3>
@@ -282,7 +284,9 @@ function updateRoomInsightText(metric, data) {
 
         <p>This predicted cancellation aligns with the dip visible in your measurement.</p>
         <p>Moving the speakers changes this frequency — closer raises it, further lowers it.</p>
-      </div>
+
+        <p><b>Peaks & Dips score:</b> <code>${Number.isFinite(score) ? score.toFixed(1) : "—"}/10</code></p>
+    </div>
     `;
     return;
   }
@@ -338,6 +342,8 @@ function updateRoomInsightText(metric, data) {
     const delta = reflected - direct;
     const delayMs = (delta / c) * 1000;
 
+    const score = Number(data?.scores?.reflections);
+
     el.innerHTML = `
         <div class="insight-block">
         <h3>Side Wall Reflections</h3>
@@ -355,6 +361,7 @@ function updateRoomInsightText(metric, data) {
         <p>
             Reflections under ~5 ms are most likely to blur stereo focus.
         </p>
+        <p><b>Reflections score:</b> <code>${Number.isFinite(score) ? score.toFixed(1) : "—"}/10</code></p>
         </div>
     `;
     return;
@@ -398,6 +405,8 @@ function updateRoomInsightText(metric, data) {
         const longest = Math.max(L, W, H);
         const fLowest = c / (2 * longest);
 
+        const score = Number(data?.scores?.bandwidth);
+
         el.innerHTML = `
             <div class="insight-block">
             <h3>Low Frequency Bandwidth</h3>
@@ -413,11 +422,176 @@ function updateRoomInsightText(metric, data) {
             <p>
                 Below this frequency, bass becomes increasingly uneven because full wavelengths cannot properly develop inside the room.
             </p>
+            <p><b>Bandwidth score:</b> <code>${Number.isFinite(score) ? score.toFixed(1) : "—"}/10</code></p>
             </div>
         `;
         return;
     }
 
+    // -----------------------------
+    // BALANCE (from band_levels_db)
+    // -----------------------------
+    if (metric === "balance") {
+
+    const bands = data?.band_levels_db || null;
+    const score = Number(data?.scores?.balance);
+
+    if (!bands) {
+        el.innerHTML = `
+        <div class="insight-block">
+            <h3>Balance</h3>
+            <p>No band level data found for this sweep.</p>
+        </div>
+        `;
+        return;
+    }
+
+    const bass   = Number(bands.bass_20_200);
+    const mid    = Number(bands.mid_200_2k);
+    const treble = Number(bands.treble_2k_10k);
+    const air    = Number(bands.air_10k_20k);
+
+    if (![bass, mid, treble, air].every(Number.isFinite)) {
+        el.innerHTML = `
+        <div class="insight-block">
+            <h3>Balance</h3>
+            <p>Band data incomplete — cannot compute balance.</p>
+        </div>
+        `;
+        return;
+    }
+
+    // ✅ HARD MATH FROM SWEEP DATA
+    const lowAvg  = (bass + mid) / 2;
+    const highAvg = (treble + air) / 2;
+
+    const tiltDb = highAvg - lowAvg;              // warm vs bright bias
+    const spreadDb = Math.max(bass, mid, treble, air) - Math.min(bass, mid, treble, air);
+
+    el.innerHTML = `
+        <div class="insight-block">
+        <h3>Balance (Measured Tonal Tilt)</h3>
+
+        <p><b>What’s happening:</b><br>
+        Balance is calculated from your measured band energy. If low bands measure higher than high bands, the room sounds warmer.  
+        If high bands measure higher, the room sounds brighter.</p>
+
+        <p><b>Measured band levels:</b><br>
+            Bass (20–200): <code>${bass.toFixed(1)} dB</code><br>
+            Mid (200–2k): <code>${mid.toFixed(1)} dB</code><br>
+            Treble (2k–10k): <code>${treble.toFixed(1)} dB</code><br>
+            Air (10k–20k): <code>${air.toFixed(1)} dB</code>
+        </p>
+
+        <p class="math">
+            Low average: <code>(${bass.toFixed(1)} + ${mid.toFixed(1)}) / 2 = ${lowAvg.toFixed(2)} dB</code><br>
+            High average: <code>(${treble.toFixed(1)} + ${air.toFixed(1)}) / 2 = ${highAvg.toFixed(2)} dB</code><br>
+            Tilt: <code>${highAvg.toFixed(2)} − ${lowAvg.toFixed(2)} = ${tiltDb.toFixed(2)} dB</code><br>
+            Spread: <code>${spreadDb.toFixed(2)} dB</code>
+        </p>
+
+        <p>
+            Tilt <b>${tiltDb < 0 ? "below" : "above"}</b> zero means your tonal balance leans
+            <b>${tiltDb < 0 ? "warm (bass-heavy)" : "bright (treble-heavy)"}</b>.
+        </p>
+
+        <p><b>Balance score:</b> <code>${Number.isFinite(score) ? score.toFixed(1) : "—"}/10</code></p>
+        </div>
+    `;
+    return;
+    }
+
+    console.log("🔍 entering smoothness block");
+
+    // -----------------------------
+    // SMOOTHNESS (from smoothness_std_db)
+    // -----------------------------
+    if (metric === "smoothness") {
+        console.log("🔎 smoothness data keys:", Object.keys(data));
+        console.log("🔎 smoothness full data:", data);
+
+
+        const std = Number(data?.smoothness_std_db);
+        const score = Number(data?.scores?.smoothness);
+
+        if (!Number.isFinite(std)) {
+            el.innerHTML = `
+            <div class="insight-block">
+                <h3>Smoothness</h3>
+                <p>No smoothness data found for this sweep.</p>
+            </div>
+            `;
+            return;
+        }
+
+        el.innerHTML = `
+            <div class="insight-block">
+            <h3>Smoothness (Frequency Consistency)</h3>
+
+            <p><b>What’s happening:</b><br>
+            Smoothness measures how much the frequency response varies across the spectrum.
+            Large peaks and dips increase the variation; a flatter response lowers it.</p>
+
+            <p class="math">
+                Standard deviation of response:<br>
+                <code>σ = ${std.toFixed(2)} dB</code>
+            </p>
+
+            <p>
+                A lower σ means the response changes less between frequencies and sounds more even.
+            </p>
+
+            <p><b>Smoothness score:</b> <code>${Number.isFinite(score) ? score.toFixed(1) : "—"}/10</code></p>
+            </div>
+        `;
+        return;
+    }
+
+    // -----------------------------
+    // CLARITY (early reflections + smoothness)
+    // -----------------------------
+    if (metric === "clarity") {
+
+        const refs = Array.isArray(data?.reflections_ms) ? data.reflections_ms : [];
+        const smooth = Number(data?.smoothness_std_db);
+        const score = Number(data?.scores?.clarity);
+
+        if (!refs.length || !Number.isFinite(smooth)) {
+            el.innerHTML = `
+            <div class="insight-block">
+                <h3>Clarity</h3>
+                <p>Reflection or smoothness data not available for this sweep.</p>
+            </div>`;
+            return;
+        }
+
+        const first = refs[0] ?? null;
+        const early = refs.filter(r => r <= 5);
+        const count = early.length;
+
+        el.innerHTML = `
+            <div class="insight-block">
+            <h3>Clarity (Early Reflection Impact)</h3>
+
+            <p><b>What’s happening:</b><br>
+            Clarity depends on how quickly reflections reach your ears and how uneven the frequency response is.</p>
+
+            <p class="math">
+                First reflection: <code>${first?.toFixed(2) ?? "—"} ms</code><br>
+                Reflections within 5 ms: <code>${count}</code><br>
+                Smoothness σ: <code>${smooth.toFixed(2)} dB</code>
+            </p>
+
+            <p>
+                Earlier and denser reflections blur detail and stereo focus.  
+                A smoother response (lower σ) improves clarity.
+            </p>
+
+            <p><b>Clarity score:</b> <code>${Number.isFinite(score) ? score.toFixed(1) : "—"}/10</code></p>
+            </div>
+        `;
+        return;
+    }
 
 }
 
@@ -807,13 +981,22 @@ class MeasurelyDashboard {
 
             // 4️⃣ Activate 3D overlay
             if (overlay && window.room3D) {
-            window.room3D.focusIssue(overlay, score);
+                if (overlay === "smoothness") {
+                    const std = Number(this.currentData?.smoothness_std_db);
+                    window.room3D.focusIssue("smoothness", score, std);
+                } else {
+                    window.room3D.focusIssue(overlay, score);
+                }
             }
+
             console.log("Analysis card clicked →", overlay);
 
+            console.log("🧠 metric received:", overlay);
+
             updateRoomInsightText(overlay, {
+                ...this.currentData,
                 room_context: this.currentData.room_context,
-                geom: this.roomGeomAnalysis   // 🔥 add this
+                geom: this.roomGeomAnalysis
             });
 
         });

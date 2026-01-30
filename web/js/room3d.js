@@ -35,7 +35,8 @@ export function initRoom3D({
     COFFEE_TABLE: "coffee_table",
     BANDWIDTH: "bandwidth",
     CLARITY: "clarity",
-    BALANCE: "balance"
+    BALANCE: "balance",
+    SMOOTHNESS: "smoothness"
 
   };
 
@@ -49,6 +50,7 @@ export function initRoom3D({
   const activeOverlays = new Set();
   let focusedOverlay = null;
   let activeScore = 10;
+  let smoothnessStd = 0;
 
   function overlayEnabled(id) {
     return activeOverlays.has(id);
@@ -563,6 +565,42 @@ export function initRoom3D({
 
   renderAnalysisOverlays(room);
 
+  // ---- SMOOTHNESS (Spectral Turbulence Field) ----
+  if (overlayEnabled(OVERLAYS.SMOOTHNESS)) {
+
+    const intensity = THREE.MathUtils.clamp(smoothnessStd / 4, 0, 1);
+
+    const geo = new THREE.PlaneGeometry(
+      room.width_m * 0.8,
+      room.length_m * 0.6,
+      40,
+      40
+    );
+
+    geo.attributes.position.setUsage(THREE.DynamicDrawUsage);
+
+    const mat = new THREE.MeshBasicMaterial({
+      color: intensity > 0.6 ? 0xff3b3b : 0x22d3ee,
+      wireframe: true,
+      transparent: true,
+      opacity: focusedOverlay === OVERLAYS.SMOOTHNESS ? 0.9 : 0.15,
+      depthWrite: false
+    });
+
+    const field = new THREE.Mesh(geo, mat);
+    field.rotation.x = -Math.PI / 2;
+    field.position.set(
+      0,
+      -room.height_m / 2 + room.tweeter_height_m,
+      -room.length_m * 0.1
+    );
+
+    field.userData.isSmoothnessField = true;
+
+    roomGroup.add(field);
+  }
+
+
 }
 
   /* ------------------------------------------
@@ -595,6 +633,30 @@ export function initRoom3D({
         obj.material.dashOffset -= 0.01;
       }
     });
+
+    // Smoothness field animation
+    if (focusedOverlay === OVERLAYS.SMOOTHNESS) {
+      const field = roomGroup.children.find(o => o.userData?.isSmoothnessField);
+      if (field) {
+        const pos = field.geometry.attributes.position;
+        const time = performance.now() * 0.001;
+        const intensity = THREE.MathUtils.clamp(smoothnessStd / 8, 0, 1);
+
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const y = pos.getY(i);
+
+          const ripple =
+            Math.sin(x * 3 + time * 2.0) *
+            Math.cos(y * 2 + time * 1.5);
+
+          pos.setZ(i, ripple * 0.12 * intensity);
+        }
+
+        pos.needsUpdate = true;
+        field.geometry.computeVertexNormals();
+      }
+    }
 
     roomGroup.scale.set(scale, scale, scale);
     controls.update();
@@ -1142,14 +1204,18 @@ export function initRoom3D({
       rebuild();
     },
 
-    focusIssue(id, score = 10) {
-      console.log("[Room3D] 🎯 focusIssue()", id, "score =", score);
+    focusIssue(id, score = 10, std = 0) {
+      console.log("[Room3D] 🎯 focusIssue()", id, "score =", score, "std =", std);
 
       activeOverlays.clear();
       activeOverlays.add(id);
 
       focusedOverlay = id;
       activeScore = score;
+
+      if (id === OVERLAYS.SMOOTHNESS) {
+        smoothnessStd = std;   // store smoothness strength
+      }
 
       rebuild();
     }
